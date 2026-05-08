@@ -1,0 +1,38 @@
+[
+  {
+    "id": "sun-in-signs",
+    "text": "Sun in signs — Aries (exalted 10°): bold leader. Taurus: steady, sensual. Gemini: curious intellect. Cancer: protective, family-focused. Leo (own): regal, charismatic. Virgo: analytical, service-oriented. Libra (debilitated 10°): indecisive ego, diplomatic. Scorpio: intense will, secretive. Sagittarius: philosophical teacher. Capricorn: ambitious authority. Aquarius: humanitarian idealist. Pisces: compassionate, spiritual."
+  },
+  {
+    "id": "moon-in-signs",
+    "text": "Moon in signs — Aries: impulsive, volatile, courageous. Taurus (exalted 3°): most stable, sensual, grounded. Gemini: mentally restless, dual moods. Cancer (own): deeply nurturing, intuitive. Leo: proud, warm, needs recognition. Virgo: analytical, worry-prone. Libra: diplomatic, harmony-seeking. Scorpio (debilitated 3°): intense, secretive, turbulent. Sagittarius: optimistic, philosophical. Capricorn: reserved, controlled. Aquarius: detached, humanitarian. Pisces: highly intuitive, spiritually sensitive."
+  },
+  {
+    "id": "mars-in-signs",
+    "text": "Mars in signs — Aries (own, moolatrikona 0–12°): warrior energy, boldest. Taurus: stubborn endurance. Gemini: argumentative, scattered. Cancer (debilitated 28°): passive-aggressive, indirect. Leo: dramatic, competitive. Virgo: precise, methodical service. Libra: diplomatic conflict. Scorpio (own): deep, strategic, intense. Sagittarius: righteous crusading drive. Capricorn (exalted 28°): peak disciplined ambition. Aquarius: humanitarian reformist. Pisces: diffuse, compassionate."
+  },
+  {
+    "id": "mercury-in-signs",
+    "text": "Mercury in signs — Aries: quick, impulsive speech. Taurus: slow, practical thinking. Gemini (own, moolatrikona 0–15°): peak versatile communication. Cancer: intuitive, memory-driven. Leo: dramatic, authoritative. Virgo (own + exalted 15°): analytical precision peak. Libra: diplomatic negotiator. Scorpio: penetrating, secretive. Sagittarius: philosophical, misses details. Capricorn: structured, methodical. Aquarius: innovative systems-thinker. Pisces (debilitated 15°): intuitive over logical."
+  },
+  {
+    "id": "jupiter-in-signs",
+    "text": "Jupiter in signs — Aries: bold, pioneering wisdom. Taurus: expands wealth/beauty. Gemini: broad intellectual curiosity. Cancer (exalted 5°): greatest nurturing grace, peak beneficence. Leo: regal generosity. Virgo (debilitated 5°): constrained, over-critical. Libra: justice-oriented wisdom. Scorpio: deep mystical knowledge. Sagittarius (own, moolatrikona 0–10°): maximum dharmic wisdom. Capricorn (debilitated 5°): constrained, delayed. Aquarius (own): humanitarian. Pisces (own): most spiritual, universal compassion."
+  },
+  {
+    "id": "venus-in-signs",
+    "text": "Venus in signs — Aries: impulsive romance. Taurus (own): most sensual, loyal, material abundance. Gemini: intellectual attraction. Cancer: nurturing, devoted. Leo: dramatic grand gestures. Virgo (debilitated 27°): critical, serves through perfection. Libra (own, moolatrikona 0–15°): harmonious, refined partnership. Scorpio: intense, possessive bonds. Sagittarius: adventurous, free-spirited. Capricorn: practical, loyal. Aquarius: unconventional, friendship-based. Pisces (exalted 27°): transcendent, unconditional, most spiritual love."
+  },
+  {
+    "id": "saturn-in-signs",
+    "text": "Saturn in signs — Aries (debilitated 20°): most restricted, impulsive friction. Taurus: slow material building. Gemini: methodical communication delays. Cancer: emotional restrictions. Leo: pride suppressed, learns humility. Virgo: disciplined perfectionist service. Libra (exalted 20°): most just, peak Saturn. Scorpio: karmic power lessons. Sagittarius: tests faith, structured wisdom. Capricorn (own): disciplined ambition, lasting achievement. Aquarius (own, moolatrikona 0–20°): humanitarian reform. Pisces: dissolves karma, spiritual discipline."
+  },
+  {
+    "id": "rahu-ketu-in-signs",
+    "text": "Rahu/Ketu (always opposite) axis themes: Aries/Libra — self-assertion vs. partnership. Taurus/Scorpio — material security vs. occult transformation (Rahu exalted 20° Taurus; Ketu exalted 20° Scorpio). Gemini/Sagittarius — information vs. dogma. Cancer/Capricorn — emotional security vs. ambition. Leo/Aquarius — recognition vs. idealism. Virgo/Pisces — perfectionism vs. spiritual dissolution. Rahu amplifies and obsesses over its sign; Ketu detaches and transcends from its sign."
+  },
+  {
+    "id": "planets-in-houses-general",
+    "text": "Planets in house positions — quick reference: 1st: personality, body. 2nd: wealth, speech, family. 3rd: courage, communication, siblings. 4th: home, mother, emotions. 5th: children, creativity, intelligence. 6th: health, enemies, service. 7th: marriage, partnerships. 8th: transformation, occult, longevity. 9th: dharma, guru, fortune. 10th: career, status, authority. 11th: gains, networks. 12th: liberation, losses, foreign. Planet in its natural house = double strength."
+  }
+]

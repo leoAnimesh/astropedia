@@ -1,0 +1,50 @@
+[
+  {
+    "id": "house-1",
+    "text": "1st House (Lagna/Tanu Bhava): self, body, personality, vitality, life direction. Natural sign: Aries; lord: Mars. Kendra (angular) — most powerful house. Body: head, skull, brain, face. Dig bala: Mercury and Jupiter strongest here. Lagna lord is most important planet in chart. Western: Ascendant — first impressions and physical form. Dusthana lords in 1st can afflict health. Whole-sign system pivots on this house."
+  },
+  {
+    "id": "house-2",
+    "text": "2nd House (Dhana Bhava): accumulated wealth, speech, family of origin, right eye, stored resources. Natural sign: Taurus; lord: Venus. Maraka house (death-inflicting combined with 7th). Body: face, mouth, teeth, tongue, throat, right eye, neck. Jupiter in 2nd: abundant wealth and wise speech. Malefics: harsh speech, financial struggles. Vedic: Dhana Yogas when 2nd and 11th lords combine. Western: personal values, material security."
+  },
+  {
+    "id": "house-3",
+    "text": "3rd House (Sahaja/Parakrama Bhava): younger siblings, communication, short journeys, courage, manual skills, media. Natural sign: Gemini; lord: Mercury. Upachaya (improves over time) and mild dusthana. Body: arms, hands, fingers, shoulders, right ear. Mars in 3rd: exceptional courage and competitive drive. Saturn: disciplined, careful communication. Vedic parakrama: physical and moral courage. Western: local environment and early education. 3rd–9th polarity: effort vs. grace."
+  },
+  {
+    "id": "house-4",
+    "text": "4th House (Sukha/Matru Bhava): mother, home, real estate, emotional security, vehicles, inner happiness. Natural sign: Cancer; lord: Moon. Kendra — powerful angular house. Body: chest, lungs, breasts. Dig bala: Moon and Venus strongest in 4th. Jupiter: wisdom from mother, contentment. Saturn: delays home ownership. Vedic: ancestral land and foundational education. Western: family of origin. Moksha trikona (4th, 8th, 12th). 4th–10th: roots vs. career."
+  },
+  {
+    "id": "house-5",
+    "text": "5th House (Putra/Poorva Punya Bhava): children, intelligence, creativity, romance, speculation, mantras, past-life merit. Natural sign: Leo; lord: Sun. Dharma trikona (1st, 5th, 9th) — powerful trine. Body: upper abdomen, solar plexus, upper spine. Jupiter in 5th: best for children and spiritual merit. Saturn: delays children. Vedic poorva punya: past-life karma flowers here. Western: self-expression, play, gambling. 5th–11th polarity: individual creativity vs. collective gains."
+  },
+  {
+    "id": "house-6",
+    "text": "6th House (Ari/Rog Bhava): disease, enemies, debts, daily service, employees, litigation. Natural sign: Virgo; lord: Mercury. Dusthana AND upachaya — malefics function well here. Body: intestines, small bowel, appendix. Mars in 6th: excellent — defeats enemies. Benefics (Jupiter/Venus) in 6th: health issues and debt possible. Vedic: shatru (open enemies), rog (chronic disease). Western: health routines, work. Viparita Raja Yoga if 6th lord in 8th or 12th."
+  },
+  {
+    "id": "house-7",
+    "text": "7th House (Kalatra Bhava): spouse, marriage, business partnerships, open adversaries, contracts. Natural sign: Libra; lord: Venus. Kendra AND maraka (death-inflicting). Body: kidneys, lower back, lumbar, adrenals. Dig bala: Saturn strongest in 7th. Jupiter in 7th: wise spouse. Saturn: delayed marriage. Mars: Mangal Dosha. Venus in 7th (own): refined partnership. Vedic maraka: 7th lord times death. Western: partnerships, contracts. 7th–1st: self vs. other."
+  },
+  {
+    "id": "house-8",
+    "text": "8th House (Mrityu/Ayur Bhava): death, longevity, transformation, hidden matters, occult, others' resources, inheritance, surgery. Natural sign: Scorpio; lord: Mars. Most difficult dusthana and house of deepest transformation. Body: genitalia, colon, rectum, prostate. Saturn in 8th: exceptional longevity. Ketu in 8th: strong occult and moksha potential. Mars in 8th (Scorpio): occult skill. Viparita Raja Yoga: 8th lord in 6th or 12th. Western: regeneration, shared finances, psychology, taboo."
+  },
+  {
+    "id": "house-9",
+    "text": "9th House (Dharma/Bhagya Bhava): father, guru, higher education, religion, philosophy, long journeys, divine grace. Natural sign: Sagittarius; lord: Jupiter. Most benefic house; apex of dharma trikona. Body: hips, thighs, sciatic nerve, liver. Jupiter in 9th: best placement — extraordinary grace. 9th lord always benefic for any chart. Vedic: bhagya (fortune), pitru (ancestors). Western: higher mind, belief, law. Dharmakarmadhipati: 9th+10th lords conjunct."
+  },
+  {
+    "id": "house-10",
+    "text": "10th House (Karma Bhava): career, calling, public reputation, authority, government, social status. Natural sign: Capricorn; lord: Saturn. Most prominent kendra — chart apex. Body: knees, kneecaps, joints. Dig bala: Sun and Mars strongest in 10th. Pancha Mahapurusha Yogas most powerful in 10th kendra. Vedic: karma (right action), rajya (governance). Western: career, public life, legacy. 10th–4th: outer achievement vs. inner roots."
+  },
+  {
+    "id": "house-11",
+    "text": "11th House (Labha Bhava): gains, income, aspirations, elder siblings, friends, networks, fulfilled desires. Natural sign: Aquarius; lord: Saturn. Upachaya — all planets give gains, even malefics. Body: calves, ankles, left ear. Rahu in 11th: best Rahu placement — enormous material gains. Jupiter in 11th: Lakshmi Yoga — prosperity and high aspirations. Vedic: labha (gains), aya (income). Western: hopes, social groups, humanitarian causes. 11th–5th polarity: collective vs. individual."
+  },
+  {
+    "id": "house-12",
+    "text": "12th House (Vyaya/Moksha Bhava): expenses, losses, foreign lands, spiritual retreat, isolation, liberation (moksha), unconscious, sleep. Natural sign: Pisces; lord: Jupiter. Dusthana materially; most spiritually significant — gateway to moksha. Body: feet, toes, lymphatic system, left eye. Ketu in 12th: most powerful moksha placement. Jupiter in 12th (Pisces nature): spiritual wisdom, inner guru. Vedic: moksha (liberation). Western: hidden enemies, institutions. Moksha trikona: 4th, 8th, 12th."
+  }
+]

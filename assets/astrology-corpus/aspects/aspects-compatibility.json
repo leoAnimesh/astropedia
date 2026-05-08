@@ -1,0 +1,50 @@
+[
+  {
+    "id": "vedic-graha-drishti",
+    "text": "Vedic Graha Drishti (planetary aspects): All planets aspect the 7th from their position (full aspect). Special aspects: Mars also aspects 4th and 8th. Jupiter also aspects 5th and 9th. Saturn also aspects 3rd and 10th. Rahu/Ketu aspect 5th, 7th, and 9th. Sun, Moon, Mercury, Venus: 7th only. Benefics uplift aspected houses; malefics afflict. Full aspects = 100% strength. No partial aspects in Vedic system (unlike Western)."
+  },
+  {
+    "id": "vedic-rashi-drishti",
+    "text": "Vedic Rashi Drishti (sign aspects — Jaimini): Movable signs (Aries, Cancer, Libra, Capricorn) aspect all Fixed signs except the adjacent one. Fixed signs (Taurus, Leo, Scorpio, Aquarius) aspect all Movable signs except the adjacent one. Dual/Mutable signs (Gemini, Virgo, Sagittarius, Pisces) aspect each other mutually. Used in Jaimini astrology; distinct from Parashara graha drishti. All planets in aspecting sign cast that sign's aspect."
+  },
+  {
+    "id": "western-major-aspects",
+    "text": "Western major aspects: Conjunction (0°, orb 8–10°): intensified merged energies — most powerful aspect. Opposition (180°, orb 8°): polarity and tension, awareness through contrast. Trine (120°, orb 6–8°): harmonious flowing energy between same-element signs — natural talent. Square (90°, orb 6–8°): tension demanding resolution — friction-driven growth. Sextile (60°, orb 4–6°): opportunity between compatible elements — requires action to manifest."
+  },
+  {
+    "id": "western-minor-aspects",
+    "text": "Western minor aspects: Quincunx/Inconjunct (150°, orb 2–3°): adjustment between incompatible sign energies; health, service, crisis adaptation. Semi-sextile (30°, orb 2°): minor stimulus between adjacent signs — subtle friction. Semi-square (45°, orb 2°): irritation and restlessness. Sesquiquadrate (135°, orb 2°): sustained irritation, minor recurring crises. Applying aspects (moving toward exact) are stronger and more fated than separating (moving away from exact)."
+  },
+  {
+    "id": "elemental-compatibility",
+    "text": "Elemental compatibility: Fire (Aries, Leo, Sagittarius) + Fire: passionate; + Air: stimulating. Earth (Taurus, Virgo, Capricorn) + Earth: stable; + Water: emotional depth meets practicality. Air (Gemini, Libra, Aquarius) + Air and Fire: mental and social connection. Water (Cancer, Scorpio, Pisces) + Water and Earth: emotional, intuitive understanding. Fire-Water: Water extinguishes Fire or Fire evaporates Water — requires effort. Earth-Air: Earth finds Air flighty; Air finds Earth too fixed."
+  },
+  {
+    "id": "modal-compatibility",
+    "text": "Modal compatibility: Cardinal (Aries, Cancer, Libra, Capricorn) = initiators; two Cardinals: leadership clash. Fixed (Taurus, Leo, Scorpio, Aquarius) = sustainers; two Fixed: stability or deadlock. Mutable (Gemini, Virgo, Sagittarius, Pisces) = adapters; two Mutables: flexible but directionless. Cardinal-Fixed: Cardinal initiates, Fixed sustains — good match. Cardinal-Mutable: good flow. Fixed-Mutable: stability plus variety."
+  },
+  {
+    "id": "vedic-ashta-kuta",
+    "text": "Vedic Ashta Kuta (8-factor compatibility): total 36 points. 18+ acceptable; 24+ good; 30+ excellent. Eight factors: (1) Varna 1pt: spiritual level. (2) Vashya 2pt: dominance/attraction. (3) Tara 3pt: birth star. (4) Yoni 4pt: sexual/instinctual compatibility via nakshatra animals. (5) Graha Maitri 5pt: Moon-sign lords' friendship. (6) Gana 6pt: Deva/Manushya/Rakshasa nature. (7) Bhakut 7pt: Moon-sign positions — 2-12, 5-9, 6-8 inauspicious. (8) Nadi 8pt: highest weight."
+  },
+  {
+    "id": "vedic-nadi-compatibility",
+    "text": "Nadi Kuta: highest-weighted (8 points) in Vedic Ashta Kuta. Each nakshatra belongs to one of three Nadis — Vata/Adi, Pitta/Madhya, or Kapha/Antya. Same Nadi = 0 points (Nadi Dosha) — incompatible, risk to marital harmony and offspring health. Different Nadi = 8 points. Dosha partially cancelled if both Moon-sign lords are same, if same nakshatra but different padas, or Venus in kendra from 7th lord. Most serious incompatibility factor in Vedic matchmaking."
+  },
+  {
+    "id": "sade-sati-transit",
+    "text": "Sade Sati: Saturn's 7.5-year transit through 12th, 1st, and 2nd houses from natal Moon. Recurs every ~29.5 years. Phase 1 (12th from Moon): losses, expenses, inner preparation. Phase 2 (Moon sign): intense personal pressure, health challenges, major restructuring. Phase 3 (2nd from Moon): financial and family adjustments. Not always negative — strong Saturn or well-placed Moon brings disciplined achievement. Ashtama Shani (Saturn 8th from Moon): ~2.5 years of obstacles and delays."
+  },
+  {
+    "id": "gochara-transits",
+    "text": "Gochara (transit) interpretation: all transits read relative to natal Moon sign. Jupiter transiting 1st, 4th, 7th, 9th, or 11th from Moon: expansion and good fortune. Jupiter in 5th or 9th from Moon: especially auspicious. Saturn in 8th from Moon (Ashtama Shani): delays and health issues ~2.5 years. Rahu-Ketu transiting over natal planets intensifies those planets. Transit results must be read within the running Mahadasha — favorable transit in difficult dasha = only mild relief."
+  },
+  {
+    "id": "naisargika-maitri",
+    "text": "Naisargika Maitri (natural planetary friendships): Sun — friends: Moon, Mars, Jupiter; enemies: Venus, Saturn; neutral: Mercury. Moon — friends: Sun, Mercury; enemies: none; neutral: Mars, Jupiter, Venus, Saturn. Mars — friends: Sun, Moon, Jupiter; enemies: Mercury; neutral: Venus, Saturn. Mercury — friends: Sun, Venus; enemies: Moon; neutral: Mars, Jupiter, Saturn. Jupiter — friends: Sun, Moon, Mars; enemies: Mercury, Venus; neutral: Saturn. Venus — friends: Mercury, Saturn; enemies: Sun, Moon; neutral: Mars, Jupiter."
+  },
+  {
+    "id": "tatkalika-maitri",
+    "text": "Tatkalika Maitri (temporary friendship by position): planet in 2nd, 3rd, 4th, 10th, 11th, or 12th from another = temporary friend; in 1st, 5th, 6th, 7th, 8th, or 9th = temporary enemy. Combined (Naisargika + Tatkalika): natural friend + temporary friend = Adhi Mitra; natural friend + temporary enemy = neutral; natural enemy + temporary friend = neutral; natural enemy + temporary enemy = Adhi Shatru. Combined relationship determines how planets work together in a chart."
+  }
+]

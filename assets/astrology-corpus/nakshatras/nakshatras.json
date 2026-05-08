@@ -1,0 +1,110 @@
+[
+  {
+    "id": "nakshatra-ashwini",
+    "text": "Ashwini: 0°–13°20' Aries. Lord: Ketu. Deity: Ashwini Kumaras (divine physicians). Symbol: Horse's head. Gana: Deva. Shakti: Shidhra Vyapani (swift reaching). Animal: Male horse. Pada 1 sound: Chu, 2: Che, 3: Cho, 4: La. Traits: speed, vitality, healing, pioneering, impulsiveness. Category: Laghu (swift). Activates Ketu Mahadasha (7 yrs). Auspicious for new beginnings and medical procedures. Body part: knees. Shadow: recklessness; Gift: instantaneous healing."
+  },
+  {
+    "id": "nakshatra-bharani",
+    "text": "Bharani: 13°20'–26°40' Aries. Lord: Venus. Deity: Yama (god of death/dharma). Symbol: Yoni (womb). Gana: Manushya. Shakti: Apabharani (carrying souls away). Animal: Male elephant. Pada 1 sound: Lee, 2: Lu, 3: Le, 4: Lo. Traits: transformation, creativity, moral gravity, carrying burdens. Body part: head. Activates Venus Mahadasha (20 yrs). Rules fertility, sexuality, entry into physical realm. Shadow: extremism; Gift: enduring creative power."
+  },
+  {
+    "id": "nakshatra-krittika",
+    "text": "Krittika: 26°40' Aries–10° Taurus. Lord: Sun. Deity: Agni (fire god). Symbol: Flame/razor/axe. Gana: Rakshasa. Shakti: Dahana (to burn/purify). Animal: Female sheep. Pada 1 sound: Aa (Aries), 2: Ee, 3: Oo, 4: Ay (Taurus). Straddles Aries-Taurus: pada 1 in Aries, padas 2–4 in Taurus. Traits: purification, sharp intellect, leadership, ambition. Body part: eyes and head. Activates Sun Mahadasha (6 yrs). Shadow: harsh criticism; Gift: transformative purification."
+  },
+  {
+    "id": "nakshatra-rohini",
+    "text": "Rohini: 10°–23°20' Taurus. Lord: Moon. Deity: Brahma (creator). Symbol: Ox-cart/banyan tree. Gana: Manushya. Shakti: Rohana (nourishment, growth). Animal: Male serpent. Pada 1 sound: O, 2: Va, 3: Vi, 4: Vu. Moon's most favored nakshatra; Moon exalted 3° Taurus falls here. Traits: beauty, fertility, creativity, sensuality, abundance, artistic genius. Body part: forehead/eyes. Activates Moon Mahadasha (10 yrs). Shadow: jealousy/possessiveness; Gift: magnetic creative beauty."
+  },
+  {
+    "id": "nakshatra-mrigashira",
+    "text": "Mrigashira: 23°20' Taurus–6°40' Gemini. Lord: Mars. Deity: Soma (Moon god). Symbol: Deer's head. Gana: Deva. Shakti: Prinana (fulfillment/searching). Animal: Female serpent. Pada 1 sound: Ve, 2: Vo (Taurus), 3: Ka, 4: Ki (Gemini). Straddles Taurus-Gemini: 2 padas each. Traits: restless curiosity, gentleness, artistic sensitivity, investigative mind. Body part: eyes and eyebrows. Activates Mars Mahadasha (7 yrs). Shadow: indecision/constant seeking; Gift: graceful, gentle exploration."
+  },
+  {
+    "id": "nakshatra-ardra",
+    "text": "Ardra: 6°40'–20° Gemini. Lord: Rahu. Deity: Rudra (storm aspect of Shiva). Symbol: Teardrop/diamond. Gana: Manushya. Shakti: Yatna (effort through difficulty). Animal: Female dog. Pada 1 sound: Ku, 2: Gha, 3: Ng, 4: Chha. Traits: penetrating intellect, transformation through crisis, emotional storms. Body part: eyes. Activates Rahu Mahadasha (18 yrs). Symbol of cosmic tempest before new creation. Shadow: destructive rage; Gift: piercing insight that transforms."
+  },
+  {
+    "id": "nakshatra-punarvasu",
+    "text": "Punarvasu: 20° Gemini–3°20' Cancer. Lord: Jupiter. Deity: Aditi (infinite cosmic mother). Symbol: Bow and quiver. Gana: Deva. Shakti: Vasutva Prapana (gaining substance/returning home). Animal: Female cat. Pada 1 sound: Kay, 2: Ko, 3: Ha (Gemini), 4: Hi (Cancer). Straddles Gemini-Cancer: 3 padas in Gemini, 1 in Cancer. Traits: renewal, restoration, optimism, wisdom, generosity, bounce-back resilience. Body part: fingers and nose. Activates Jupiter Mahadasha (16 yrs)."
+  },
+  {
+    "id": "nakshatra-pushya",
+    "text": "Pushya: 3°20'–16°40' Cancer. Lord: Saturn. Deity: Brihaspati (priest of the gods). Symbol: Flower/cow's udder/arrow. Gana: Deva. Shakti: Brahmavarchasa (spiritual energy/nourishment). Animal: Male sheep. Pada 1: Hu, 2: He, 3: Ho, 4: Da. Most nourishing and auspicious nakshatra in classical texts. Guru Pushya Yoga (Jupiter transiting Pushya on Thursday) = most auspicious muhurta for new ventures. Body part: mouth and face. Activates Saturn Mahadasha (19 yrs)."
+  },
+  {
+    "id": "nakshatra-ashlesha",
+    "text": "Ashlesha: 16°40'–30° Cancer. Lord: Mercury. Deity: Nagas (serpent beings). Symbol: Coiled serpent. Gana: Rakshasa. Shakti: Visasleshana (embrace — to heal or paralyze). Animal: Male cat. Pada 1: Dee, 2: Du, 3: Day, 4: Do. Traits: Kundalini energy, hypnotic presence, penetrating intellect, business acumen. Body part: ears and joints. Activates Mercury Mahadasha (17 yrs). Cycle completion before transformation. Shadow: manipulation; Gift: serpentine healing wisdom."
+  },
+  {
+    "id": "nakshatra-magha",
+    "text": "Magha: 0°–13°20' Leo. Lord: Ketu. Deity: Pitrs (ancestral spirits). Symbol: Royal throne/palanquin. Gana: Rakshasa. Shakti: Tyage Kshepani (leaving the body with authority). Animal: Male rat. Pada 1: Ma, 2: Mi, 3: Mu, 4: Me. Traits: royalty, ancestral power, pride of lineage, natural command, political leadership. Body part: nose. Activates Ketu Mahadasha (7 yrs). Strong ancestral karmic connection. Shadow: arrogance; Gift: inherited noble power and authority."
+  },
+  {
+    "id": "nakshatra-purva-phalguni",
+    "text": "Purva Phalguni: 13°20'–26°40' Leo. Lord: Venus. Deity: Bhaga (fortune and marital bliss). Symbol: Front legs of bed/hammock. Gana: Manushya. Shakti: Prajanana (procreation and creative bliss). Animal: Female rat. Pada 1: Mo, 2: Ta, 3: Ti, 4: Tu. Traits: rest, pleasure, creative union, romance, luxury, magnetic charm, artistic talent. Body part: right hand and genitals. Activates Venus Mahadasha (20 yrs). Shadow: laziness/vanity; Gift: joyful creative manifestation."
+  },
+  {
+    "id": "nakshatra-uttara-phalguni",
+    "text": "Uttara Phalguni: 26°40' Leo–10° Virgo. Lord: Sun. Deity: Aryaman (nobility and contracts). Symbol: Rear legs of bed/fig tree. Gana: Manushya. Shakti: Chhatradhara (patronage/being supported). Animal: Male bull. Pada 1: Te (Leo), 2: To, 3: Pa, 4: Pi (Virgo). Straddles Leo-Virgo: 1 pada in Leo, 3 in Virgo. Traits: committed partnership, social bonds, fairness, helpfulness. Body part: left hand. Activates Sun Mahadasha (6 yrs). Shadow: dependency on approval; Gift: lasting, noble partnerships."
+  },
+  {
+    "id": "nakshatra-hasta",
+    "text": "Hasta: 10°–23°20' Virgo. Lord: Moon. Deity: Savitar (creative solar power). Symbol: Open/closed hand. Gana: Deva. Shakti: Hasta Sthapaniya Agama (achieving goals through the hand — skill). Animal: Female buffalo. Pada 1: Pu, 2: Sha, 3: Na, 4: Tha. Traits: craftsmanship, dexterity, healing through touch, practical creativity, intelligence. Body part: hands. Activates Moon Mahadasha (10 yrs). Shadow: cunning manipulation; Gift: extraordinary manual and healing skill."
+  },
+  {
+    "id": "nakshatra-chitra",
+    "text": "Chitra: 23°20' Virgo–6°40' Libra. Lord: Mars. Deity: Tvashtar/Vishwakarma (divine craftsman). Symbol: Bright jewel/pearl. Gana: Rakshasa. Shakti: Tvashtr (creating perfect forms). Animal: Female tiger. Pada 1: Pe (Virgo), 2: Po (Virgo), 3: Ra (Libra), 4: Ri (Libra). Straddles Virgo-Libra: 2 padas each. Traits: brilliance, artistic perfection, beauty, craftsmanship genius. Body part: neck/forehead. Activates Mars Mahadasha (7 yrs). Shadow: perfectionism/vanity; Gift: divine aesthetic creation."
+  },
+  {
+    "id": "nakshatra-swati",
+    "text": "Swati: 6°40'–20° Libra. Lord: Rahu. Deity: Vayu (wind god). Symbol: Coral/sword/young plant bending in wind. Gana: Deva. Shakti: Pradhvamsa (scattering like wind to find independence). Animal: Male buffalo. Pada 1: Ru, 2: Re, 3: Ro, 4: Ta. Traits: independence, flexibility, business acumen, adaptability, cross-cultural skill. Body part: chest/lungs. Activates Rahu Mahadasha (18 yrs). Shadow: ungroundedness/indecisiveness; Gift: entrepreneurial adaptability."
+  },
+  {
+    "id": "nakshatra-vishakha",
+    "text": "Vishakha: 20° Libra–3°20' Scorpio. Lord: Jupiter. Deity: Indra and Agni. Symbol: Triumphal arch/potter's wheel. Gana: Rakshasa. Shakti: Vyapana (achieving many fruits over time). Animal: Male tiger. Pada 1: Ti, 2: Tu, 3: Te (Libra), 4: To (Scorpio). Straddles Libra-Scorpio. Traits: single-minded determination, focused ambition, leadership. Body part: arms and breasts. Activates Jupiter Mahadasha (16 yrs). Shadow: jealousy; Gift: unwavering goal-achievement."
+  },
+  {
+    "id": "nakshatra-anuradha",
+    "text": "Anuradha: 3°20'–16°40' Scorpio. Lord: Saturn. Deity: Mitra (friendship, contracts). Symbol: Lotus/staff. Gana: Deva. Shakti: Radhana (devotional honor). Animal: Female deer. Pada 1: Na, 2: Ni, 3: Nu, 4: Ne. Traits: deep friendship, devotion across obstacles, loyalty, group orientation, spiritual discipline. Body part: heart and stomach. Activates Saturn Mahadasha (19 yrs). The lotus flowering in Scorpio's depths. Shadow: possessiveness; Gift: transcendent loyal friendship."
+  },
+  {
+    "id": "nakshatra-jyeshtha",
+    "text": "Jyeshtha: 16°40'–30° Scorpio. Lord: Mercury. Deity: Indra (king of gods). Symbol: Circular amulet (kundala)/umbrella. Gana: Rakshasa. Shakti: Arohana (rising, conquering challenges). Animal: Male deer. Pada 1: No, 2: Ya, 3: Yi, 4: Yu. Traits: elder/chief archetype, protective authority, responsibility, courage, intelligence. Body part: right side of torso and neck. Activates Mercury Mahadasha (17 yrs). Shadow: arrogance/control issues; Gift: protective, wise leadership under fire."
+  },
+  {
+    "id": "nakshatra-mula",
+    "text": "Mula: 0°–13°20' Sagittarius. Lord: Ketu. Deity: Nirriti (goddess of dissolution/calamity). Symbol: Bundle of roots/elephant goad. Gana: Rakshasa. Shakti: Barhana (ruining to the very root to rebuild). Animal: Male dog. Pada 1: Ye, 2: Yo, 3: Bha, 4: Bhi. Located near the Galactic Center. Traits: root-cause investigation, philosophical depth, dissolution leading to liberation. Body part: feet. Activates Ketu Mahadasha (7 yrs). Shadow: destructive intensity; Gift: penetrating truth that liberates."
+  },
+  {
+    "id": "nakshatra-purva-ashadha",
+    "text": "Purva Ashadha: 13°20'–26°40' Sagittarius. Lord: Venus. Deity: Apah (cosmic waters). Symbol: Fan/elephant tusk. Gana: Manushya. Shakti: Varchasya (giving invincibility and energizing). Animal: Male monkey. Pada 1: Bhu, 2: Dha, 3: Bha, 4: Dha. Traits: invincibility of spirit, purification, optimism, enthusiasm before final victory, persuasive communication. Body part: back and hips. Activates Venus Mahadasha (20 yrs). Shadow: pride/overconfidence; Gift: indomitable, purifying energy."
+  },
+  {
+    "id": "nakshatra-uttara-ashadha",
+    "text": "Uttara Ashadha: 26°40' Sagittarius–10° Capricorn. Lord: Sun. Deity: Vishvadevas (10 universal gods). Symbol: Elephant tusk/small bed. Gana: Manushya. Shakti: Apradhrisya (invincible final victory). Animal: Male mongoose. Pada 1: Bhe (Sag), 2: Bho, 3: Ja, 4: Ji (Cap). Straddles Sagittarius-Capricorn. Traits: final righteous victory, noble character, persistent disciplined effort. Body part: thighs. Activates Sun Mahadasha (6 yrs). Shadow: over-seriousness; Gift: noble victory."
+  },
+  {
+    "id": "nakshatra-shravana",
+    "text": "Shravana: 10°–23°20' Capricorn. Lord: Moon. Deity: Vishnu (preserver). Symbol: Three footsteps/ear. Gana: Deva. Shakti: Samhanana (connecting, preserving ancient knowledge). Animal: Female monkey. Pada 1: Khi, 2: Khu, 3: Khe, 4: Kho. Traits: listening, wisdom transmission, preserving sacred knowledge, counseling, media. Body part: ears. Activates Moon Mahadasha (10 yrs). Associated with Trivikrama's 3 steps of Vishnu. Shadow: gossip; Gift: cosmic receptivity — the ear of the universe."
+  },
+  {
+    "id": "nakshatra-dhanishtha",
+    "text": "Dhanishtha: 23°20' Capricorn–6°40' Aquarius. Lord: Mars. Deity: Ashta Vasus (8 elemental gods). Symbol: Drum/flute. Gana: Rakshasa. Shakti: Khyapayitri (granting abundance, fame, and musical gifts). Animal: Female lion. Pada 1: Ga (Capricorn), 2: Gi (Capricorn), 3: Gu (Aquarius), 4: Ge (Aquarius). Traits: wealth, musical talent, perfect timing, group achievement, courage. Body part: back and anus. Activates Mars Mahadasha (7 yrs). Shadow: marital difficulty/egotism; Gift: rhythmic abundance."
+  },
+  {
+    "id": "nakshatra-shatabhisha",
+    "text": "Shatabhisha: 6°40'–20° Aquarius. Lord: Rahu. Deity: Varuna (cosmic ocean, hidden truths). Symbol: Empty circle/1000 stars. Gana: Rakshasa. Shakti: Bheshaja (healing through hidden knowledge). Animal: Female horse. Pada 1: Go, 2: Sa, 3: Si, 4: Su. Name: '100 physicians/1000 healers.' Traits: mystical healing, cosmic secrets, unconventional scientific genius, isolation. Body part: right thigh. Activates Rahu Mahadasha (18 yrs). Shadow: extreme isolation; Gift: revolutionary healing."
+  },
+  {
+    "id": "nakshatra-purva-bhadrapada",
+    "text": "Purva Bhadrapada: 20° Aquarius–3°20' Pisces. Lord: Jupiter. Deity: Aja Ekapada (one-footed Rudra/fire serpent). Symbol: Sword/front legs of funeral cot. Gana: Manushya. Shakti: Yajamana Udyamana (raising the evolutionary level through tapas). Animal: Male lion. Pada 1: Se (Aquarius), 2: So (Aquarius), 3: Da (Aquarius), 4: Di (Pisces). Straddles Aquarius-Pisces. Traits: ascetic intensity, spiritual fire, revolutionary transformation, psychic ability. Activates Jupiter Mahadasha (16 yrs)."
+  },
+  {
+    "id": "nakshatra-uttara-bhadrapada",
+    "text": "Uttara Bhadrapada: 3°20'–16°40' Pisces. Lord: Saturn. Deity: Ahir Budhnya (kundalini serpent). Symbol: Rear legs of funeral cot. Gana: Manushya. Shakti: Varshodyamana (cosmic nourishing rain). Animal: Female cow. Pada 1: Du, 2: Tha, 3: Jha, 4: Tra. Traits: profound wisdom through experience, compassion, spiritual maturation, serving through suffering. Body part: sides and legs. Activates Saturn Mahadasha (19 yrs). Shadow: excessive introversion; Gift: oceanic spiritual depth."
+  },
+  {
+    "id": "nakshatra-revati",
+    "text": "Revati: 16°40'–30° Pisces. Lord: Mercury. Deity: Pushan (traveler's guide between worlds). Symbol: Fish/drum. Gana: Deva. Shakti: Kshiradyapani (nourishment, safe passage). Animal: Female elephant. Pada 1: De, 2: Do, 3: Cha, 4: Chi. Final nakshatra — completion, nourishment, passage between worlds. Traits: compassionate guidance, spiritual completion, artistic sensibility. Body part: feet and ankles. Activates Mercury Mahadasha (17 yrs). Shadow: over-sensitivity; Gift: transcendent loving completion."
+  }
+]

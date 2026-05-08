@@ -1,0 +1,46 @@
+[
+  {
+    "id": "dasha-system-overview",
+    "text": "Vimshottari Dasha: primary planetary period system in Vedic astrology. Total span: 120 years. Fixed sequence: Sun 6, Moon 10, Mars 7, Rahu 18, Jupiter 16, Saturn 19, Mercury 17, Ketu 7, Venus 20 years. Starting dasha from natal Moon's nakshatra — fraction elapsed determines remaining balance. Each Mahadasha divides into 9 Antardashas proportionally. Dashas represent karmic ripening — natal strength, house, sign, and yogas determine results."
+  },
+  {
+    "id": "dasha-sun",
+    "text": "Sun Mahadasha: 6 years. Themes: identity, career, authority, father, government dealings. Strong Sun (exalted 10° Aries, own Leo, kendra): leadership, political rise, health, clarity. Afflicted Sun (debilitated 10° Libra, with malefics): ego conflicts, heart/eye issues, father troubles. Sun's natal house shows domain activated. Antardasha of Moon: public visibility; Saturn: authority friction. Sun-Sun is the first and most intense sub-period."
+  },
+  {
+    "id": "dasha-moon",
+    "text": "Moon Mahadasha: 10 years. Themes: emotional life, mind, mother, home, public recognition, intuition, fluids. Strong Moon (exalted 3° Taurus, own Cancer, waxing, Jupiter aspect): popularity, domestic happiness, emotional fulfillment. Weak/afflicted Moon (waning, debilitated 3° Scorpio, with Ketu/Saturn): anxiety, mood disorders, mother grief, mental instability. Moon's nakshatra lord co-rules events. Antardasha of Jupiter: Gajakesari peak effects. Antardasha of Rahu: emotional turbulence."
+  },
+  {
+    "id": "dasha-mars",
+    "text": "Mars Mahadasha: 7 years. Themes: courage, energy, siblings, land/property, competition, blood health. Strong Mars (exalted 28° Capricorn, own Aries/Scorpio, Ruchaka Yoga): athletic success, property gains, entrepreneurship. Afflicted Mars (debilitated 28° Cancer, with Rahu/Ketu): accidents, surgery, legal disputes, anger. Blood, muscles, adrenals need monitoring. Mangal Dosha placements activate intensely. Mars-Mars antardasha: most intense 4.5-month sub-period."
+  },
+  {
+    "id": "dasha-rahu",
+    "text": "Rahu Mahadasha: 18 years (longest shadow-planet period). Themes: material ambition, foreign connections, technology, unconventional paths, karmic acceleration. Well-placed Rahu (with Jupiter, in Gemini/Taurus/Virgo, 3rd/6th/10th/11th): success in unconventional fields, foreign achievement. Ill-placed: obsession, deception, sudden reversals. Nervous system, skin, respiratory at risk. Rahu-Jupiter antardasha: intense expansion. Rahu-Saturn: heaviest sub-period."
+  },
+  {
+    "id": "dasha-jupiter",
+    "text": "Jupiter Mahadasha: 16 years. Themes: wisdom, dharma, children, marriage, higher education, wealth through righteous means. Strong Jupiter (exalted 5° Cancer, own Sagittarius/Pisces, Hamsa/Gajakesari Yoga): abundant blessings, wisdom, prosperity — most fortunate period in many charts. Weak Jupiter (debilitated 5° Capricorn, with Saturn/Rahu): overindulgence, liver issues, poor judgment, problematic children. Antardasha of Venus within Jupiter: peak for marriage and artistic prosperity."
+  },
+  {
+    "id": "dasha-saturn",
+    "text": "Saturn Mahadasha: 19 years (longest planetary dasha). Themes: karmic accountability, discipline, service, delayed-but-earned success. First phase: heaviness; later phases reward integrity. Strong Saturn (exalted 20° Libra, own Capricorn/Aquarius, Shasha Yoga): authority and lasting legacy. Weak Saturn: chronic illness, isolation. Bones, joints, teeth at risk. Saturn-Mercury antardasha: systematic business success. Sade Sati may coincide with this period."
+  },
+  {
+    "id": "dasha-mercury",
+    "text": "Mercury Mahadasha: 17 years. Themes: intellect, communication, commerce, education, multiple income streams, writing, technology. Strong Mercury (exalted 15° Virgo, own Gemini/Virgo, Bhadra/Budhaditya Yoga): business excellence, writing and technology success. Afflicted Mercury (debilitated 15° Pisces, deeply combust): nervous disorders, speech problems, business losses. Venus antardasha within Mercury: artistic-commercial golden period. Nervous system and skin need attention."
+  },
+  {
+    "id": "dasha-ketu",
+    "text": "Ketu Mahadasha: 7 years. Themes: past-life karma, detachment, spirituality, esoteric knowledge, sudden loss, inner transformation. Well-placed Ketu (12th house, with Jupiter/Venus, in Sagittarius/Pisces/Scorpio): spiritual liberation, unusual wisdom, moksha progress. Ill-placed (conjunct Moon/Sun, in 1st/7th): strange health, identity confusion. Ketu-Jupiter antardasha: unexpected spiritual breakthroughs. Precedes Venus (abundance) Mahadasha."
+  },
+  {
+    "id": "dasha-venus",
+    "text": "Venus Mahadasha: 20 years (longest planetary dasha). Themes: love, beauty, luxury, arts, marriage, material comforts, vehicles. Strong Venus (exalted 27° Pisces, own Taurus/Libra, Malavya Yoga): extraordinary fortune — romance, wealth, creative success, happy marriage. Afflicted Venus (debilitated 27° Virgo, with Rahu): relationship difficulties, reproductive/kidney issues, addiction risk. Marriage frequently occurs in Venus Mahadasha. Best period for artists and musicians."
+  },
+  {
+    "id": "dasha-antardasha-interpretation",
+    "text": "Antardasha (sub-period) interpretation: Mahadasha lord sets overarching theme; Antardasha lord activates specific events. Natural friends as MD/AD lords (Sun-Moon, Jupiter-Moon): harmonious sub-periods. Natural enemies (Sun-Saturn, Moon-Rahu): tension, delays, obstacles. AD lord's natal house specifies the life domain activated. AD of the MD lord itself (e.g. Sun in Sun): most intense sub-period. Transits of MD/AD lord and Jupiter, Saturn timestamp exact events."
+  }
+]

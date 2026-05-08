@@ -1,0 +1,38 @@
+[
+  {
+    "id": "planet-sun",
+    "text": "Sun (Surya/Ravi): karaka of soul (atma), self, vitality, father, authority, government. Natural malefic. Own sign: Leo (moolatrikona 0–20° Leo). Exalted: 10° Aries; debilitated: 10° Libra. Friends: Moon, Mars, Jupiter. Enemies: Venus, Saturn. Neutral: Mercury. Transit: ~1 month/sign, 365 days full cycle. Dig bala: 10th house. Governs heart, right eye (male), spine, bones. Mahadasha: 6 years. Gem: Ruby. Day: Sunday. Karakatwa: self-expression, political power, health."
+  },
+  {
+    "id": "planet-moon",
+    "text": "Moon (Chandra/Soma): karaka of mind (manas), emotions, mother, public, fertility, water. Benefic waxing (Shukla Paksha); malefic waning (Krishna Paksha). Own sign: Cancer. Exalted: 3° Taurus (Rohini); debilitated: 3° Scorpio. Friends: Sun, Mercury. Enemies: none. Neutral: Mars, Jupiter, Venus, Saturn. Transit: ~2.5 days/sign, ~27–28 days full cycle. Dig bala: 4th house. Governs left eye (male), breasts, lymph, stomach. Mahadasha: 10 years. Gem: Pearl. Day: Monday."
+  },
+  {
+    "id": "planet-mars",
+    "text": "Mars (Mangala/Kuja): karaka of courage, brothers, land, blood, surgery, military. Natural malefic; senapati (commander). Own signs: Aries (moolatrikona 0–12°), Scorpio. Exalted: 28° Capricorn; debilitated: 28° Cancer. Friends: Sun, Moon, Jupiter. Enemies: Mercury. Neutral: Venus, Saturn. Transit: ~45 days/sign. Dig bala: 10th house. Governs blood, bone marrow, muscles, adrenals, pitta. Special aspects: 4th and 8th from position. Mahadasha: 7 years. Gem: Red Coral. Day: Tuesday."
+  },
+  {
+    "id": "planet-mercury",
+    "text": "Mercury (Budha): karaka of intellect, speech, commerce, nervous system, education. Benefic with benefics; malefic with malefics. Own signs: Gemini, Virgo (moolatrikona 15–20° Virgo). Exalted: 15° Virgo; debilitated: 15° Pisces. Friends: Sun, Venus. Enemies: Moon. Neutral: Mars, Jupiter, Saturn. Transit: ~25 days/sign; retrograde ~3×/year. Dig bala: 1st house. Governs nervous system, arms, skin, intestines. Special aspect: 7th only. Mahadasha: 17 years. Gem: Emerald. Day: Wednesday."
+  },
+  {
+    "id": "planet-jupiter",
+    "text": "Jupiter (Guru/Brihaspati): greatest benefic; karaka of children, dharma, wealth, wisdom, teachers, husband (female charts). Deva Guru. Own signs: Sagittarius (moolatrikona 0–10°), Pisces. Exalted: 5° Cancer; debilitated: 5° Capricorn. Friends: Sun, Moon, Mars. Enemies: Mercury, Venus. Neutral: Saturn. Transit: ~13 months/sign. Dig bala: 1st house. Special aspects: 5th, 7th, 9th. Governs liver, hips, fat tissue (medha). Mahadasha: 16 years. Gem: Yellow Sapphire. Day: Thursday."
+  },
+  {
+    "id": "planet-venus",
+    "text": "Venus (Shukra): natural benefic; karaka of marriage, beauty, arts, luxury, vehicles, wife (male charts). Asura Guru. Own signs: Taurus, Libra (moolatrikona 0–15° Libra). Exalted: 27° Pisces; debilitated: 27° Virgo. Friends: Mercury, Saturn. Enemies: Sun, Moon. Neutral: Mars, Jupiter. Transit: ~23–24 days/sign; retrogrades periodically. Dig bala: 4th house. Governs reproductive system, kidneys, skin, throat. Mahadasha: 20 years. Gem: Diamond. Day: Friday."
+  },
+  {
+    "id": "planet-saturn",
+    "text": "Saturn (Shani): natural malefic; karaka of longevity (ayus), karma, hard work, service, elderly, detachment, moksha. Own signs: Capricorn, Aquarius (moolatrikona 0–20° Aquarius). Exalted: 20° Libra; debilitated: 20° Aries. Friends: Mercury, Venus. Enemies: Sun, Moon, Mars. Neutral: Jupiter. Transit: ~2.5 years/sign, ~29.5 years full cycle. Dig bala: 7th house. Special aspects: 3rd, 7th, 10th. Governs bones, joints, teeth, skin, spleen. Mahadasha: 19 years. Gem: Blue Sapphire. Day: Saturday."
+  },
+  {
+    "id": "planet-rahu",
+    "text": "Rahu (Dragon's Head/North Node): shadow planet (chhaya graha), always retrograde, always 180° opposite Ketu. Karaka of foreigners, technology, obsession, maya, mass media, sudden events. Behaves like Saturn. Exalted: 20° Taurus (some: Gemini); debilitated: 20° Scorpio. Friends: Saturn, Mercury, Venus. Enemies: Sun, Moon. Transit: ~18 months/sign. Best house: 11th. Governs: nervous system, skin, respiratory. Mahadasha: 18 years. Gem: Hessonite Garnet. Day: Saturday."
+  },
+  {
+    "id": "planet-ketu",
+    "text": "Ketu (Dragon's Tail/South Node): shadow planet (chhaya graha), always retrograde, always opposite Rahu. Karaka of moksha, past-life karma, detachment, occult, psychic sensitivity, sudden loss. Behaves like Mars. Exalted: 20° Scorpio; debilitated: 20° Taurus. Friends: Mars, Venus, Saturn. Enemies: Sun, Moon. Transit: ~18 months/sign. Best house: 12th. Nakshatras: Ashwini, Magha, Mula. Governs: wounds, mysterious illness, spiritual experiences. Mahadasha: 7 years. Gem: Cat's Eye."
+  }
+]

@@ -1,0 +1,152 @@
+import { useState, useEffect } from 'react';
+import { Storage } from '@/utils/storage';
+import { askAI } from '@/utils/ai';
+import { getFullKundli, getTodayTransits, getLunarPhase } from '@/utils/astrology';
+import { ZODIAC } from '@/constants/astrology';
+import { todayIso, formatFullDate } from '@/utils/format';
+import type { Profile } from '@/utils/database';
+
+export type HoroscopeSections = {
+  energy:    string;
+  love:      string;
+  career:    string;
+  wellness:  string;
+  guidance:  string;
+  mantra:    string;
+};
+
+export type HoroscopeState = {
+  sections: HoroscopeSections | null;
+  text:     string | null; // = energy section, for home teaser
+  loading:  boolean;
+};
+
+function parseSections(raw: string): HoroscopeSections | null {
+  const get = (prefix: string): string => {
+    const lines = raw.split('\n');
+    const line = lines.find(l => l.trimStart().toUpperCase().startsWith(prefix.toUpperCase()));
+    if (!line) return '';
+    return line.slice(line.toUpperCase().indexOf(prefix.toUpperCase()) + prefix.length).trim()
+      .replace(/^[*_"']+|[*_"']+$/g, '').trim();
+  };
+  const energy   = get('ENERGY:');
+  const love     = get('LOVE:');
+  const career   = get('CAREER:');
+  const wellness = get('WELLNESS:');
+  const guidance = get('GUIDANCE:');
+  const mantra   = get('MANTRA:');
+  if (!energy && !guidance) return null; // parse failed
+  return { energy, love, career, wellness, guidance, mantra };
+}
+
+function buildHoroscopePrompt(profile: Profile, today: string): string {
+  const kundli  = getFullKundli({
+    birthDate: profile.birthDate,
+    birthTime: profile.birthTime ?? undefined,
+    birthLat:  profile.birthLat,
+    birthLng:  profile.birthLng,
+  });
+
+  const { sun, moon, rising } = kundli.bigThree;
+  const { nakshatra, dasha }  = kundli;
+
+  const transits    = getTodayTransits();
+  const lunarPhase  = getLunarPhase(today);
+  const transitText = transits.map(t => `${t.name} in ${t.signName} ${t.degInSign}°`).join(', ');
+
+  const todayDate   = new Date(today + 'T12:00:00');
+  const days        = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName     = days[todayDate.getDay()];
+  const dateLabel   = formatFullDate(todayDate);
+
+  const firstName = profile.name.split(' ')[0];
+
+  // Identify strong transit aspects (simplified: if a transiting planet is in same sign as natal)
+  const natalSigns = kundli.planets.map(p => ({ name: p.name, signIndex: p.signIndex }));
+  const conjunctions = transits
+    .filter(t => natalSigns.some(n => n.name !== t.name && ZODIAC[natalSigns.find(n2 => n2.name === t.name)?.signIndex ?? -1]?.name === t.signName))
+    .map(t => t.name)
+    .slice(0, 2);
+  const aspectNote = conjunctions.length
+    ? `Notable: transiting ${conjunctions.join(' & ')} activating natal placements.`
+    : '';
+
+  return `Write a complete personalized daily horoscope for ${firstName} for ${dayName}, ${dateLabel}.
+
+Today's sky: ${lunarPhase}. Transits: ${transitText}.
+${aspectNote}
+
+Their natal chart:
+- Sun in ${sun?.name ?? 'unknown'}, Moon in ${moon?.name ?? 'unknown'}${rising ? `, Rising in ${rising.name}` : ''}
+- Moon nakshatra: ${nakshatra.name} (ruled by ${nakshatra.lord})
+- Current Mahadasha: ${dasha.lord} Dasha (ends ${dasha.endDate})
+
+Write the reading in EXACTLY this format — one labeled line per section, no extra text, no preamble:
+ENERGY: [2 rich sentences on today's overall cosmic energy and emotional tone, weaving the lunar phase and key transits]
+LOVE: [2 sentences on relationships, connections, and heart energy today — be warm and specific]
+CAREER: [2 sentences on work, ambition, finances, and creative flow for today]
+WELLNESS: [2 sentences on physical vitality, mental clarity, and spiritual grounding today]
+GUIDANCE: [One specific, actionable insight that will serve ${firstName} most today — the Saga wisdom line]
+MANTRA: [A short, powerful affirmation for today — 5 to 8 words, no quotes]`;
+}
+
+export function useHoroscope(profile: Profile | null, refreshKey = 0): HoroscopeState {
+  const [state, setState] = useState<HoroscopeState>({ sections: null, text: null, loading: false });
+
+  useEffect(() => {
+    if (!profile?.birthDate) return;
+    let cancelled = false;
+
+    const today  = todayIso();
+    const cached = Storage.getHoroscopeCache(profile.id, today);
+
+    if (cached) {
+      try {
+        const sections = JSON.parse(cached) as HoroscopeSections;
+        setState({ sections, text: sections.energy, loading: false });
+        return;
+      } catch {
+        // cache corrupt — regenerate
+      }
+    }
+
+    setState({ sections: null, text: null, loading: true });
+
+    const userMessage = buildHoroscopePrompt(profile, today);
+
+    askAI({
+      profile,
+      history:      [],
+      userMessage,
+      isHoroscope:  true,
+    }).then(({ text }) => {
+      if (cancelled) return;
+      const sections = parseSections(text);
+      if (sections) {
+        Storage.setHoroscopeCache(profile.id, today, JSON.stringify(sections));
+        setState({ sections, text: sections.energy, loading: false });
+      } else {
+        // AI didn't follow format — show raw text as energy fallback
+        const fallback: HoroscopeSections = {
+          energy:   text.split('\n').find(l => l.trim()) ?? text,
+          love:     '',
+          career:   '',
+          wellness: '',
+          guidance: text,
+          mantra:   '',
+        };
+        Storage.setHoroscopeCache(profile.id, today, JSON.stringify(fallback));
+        setState({ sections: fallback, text: fallback.energy, loading: false });
+      }
+    }).catch((err) => {
+      if (!cancelled) {
+        console.warn('Horoscope generation failed:', err);
+        setState({ sections: null, text: null, loading: false });
+      }
+    });
+
+    return () => { cancelled = true; };
+  }, [profile?.id, refreshKey]);
+
+  return state;
+}

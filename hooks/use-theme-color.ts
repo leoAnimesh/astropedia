@@ -1,21 +1,11 @@
-/**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
- */
-
+// Backward-compatible hook — new code should use useAccent() from hooks/use-accent.ts instead
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
-) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
-
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
-  }
+  colorName: keyof typeof Colors.light & keyof typeof Colors.dark,
+): string {
+  const scheme = useColorScheme() ?? 'light';
+  return props[scheme] ?? Colors[scheme][colorName];
 }

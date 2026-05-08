@@ -1,0 +1,50 @@
+[
+  {
+    "id": "sign-aries",
+    "text": "Aries (Mesha): 0–30° ecliptic, Fire, Cardinal (Chara). Ruled by Mars. Sun exalted 10°; Saturn debilitated 20°. Symbol: Ram. Body: head, skull, brain, face. Natural 1st house (Tanu Bhava). Key traits: bold, pioneering, impulsive, courageous. Lucky colors: red, scarlet. Nakshatras: Ashwini (0–13°20'), Bharani (13°20'–26°40'), Krittika pada 1 (26°40'–30°). Vedic: Mesha Rashi. No notable exaltation yoga — Mars in own sign Aries in a kendra forms Ruchaka Yoga."
+  },
+  {
+    "id": "sign-taurus",
+    "text": "Taurus (Vrishabha): 30–60°, Earth, Fixed (Sthira). Ruled by Venus. Moon exalted 3°; Rahu exalted 20° (widely accepted). Symbol: Bull. Body: neck, throat, larynx, thyroid. Natural 2nd house (Dhana Bhava). Key traits: patient, sensual, reliable, possessive. Lucky colors: green, pink. Nakshatras: Krittika padas 2–4 (0–10°), Rohini (10°–23°20'), Mrigashira padas 1–2 (23°20'–30°). Vedic: Vrishabha Rashi. Bhagya Yoga possible when Venus and Moon conjoin here."
+  },
+  {
+    "id": "sign-gemini",
+    "text": "Gemini (Mithuna): 60–90°, Air, Mutable (Dwiswabhava). Ruled by Mercury. Mercury own sign; moolatrikona 0–15°. No classical exaltation/debilitation. Symbol: Twins. Body: arms, hands, shoulders, lungs. Natural 3rd house (Sahaja Bhava). Key traits: versatile, communicative, curious, inconsistent. Lucky colors: yellow, green. Nakshatras: Mrigashira padas 3–4 (0–6°40'), Ardra (6°40'–20°), Punarvasu padas 1–3 (20°–30°). Vedic: Mithuna Rashi. Bhadra Yoga if Mercury in kendra here."
+  },
+  {
+    "id": "sign-cancer",
+    "text": "Cancer (Karka): 90–120°, Water, Cardinal (Chara). Ruled by Moon. Jupiter exalted 5°; Mars debilitated 28°. Symbol: Crab. Body: chest, breasts, stomach, pancreas. Natural 4th house (Sukha Bhava). Key traits: nurturing, empathic, tenacious, moody. Lucky colors: silver, white. Nakshatras: Punarvasu pada 4 (0–3°20'), Pushya (3°20'–16°40'), Ashlesha (16°40'–30°). Vedic: Karka Rashi. Gajakesari Yoga if Jupiter in kendra from Moon placed here. Hamsa Yoga if Jupiter exalted here in kendra."
+  },
+  {
+    "id": "sign-leo",
+    "text": "Leo (Simha): 120–150°, Fire, Fixed (Sthira). Ruled by Sun; own sign, moolatrikona 0–20°. No planet exalted/debilitated classically. Symbol: Lion. Body: heart, upper back, spine, aorta. Natural 5th house (Putra Bhava). Key traits: charismatic, creative, proud, generous. Lucky colors: gold, orange. Nakshatras: Magha (0–13°20'), Purva Phalguni (13°20'–26°40'), Uttara Phalguni pada 1 (26°40'–30°). Vedic: Simha Rashi. Sun in kendra in Leo creates Budhaditya Yoga when Mercury joins."
+  },
+  {
+    "id": "sign-virgo",
+    "text": "Virgo (Kanya): 150–180°, Earth, Mutable (Dwiswabhava). Ruled by Mercury. Mercury exalted 15°; Jupiter debilitated 5°. Symbol: Virgin with grain. Body: intestines, small bowel, digestive enzymes. Natural 6th house (Ari Bhava). Key traits: analytical, precise, service-oriented, critical. Lucky colors: navy, earthy green. Nakshatras: Uttara Phalguni padas 2–4 (0–10°), Hasta (10°–23°20'), Chitra padas 1–2 (23°20'–30°). Vedic: Kanya Rashi. Mercury exalted in kendra = Bhadra Mahapurusha Yoga."
+  },
+  {
+    "id": "sign-libra",
+    "text": "Libra (Tula): 180–210°, Air, Cardinal (Chara). Ruled by Venus; moolatrikona 0–15°. Saturn exalted 20°; Sun debilitated 10°. Symbol: Scales. Body: kidneys, adrenals, lower back, skin. Natural 7th house (Kalatra Bhava). Key traits: diplomatic, fair, refined, indecisive. Lucky colors: blue, pink. Nakshatras: Chitra padas 3–4 (0–6°40'), Swati (6°40'–20°), Vishakha padas 1–3 (20°–30°). Vedic: Tula Rashi. Shasha Yoga if Saturn exalted here in kendra. Malavya Yoga if Venus in kendra."
+  },
+  {
+    "id": "sign-scorpio",
+    "text": "Scorpio (Vrishchika): 210–240°, Water, Fixed (Sthira). Ruled by Mars (classical Vedic); Ketu associated. Moon debilitated 3°; Ketu exalted 20°. Symbol: Scorpion. Body: genitalia, colon, rectum, prostate. Natural 8th house (Mrityu Bhava). Key traits: intense, magnetic, perceptive, secretive. Lucky colors: dark red, black. Nakshatras: Vishakha pada 4 (0–3°20'), Anuradha (3°20'–16°40'), Jyeshtha (16°40'–30°). Vedic: Vrishchika Rashi. Ketu in Scorpio in kendra aids moksha liberation."
+  },
+  {
+    "id": "sign-sagittarius",
+    "text": "Sagittarius (Dhanu): 240–270°, Fire, Mutable (Dwiswabhava). Ruled by Jupiter; moolatrikona 0–10°. No classical exaltation/debilitation. Symbol: Archer/Bow. Body: hips, thighs, sciatic nerve, liver. Natural 9th house (Dharma Bhava). Key traits: philosophical, optimistic, freedom-loving, blunt. Lucky colors: purple, blue. Nakshatras: Mula (0–13°20'), Purva Ashadha (13°20'–26°40'), Uttara Ashadha pada 1 (26°40'–30°). Vedic: Dhanu Rashi. Jupiter own sign in kendra = Hamsa Yoga."
+  },
+  {
+    "id": "sign-capricorn",
+    "text": "Capricorn (Makara): 270–300°, Earth, Cardinal (Chara). Ruled by Saturn. Mars exalted 28°; Jupiter debilitated 5°. Symbol: Sea-Goat. Body: knees, kneecaps, skin, bones, skeletal system. Natural 10th house (Karma Bhava). Key traits: ambitious, disciplined, patient, cold. Lucky colors: black, dark blue. Nakshatras: Uttara Ashadha padas 2–4 (0–10°), Shravana (10°–23°20'), Dhanishtha padas 1–2 (23°20'–30°). Vedic: Makara Rashi. Mars exalted here in kendra = Ruchaka Yoga."
+  },
+  {
+    "id": "sign-aquarius",
+    "text": "Aquarius (Kumbha): 300–330°, Air, Fixed (Sthira). Ruled by Saturn; moolatrikona 0–20°. Rahu co-ruler in some Vedic traditions. No classical exaltation/debilitation. Symbol: Water Bearer. Body: calves, ankles, circulation. Natural 11th house (Labha Bhava). Key traits: humanitarian, visionary, detached, rebellious. Lucky colors: electric blue, turquoise. Nakshatras: Dhanishtha padas 3–4 (0–6°40'), Shatabhisha (6°40'–20°), Purva Bhadrapada padas 1–3 (20°–30°). Vedic: Kumbha Rashi."
+  },
+  {
+    "id": "sign-pisces",
+    "text": "Pisces (Meena): 330–360°, Water, Mutable (Dwiswabhava). Ruled by Jupiter. Venus exalted 27°; Mercury debilitated 15°. Symbol: Two Fish. Body: feet, toes, lymphatic system, pineal gland. Natural 12th house (Vyaya/Moksha Bhava). Key traits: intuitive, compassionate, mystical, boundaryless. Lucky colors: sea green, violet. Nakshatras: Purva Bhadrapada pada 4 (0–3°20'), Uttara Bhadrapada (3°20'–16°40'), Revati (16°40'–30°). Vedic: Meena Rashi. Venus exalted here in kendra = Malavya Yoga."
+  }
+]
