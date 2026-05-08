@@ -11,6 +11,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { FONTS, RADIUS, ACCENT_THEMES, ACCENT_LABEL, type AccentKey } from '@/constants/themes';
 import { clearAllData } from '@/utils/database';
 import { Storage } from '@/utils/storage';
+import { todayIso } from '@/utils/format';
 
 const ACCENT_KEYS: AccentKey[] = ['amber', 'sage', 'lilac', 'blush', 'ink'];
 
@@ -19,6 +20,15 @@ export default function SettingsScreen() {
   const { profiles } = useProfiles();
   const setDark = useSettingsStore((s) => s.setDarkModeOverride);
   const darkOverride = useSettingsStore((s) => s.darkModeOverride);
+
+  const handleClearAICache = () => {
+    const today = todayIso();
+    profiles.forEach((p) => {
+      Storage.deleteHoroscopeCache(p.id, today);
+      Storage.deleteChartReading(p.id);
+    });
+    Alert.alert('Cache cleared', 'Horoscope and chart readings will regenerate on next open.');
+  };
 
   const handleReset = () => {
     Alert.alert(
@@ -144,6 +154,20 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Dev tools */}
+        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Dev</EyebrowLabel>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          <TouchableOpacity style={styles.cardRow} onPress={handleClearAICache}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+              <Icon name="refresh" size={16} color={theme.ink2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>Clear AI cache</Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>Force regenerate horoscope &amp; chart readings</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
           <Text style={styles.resetText}>Reset all data</Text>
         </TouchableOpacity>
@@ -257,6 +281,11 @@ const styles = StyleSheet.create({
     flex:       1,
     fontFamily: FONTS.sansRegular,
     fontSize:   14,
+  },
+  rowSub: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   12,
+    marginTop:  1,
   },
   resetBtn: {
     marginTop:     24,

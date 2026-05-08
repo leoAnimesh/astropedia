@@ -1,4 +1,12 @@
-import { StyleSheet, Text, TouchableOpacity, View, Modal, FlatList, Pressable } from 'react-native';
+import { forwardRef, useCallback } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  BottomSheetModal,
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetFlatList,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { useAccent } from '@/hooks/use-accent';
 import { Avatar } from '@/components/atoms/Avatar';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
@@ -7,50 +15,58 @@ import { FONTS, RADIUS } from '@/constants/themes';
 import { getSunSign } from '@/utils/astrology';
 import type { Profile } from '@/utils/database';
 
-type Props = {
-  visible: boolean;
+type SheetProps = {
   profiles: Profile[];
   activeProfileId: string | null;
   onSelect: (profile: Profile) => void;
   onCreateNew: () => void;
-  onClose: () => void;
 };
 
-export function ProfileSwitcherSheet({
-  visible,
-  profiles,
-  activeProfileId,
-  onSelect,
-  onCreateNew,
-  onClose,
-}: Props) {
-  const { theme } = useAccent();
+export type ProfileSwitcherSheetRef = BottomSheetModal;
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: theme.bg, borderTopColor: theme.hairline }]}
-          onPress={() => {}} // prevent close on sheet tap
-        >
-          <View style={[styles.handle, { backgroundColor: theme.hairline2 }]} />
+export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetProps>(
+  function ProfileSwitcherSheet({ profiles, activeProfileId, onSelect, onCreateNew }, ref) {
+    const { theme } = useAccent();
+
+    const dismiss = useCallback(() => {
+      (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
+    }, [ref]);
+
+    const renderBackdrop = useCallback(
+      (props: BottomSheetBackdropProps) => (
+        <BottomSheetBackdrop
+          {...props}
+          disappearsOnIndex={-1}
+          appearsOnIndex={0}
+          opacity={0.32}
+        />
+      ),
+      [],
+    );
+
+    return (
+      <BottomSheetModal
+        ref={ref}
+        enableDynamicSizing
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        handleIndicatorStyle={{ backgroundColor: theme.hairline2, width: 36 }}
+        backgroundStyle={{ backgroundColor: theme.surface }}
+      >
+        <BottomSheetView style={styles.content}>
           <EyebrowLabel style={styles.sheetTitle}>Switch chart</EyebrowLabel>
 
-          <FlatList
-            data={profiles}
-            keyExtractor={(p) => p.id}
-            renderItem={({ item: p }) => {
-              const sun = getSunSign(p.birthDate);
-              const isActive = p.id === activeProfileId;
-              return (
+          {profiles.map((p, i) => {
+            const sun = getSunSign(p.birthDate);
+            const isActive = p.id === activeProfileId;
+            return (
+              <View key={p.id}>
+                {i > 0 && (
+                  <View style={[styles.separator, { backgroundColor: theme.hairline }]} />
+                )}
                 <TouchableOpacity
                   style={styles.profileRow}
-                  onPress={() => { onSelect(p); onClose(); }}
+                  onPress={() => { onSelect(p); dismiss(); }}
                   activeOpacity={0.75}
                 >
                   <Avatar name={p.name} size={40} />
@@ -69,27 +85,24 @@ export function ProfileSwitcherSheet({
                     <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />
                   )}
                 </TouchableOpacity>
-              );
-            }}
-            ItemSeparatorComponent={() => (
-              <View style={[styles.separator, { backgroundColor: theme.hairline }]} />
-            )}
-          />
+              </View>
+            );
+          })}
 
           <TouchableOpacity
             style={[styles.addBtn, { borderColor: theme.hairline2 }]}
-            onPress={() => { onCreateNew(); onClose(); }}
+            onPress={() => { onCreateNew(); dismiss(); }}
           >
             <Icon name="plus" size={16} color={theme.ink2} />
             <Text style={[styles.addLabel, { color: theme.ink2 }]}>Add a chart</Text>
           </TouchableOpacity>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
+        </BottomSheetView>
+      </BottomSheetModal>
+    );
+  },
+);
 
-// Pill button that triggers the sheet
+// Pill trigger button
 type TriggerProps = {
   profile: Profile | null;
   onPress: () => void;
@@ -115,39 +128,23 @@ export function ProfileSwitcherTrigger({ profile, onPress }: TriggerProps) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex:            1,
-    backgroundColor: 'rgba(0,0,0,0.32)',
-    justifyContent:  'flex-end',
-  },
-  sheet: {
-    borderTopLeftRadius:  24,
-    borderTopRightRadius: 24,
-    paddingBottom:        36,
-    paddingTop:           14,
-    borderTopWidth:       StyleSheet.hairlineWidth,
-    maxHeight:            '70%',
-  },
-  handle: {
-    width:        36,
-    height:       4,
-    borderRadius: 2,
-    alignSelf:    'center',
-    marginBottom: 14,
+  content: {
+    paddingBottom: 40,
   },
   sheetTitle: {
     paddingHorizontal: 26,
-    marginBottom:      10,
+    marginTop: 4,
+    marginBottom: 10,
   },
   profileRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            12,
-    paddingVertical: 12,
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               12,
+    paddingVertical:   12,
     paddingHorizontal: 26,
   },
   profileText: {
-    flex: 1,
+    flex:     1,
     minWidth: 0,
   },
   profileName: {
@@ -170,8 +167,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   separator: {
-    height:            StyleSheet.hairlineWidth,
-    marginHorizontal:  26,
+    height:           StyleSheet.hairlineWidth,
+    marginHorizontal: 26,
   },
   addBtn: {
     flexDirection:    'row',
@@ -189,15 +186,15 @@ const styles = StyleSheet.create({
     fontSize:   14,
   },
   trigger: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    gap:              8,
-    borderRadius:     RADIUS.pill,
-    borderWidth:      1,
-    paddingVertical:  5,
-    paddingLeft:      5,
-    paddingRight:     12,
-    maxWidth:         200,
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            8,
+    borderRadius:   RADIUS.pill,
+    borderWidth:    1,
+    paddingVertical: 5,
+    paddingLeft:    5,
+    paddingRight:   12,
+    maxWidth:       200,
   },
   triggerName: {
     fontFamily:    FONTS.sansRegular,

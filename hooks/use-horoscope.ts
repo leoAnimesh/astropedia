@@ -22,20 +22,22 @@ export type HoroscopeState = {
 };
 
 function parseSections(raw: string): HoroscopeSections | null {
-  const get = (prefix: string): string => {
+  const get = (key: string): string => {
     const lines = raw.split('\n');
-    const line = lines.find(l => l.trimStart().toUpperCase().startsWith(prefix.toUpperCase()));
+    // Match: "ENERGY:", "## Energy:", "**ENERGY:**", "Energy:" etc.
+    const pattern = new RegExp(`^[#*\\s]*${key}[:\\s*_]+`, 'i');
+    const line = lines.find(l => pattern.test(l.trimStart()));
     if (!line) return '';
-    return line.slice(line.toUpperCase().indexOf(prefix.toUpperCase()) + prefix.length).trim()
-      .replace(/^[*_"']+|[*_"']+$/g, '').trim();
+    return line.replace(pattern, '').trim()
+      .replace(/^[*_"'#]+|[*_"'#]+$/g, '').trim();
   };
-  const energy   = get('ENERGY:');
-  const love     = get('LOVE:');
-  const career   = get('CAREER:');
-  const wellness = get('WELLNESS:');
-  const guidance = get('GUIDANCE:');
-  const mantra   = get('MANTRA:');
-  if (!energy && !guidance) return null; // parse failed
+  const energy   = get('ENERGY');
+  const love     = get('LOVE');
+  const career   = get('CAREER');
+  const wellness = get('WELLNESS');
+  const guidance = get('GUIDANCE');
+  const mantra   = get('MANTRA');
+  if (!energy && !guidance) return null;
   return { energy, love, career, wellness, guidance, mantra };
 }
 
@@ -71,23 +73,17 @@ function buildHoroscopePrompt(profile: Profile, today: string): string {
     ? `Notable: transiting ${conjunctions.join(' & ')} activating natal placements.`
     : '';
 
-  return `Write a complete personalized daily horoscope for ${firstName} for ${dayName}, ${dateLabel}.
+  return `Write a warm, friendly daily reading for ${firstName} for ${dayName}, ${dateLabel}.
 
-Today's sky: ${lunarPhase}. Transits: ${transitText}.
-${aspectNote}
+About ${firstName}: They are a ${sun?.name ?? ''} at heart, feel things like a ${moon?.name ?? ''}, and come across as ${rising?.name ?? 'themselves'}.${dasha ? ` They are in a life chapter ruled by ${dasha.lord === 'Rahu' || dasha.lord === 'Ketu' ? 'change and karmic growth' : dasha.lord === 'Jupiter' ? 'growth, wisdom, and expansion' : dasha.lord === 'Venus' ? 'love, beauty, and enjoyment' : dasha.lord === 'Saturn' ? 'hard work, discipline, and long-term building' : dasha.lord === 'Sun' ? 'identity and purpose' : dasha.lord === 'Moon' ? 'emotions and intuition' : dasha.lord === 'Mars' ? 'action and courage' : dasha.lord === 'Mercury' ? 'learning and communication' : 'transformation'}.` : ''}
 
-Their natal chart:
-- Sun in ${sun?.name ?? 'unknown'}, Moon in ${moon?.name ?? 'unknown'}${rising ? `, Rising in ${rising.name}` : ''}
-- Moon nakshatra: ${nakshatra.name} (ruled by ${nakshatra.lord})
-- Current Mahadasha: ${dasha.lord} Dasha (ends ${dasha.endDate})
-
-Write the reading in EXACTLY this format — one labeled line per section, no extra text, no preamble:
-ENERGY: [2 rich sentences on today's overall cosmic energy and emotional tone, weaving the lunar phase and key transits]
-LOVE: [2 sentences on relationships, connections, and heart energy today — be warm and specific]
-CAREER: [2 sentences on work, ambition, finances, and creative flow for today]
-WELLNESS: [2 sentences on physical vitality, mental clarity, and spiritual grounding today]
-GUIDANCE: [One specific, actionable insight that will serve ${firstName} most today — the Saga wisdom line]
-MANTRA: [A short, powerful affirmation for today — 5 to 8 words, no quotes]`;
+Write EXACTLY this format — one labeled line per section, NO astrology terms, NO markdown (no ##, no **), plain text only:
+ENERGY: [How ${firstName} will feel today overall — their mood and inner energy in 1–2 plain sentences]
+LOVE: [What's happening in their close relationships and heart today — warm and practical, 1–2 sentences]
+CAREER: [What to focus on at work or with personal goals today — specific and grounded, 1–2 sentences]
+WELLNESS: [A simple note on their physical energy and mental wellbeing today, 1–2 sentences]
+GUIDANCE: [One clear, actionable piece of advice for ${firstName} today — like a wise friend would give]
+MANTRA: [A short uplifting phrase for today — 5 to 8 words, no quotes]`;
 }
 
 export function useHoroscope(profile: Profile | null, refreshKey = 0): HoroscopeState {

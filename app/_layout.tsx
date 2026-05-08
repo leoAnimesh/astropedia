@@ -3,6 +3,7 @@ import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { StyleSheet } from 'react-native';
 import {
   useFonts,
@@ -99,6 +100,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.fill}>
+      <BottomSheetModalProvider>
       <KeyboardProvider>
       <Stack screenOptions={STACK_SCREEN_OPTIONS}>
         <Stack.Screen name="(onboarding)" />
@@ -110,6 +112,7 @@ export default function RootLayout() {
         <Stack.Screen name="archived" />
       </Stack>
       </KeyboardProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }

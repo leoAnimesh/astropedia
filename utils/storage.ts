@@ -56,13 +56,13 @@ export const Storage = {
 
   // Daily horoscope cache (keyed by profileId + date — stores JSON of HoroscopeSections)
   getHoroscopeCache: (profileId: string, date: string): string | null => {
-    const v = getStorage().getString(`horoscope_${profileId}_${date}`);
+    const v = getStorage().getString(`horoscope_v2_${profileId}_${date}`);
     return (v && v.length > 2) ? v : null; // treat empty / '{}' as cache miss
   },
   setHoroscopeCache: (profileId: string, date: string, json: string): void =>
-    getStorage().set(`horoscope_${profileId}_${date}`, json),
+    getStorage().set(`horoscope_v2_${profileId}_${date}`, json),
   deleteHoroscopeCache: (profileId: string, date: string): void =>
-    getStorage().delete(`horoscope_${profileId}_${date}`),
+    getStorage().delete(`horoscope_v2_${profileId}_${date}`),
 
   // Active profile
   getActiveProfileId: (): string | null =>
@@ -76,11 +76,11 @@ export const Storage = {
 
   // AI-generated chart readings (cached per profile)
   getChartReading: (profileId: string): string | null =>
-    getStorage().getString(`chart_reading_${profileId}`) ?? null,
+    getStorage().getString(`chart_reading_v2_${profileId}`) ?? null,
   setChartReading: (profileId: string, json: string): void =>
-    getStorage().set(`chart_reading_${profileId}`, json),
+    getStorage().set(`chart_reading_v2_${profileId}`, json),
   deleteChartReading: (profileId: string): void =>
-    getStorage().delete(`chart_reading_${profileId}`),
+    getStorage().delete(`chart_reading_v2_${profileId}`),
 
   // Clear everything (used by reset)
   clear: (): void => {

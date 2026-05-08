@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useThreads } from '@/hooks/use-threads';
 import { useHoroscope } from '@/hooks/use-horoscope';
-import { ProfileSwitcherTrigger, ProfileSwitcherSheet } from '@/components/organisms/ProfileSwitcher';
+import { ProfileSwitcherTrigger, ProfileSwitcherSheet, type ProfileSwitcherSheetRef } from '@/components/organisms/ProfileSwitcher';
 import { ProfileBlock } from '@/components/organisms/ProfileBlock';
 import { VedicLoadingOverlay } from '@/components/organisms/VedicLoadingOverlay';
 import { DailyTeaser } from '@/components/molecules/DailyTeaser';
@@ -18,7 +18,7 @@ import type { Thread } from '@/utils/database';
 
 export default function HomeScreen() {
   const { theme } = useAccent();
-  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherRef = useRef<ProfileSwitcherSheetRef>(null);
 
   const { profiles, activeProfile, setActiveProfile } = useProfiles();
   const { activeThreads, archiveThread } = useThreads(activeProfile?.id ?? null);
@@ -51,7 +51,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <ProfileSwitcherTrigger
           profile={activeProfile}
-          onPress={() => setSwitcherOpen(true)}
+          onPress={() => switcherRef.current?.present()}
         />
         <View style={styles.headerSpacer} />
         <TouchableOpacity onPress={() => router.push('/(app)/settings')}>
@@ -117,12 +117,11 @@ export default function HomeScreen() {
 
       {/* Profile switcher sheet */}
       <ProfileSwitcherSheet
-        visible={switcherOpen}
+        ref={switcherRef}
         profiles={profiles}
         activeProfileId={activeProfile?.id ?? null}
         onSelect={(p) => setActiveProfile(p.id)}
         onCreateNew={() => router.push('/profile/new')}
-        onClose={() => setSwitcherOpen(false)}
       />
 
       {/* Full-screen vedic loading overlay — covers everything until model is ready */}

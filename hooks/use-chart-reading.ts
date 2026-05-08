@@ -18,18 +18,19 @@ type State = { reading: ChartReading | null; loading: boolean };
 
 function parseReading(text: string): ChartReading {
   const lines = text.split('\n');
-  const get = (prefix: string): string | null => {
-    const line = lines.find(l => l.trimStart().startsWith(prefix));
+  const get = (key: string): string | null => {
+    const pattern = new RegExp(`^[#*\\s]*${key}[:\\s*_]+`, 'i');
+    const line = lines.find(l => pattern.test(l.trimStart()));
     if (!line) return null;
-    const val = line.slice(line.indexOf(prefix) + prefix.length).trim();
+    const val = line.replace(pattern, '').trim().replace(/^[*_"'#]+|[*_"'#]+$/g, '').trim();
     return val || null;
   };
-  const sun       = get('SUN:');
-  const moon      = get('MOON:');
-  const rising    = get('RISING:');
-  const nakshatra = get('NAKSHATRA:');
-  const dasha     = get('DASHA:');
-  const overview  = get('OVERVIEW:');
+  const sun       = get('SUN');
+  const moon      = get('MOON');
+  const rising    = get('RISING');
+  const nakshatra = get('NAKSHATRA');
+  const dasha     = get('DASHA');
+  const overview  = get('OVERVIEW');
   if (!sun && !moon && !overview) {
     return { sun: null, moon: null, rising: null, nakshatra: null, dasha: null, overview: text.trim() || null };
   }
@@ -74,17 +75,18 @@ export function useChartReading(profile: Profile | null): State {
       rising && `Rising in ${rising.name}`,
     ].filter(Boolean).join(', ');
 
-    const prompt = `Write a warm, personal astrological reading for ${firstName}.
-Chart: ${chartDesc}
-Moon nakshatra: ${nakshatra.name} (ruled by ${nakshatra.lord})
-Current Mahadasha: ${dasha.lord} (until ${dasha.endDate})
+    const prompt = `Write a warm, simple personality description for ${firstName}. They know nothing about astrology — speak in plain everyday language, like a wise friend who knows them well. No jargon whatsoever.
 
-Reply in exactly this format — one line per key, no preamble, no extra text:
-SUN: one warm sentence about their ${sun?.name ?? 'sun'} core self
-MOON: one warm sentence about their ${moon?.name ?? 'moon'} emotional world${rising ? `\nRISING: one warm sentence about their ${rising.name} outer presence` : ''}
-NAKSHATRA: one warm sentence about what ${nakshatra.name} nakshatra brings them
-DASHA: one warm sentence about what the ${dasha.lord} Mahadasha means for them right now
-OVERVIEW: two warm sentences synthesizing how all these placements blend together`;
+Their chart: ${chartDesc}
+Their moon personality style: ${nakshatra.name} nakshatra (intuitive, ${nakshatra.lord}-influenced)
+Their current life phase: ${dasha.lord} period until ${dasha.endDate}
+
+Reply in EXACTLY this format — one line per key, plain English only, no astrology terms, NO markdown (no ##, no **):
+SUN: one sentence about who ${firstName} is at their core — their main personality strength and drive
+MOON: one sentence about how ${firstName} feels and handles emotions — their inner world${rising ? `\nRISING: one sentence about how ${firstName} comes across to others at first meeting` : ''}
+NAKSHATRA: one sentence about ${firstName}'s instinctive nature and what makes them unique
+DASHA: one sentence about what kind of chapter of life ${firstName} is going through right now
+OVERVIEW: two sentences describing ${firstName} as a whole person — what makes them special and what to embrace`;
 
     askAI({ profile, history: [], userMessage: prompt }).then(({ text }) => {
       if (cancelled) return;

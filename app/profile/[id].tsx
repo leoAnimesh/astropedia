@@ -60,11 +60,6 @@ export default function ProfileDetailScreen() {
     );
   };
 
-  const handleNewChat = () => {
-    const tempId = 't_' + Math.random().toString(36).slice(2, 11);
-    router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true`);
-  };
-
   const bigThree: Array<{ label: string; sign: ZodiacSign | null; dim: boolean; aiKey: 'sun' | 'moon' | 'rising' }> = [
     { label: 'Sun',    sign: sunSign,    dim: false,               aiKey: 'sun' },
     { label: 'Moon',   sign: moonSign,   dim: false,               aiKey: 'moon' },
@@ -117,19 +112,26 @@ export default function ProfileDetailScreen() {
                   { backgroundColor: theme.surface, borderColor: theme.hairline, opacity: dim ? 0.5 : 1 },
                 ]}
               >
-                <EyebrowLabel size={9.5}>{label}</EyebrowLabel>
-                <Text style={[styles.bigOneGlyph, { color: theme.accent }]}>{sign?.glyph ?? '—'}</Text>
-                <Text style={[styles.bigOneName, { color: theme.ink }]}>
-                  {sign?.name ?? (dim ? 'Need time' : '—')}
-                </Text>
-                {readingLoading && !reading && !dim && (
-                  <ActivityIndicator size="small" color={theme.muted} style={{ marginTop: 6 }} />
-                )}
-                {desc && !dim && (
-                  <Text style={[styles.bigOneDesc, { color: theme.muted }]} numberOfLines={3}>
-                    {desc}
+                {/* Left: label + glyph + name */}
+                <View style={styles.bigOneLeft}>
+                  <EyebrowLabel size={9.5}>{label}</EyebrowLabel>
+                  <Text style={[styles.bigOneGlyph, { color: theme.accent }]}>{sign?.glyph ?? '—'}</Text>
+                  <Text style={[styles.bigOneName, { color: theme.ink }]}>
+                    {sign?.name ?? (dim ? 'No time' : '—')}
                   </Text>
-                )}
+                </View>
+                {/* Right: description */}
+                <View style={styles.bigOneRight}>
+                  {readingLoading && !reading && !dim && (
+                    <ActivityIndicator size="small" color={theme.muted} />
+                  )}
+                  {desc && !dim && (
+                    <Text style={[styles.bigOneDesc, { color: theme.ink2 }]}>{desc}</Text>
+                  )}
+                  {!desc && !readingLoading && !dim && (
+                    <Text style={[styles.bigOneDesc, { color: theme.faint }]}>—</Text>
+                  )}
+                </View>
               </View>
             );
           })}
@@ -253,17 +255,6 @@ export default function ProfileDetailScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* New chat button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.chatBtn, { backgroundColor: theme.accent }]}
-          onPress={handleNewChat}
-          activeOpacity={0.85}
-        >
-          <Icon name="chat" size={18} color={theme.accentFg} />
-          <Text style={[styles.chatBtnLabel, { color: theme.accentFg }]}>New conversation</Text>
-        </TouchableOpacity>
-      </View>
     </ScreenLayout>
   );
 }
@@ -279,16 +270,18 @@ const styles = StyleSheet.create({
   nameSub:        { fontFamily: FONTS.sansRegular, fontSize: 14, marginTop: 4 },
   italic:         { fontFamily: FONTS.serifItalic },
 
-  bigThree:    { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 14 },
+  bigThree:    { flexDirection: 'column', gap: 8, marginTop: 8, marginBottom: 14 },
   bigOneCard:  {
-    flex: 1, borderRadius: RADIUS.medium, borderWidth: StyleSheet.hairlineWidth,
-    padding: 12, alignItems: 'center', gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    borderRadius: RADIUS.medium, borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14, paddingHorizontal: 16,
   },
-  bigOneGlyph:  { fontSize: 22 },
-  bigOneName:   { fontFamily: FONTS.serifItalic, fontSize: 15, textAlign: 'center' },
+  bigOneLeft:  { alignItems: 'center', width: 70, gap: 3 },
+  bigOneRight: { flex: 1 },
+  bigOneGlyph:  { fontSize: 26 },
+  bigOneName:   { fontFamily: FONTS.serifItalic, fontSize: 14, textAlign: 'center' },
   bigOneDesc:   {
-    fontFamily: FONTS.sansRegular, fontSize: 11, lineHeight: 15,
-    textAlign: 'center', marginTop: 4,
+    fontFamily: FONTS.sansRegular, fontSize: 13.5, lineHeight: 20,
   },
 
   card: {
@@ -325,7 +318,4 @@ const styles = StyleSheet.create({
   dashaBar:     { flex: 1, height: 1, marginHorizontal: 8, alignSelf: 'center' },
 
   horoscope: { fontFamily: FONTS.sansRegular, fontSize: 16, lineHeight: 26 },
-  footer:    { padding: 20 },
-  chatBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 52, borderRadius: RADIUS.pill },
-  chatBtnLabel: { fontFamily: FONTS.sansMedium, fontSize: 15.5, letterSpacing: -0.2 },
 });
