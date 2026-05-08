@@ -6,7 +6,6 @@ import { useSettingsStore } from '@/stores/settings-store';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Toggle } from '@/components/atoms/Toggle';
-import { Avatar } from '@/components/atoms/Avatar';
 import { Icon } from '@/components/atoms/Icon';
 import { FONTS, RADIUS, ACCENT_THEMES, ACCENT_LABEL, type AccentKey } from '@/constants/themes';
 import { clearAllData } from '@/utils/database';
@@ -115,58 +114,23 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Profiles */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Profiles</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          {profiles.map((p, i) => (
-            <View
-              key={p.id}
-              style={[
-                styles.profileRow,
-                i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline },
-              ]}
-            >
-              <Avatar name={p.name} size={34} />
-              <Text style={[styles.rowLabel, { flex: 1, color: theme.ink }]}>
-                {p.name}
-                {p.isYou && (
-                  <Text style={[styles.youText, { color: theme.muted }]}> · you</Text>
-                )}
-              </Text>
+        {/* Dev tools — only visible in development builds */}
+        {__DEV__ && (
+          <>
+            <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Dev</EyebrowLabel>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+              <TouchableOpacity style={styles.cardRow} onPress={handleClearAICache}>
+                <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+                  <Icon name="refresh" size={16} color={theme.ink2} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.rowLabel, { color: theme.ink }]}>Clear AI cache</Text>
+                  <Text style={[styles.rowSub, { color: theme.muted }]}>Force regenerate horoscope &amp; chart readings</Text>
+                </View>
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
-
-        {/* About */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>About</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          <View style={styles.aboutRow}>
-            <Text style={[styles.aboutLabel, { color: theme.muted }]}>Saga</Text>
-            <Text style={[styles.aboutValue, { color: theme.ink }]}>Friendly best-friend astrologer</Text>
-          </View>
-          <View style={[styles.aboutRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline }]}>
-            <Text style={[styles.aboutLabel, { color: theme.muted }]}>Privacy</Text>
-            <Text style={[styles.aboutValue, { color: theme.ink }]}>Charts stay on your device</Text>
-          </View>
-          <View style={[styles.aboutRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline }]}>
-            <Text style={[styles.aboutLabel, { color: theme.muted }]}>Version</Text>
-            <Text style={[styles.aboutValue, { color: theme.ink }]}>1.0.0</Text>
-          </View>
-        </View>
-
-        {/* Dev tools */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Dev</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          <TouchableOpacity style={styles.cardRow} onPress={handleClearAICache}>
-            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
-              <Icon name="refresh" size={16} color={theme.ink2} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: theme.ink }]}>Clear AI cache</Text>
-              <Text style={[styles.rowSub, { color: theme.muted }]}>Force regenerate horoscope &amp; chart readings</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+          </>
+        )}
 
         <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
           <Text style={styles.resetText}>Reset all data</Text>
@@ -252,35 +216,6 @@ const styles = StyleSheet.create({
     fontFamily:    FONTS.sansRegular,
     fontSize:      14.5,
     letterSpacing: -0.1,
-  },
-  profileRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            12,
-    paddingVertical: 10,
-  },
-  youText: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   12,
-  },
-  aboutRow: {
-    flexDirection:  'row',
-    alignItems:     'flex-start',
-    gap:            12,
-    paddingVertical: 10,
-  },
-  aboutLabel: {
-    fontFamily:    FONTS.monoRegular,
-    fontSize:      10.5,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    width:         64,
-    marginTop:     2,
-  },
-  aboutValue: {
-    flex:       1,
-    fontFamily: FONTS.sansRegular,
-    fontSize:   14,
   },
   rowSub: {
     fontFamily: FONTS.sansRegular,
