@@ -73,7 +73,7 @@ async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
   const system   = req.systemOverride ?? await buildSystemPrompt(req.profile, req.isHoroscope ?? false, req.userMessage);
   const messages = [
     { role: 'system'    as const, content: system },
-    ...req.history.slice(-6).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+    ...req.history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     { role: 'user'      as const, content: req.userMessage },
   ];
 
@@ -120,7 +120,7 @@ async function* streamGroq(req: AIRequest): AsyncGenerator<string> {
       max_tokens: req.isHoroscope ? 600 : 200,
       messages:   [
         { role: 'system', content: system },
-        ...req.history.slice(-6).map(m => ({ role: m.role, content: m.content })),
+        ...req.history.map(m => ({ role: m.role, content: m.content })),
         { role: 'user',   content: req.userMessage },
       ],
     }),
@@ -156,7 +156,7 @@ async function* streamClaude(req: AIRequest): AsyncGenerator<string> {
       max_tokens: req.isHoroscope ? 600 : 200,
       system,
       messages:   [
-        ...req.history.slice(-6).map(m => ({ role: m.role, content: m.content })),
+        ...req.history.map(m => ({ role: m.role, content: m.content })),
         { role: 'user' as const, content: req.userMessage },
       ],
     }),

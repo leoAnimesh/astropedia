@@ -1,17 +1,18 @@
 /**
  * RAG (Retrieval-Augmented Generation) for astrology knowledge.
  *
- * Uses react-native-rag's MemoryVectorStore with a custom hash-based bag-of-words
- * embedder — no model download required, works fully offline, instant startup.
+ * Uses react-native-executorch's TextEmbeddingsModule (ALL_MINILM_L6_V2) when
+ * available for neural semantic search. Falls back to a hash-based bag-of-words
+ * embedder — no model download required, fully offline, instant startup.
  *
  * The corpus covers: zodiac signs, planets, houses, nakshatras, Vimshottari dashas,
  * major yogas, aspects, compatibility, and planet-in-sign interpretations.
  */
 
+import { Platform } from 'react-native';
 import { MemoryVectorStore } from 'react-native-rag';
 
 // ─── Corpus imports ───────────────────────────────────────────────────────────
-// Static require so Metro bundles them into the app (no network needed)
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const signsData: CorpusEntry[]        = require('@/assets/astrology-corpus/signs/zodiac-signs.json');
@@ -32,11 +33,9 @@ const aspectsData: CorpusEntry[]      = require('@/assets/astrology-corpus/aspec
 
 type CorpusEntry = { id: string; text: string };
 
-// ─── Hash-based bag-of-words embeddings ───────────────────────────────────────
-// 512-dimensional embedding using FNV-1a–style hashing of tokens.
-// Gives meaningful cosine similarity for domain-specific vocabulary.
+// ─── Hash-based bag-of-words embeddings (fallback) ────────────────────────────
 
-const DIM = 512;
+const HASH_DIM = 512;
 
 const STOP_WORDS = new Set([
   'a','an','the','and','or','but','in','on','at','to','for','of','with',
@@ -54,7 +53,7 @@ function hashToken(token: string): number {
     h ^= token.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  return Math.abs(h) % DIM;
+  return Math.abs(h) % HASH_DIM;
 }
 
 function tokenize(text: string): string[] {
@@ -65,37 +64,80 @@ function tokenize(text: string): string[] {
     .filter(t => t.length > 2 && !STOP_WORDS.has(t));
 }
 
-function makeEmbedding(text: string): number[] {
-  const vec = new Array<number>(DIM).fill(0);
+function hashEmbedding(text: string): number[] {
+  const vec = new Array<number>(HASH_DIM).fill(0);
   const tokens = tokenize(text);
   if (tokens.length === 0) return vec;
 
-  // Term frequency with position weighting (earlier terms slightly upweighted)
   for (let i = 0; i < tokens.length; i++) {
     const bucket = hashToken(tokens[i]);
     const weight  = 1 + (tokens.length - i) / tokens.length;
     vec[bucket]  += weight;
-
-    // Also hash 2-grams for better phrase matching
     if (i < tokens.length - 1) {
-      const bigram = tokens[i] + '_' + tokens[i + 1];
-      vec[hashToken(bigram)] += 0.5;
+      vec[hashToken(tokens[i] + '_' + tokens[i + 1])] += 0.5;
     }
   }
 
-  // L2-normalize to unit vector for cosine similarity
   const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1;
-  for (let i = 0; i < DIM; i++) vec[i] /= norm;
+  for (let i = 0; i < HASH_DIM; i++) vec[i] /= norm;
   return vec;
 }
 
-// ─── Embeddings provider implementing react-native-rag interface ───────────────
+// ─── Neural embeddings (TextEmbeddingsModule) ─────────────────────────────────
+
+type TextEmbeddingsModuleType = import('react-native-executorch').TextEmbeddingsModule;
+
+let _embedModule: TextEmbeddingsModuleType | null = null;
+let _usingNeural = false;
+
+async function tryLoadNeuralEmbeddings(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    const {
+      TextEmbeddingsModule,
+      ALL_MINILM_L6_V2,
+      initExecutorch,
+    } = require('react-native-executorch') as typeof import('react-native-executorch');
+
+    const { ExpoResourceFetcher } =
+      require('react-native-executorch-expo-resource-fetcher') as
+      typeof import('react-native-executorch-expo-resource-fetcher');
+
+    initExecutorch({ resourceFetcher: ExpoResourceFetcher });
+
+    // 4-second timeout — if model isn't cached it'll download in background; we use hash now
+    const module = await Promise.race<TextEmbeddingsModuleType | null>([
+      TextEmbeddingsModule.fromModelName(ALL_MINILM_L6_V2),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), 4000)),
+    ]);
+
+    if (module) {
+      _embedModule = module;
+      _usingNeural = true;
+    }
+  } catch {
+    // Neural embeddings unavailable — hash fallback continues
+  }
+}
+
+async function embed(text: string): Promise<number[]> {
+  if (_usingNeural && _embedModule) {
+    try {
+      return Array.from(await _embedModule.forward(text));
+    } catch {
+      // On failure, fall through to hash
+    }
+  }
+  return hashEmbedding(text);
+}
+
+// ─── Embeddings provider ──────────────────────────────────────────────────────
 
 class AstrologyEmbeddings {
   async load():   Promise<this>     { return this; }
   async unload(): Promise<void>     { /* nothing to release */ }
   async embed(text: string): Promise<number[]> {
-    return makeEmbedding(text);
+    return embed(text);
   }
 }
 
@@ -118,13 +160,16 @@ const ALL_CORPUS: CorpusEntry[] = [
 export async function initRAG(): Promise<void> {
   if (initPromise) return initPromise;
   initPromise = (async () => {
+    // Try to load neural embeddings first (uses cached model if available)
+    await tryLoadNeuralEmbeddings();
+
     const embeddings = new AstrologyEmbeddings();
     store = new MemoryVectorStore({ embeddings });
     await store.load();
 
-    // Pre-compute and ingest all corpus entries
+    // Embed all corpus entries using whichever embedder loaded
     for (const entry of ALL_CORPUS) {
-      const embedding = makeEmbedding(entry.text); // sync, skip the async round-trip
+      const embedding = await embed(entry.text);
       await store.add({ id: entry.id, document: entry.text, embedding });
     }
   })();
@@ -144,20 +189,21 @@ export async function retrieveContext(
   if (!store) return '';
 
   try {
-    const queryEmbedding = makeEmbedding(query);
+    const queryEmbedding = await embed(query);
     const results = await store.query({
       queryEmbedding,
       nResults,
     });
 
-    // Only include results with meaningful similarity (>0.15)
-    const relevant = results.filter(r => r.similarity > 0.15);
+    const threshold = _usingNeural ? 0.25 : 0.15;
+    const relevant = results.filter(r => r.similarity > threshold);
     if (relevant.length === 0) return '';
 
     return relevant
-      .map(r => r.document.length > MAX_CHUNK_CHARS
-        ? r.document.slice(0, MAX_CHUNK_CHARS) + '…'
-        : r.document)
+      .map(r => {
+        const doc = r.document ?? '';
+        return doc.length > MAX_CHUNK_CHARS ? doc.slice(0, MAX_CHUNK_CHARS) + '…' : doc;
+      })
       .join('\n\n');
   } catch {
     return '';
@@ -167,4 +213,9 @@ export async function retrieveContext(
 /** Returns true once the vector store is ready to query. */
 export function isRAGReady(): boolean {
   return store !== null;
+}
+
+/** Returns true if neural (MiniLM) embeddings are active. */
+export function isNeuralRAG(): boolean {
+  return _usingNeural;
 }

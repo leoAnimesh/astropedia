@@ -22,9 +22,29 @@ export type HoroscopeState = {
 };
 
 function parseSections(raw: string): HoroscopeSections | null {
+  // Try JSON first (LFM2.5 structured output)
+  try {
+    const cleaned = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const first = cleaned.indexOf('{');
+    const last  = cleaned.lastIndexOf('}');
+    if (first !== -1 && last !== -1) {
+      const json = JSON.parse(cleaned.slice(first, last + 1)) as Partial<HoroscopeSections>;
+      if (json.energy || json.guidance) {
+        return {
+          energy:   (json.energy   ?? '').trim(),
+          love:     (json.love     ?? '').trim(),
+          career:   (json.career   ?? '').trim(),
+          wellness: (json.wellness ?? '').trim(),
+          guidance: (json.guidance ?? '').trim(),
+          mantra:   (json.mantra   ?? '').trim(),
+        };
+      }
+    }
+  } catch { /* fall through to regex */ }
+
+  // Regex fallback for legacy cache or non-JSON responses
   const get = (key: string): string => {
     const lines = raw.split('\n');
-    // Match: "ENERGY:", "## Energy:", "**ENERGY:**", "Energy:" etc.
     const pattern = new RegExp(`^[#*\\s]*${key}[:\\s*_]+`, 'i');
     const line = lines.find(l => pattern.test(l.trimStart()));
     if (!line) return '';
@@ -77,13 +97,15 @@ function buildHoroscopePrompt(profile: Profile, today: string): string {
 
 About ${firstName}: They are a ${sun?.name ?? ''} at heart, feel things like a ${moon?.name ?? ''}, and come across as ${rising?.name ?? 'themselves'}.${dasha ? ` They are in a life chapter ruled by ${dasha.lord === 'Rahu' || dasha.lord === 'Ketu' ? 'change and karmic growth' : dasha.lord === 'Jupiter' ? 'growth, wisdom, and expansion' : dasha.lord === 'Venus' ? 'love, beauty, and enjoyment' : dasha.lord === 'Saturn' ? 'hard work, discipline, and long-term building' : dasha.lord === 'Sun' ? 'identity and purpose' : dasha.lord === 'Moon' ? 'emotions and intuition' : dasha.lord === 'Mars' ? 'action and courage' : dasha.lord === 'Mercury' ? 'learning and communication' : 'transformation'}.` : ''}
 
-Write EXACTLY this format — one labeled line per section, NO astrology terms, NO markdown (no ##, no **), plain text only:
-ENERGY: [How ${firstName} will feel today overall — their mood and inner energy in 1–2 plain sentences]
-LOVE: [What's happening in their close relationships and heart today — warm and practical, 1–2 sentences]
-CAREER: [What to focus on at work or with personal goals today — specific and grounded, 1–2 sentences]
-WELLNESS: [A simple note on their physical energy and mental wellbeing today, 1–2 sentences]
-GUIDANCE: [One clear, actionable piece of advice for ${firstName} today — like a wise friend would give]
-MANTRA: [A short uplifting phrase for today — 5 to 8 words, no quotes]`;
+NO astrology terms. NO markdown. Plain everyday language only. Respond with ONLY this JSON object, no other text:
+{
+  "energy": "How ${firstName} will feel today — their mood and inner energy in 1–2 sentences",
+  "love": "What's happening in their close relationships today — warm and practical, 1–2 sentences",
+  "career": "What to focus on at work or personal goals today — grounded and specific, 1–2 sentences",
+  "wellness": "A simple note on their physical energy and mental wellbeing today, 1–2 sentences",
+  "guidance": "One clear actionable piece of advice for today — like a wise friend would give",
+  "mantra": "A short uplifting phrase for today — 5 to 8 words"
+}`;
 }
 
 export function useHoroscope(profile: Profile | null, refreshKey = 0): HoroscopeState {

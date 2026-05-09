@@ -45,14 +45,15 @@ export default function ChatScreen() {
     () =>
       threadId
         ? {
-            id:         threadId,
-            profileId:  profileId ?? '',
-            title:      null,
-            archived:   false,
-            archivedAt: null,
-            createdAt:  '',
-            updatedAt:  '',
-            syncedAt:   null,
+            id:                 threadId,
+            profileId:          profileId ?? '',
+            title:              null,
+            archived:           false,
+            archivedAt:         null,
+            lastMessagePreview: null,
+            createdAt:          '',
+            updatedAt:          '',
+            syncedAt:           null,
           }
         : null,
     [threadId, profileId],

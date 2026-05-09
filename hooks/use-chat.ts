@@ -70,11 +70,12 @@ export function useChat(thread: Thread | null, profile: Profile | null, isNew = 
     // Lazily persist thread on first message
     if (isNew && isFirstMessage) {
       const persisted = await insertThread({
-        id:         thread.id,
-        profileId:  thread.profileId,
-        title:      null,
-        archived:   false,
-        archivedAt: null,
+        id:                 thread.id,
+        profileId:          thread.profileId,
+        title:              null,
+        archived:           false,
+        archivedAt:         null,
+        lastMessagePreview: null,
       });
       useThreadStore.getState().upsertThread(persisted);
     }

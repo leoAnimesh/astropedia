@@ -37,11 +37,12 @@ export function useThreads(profileId: string | null) {
   const createThread = useCallback(async (): Promise<Thread> => {
     if (!profileId) throw new Error('No active profile');
     const thread = await insertThread({
-      id:         generateId(),
+      id:                 generateId(),
       profileId,
-      title:      null,
-      archived:   false,
-      archivedAt: null,
+      title:              null,
+      archived:           false,
+      archivedAt:         null,
+      lastMessagePreview: null,
     });
     storeUpsert(thread);
     return thread;
