@@ -23,7 +23,6 @@ import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
 import { initLocalLLM } from '@/utils/local-llm';
-import { initRAG } from '@/utils/rag';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -48,8 +47,7 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
-        // Boot RAG and local LLM in parallel — neither blocks app startup
-        initRAG().catch(() => {});
+        // Boot local LLM in background — RAG inits lazily on first chat message
         initLocalLLM().catch(() => {/* errors surfaced via ModelDownloadBanner */});
         const [profiles, threads] = await Promise.all([
           getAllProfiles(),

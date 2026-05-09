@@ -186,6 +186,8 @@ export async function retrieveContext(
   query:    string,
   nResults: number = 3,
 ): Promise<string> {
+  // Auto-init on first use — no need to call initRAG() at app startup
+  if (!store) await initRAG().catch(() => {});
   if (!store) return '';
 
   try {
