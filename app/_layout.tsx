@@ -4,7 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { StyleSheet } from 'react-native';
+import { AppState, StyleSheet } from 'react-native';
 import {
   useFonts,
   InstrumentSerif_400Regular,
@@ -22,7 +22,7 @@ import { initDatabase, getAllProfiles, getAllThreads } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
-import { initLocalLLM } from '@/utils/local-llm';
+import { initLocalLLM, unloadLocalLLM } from '@/utils/local-llm';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,8 +47,12 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
-        // Boot local LLM in background — RAG inits lazily on first chat message
-        initLocalLLM().catch(() => {/* errors surfaced via ModelDownloadBanner */});
+        // Only auto-download on first run. After that, model loads on-demand
+        // from disk when the user opens a chat (~2–5 s, shown via typing indicator).
+        // This keeps RAM at ~150 MB on the home screen instead of ~2.9 GB.
+        if (!Storage.getModelDownloaded()) {
+          initLocalLLM().catch(() => {});
+        }
         const [profiles, threads] = await Promise.all([
           getAllProfiles(),
           getAllThreads(),
@@ -82,6 +86,17 @@ export default function RootLayout() {
       }
     }
     bootstrap();
+  }, []);
+
+  // Free the ~2.9 GB model from RAM whenever the app goes to background.
+  // ensureLocalLLM() reloads from disk cache when the user chats again.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'background' || next === 'inactive') {
+        unloadLocalLLM();
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {

@@ -109,6 +109,24 @@ export function initLocalLLM(): Promise<void> {
   return _initPromise;
 }
 
+/**
+ * Release the model from RAM without touching disk.
+ * _state stays 'ready' so the overlay never re-appears.
+ * ensureLocalLLM() will reload from disk cache (~2–5 s) on next chat.
+ */
+export async function unloadLocalLLM(): Promise<void> {
+  if (!_module) return;
+  const mod = _module;
+  _module      = null;
+  _initPromise = null;
+  // Interrupt any in-progress generation before deleting
+  if (_activeGeneration) {
+    try { mod.interrupt(); } catch {}
+    try { await _activeGeneration; } catch {}
+  }
+  try { mod.delete(); } catch {}
+}
+
 // Serialize generations — the native module handles one at a time.
 let _activeGeneration: Promise<string> | null = null;
 
