@@ -1,4 +1,5 @@
-import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { Alert, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
@@ -23,6 +24,26 @@ const DIGNITY_COLOR: Record<string, string> = {
   own:        '#C68B2F',
   neutral:    'transparent',
 };
+
+// Animated shimmer skeleton line
+function SkeletonLine({ color, width, style }: { color: string; width: number | `${number}%`; style?: object }) {
+  const opacity = useRef(new Animated.Value(0.45)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1,    duration: 750, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.45, duration: 750, useNativeDriver: true }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [opacity]);
+  return (
+    <Animated.View
+      style={[{ height: 11, borderRadius: 6, backgroundColor: color, opacity }, style, { width }]}
+    />
+  );
+}
 
 export default function ProfileDetailScreen() {
   const { theme } = useAccent();
@@ -100,7 +121,7 @@ export default function ProfileDetailScreen() {
         {/* Birth chart */}
         <BirthChart profile={profile} size={290} />
 
-        {/* Big Three */}
+        {/* Big Three — desc is always available (sign description fallback); spinner omitted */}
         <View style={styles.bigThree}>
           {bigThree.map(({ label, sign, dim, aiKey }) => {
             const desc = reading?.[aiKey] ?? sign?.description ?? null;
@@ -120,17 +141,13 @@ export default function ProfileDetailScreen() {
                     {sign?.name ?? (dim ? 'No time' : '—')}
                   </Text>
                 </View>
-                {/* Right: description */}
+                {/* Right: description — AI text replaces static when ready, no spinner */}
                 <View style={styles.bigOneRight}>
-                  {readingLoading && !reading && !dim && (
-                    <ActivityIndicator size="small" color={theme.muted} />
-                  )}
-                  {desc && !dim && (
+                  {desc && !dim ? (
                     <Text style={[styles.bigOneDesc, { color: theme.ink2 }]}>{desc}</Text>
-                  )}
-                  {!desc && !readingLoading && !dim && (
+                  ) : (!dim && (
                     <Text style={[styles.bigOneDesc, { color: theme.faint }]}>—</Text>
-                  )}
+                  ))}
                 </View>
               </View>
             );
@@ -140,11 +157,12 @@ export default function ProfileDetailScreen() {
         {/* Saga's reading overview */}
         {(reading?.overview || readingLoading) && (
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <EyebrowLabel style={{ marginBottom: 10 }}>Saga's reading</EyebrowLabel>
+            <EyebrowLabel style={{ marginBottom: 12 }}>Saga's reading</EyebrowLabel>
             {readingLoading && !reading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color={theme.muted} />
-                <Text style={[styles.loadingText, { color: theme.muted }]}>Reading your chart…</Text>
+              <View style={styles.skeletonBlock}>
+                <SkeletonLine color={theme.hairline2} width="92%" />
+                <SkeletonLine color={theme.hairline2} width="78%" style={{ marginTop: 9 }} />
+                <SkeletonLine color={theme.hairline2} width="55%" style={{ marginTop: 9 }} />
               </View>
             ) : (
               <Text style={[styles.overviewText, { color: theme.ink }]}>{reading?.overview}</Text>
@@ -200,12 +218,14 @@ export default function ProfileDetailScreen() {
                 </Text>
               </View>
             </View>
-            {reading?.nakshatra && (
+            {reading?.nakshatra ? (
               <Text style={[styles.nakshatraDesc, { color: theme.ink2 }]}>{reading.nakshatra}</Text>
-            )}
-            {readingLoading && !reading && (
-              <ActivityIndicator size="small" color={theme.muted} style={{ marginTop: 8 }} />
-            )}
+            ) : readingLoading ? (
+              <View style={styles.skeletonInline}>
+                <SkeletonLine color={theme.hairline2} width="88%" />
+                <SkeletonLine color={theme.hairline2} width="65%" style={{ marginTop: 8 }} />
+              </View>
+            ) : null}
           </View>
         )}
 
@@ -224,12 +244,14 @@ export default function ProfileDetailScreen() {
               <View style={[styles.dashaBar, { backgroundColor: theme.hairline2 }]} />
               <Text style={[styles.dashaDate, { color: theme.accent }]}>{dasha.endDate}</Text>
             </View>
-            {reading?.dasha && (
+            {reading?.dasha ? (
               <Text style={[styles.nakshatraDesc, { color: theme.ink2 }]}>{reading.dasha}</Text>
-            )}
-            {readingLoading && !reading && (
-              <ActivityIndicator size="small" color={theme.muted} style={{ marginTop: 8 }} />
-            )}
+            ) : readingLoading ? (
+              <View style={styles.skeletonInline}>
+                <SkeletonLine color={theme.hairline2} width="88%" />
+                <SkeletonLine color={theme.hairline2} width="60%" style={{ marginTop: 8 }} />
+              </View>
+            ) : null}
           </View>
         )}
 
@@ -280,17 +302,16 @@ const styles = StyleSheet.create({
   bigOneRight: { flex: 1 },
   bigOneGlyph:  { fontSize: 26 },
   bigOneName:   { fontFamily: FONTS.serifItalic, fontSize: 14, textAlign: 'center' },
-  bigOneDesc:   {
-    fontFamily: FONTS.sansRegular, fontSize: 13.5, lineHeight: 20,
-  },
+  bigOneDesc:   { fontFamily: FONTS.sansRegular, fontSize: 13.5, lineHeight: 20 },
 
   card: {
     borderRadius: RADIUS.card, borderWidth: StyleSheet.hairlineWidth,
     padding: 16, marginBottom: 14,
   },
-  loadingRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
-  loadingText:   { fontFamily: FONTS.sansRegular, fontSize: 13 },
   overviewText:  { fontFamily: FONTS.sansRegular, fontSize: 15, lineHeight: 24 },
+
+  skeletonBlock:  { paddingVertical: 4 },
+  skeletonInline: { marginTop: 10 },
 
   planetRow:   {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 6,
