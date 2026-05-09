@@ -4,7 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { AppState, StyleSheet } from 'react-native';
+import { AppState, LogBox, StyleSheet } from 'react-native';
 import {
   useFonts,
   InstrumentSerif_400Regular,
@@ -25,6 +25,10 @@ import { useThreadStore } from '@/stores/thread-store';
 import { initLocalLLM, unloadLocalLLM } from '@/utils/local-llm';
 
 SplashScreen.preventAutoHideAsync();
+
+// HuggingFace CDN doesn't send content-length headers for tokenizer JSON files —
+// this is expected and harmless; the download succeeds via chunked transfer.
+LogBox.ignoreLogs(['[React Native ExecuTorch] No content-length header']);
 
 export const unstable_settings = {
   anchor: '(app)',
