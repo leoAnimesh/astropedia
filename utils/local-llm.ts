@@ -65,7 +65,7 @@ function loadModule(silent: boolean): Promise<void> {
       const {
         initExecutorch,
         LLMModule,
-        LLAMA3_2_1B_SPINQUANT,
+        LFM2_5_1_2B_INSTRUCT,
       } = require('react-native-executorch') as typeof import('react-native-executorch');
 
       const { ExpoResourceFetcher } =
@@ -75,7 +75,7 @@ function loadModule(silent: boolean): Promise<void> {
       initExecutorch({ resourceFetcher: ExpoResourceFetcher });
 
       _module = await LLMModule.fromModelName(
-        LLAMA3_2_1B_SPINQUANT,
+        LFM2_5_1_2B_INSTRUCT,
         (progress: number) => {
           if (!silent) setState({ status: 'downloading', progress });
         },
