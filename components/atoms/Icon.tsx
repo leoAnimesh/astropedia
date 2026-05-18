@@ -19,7 +19,10 @@ export type IconName =
   | 'close'
   | 'search'
   | 'check'
-  | 'refresh';
+  | 'refresh'
+  | 'lotus'
+  | 'pin'
+  | 'pin-filled';
 
 type IOSMap = Record<IconName, SymbolViewProps['name']>;
 type AndroidMap = Record<IconName, string>;
@@ -42,6 +45,9 @@ const IOS_MAP: IOSMap = {
   search:       'magnifyingglass',
   check:        'checkmark',
   refresh:      'arrow.clockwise',
+  lotus:        'leaf',
+  pin:          'pin',
+  'pin-filled': 'pin.fill',
 };
 
 const ANDROID_MAP: AndroidMap = {
@@ -62,6 +68,9 @@ const ANDROID_MAP: AndroidMap = {
   search:       'search',
   check:        'check',
   refresh:      'refresh',
+  lotus:        'spa',
+  pin:          'push-pin',
+  'pin-filled': 'push-pin',
 };
 
 type Props = {

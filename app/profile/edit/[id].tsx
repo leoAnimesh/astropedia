@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Country, State, City } from 'country-state-city';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
@@ -12,44 +12,55 @@ import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { LocationPickerModal, type PickerItem } from '@/components/molecules/LocationPickerModal';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { getSunSign } from '@/utils/astrology';
 import { localDateIso } from '@/utils/format';
 
 type Picker = 'country' | 'state' | 'city' | null;
 
-export default function NewProfileScreen() {
-  const { theme }                    = useAccent();
-  const { createProfile, profiles }  = useProfiles();
-  // The primary profile is whichever was created first — the one onboarded
-  // through the app's setup flow. `isYou` is the canonical flag, but profile
-  // order is the reliable fallback in case the flag was never set.
-  const primaryProfile = profiles.find((p) => p.isYou) ?? profiles[0];
-  const primaryName    = (primaryProfile?.name ?? '').split(' ')[0];
+export default function EditProfileScreen() {
+  const { theme }                = useAccent();
+  const { id }                   = useLocalSearchParams<{ id: string }>();
+  const { profiles, editProfile } = useProfiles();
+  const profile                  = profiles.find((p) => p.id === id);
 
-  const [name,   setName]   = useState('');
-  const [rel,    setRel]    = useState('');
-  const [gender, setGender] = useState<string>('');
-  const [date,   setDate]   = useState<Date | null>(null);
-  const [time,   setTime]   = useState<Date | null>(null);
+  const initialDate = profile?.birthDate ? new Date(profile.birthDate + 'T12:00:00') : null;
+  const initialTime = (() => {
+    if (!profile?.birthTime) return null;
+    const [h, m] = profile.birthTime.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  })();
+
+  const [name,   setName]   = useState(profile?.name ?? '');
+  const [rel,    setRel]    = useState(profile?.relationship ?? '');
+  const [gender, setGender] = useState<string>(profile?.gender ?? '');
+  const [date,   setDate]   = useState<Date | null>(initialDate);
+  const [time,   setTime]   = useState<Date | null>(initialTime);
   const [loading, setLoading] = useState(false);
 
-  // Location state
+  // Location editing flow: we don't try to parse the saved string back into
+  // country/state/city codes. Instead, the saved location is shown as-is and
+  // remains unchanged unless the user opts in to "Change location", at which
+  // point a fresh pick replaces it.
+  const [editingLocation, setEditingLocation] = useState(false);
   const [countryCode, setCountryCode] = useState('');
   const [countryName, setCountryName] = useState('');
   const [stateCode,   setStateCode]   = useState('');
   const [stateName,   setStateName]   = useState('');
-  const [cityName,    setCityName]     = useState('');
-  const [cityLat,     setCityLat]      = useState<number | null>(null);
-  const [cityLng,     setCityLng]      = useState<number | null>(null);
+  const [cityName,    setCityName]    = useState('');
+  const [cityLat,     setCityLat]     = useState<number | null>(null);
+  const [cityLng,     setCityLng]     = useState<number | null>(null);
   const [activePicker, setActivePicker] = useState<Picker>(null);
+
+  const newLocation = [cityName, stateName, countryName].filter(Boolean).join(', ');
+  const locationToSave = editingLocation && newLocation ? newLocation : (profile?.birthCity ?? null);
 
   const birthDateIso = date ? localDateIso(date) : '';
   const birthTimeStr = time
     ? `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`
     : '';
-  const sun          = birthDateIso ? getSunSign(birthDateIso) : null;
-  const fullLocation = [cityName, stateName, countryName].filter(Boolean).join(', ');
-  const valid        = name.trim().length > 0 && birthDateIso.length > 0;
+
+  const valid = name.trim().length > 0 && birthDateIso.length > 0;
 
   // ── Picker items ───────────────────────────────────────────────────────────
 
@@ -89,23 +100,15 @@ export default function NewProfileScreen() {
   const handleSelectCountry = (item: PickerItem) => {
     setCountryCode(item.value);
     setCountryName(Country.getCountryByCode(item.value)?.name ?? item.label.replace(/^\S+\s/, ''));
-    setStateCode('');
-    setStateName('');
-    setCityName('');
-    setCityLat(null);
-    setCityLng(null);
+    setStateCode(''); setStateName('');
+    setCityName(''); setCityLat(null); setCityLng(null);
     setActivePicker(null);
   };
-
   const handleSelectState = (item: PickerItem) => {
-    setStateCode(item.value);
-    setStateName(item.label);
-    setCityName('');
-    setCityLat(null);
-    setCityLng(null);
+    setStateCode(item.value); setStateName(item.label);
+    setCityName(''); setCityLat(null); setCityLng(null);
     setActivePicker(null);
   };
-
   const handleSelectCity = (item: PickerItem) => {
     setCityName(item.label);
     setCityLat(item.lat ?? null);
@@ -114,7 +117,7 @@ export default function NewProfileScreen() {
   };
 
   const handleSave = async () => {
-    if (!valid) return;
+    if (!valid || !profile) return;
     if (date && date.getTime() > Date.now() + 60_000) {
       Alert.alert(
         'That date is in the future',
@@ -124,22 +127,32 @@ export default function NewProfileScreen() {
     }
     setLoading(true);
     try {
-      await createProfile({
+      // Only patch location-related fields when the user actually picked a
+      // new one — otherwise leave them alone so we don't blow away existing
+      // lat/lng on no-op edits.
+      const patch: Parameters<typeof editProfile>[1] = {
         name:         name.trim(),
         relationship: rel.trim() || null,
         gender:       gender || null,
         birthDate:    birthDateIso,
         birthTime:    birthTimeStr || null,
-        birthCity:    fullLocation || null,
-        birthLat:     cityLat,
-        birthLng:     cityLng,
-        isYou:        false,
-      });
+      };
+      if (editingLocation && newLocation) {
+        patch.birthCity = locationToSave;
+        patch.birthLat  = cityLat;
+        patch.birthLng  = cityLng;
+      }
+      await editProfile(profile.id, patch);
       router.back();
     } finally {
       setLoading(false);
     }
   };
+
+  if (!profile) {
+    router.back();
+    return null;
+  }
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
@@ -147,17 +160,12 @@ export default function NewProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <EyebrowLabel>New chart</EyebrowLabel>
+        <EyebrowLabel>Edit chart</EyebrowLabel>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.display, { color: theme.ink }]}>
-          A chart for{'\n'}
-          <Text style={styles.italic}>someone you love.</Text>
+          Update <Text style={styles.italic}>{profile.name.split(' ')[0] || 'their'}'s</Text> details
         </Text>
 
         <Input
@@ -165,13 +173,12 @@ export default function NewProfileScreen() {
           placeholder="e.g. Mom, Sam, Priya"
           value={name}
           onChangeText={setName}
-          autoFocus
           autoCapitalize="words"
           containerStyle={styles.field}
         />
         <Input
-          label={primaryName ? `Relationship to ${primaryName} · optional` : 'Relationship · optional'}
-          placeholder={primaryName ? `${primaryName}'s partner, friend, parent…` : 'Partner, friend, parent…'}
+          label="Relationship · optional"
+          placeholder="Partner, friend, parent…"
           value={rel}
           onChangeText={setRel}
           containerStyle={styles.field}
@@ -199,10 +206,9 @@ export default function NewProfileScreen() {
                   },
                 ]}
               >
-                <Text style={[
-                  styles.genderChipText,
-                  { color: isSelected ? theme.accentFg : theme.ink2 },
-                ]}>{opt.label}</Text>
+                <Text style={[styles.genderChipText, { color: isSelected ? theme.accentFg : theme.ink2 }]}>
+                  {opt.label}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -219,9 +225,7 @@ export default function NewProfileScreen() {
           themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
         />
 
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>
-          Time of birth · optional
-        </EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Time of birth · optional</EyebrowLabel>
         <DateTimePicker
           value={time ?? new Date(0, 0, 0, 12, 0)}
           mode="time"
@@ -232,90 +236,76 @@ export default function NewProfileScreen() {
           themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
         />
 
-        {/* Location section */}
-        <EyebrowLabel style={[styles.field, { marginBottom: 14 }]}>
-          Birth location · optional
-        </EyebrowLabel>
-
-        {/* Country */}
-        <EyebrowLabel style={styles.subLabel}>Country</EyebrowLabel>
-        <TouchableOpacity
-          style={[styles.locationField, { backgroundColor: theme.surface2 }]}
-          onPress={() => setActivePicker('country')}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[styles.locationValue, { color: countryName ? theme.ink : theme.muted }]}
-            numberOfLines={1}
-          >
-            {countryName || 'Select country…'}
-          </Text>
-          <Icon name="chevron-down" size={16} color={theme.muted} />
-        </TouchableOpacity>
-
-        {/* State */}
-        {countryCode && hasStates && (
-          <>
-            <EyebrowLabel style={styles.subLabel}>State / Province</EyebrowLabel>
-            <TouchableOpacity
-              style={[styles.locationField, { backgroundColor: theme.surface2 }]}
-              onPress={() => setActivePicker('state')}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[styles.locationValue, { color: stateName ? theme.ink : theme.muted }]}
-                numberOfLines={1}
-              >
-                {stateName || 'Select state…'}
+        {/* Location — show current + a "change" toggle */}
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Birth location</EyebrowLabel>
+        {!editingLocation ? (
+          <View>
+            <View style={[styles.locationField, { backgroundColor: theme.surface2 }]}>
+              <Text style={[styles.locationValue, { color: profile.birthCity ? theme.ink : theme.muted }]} numberOfLines={1}>
+                {profile.birthCity ?? 'Unknown'}
               </Text>
-              <Icon name="chevron-down" size={16} color={theme.muted} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* City */}
-        {countryCode && (!hasStates || stateCode) && (
-          <>
-            <EyebrowLabel style={styles.subLabel}>City</EyebrowLabel>
-            <TouchableOpacity
-              style={[styles.locationField, { backgroundColor: theme.surface2 }]}
-              onPress={() => setActivePicker('city')}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[styles.locationValue, { color: cityName ? theme.ink : theme.muted }]}
-                numberOfLines={1}
-              >
-                {cityName || 'Select or type city…'}
-              </Text>
-              <Icon name="chevron-down" size={16} color={theme.muted} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* Sun sign preview */}
-        {sun && (
-          <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
-            <Text style={[styles.signGlyph, { color: theme.accent }]}>{sun.glyph}</Text>
-            <View>
-              <EyebrowLabel size={10}>{name || 'They'}'s sun</EyebrowLabel>
-              <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{sun.name}</Text>
-                {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{sun.element}</Text>
-              </Text>
-              {fullLocation ? (
-                <Text style={[styles.signLocation, { color: theme.muted }]}>{fullLocation}</Text>
-              ) : null}
             </View>
+            <TouchableOpacity onPress={() => setEditingLocation(true)} style={styles.linkBtn}>
+              <Text style={[styles.linkText, { color: theme.accent }]}>Change location</Text>
+            </TouchableOpacity>
           </View>
+        ) : (
+          <>
+            <EyebrowLabel style={styles.subLabel}>Country</EyebrowLabel>
+            <TouchableOpacity
+              style={[styles.locationField, { backgroundColor: theme.surface2 }]}
+              onPress={() => setActivePicker('country')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.locationValue, { color: countryName ? theme.ink : theme.muted }]} numberOfLines={1}>
+                {countryName || 'Select country…'}
+              </Text>
+              <Icon name="chevron-down" size={16} color={theme.muted} />
+            </TouchableOpacity>
+
+            {countryCode && hasStates && (
+              <>
+                <EyebrowLabel style={styles.subLabel}>State / Province</EyebrowLabel>
+                <TouchableOpacity
+                  style={[styles.locationField, { backgroundColor: theme.surface2 }]}
+                  onPress={() => setActivePicker('state')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.locationValue, { color: stateName ? theme.ink : theme.muted }]} numberOfLines={1}>
+                    {stateName || 'Select state…'}
+                  </Text>
+                  <Icon name="chevron-down" size={16} color={theme.muted} />
+                </TouchableOpacity>
+              </>
+            )}
+
+            {countryCode && (!hasStates || stateCode) && (
+              <>
+                <EyebrowLabel style={styles.subLabel}>City</EyebrowLabel>
+                <TouchableOpacity
+                  style={[styles.locationField, { backgroundColor: theme.surface2 }]}
+                  onPress={() => setActivePicker('city')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.locationValue, { color: cityName ? theme.ink : theme.muted }]} numberOfLines={1}>
+                    {cityName || 'Select or type city…'}
+                  </Text>
+                  <Icon name="chevron-down" size={16} color={theme.muted} />
+                </TouchableOpacity>
+              </>
+            )}
+
+            <TouchableOpacity onPress={() => { setEditingLocation(false); setCountryCode(''); setCountryName(''); setStateCode(''); setStateName(''); setCityName(''); }} style={styles.linkBtn}>
+              <Text style={[styles.linkText, { color: theme.muted }]}>Cancel location change</Text>
+            </TouchableOpacity>
+          </>
         )}
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          label="Save chart"
-          variant="primary"
+          label="Save changes"
+          variant="accent"
           fullWidth
           disabled={!valid}
           loading={loading}
@@ -323,7 +313,6 @@ export default function NewProfileScreen() {
         />
       </View>
 
-      {/* Pickers */}
       <LocationPickerModal
         visible={activePicker === 'country'}
         title="Select Country"
@@ -358,51 +347,24 @@ const styles = StyleSheet.create({
   back:    { padding: 4 },
   scroll:  { flex: 1 },
   content: { padding: 32, paddingTop: 12, paddingBottom: 40 },
-  display: { fontFamily: FONTS.serifRegular, fontSize: 36, lineHeight: 40, marginBottom: 28 },
+  display: { fontFamily: FONTS.serifRegular, fontSize: 32, lineHeight: 38, marginBottom: 22 },
   italic:  { fontFamily: FONTS.serifItalic },
   field:   { marginTop: 22 },
-  genderRow: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           8,
-  },
+  subLabel:{ marginTop: 14, marginBottom: 8 },
+  genderRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   genderChip: {
-    paddingHorizontal: 14,
-    paddingVertical:   8,
-    borderRadius:      999,
-    borderWidth:       StyleSheet.hairlineWidth,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 999, borderWidth: StyleSheet.hairlineWidth,
   },
-  genderChipText: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   13,
-  },
-  picker:  { alignSelf: 'flex-start' },
-  subLabel: { marginTop: 12, marginBottom: 8 },
+  genderChipText: { fontFamily: FONTS.sansRegular, fontSize: 13 },
+  picker: { alignSelf: 'stretch' },
   locationField: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    justifyContent:   'space-between',
-    paddingHorizontal: 14,
-    paddingVertical:  13,
-    borderRadius:     RADIUS.medium,
-    gap:              8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderRadius: RADIUS.medium, gap: 8,
   },
-  locationValue: {
-    flex:       1,
-    fontFamily: FONTS.sansRegular,
-    fontSize:   15,
-  },
-  signCard: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           14,
-    marginTop:     28,
-    padding:       18,
-    borderRadius:  RADIUS.card,
-  },
-  signGlyph:    { fontSize: 26 },
-  signName:     { fontFamily: FONTS.serifRegular, fontSize: 22, lineHeight: 26, marginTop: 4 },
-  signElement:  { fontFamily: FONTS.sansRegular, fontSize: 13 },
-  signLocation: { fontFamily: FONTS.sansRegular, fontSize: 12, marginTop: 4 },
-  footer: { padding: 32, paddingTop: 12 },
+  locationValue: { flex: 1, fontFamily: FONTS.sansRegular, fontSize: 15 },
+  linkBtn:  { marginTop: 10, alignSelf: 'flex-start' },
+  linkText: { fontFamily: FONTS.sansRegular, fontSize: 13 },
+  footer:   { padding: 32, paddingTop: 12 },
 });

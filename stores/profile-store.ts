@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Profile } from '@/utils/database';
+import { isSystemProfile, type Profile } from '@/utils/database';
 
 type ProfileStore = {
   profiles: Profile[];
@@ -10,13 +10,20 @@ type ProfileStore = {
   setActiveProfileId: (id: string | null) => void;
 };
 
+/**
+ * Profile store strips synthetic system profiles (e.g. `__krishna__`) at
+ * every write boundary. Callers can read `profiles` without worrying about
+ * filtering — the store guarantees only user-facing profiles are visible.
+ */
 export const useProfileStore = create<ProfileStore>((set) => ({
   profiles:        [],
   activeProfileId: null,
 
-  setProfiles: (profiles) => set({ profiles }),
+  setProfiles: (profiles) =>
+    set({ profiles: profiles.filter((p) => !isSystemProfile(p.id)) }),
 
-  upsertProfile: (profile) =>
+  upsertProfile: (profile) => {
+    if (isSystemProfile(profile.id)) return;
     set((s) => {
       const exists = s.profiles.some((p) => p.id === profile.id);
       return {
@@ -24,7 +31,8 @@ export const useProfileStore = create<ProfileStore>((set) => ({
           ? s.profiles.map((p) => (p.id === profile.id ? profile : p))
           : [...s.profiles, profile],
       };
-    }),
+    });
+  },
 
   removeProfile: (id) =>
     set((s) => ({

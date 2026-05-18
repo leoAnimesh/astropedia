@@ -16,7 +16,7 @@ export default function NameScreen() {
 
   const handleContinue = () => {
     OnboardingStore.name = name.trim();
-    router.push('/(onboarding)/birth-date');
+    router.push('/(onboarding)/gender');
   };
 
   return (
@@ -25,7 +25,7 @@ export default function NameScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>01 / 04 — You</Text>
+        <Text style={[styles.step, { color: theme.muted }]}>01 / 05 — You</Text>
       </View>
 
       <View style={styles.content}>

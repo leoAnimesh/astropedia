@@ -115,6 +115,7 @@ export default function BirthPlaceScreen() {
     try {
       await createProfile({
         name:      OnboardingStore.name || 'You',
+        gender:    OnboardingStore.gender || null,
         birthDate: OnboardingStore.birthDate,
         birthTime: OnboardingStore.birthTime || null,
         birthCity: fullLocation,
@@ -122,8 +123,8 @@ export default function BirthPlaceScreen() {
         birthLng:  cityLng,
         isYou:     true,
       });
-      Storage.setOnboardingDone(true);
-      router.replace('/(app)');
+      // Intent screen sets onboarding done after capturing the user's starter.
+      router.push('/(onboarding)/intent');
     } finally {
       setLoading(false);
     }
@@ -135,7 +136,7 @@ export default function BirthPlaceScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>04 / 04 — Place</Text>
+        <Text style={[styles.step, { color: theme.muted }]}>05 / 05 — Place</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

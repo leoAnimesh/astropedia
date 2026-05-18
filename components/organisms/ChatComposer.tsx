@@ -134,53 +134,27 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
   };
 
   /**
-   * On iOS: decode WAV → on-device Whisper → setText.
-   * On Android or if model not ready: fall back to Groq Whisper API.
+   * On iOS: decode WAV → on-device Whisper → setText. Fully offline.
+   * On Android: voice input isn't supported in this version — the recording
+   * format differs and we don't ship a cloud STT fallback.
    */
   const transcribeAudio = async (uri: string) => {
-    if (Platform.OS === 'ios' && sttRef.current) {
-      try {
-        const { readAsStringAsync } = await import('expo-file-system');
-        const b64 = await readAsStringAsync(uri, { encoding: 'base64' as any });
-        const binary = atob(b64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const waveform = wavToFloat32(bytes);
-        const result = await sttRef.current.transcribe(waveform, { language: 'en' });
-        const transcript = result.text.trim();
-        if (transcript) {
-          setText(transcript);
-          setTimeout(() => inputRef.current?.focus(), 50);
-          return;
-        }
-      } catch (e) {
-        console.warn('On-device STT failed, falling back to Groq:', e);
-      }
-    }
-    await transcribeGroq(uri);
-  };
-
-  const transcribeGroq = async (uri: string) => {
-    const key = process.env.EXPO_PUBLIC_GROQ_KEY;
-    if (!key || key.startsWith('your_')) return;
+    if (Platform.OS !== 'ios' || !sttRef.current) return;
     try {
-      const formData = new FormData();
-      formData.append('file', { uri, type: 'audio/m4a', name: 'voice.m4a' } as any);
-      formData.append('model', 'whisper-large-v3-turbo');
-      formData.append('language', 'en');
-      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method:  'POST',
-        headers: { Authorization: `Bearer ${key}` },
-        body:    formData,
-      });
-      const data = await res.json() as { text?: string };
-      const transcript = data.text?.trim() ?? '';
+      const { readAsStringAsync } = await import('expo-file-system');
+      const b64 = await readAsStringAsync(uri, { encoding: 'base64' as any });
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const waveform = wavToFloat32(bytes);
+      const result = await sttRef.current.transcribe(waveform, { language: 'en' });
+      const transcript = result.text.trim();
       if (transcript) {
         setText(transcript);
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     } catch (e) {
-      console.warn('Groq transcription failed:', e);
+      console.warn('On-device STT failed:', e);
     }
   };
 
@@ -236,7 +210,10 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           >
             <Icon name="send" size={18} color={theme.accentFg} />
           </TouchableOpacity>
-        ) : (
+        ) : Platform.OS === 'ios' ? (
+          // Voice input is iOS-only — the on-device Whisper build only ships
+          // with the iOS WAV recording pipeline. Hide the mic on Android so
+          // tapping it doesn't silently no-op.
           <TouchableOpacity
             style={[styles.iconBtn, { backgroundColor: recording ? theme.accent : theme.surface3 }]}
             onPress={handleMic}
@@ -244,7 +221,7 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           >
             <Icon name="mic" size={18} color={recording ? theme.accentFg : theme.ink2} />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
@@ -8,7 +8,8 @@ import { Button } from '@/components/atoms/Button';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { getSunSign } from '@/utils/astrology';
+import { getMoonSign } from '@/utils/astrology';
+import { localDateIso } from '@/utils/format';
 import OnboardingStore from './_store';
 
 export default function BirthDateScreen() {
@@ -22,11 +23,24 @@ export default function BirthDateScreen() {
 
   const handleContinue = () => {
     if (!date) return;
-    OnboardingStore.birthDate = date.toISOString().slice(0, 10);
+    // Reject future dates — the DateTimePicker has maximumDate set, but a
+    // wrong device clock can still let one through. Charts for unborn people
+    // are nonsensical.
+    if (date.getTime() > Date.now() + 60_000) {
+      Alert.alert(
+        'That date is in the future',
+        "Pick the date you were actually born — we can't read a chart for a moment that hasn't happened yet.",
+      );
+      return;
+    }
+    OnboardingStore.birthDate = localDateIso(date);
     router.push('/(onboarding)/birth-time');
   };
 
-  const sun = date ? getSunSign(date.toISOString().slice(0, 10)) : null;
+  // Computed with a noon default. Moon moves ~13° per day, so this can be
+  // off by one sign for births near a sign-change moment — that's why we show
+  // an "approximate" hint and refine on the next (birth-time) screen.
+  const moon = date ? getMoonSign(localDateIso(date)) : null;
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
@@ -34,7 +48,7 @@ export default function BirthDateScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>02 / 04 — Birthday</Text>
+        <Text style={[styles.step, { color: theme.muted }]}>03 / 05 — Birthday</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -57,15 +71,18 @@ export default function BirthDateScreen() {
           />
         </View>
 
-        {sun && (
+        {moon && (
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
-            <Text style={[styles.signGlyph, { color: theme.accent }]}>{sun.glyph}</Text>
+            <Text style={[styles.signGlyph, { color: theme.accent }]}>{moon.glyph}</Text>
             <View style={styles.signInfo}>
-              <EyebrowLabel size={10}>Sun sign</EyebrowLabel>
+              <EyebrowLabel size={10}>Moon sign · Rashi</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{sun.name}</Text>
+                <Text style={styles.italic}>{moon.name}</Text>
                 {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{sun.element}</Text>
+                <Text style={[styles.signElement, { color: theme.muted }]}>{moon.element}</Text>
+              </Text>
+              <Text style={[styles.signNote, { color: theme.muted }]}>
+                approximate — your birth time refines this next
               </Text>
             </View>
           </View>
@@ -142,6 +159,13 @@ const styles = StyleSheet.create({
   signElement: {
     fontFamily: FONTS.sansRegular,
     fontSize:   13,
+  },
+  signNote: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   11.5,
+    lineHeight: 16,
+    marginTop:  6,
+    fontStyle:  'italic',
   },
   footer: {
     padding:    32,

@@ -9,6 +9,12 @@ export type Profile = {
   birthCity: string | null;
   birthLat: number | null;
   birthLng: number | null;
+  /**
+   * Optional gender for interpretation conventions. Stored as a stable
+   * machine identifier so display strings can evolve without migrations:
+   *   'woman' | 'man' | 'non_binary' | 'unspecified' | null
+   */
+  gender: string | null;
   isYou: boolean;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +28,8 @@ export type Thread = {
   lastMessagePreview: string | null;
   archived: boolean;
   archivedAt: string | null;
+  pinned: boolean;
+  pinnedAt: string | null;
   createdAt: string;
   updatedAt: string;
   syncedAt: string | null;
@@ -32,7 +40,7 @@ export type Message = {
   threadId: string;
   role: 'user' | 'assistant';
   content: string;
-  modelTier: 'executorch' | 'groq' | 'claude' | 'pending' | null;
+  modelTier: 'executorch' | 'groq' | 'claude' | 'deterministic' | 'cached' | 'pending' | null;
   createdAt: string;
   syncedAt: string | null;
 };
@@ -92,6 +100,20 @@ const MIGRATIONS = [
       `ALTER TABLE threads ADD COLUMN last_message_preview TEXT`,
     ],
   },
+  {
+    version: 3,
+    sql: [
+      `ALTER TABLE threads ADD COLUMN pinned    INTEGER NOT NULL DEFAULT 0`,
+      `ALTER TABLE threads ADD COLUMN pinned_at TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_threads_pinned ON threads(pinned)`,
+    ],
+  },
+  {
+    version: 4,
+    sql: [
+      `ALTER TABLE profiles ADD COLUMN gender TEXT`,
+    ],
+  },
 ];
 
 async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
@@ -123,6 +145,23 @@ async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
 export async function initDatabase(): Promise<void> {
   db = await SQLite.openDatabaseAsync('astropedia.db');
   await runMigrations(db);
+  await ensureSystemProfiles(db);
+}
+
+// System (synthetic) profiles are filtered out of the profile switcher but
+// satisfy the threads.profile_id foreign key for special chats like Krishna.
+const SYSTEM_PROFILE_IDS = ['__krishna__'] as const;
+
+async function ensureSystemProfiles(database: SQLite.SQLiteDatabase): Promise<void> {
+  await database.runAsync(
+    `INSERT OR IGNORE INTO profiles (id, name, relationship, birth_date, is_you)
+     VALUES (?, ?, ?, ?, ?)`,
+    ['__krishna__', 'Krishna', null, '', 0],
+  );
+}
+
+export function isSystemProfile(id: string): boolean {
+  return (SYSTEM_PROFILE_IDS as readonly string[]).includes(id);
 }
 
 // ─── Profile queries ───────────────────────────────────────────────────
@@ -137,6 +176,7 @@ function rowToProfile(row: Record<string, unknown>): Profile {
     birthCity:    row.birth_city as string | null,
     birthLat:     row.birth_lat as number | null,
     birthLng:     row.birth_lng as number | null,
+    gender:       (row.gender as string | null) ?? null,
     isYou:        Boolean(row.is_you),
     createdAt:    row.created_at as string,
     updatedAt:    row.updated_at as string,
@@ -155,15 +195,16 @@ export async function insertProfile(
   p: Omit<Profile, 'createdAt' | 'updatedAt' | 'syncedAt'>,
 ): Promise<Profile> {
   await db.runAsync(
-    `INSERT INTO profiles (id, name, relationship, birth_date, birth_time, birth_city, birth_lat, birth_lng, is_you)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO profiles (id, name, relationship, birth_date, birth_time, birth_city, birth_lat, birth_lng, gender, is_you)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [p.id, p.name, p.relationship ?? null, p.birthDate, p.birthTime ?? null,
-     p.birthCity ?? null, p.birthLat ?? null, p.birthLng ?? null, p.isYou ? 1 : 0],
+     p.birthCity ?? null, p.birthLat ?? null, p.birthLng ?? null, p.gender ?? null, p.isYou ? 1 : 0],
   );
   const row = await db.getFirstAsync<Record<string, unknown>>(
     `SELECT * FROM profiles WHERE id = ?`, [p.id],
   );
-  return rowToProfile(row!);
+  if (!row) throw new Error(`insertProfile: failed to read back profile ${p.id} after insert`);
+  return rowToProfile(row);
 }
 
 export async function updateProfile(id: string, patch: Partial<Profile>): Promise<void> {
@@ -176,6 +217,7 @@ export async function updateProfile(id: string, patch: Partial<Profile>): Promis
   if (patch.birthCity    !== undefined) { sets.push('birth_city = ?');   vals.push(patch.birthCity ?? null); }
   if (patch.birthLat     !== undefined) { sets.push('birth_lat = ?');    vals.push(patch.birthLat ?? null); }
   if (patch.birthLng     !== undefined) { sets.push('birth_lng = ?');    vals.push(patch.birthLng ?? null); }
+  if (patch.gender       !== undefined) { sets.push('gender = ?');       vals.push(patch.gender ?? null); }
   sets.push("updated_at = datetime('now')");
   vals.push(id);
   await db.runAsync(`UPDATE profiles SET ${sets.join(', ')} WHERE id = ?`, vals);
@@ -195,6 +237,8 @@ function rowToThread(row: Record<string, unknown>): Thread {
     lastMessagePreview: row.last_message_preview as string | null,
     archived:           Boolean(row.archived),
     archivedAt:         row.archived_at as string | null,
+    pinned:             Boolean(row.pinned),
+    pinnedAt:           (row.pinned_at as string | null) ?? null,
     createdAt:          row.created_at as string,
     updatedAt:          row.updated_at as string,
     syncedAt:           row.synced_at as string | null,
@@ -203,7 +247,8 @@ function rowToThread(row: Record<string, unknown>): Thread {
 
 export async function getThreadsByProfile(profileId: string): Promise<Thread[]> {
   const rows = await db.getAllAsync<Record<string, unknown>>(
-    `SELECT * FROM threads WHERE profile_id = ? ORDER BY updated_at DESC`,
+    `SELECT * FROM threads WHERE profile_id = ?
+     ORDER BY pinned DESC, COALESCE(pinned_at, '') DESC, updated_at DESC`,
     [profileId],
   );
   return rows.map(rowToThread);
@@ -211,7 +256,8 @@ export async function getThreadsByProfile(profileId: string): Promise<Thread[]> 
 
 export async function getAllThreads(): Promise<Thread[]> {
   const rows = await db.getAllAsync<Record<string, unknown>>(
-    `SELECT * FROM threads ORDER BY updated_at DESC`,
+    `SELECT * FROM threads
+     ORDER BY pinned DESC, COALESCE(pinned_at, '') DESC, updated_at DESC`,
   );
   return rows.map(rowToThread);
 }
@@ -226,7 +272,8 @@ export async function insertThread(
   const row = await db.getFirstAsync<Record<string, unknown>>(
     `SELECT * FROM threads WHERE id = ?`, [t.id],
   );
-  return rowToThread(row!);
+  if (!row) throw new Error(`insertThread: failed to read back thread ${t.id} after insert`);
+  return rowToThread(row);
 }
 
 export async function updateThread(id: string, patch: Partial<Thread>): Promise<void> {
@@ -236,6 +283,10 @@ export async function updateThread(id: string, patch: Partial<Thread>): Promise<
   if (patch.lastMessagePreview !== undefined) { sets.push('last_message_preview = ?'); vals.push(patch.lastMessagePreview ?? null); }
   if (patch.archived           !== undefined) { sets.push('archived = ?');             vals.push(patch.archived ? 1 : 0); }
   if (patch.archivedAt         !== undefined) { sets.push('archived_at = ?');          vals.push(patch.archivedAt ?? null); }
+  if (patch.pinned             !== undefined) {
+    sets.push('pinned = ?');     vals.push(patch.pinned ? 1 : 0);
+    sets.push('pinned_at = ?');  vals.push(patch.pinned ? new Date().toISOString() : null);
+  }
   sets.push("updated_at = datetime('now')");
   vals.push(id);
   await db.runAsync(`UPDATE threads SET ${sets.join(', ')} WHERE id = ?`, vals);
@@ -277,7 +328,8 @@ export async function insertMessage(
   const row = await db.getFirstAsync<Record<string, unknown>>(
     `SELECT * FROM messages WHERE id = ?`, [m.id],
   );
-  return rowToMessage(row!);
+  if (!row) throw new Error(`insertMessage: failed to read back message ${m.id} after insert`);
+  return rowToMessage(row);
 }
 
 export async function updateMessageContent(id: string, content: string, modelTier?: Message['modelTier']): Promise<void> {

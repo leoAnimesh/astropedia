@@ -1,12 +1,16 @@
 /**
- * RAG (Retrieval-Augmented Generation) for astrology knowledge.
+ * RAG (Retrieval-Augmented Generation) — supports multiple isolated corpora.
  *
- * Uses react-native-executorch's TextEmbeddingsModule (ALL_MINILM_L6_V2) when
- * available for neural semantic search. Falls back to a hash-based bag-of-words
- * embedder — no model download required, fully offline, instant startup.
+ * Two modes:
+ *  - 'astrology' — zodiac signs, planets, houses, nakshatras, dashas, yogas, aspects
+ *  - 'krishna'   — Bhagavad Gita verses + chapter summaries
  *
- * The corpus covers: zodiac signs, planets, houses, nakshatras, Vimshottari dashas,
- * major yogas, aspects, compatibility, and planet-in-sign interpretations.
+ * Each mode has its own MemoryVectorStore so retrieval never mixes scripture
+ * with chart interpretations.
+ *
+ * Neural embeddings via react-native-executorch's TextEmbeddingsModule
+ * (ALL_MINILM_L6_V2) when available; otherwise hash-based fallback — fully
+ * offline, no model download required.
  */
 
 import { Platform } from 'react-native';
@@ -14,6 +18,7 @@ import { MemoryVectorStore } from 'react-native-rag';
 
 // ─── Corpus imports ───────────────────────────────────────────────────────────
 
+// Astrology
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const signsData: CorpusEntry[]        = require('@/assets/astrology-corpus/signs/zodiac-signs.json');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -31,7 +36,32 @@ const yogasData: CorpusEntry[]        = require('@/assets/astrology-corpus/yogas
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const aspectsData: CorpusEntry[]      = require('@/assets/astrology-corpus/aspects/aspects-compatibility.json');
 
+// Krishna (Bhagavad Gita)
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const gitaVerses: CorpusEntry[]       = require('@/assets/gita-corpus/verses.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const gitaChapters: CorpusEntry[]     = require('@/assets/gita-corpus/chapters.json');
+
 type CorpusEntry = { id: string; text: string };
+
+export type RagMode = 'astrology' | 'krishna';
+
+const CORPORA: Record<RagMode, CorpusEntry[]> = {
+  astrology: [
+    ...signsData,
+    ...planetsData,
+    ...planetsInSigns,
+    ...housesData,
+    ...nakshatrasData,
+    ...dashasData,
+    ...yogasData,
+    ...aspectsData,
+  ],
+  krishna: [
+    ...gitaChapters,
+    ...gitaVerses,
+  ],
+};
 
 // ─── Hash-based bag-of-words embeddings (fallback) ────────────────────────────
 
@@ -89,35 +119,39 @@ type TextEmbeddingsModuleType = import('react-native-executorch').TextEmbeddings
 
 let _embedModule: TextEmbeddingsModuleType | null = null;
 let _usingNeural = false;
+let _neuralLoadPromise: Promise<void> | null = null;
 
 async function tryLoadNeuralEmbeddings(): Promise<void> {
-  if (Platform.OS === 'web') return;
-  try {
-    const {
-      TextEmbeddingsModule,
-      ALL_MINILM_L6_V2,
-      initExecutorch,
-    } = require('react-native-executorch') as typeof import('react-native-executorch');
+  if (_neuralLoadPromise) return _neuralLoadPromise;
+  _neuralLoadPromise = (async () => {
+    if (Platform.OS === 'web') return;
+    try {
+      const {
+        TextEmbeddingsModule,
+        ALL_MINILM_L6_V2,
+        initExecutorch,
+      } = require('react-native-executorch') as typeof import('react-native-executorch');
 
-    const { ExpoResourceFetcher } =
-      require('react-native-executorch-expo-resource-fetcher') as
-      typeof import('react-native-executorch-expo-resource-fetcher');
+      const { ExpoResourceFetcher } =
+        require('react-native-executorch-expo-resource-fetcher') as
+        typeof import('react-native-executorch-expo-resource-fetcher');
 
-    initExecutorch({ resourceFetcher: ExpoResourceFetcher });
+      initExecutorch({ resourceFetcher: ExpoResourceFetcher });
 
-    // 4-second timeout — if model isn't cached it'll download in background; we use hash now
-    const module = await Promise.race<TextEmbeddingsModuleType | null>([
-      TextEmbeddingsModule.fromModelName(ALL_MINILM_L6_V2),
-      new Promise<null>(resolve => setTimeout(() => resolve(null), 4000)),
-    ]);
+      const module = await Promise.race<TextEmbeddingsModuleType | null>([
+        TextEmbeddingsModule.fromModelName(ALL_MINILM_L6_V2),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 4000)),
+      ]);
 
-    if (module) {
-      _embedModule = module;
-      _usingNeural = true;
+      if (module) {
+        _embedModule = module;
+        _usingNeural = true;
+      }
+    } catch {
+      // Neural embeddings unavailable — hash fallback continues
     }
-  } catch {
-    // Neural embeddings unavailable — hash fallback continues
-  }
+  })();
+  return _neuralLoadPromise;
 }
 
 async function embed(text: string): Promise<number[]> {
@@ -131,9 +165,7 @@ async function embed(text: string): Promise<number[]> {
   return hashEmbedding(text);
 }
 
-// ─── Embeddings provider ──────────────────────────────────────────────────────
-
-class AstrologyEmbeddings {
+class SharedEmbeddings {
   async load():   Promise<this>     { return this; }
   async unload(): Promise<void>     { /* nothing to release */ }
   async embed(text: string): Promise<number[]> {
@@ -141,53 +173,42 @@ class AstrologyEmbeddings {
   }
 }
 
-// ─── Singleton vector store ────────────────────────────────────────────────────
+// ─── Per-mode singleton vector stores ─────────────────────────────────────────
 
-let store: MemoryVectorStore | null = null;
-let initPromise: Promise<void>      | null = null;
+const stores: Partial<Record<RagMode, MemoryVectorStore>>  = {};
+const initPromises: Partial<Record<RagMode, Promise<void>>> = {};
 
-const ALL_CORPUS: CorpusEntry[] = [
-  ...signsData,
-  ...planetsData,
-  ...planetsInSigns,
-  ...housesData,
-  ...nakshatrasData,
-  ...dashasData,
-  ...yogasData,
-  ...aspectsData,
-];
-
-export async function initRAG(): Promise<void> {
-  if (initPromise) return initPromise;
-  initPromise = (async () => {
-    // Try to load neural embeddings first (uses cached model if available)
+export async function initRAG(mode: RagMode = 'astrology'): Promise<void> {
+  if (initPromises[mode]) return initPromises[mode]!;
+  initPromises[mode] = (async () => {
     await tryLoadNeuralEmbeddings();
 
-    const embeddings = new AstrologyEmbeddings();
-    store = new MemoryVectorStore({ embeddings });
+    const store = new MemoryVectorStore({ embeddings: new SharedEmbeddings() });
     await store.load();
 
-    // Embed all corpus entries using whichever embedder loaded
-    for (const entry of ALL_CORPUS) {
+    for (const entry of CORPORA[mode]) {
       const embedding = await embed(entry.text);
       await store.add({ id: entry.id, document: entry.text, embedding });
     }
+    stores[mode] = store;
   })();
-  return initPromise;
+  return initPromises[mode]!;
 }
 
 const MAX_CHUNK_CHARS = 500;
 
 /**
- * Retrieve the most relevant astrology knowledge chunks for a given query.
- * Returns formatted text ready for injection into a system prompt.
+ * Retrieve the most relevant knowledge chunks for a given query from the
+ * specified corpus. Returns formatted text ready for injection into a system
+ * prompt.
  */
 export async function retrieveContext(
   query:    string,
   nResults: number = 3,
+  mode:     RagMode = 'astrology',
 ): Promise<string> {
-  // Auto-init on first use — no need to call initRAG() at app startup
-  if (!store) await initRAG().catch(() => {});
+  if (!stores[mode]) await initRAG(mode).catch(() => {});
+  const store = stores[mode];
   if (!store) return '';
 
   try {
@@ -212,9 +233,9 @@ export async function retrieveContext(
   }
 }
 
-/** Returns true once the vector store is ready to query. */
-export function isRAGReady(): boolean {
-  return store !== null;
+/** Returns true once the given corpus is ready to query. */
+export function isRAGReady(mode: RagMode = 'astrology'): boolean {
+  return stores[mode] != null;
 }
 
 /** Returns true if neural (MiniLM) embeddings are active. */

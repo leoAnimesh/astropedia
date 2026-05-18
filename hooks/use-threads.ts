@@ -43,6 +43,8 @@ export function useThreads(profileId: string | null) {
       archived:           false,
       archivedAt:         null,
       lastMessagePreview: null,
+      pinned:             false,
+      pinnedAt:           null,
     });
     storeUpsert(thread);
     return thread;
@@ -73,6 +75,13 @@ export function useThreads(profileId: string | null) {
     storeRemove(threadId, profileId);
   }, [profileId, storeRemove]);
 
+  const setPinned = useCallback(async (threadId: string, pinned: boolean): Promise<void> => {
+    if (!profileId) return;
+    const pinnedAt = pinned ? new Date().toISOString() : null;
+    await dbUpdateThread(threadId, { pinned, pinnedAt });
+    storeUpdate(threadId, profileId, { pinned, pinnedAt });
+  }, [profileId, storeUpdate]);
+
   return {
     threads,
     activeThreads,
@@ -82,6 +91,7 @@ export function useThreads(profileId: string | null) {
     archiveThread,
     unarchiveThread,
     removeThread,
+    setPinned,
   };
 }
 

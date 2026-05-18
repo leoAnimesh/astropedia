@@ -66,6 +66,20 @@ export function todayShort(): string {
   return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
 
+/**
+ * YYYY-MM-DD in the device's LOCAL timezone — never UTC.
+ *
+ * `Date.toISOString()` returns UTC; for users east of GMT this can shift a
+ * locally-picked date back by one day (e.g. IST midnight on Aug 6 → Aug 5
+ * UTC). Always use this helper for birth dates and "today".
+ */
+export function localDateIso(date: Date): string {
+  const y   = date.getFullYear();
+  const m   = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDateIso(new Date());
 }

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Stack, router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -18,11 +18,18 @@ import {
 import { GeistMono_400Regular } from '@expo-google-fonts/geist-mono';
 import 'react-native-reanimated';
 
-import { initDatabase, getAllProfiles, getAllThreads } from '@/utils/database';
+import { initDatabase, getAllProfiles, getAllThreads, isSystemProfile } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
+import { useOnboardingStore } from '@/stores/onboarding-store';
 import { initLocalLLM, unloadLocalLLM } from '@/utils/local-llm';
+import { VedicLoadingOverlay } from '@/components/organisms/VedicLoadingOverlay';
+import {
+  setupNotifications,
+  scheduleDailyHoroscope,
+  scheduleTransitAlerts,
+} from '@/utils/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,7 +43,10 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
-  const navigated = useRef(false);
+  // Reactive onboarding-done flag — drives the <Stack.Protected> guards.
+  // When this flips to true (after the intent screen saves), the router
+  // automatically redirects out of the onboarding stack into the app stack.
+  const onboardingDone = useOnboardingStore((s) => s.done);
 
   const [fontsLoaded, fontError] = useFonts({
     'InstrumentSerif-Regular': InstrumentSerif_400Regular,
@@ -57,12 +67,15 @@ export default function RootLayout() {
         if (!Storage.getModelDownloaded()) {
           initLocalLLM().catch(() => {});
         }
-        const [profiles, threads] = await Promise.all([
+        const [allProfiles, threads] = await Promise.all([
           getAllProfiles(),
           getAllThreads(),
         ]);
 
-        // Hydrate Zustand from SQLite
+        // Hydrate Zustand from SQLite — but hide synthetic system profiles
+        // (e.g. __krishna__) that only exist to anchor Krishna-mode threads
+        // to a valid profile_id. They must never appear in the switcher.
+        const profiles = allProfiles.filter((p) => !isSystemProfile(p.id));
         useProfileStore.getState().setProfiles(profiles);
 
         const byProfile: Record<string, typeof threads> = {};
@@ -83,6 +96,13 @@ export default function RootLayout() {
           useProfileStore.getState().setActiveProfileId(self.id);
           Storage.setActiveProfileId(self.id);
         }
+
+        // Notifications: register handler and refresh any user-enabled
+        // schedules. Daily push self-repeats; transit alerts need to be
+        // re-scheduled occasionally so the 90-day window stays fresh.
+        setupNotifications();
+        if (Storage.getDailyHoroscopePush()) scheduleDailyHoroscope().catch(() => {});
+        if (Storage.getTransitAlerts())      scheduleTransitAlerts(null).catch(() => {});
       } catch (e) {
         console.error('Bootstrap error', e);
       } finally {
@@ -92,42 +112,65 @@ export default function RootLayout() {
     bootstrap();
   }, []);
 
-  // Free the ~2.9 GB model from RAM whenever the app goes to background.
-  // ensureLocalLLM() reloads from disk cache when the user chats again.
+  // Background/foreground hooks:
+  //  - background : free model RAM (~0.5–2 GB depending on tier)
+  //  - active     : re-anchor scheduled notifications to the current local
+  //                 timezone so DST shifts and travel don't move the 8 AM
+  //                 daily push off-target.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'background' || next === 'inactive') {
         unloadLocalLLM();
+      } else if (next === 'active') {
+        if (Storage.getDailyHoroscopePush()) scheduleDailyHoroscope().catch(() => {});
+        if (Storage.getTransitAlerts())      scheduleTransitAlerts(null).catch(() => {});
       }
     });
     return () => sub.remove();
   }, []);
 
+  // Hide the splash once fonts + DB are ready. Routing is handled declaratively
+  // below via <Stack.Protected> — no imperative router.replace needed.
   useEffect(() => {
-    if ((fontsLoaded || fontError) && dbReady && !navigated.current) {
-      navigated.current = true;
+    if ((fontsLoaded || fontError) && dbReady) {
       SplashScreen.hideAsync();
-      if (!Storage.getOnboardingDone()) {
-        router.replace('/(onboarding)');
-      }
     }
   }, [fontsLoaded, fontError, dbReady]);
 
-  if (!fontsLoaded && !fontError) return null;
+  // Hold rendering until fonts AND the DB/store bootstrap are done. The
+  // splash screen stays up until then, so the user never sees the wrong
+  // stack mounted with empty data.
+  if ((!fontsLoaded && !fontError) || !dbReady) return null;
 
   return (
     <GestureHandlerRootView style={styles.fill}>
       <BottomSheetModalProvider>
       <KeyboardProvider>
       <Stack screenOptions={STACK_SCREEN_OPTIONS}>
-        <Stack.Screen name="(onboarding)" />
-        <Stack.Screen name="(app)" />
-        <Stack.Screen name="profile/new"  options={MODAL_OPTIONS} />
-        <Stack.Screen name="profile/[id]" />
-        <Stack.Screen name="chat/[threadId]" />
-        <Stack.Screen name="horoscope/[profileId]" />
-        <Stack.Screen name="archived" />
+        {/* Onboarding stack — only mounted when onboarding isn't complete. */}
+        <Stack.Protected guard={!onboardingDone}>
+          <Stack.Screen name="(onboarding)" />
+        </Stack.Protected>
+
+        {/* Main app stack — only mounted once onboarding is complete. */}
+        <Stack.Protected guard={onboardingDone}>
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="profile/new"       options={MODAL_OPTIONS} />
+          <Stack.Screen name="profile/[id]" />
+          <Stack.Screen name="profile/edit/[id]" options={MODAL_OPTIONS} />
+          <Stack.Screen name="chat/[threadId]" />
+          <Stack.Screen name="horoscope/[profileId]" />
+          <Stack.Screen name="panchang/index" />
+          <Stack.Screen name="compatibility/index" />
+          <Stack.Screen name="archived" />
+        </Stack.Protected>
       </Stack>
+
+      {/* Model-download / model-load overlay. Renders once onboarding is done
+          and stays mounted across every app screen so a model swap from
+          Settings (or a re-download after a version bump) shows progress
+          everywhere, not just on home. */}
+      {onboardingDone && <VedicLoadingOverlay />}
       </KeyboardProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
