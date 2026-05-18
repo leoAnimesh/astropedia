@@ -45,20 +45,31 @@ export function VedicLoadingOverlay() {
     return () => clearInterval(id);
   }, []);
 
-  // Breathing dot animation
+  // Breathing dot animation — stop the loops on unmount so we don't keep
+  // ticking against Animated.Values whose owning component is gone.
   useEffect(() => {
-    const pulse = (dot: Animated.Value, delay: number) =>
-      Animated.loop(
+    const pulse = (dot: Animated.Value, delay: number) => {
+      const loop = Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
           Animated.timing(dot, { toValue: 1,   duration: 500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
           Animated.timing(dot, { toValue: 0.4, duration: 500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
         ]),
-      ).start();
-    pulse(dotScale1, 0);
-    pulse(dotScale2, 180);
-    pulse(dotScale3, 360);
-  }, []);
+      );
+      loop.start();
+      return loop;
+    };
+    const loops = [
+      pulse(dotScale1, 0),
+      pulse(dotScale2, 180),
+      pulse(dotScale3, 360),
+    ];
+    return () => {
+      for (const l of loops) {
+        try { l.stop(); } catch {}
+      }
+    };
+  }, [dotScale1, dotScale2, dotScale3]);
 
   // Fade out when ready
   useEffect(() => {

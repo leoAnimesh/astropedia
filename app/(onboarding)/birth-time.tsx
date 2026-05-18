@@ -8,6 +8,7 @@ import { Button } from '@/components/atoms/Button';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { getMoonSign } from '@/utils/astrology';
 import OnboardingStore from './_store';
 
 function parseStoredTime(stored: string): Date | null {
@@ -37,13 +38,24 @@ export default function BirthTimeScreen() {
     ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : null;
 
+  // Refined moon sign using the user's actual birth time. This is the same
+  // sign we showed on the previous screen — confirmed when the time given
+  // doesn't cross a sign boundary, otherwise corrected.
+  const refinedMoon = time && OnboardingStore.birthDate
+    ? (() => {
+        const hh = String(time.getHours()).padStart(2, '0');
+        const mm = String(time.getMinutes()).padStart(2, '0');
+        return getMoonSign(OnboardingStore.birthDate, `${hh}:${mm}`);
+      })()
+    : null;
+
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>03 / 04 — Time</Text>
+        <Text style={[styles.step, { color: theme.muted }]}>04 / 05 — Time</Text>
       </View>
 
       <View style={styles.content}>
@@ -63,6 +75,7 @@ export default function BirthTimeScreen() {
             value={time ?? new Date(0, 0, 0, 12, 0)}
             mode="time"
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            minuteInterval={1}
             onChange={(_, t) => t && setTime(t)}
             style={styles.picker}
             themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
@@ -73,6 +86,23 @@ export default function BirthTimeScreen() {
           <View style={[styles.preview, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.previewLabel, { color: theme.muted }]}>Selected time</Text>
             <Text style={[styles.previewValue, { color: theme.ink }]}>{timeLabel}</Text>
+          </View>
+        )}
+
+        {refinedMoon && (
+          <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
+            <Text style={[styles.signGlyph, { color: theme.accent }]}>{refinedMoon.glyph}</Text>
+            <View style={styles.signInfo}>
+              <EyebrowLabel size={10}>Moon sign · Rashi</EyebrowLabel>
+              <Text style={[styles.signName, { color: theme.ink }]}>
+                <Text style={styles.italic}>{refinedMoon.name}</Text>
+                {'  '}
+                <Text style={[styles.signElement, { color: theme.muted }]}>{refinedMoon.element}</Text>
+              </Text>
+              <Text style={[styles.signNote, { color: theme.muted }]}>
+                now exact — this is your Rashi
+              </Text>
+            </View>
           </View>
         )}
       </View>
@@ -147,6 +177,33 @@ const styles = StyleSheet.create({
   previewValue: {
     fontFamily: FONTS.serifItalic,
     fontSize:   22,
+  },
+  signCard: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           16,
+    marginTop:     16,
+    padding:       20,
+    borderRadius:  RADIUS.card,
+  },
+  signGlyph: { fontSize: 30 },
+  signInfo:  { flex: 1 },
+  signName: {
+    fontFamily: FONTS.serifRegular,
+    fontSize:   26,
+    lineHeight: 30,
+    marginTop:  4,
+  },
+  signElement: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   13,
+  },
+  signNote: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   11.5,
+    lineHeight: 16,
+    marginTop:  6,
+    fontStyle:  'italic',
   },
   footer: {
     padding:    32,

@@ -1,4 +1,5 @@
 import { ZODIAC, PLANETS, NAKSHATRAS, DASHA_YEARS, ELEMENT_COLORS, type ZodiacSign, type Nakshatra } from '@/constants/astrology';
+import { localDateIso } from './format';
 
 export type { ZodiacSign, Nakshatra };
 
@@ -44,10 +45,45 @@ function norm(deg: number): number {
   return ((deg % 360) + 360) % 360;
 }
 
-function toJulianDay(date: string, time?: string): number {
+/**
+ * Lahiri ayanamsa — the offset between tropical (Western) and sidereal
+ * (Vedic) zodiacs. Indian astrology reads sign positions in SIDEREAL: moon
+ * sign (rashi), nakshatra, planetary placements all need this correction
+ * applied to the raw tropical ecliptic longitude.
+ *
+ * Approximation: Lahiri value at JD 2451545.0 (Jan 1 2000) is 23.85°, with
+ * precession adding ~50.27"/year ≈ 0.01396°/year. Accurate to a few
+ * arc-minutes for the next century — well inside Vedic chart tolerance.
+ */
+function lahiriAyanamsa(jd: number): number {
+  const yearsFromJ2000 = (jd - 2451545.0) / 365.25;
+  return 23.85 + yearsFromJ2000 * (50.27 / 3600);
+}
+
+/** Convert a tropical ecliptic longitude to sidereal at the given JD. */
+function toSidereal(tropicalLon: number, jd: number): number {
+  return norm(tropicalLon - lahiriAyanamsa(jd));
+}
+
+/**
+ * Convert a local birth date + time to a continuous Julian Day.
+ *
+ * `time` is the LOCAL clock time at the birth location (e.g. "14:30" IST).
+ * `lng` is the birth longitude in degrees — used to convert local time to UT
+ * at ~15° per hour. When `lng` is unknown the time is treated as UT (the
+ * old, slightly-off behaviour).
+ *
+ * Julian Days are continuous, so a negative `ut` (e.g. early-morning local
+ * birth that maps to the previous UT day) correctly produces a JD on the
+ * earlier calendar day without any explicit rollback.
+ */
+function toJulianDay(date: string, time?: string, lng?: number | null): number {
   const [yr, mo, dy] = date.split('-').map(Number);
   const [h = 12, min = 0] = (time ?? '12:00').split(':').map(Number);
-  const ut = h + min / 60;
+  let ut = h + min / 60;
+  if (lng != null && Number.isFinite(lng)) {
+    ut -= lng / 15;
+  }
   const Y = mo <= 2 ? yr - 1 : yr;
   const M = mo <= 2 ? mo + 12 : mo;
   const A = Math.floor(Y / 100);
@@ -99,8 +135,12 @@ export function getSunSign(birthDate: string): ZodiacSign | null {
 
 // ─── Moon longitude (Jean Meeus 10-term, accurate ~0.3°) ─────────────────────
 
-export function getMoonLongitudeExact(birthDate: string, birthTime?: string): number {
-  const jd = toJulianDay(birthDate, birthTime);
+/**
+ * Returns the moon's SIDEREAL ecliptic longitude (Lahiri ayanamsa applied),
+ * which is what Vedic moon sign + nakshatra + dasha math expects.
+ */
+export function getMoonLongitudeExact(birthDate: string, birthTime?: string, birthLng?: number | null): number {
+  const jd = toJulianDay(birthDate, birthTime, birthLng);
   const T  = julianCenturies(jd);
 
   const L  = norm(218.3164477 + 481267.88123421 * T);
@@ -121,21 +161,23 @@ export function getMoonLongitudeExact(birthDate: string, birthTime?: string): nu
   + 0.046 * Math.sin((2 * D - Ms) * RAD)
   + 0.041 * Math.sin((Mm - Ms) * RAD);
 
-  return norm(L + delta);
+  const tropical = norm(L + delta);
+  return toSidereal(tropical, jd);
 }
 
-export function getMoonSign(birthDate: string, birthTime?: string): ZodiacSign | null {
+export function getMoonSign(birthDate: string, birthTime?: string, birthLng?: number | null): ZodiacSign | null {
   if (!birthDate) return null;
-  const moonLon = getMoonLongitudeExact(birthDate, birthTime);
+  const moonLon = getMoonLongitudeExact(birthDate, birthTime, birthLng);
   return ZODIAC[Math.floor(moonLon / 30)];
 }
 
 // ─── Rahu (mean lunar node) ───────────────────────────────────────────────────
 
-export function getRahuDegree(birthDate: string, birthTime?: string): number {
-  const jd = toJulianDay(birthDate, birthTime);
+export function getRahuDegree(birthDate: string, birthTime?: string, birthLng?: number | null): number {
+  const jd = toJulianDay(birthDate, birthTime, birthLng);
   const T  = julianCenturies(jd);
-  return norm(125.0445479 - 1934.1362608 * T);
+  const tropical = norm(125.0445479 - 1934.1362608 * T);
+  return toSidereal(tropical, jd);
 }
 
 // ─── Ascendant (Placidus via LST) ─────────────────────────────────────────────
@@ -148,6 +190,10 @@ export function getAscendantDegree(
 ): number | null {
   if (!birthDate || !birthTime || birthLat == null || birthLng == null) return null;
 
+  // For the ascendant we still need a JD anchored to UT to compute GMST/LST
+  // correctly. The existing GMST/LST formulas below already use `birthLng` to
+  // do the local-sidereal conversion, so we must pass UT (not local-converted)
+  // to toJulianDay here.
   const jd = toJulianDay(birthDate, birthTime);
   const T  = julianCenturies(jd);
 
@@ -169,7 +215,8 @@ export function getAscendantDegree(
   const x = Math.sin(E) * Math.tan(P) + Math.cos(E) * Math.sin(R);
 
   if (!isFinite(x) || !isFinite(y)) return null;
-  return norm(Math.atan2(y, x) * DEG);
+  const tropical = norm(Math.atan2(y, x) * DEG);
+  return toSidereal(tropical, jd);
 }
 
 export function getRisingSign(
@@ -222,8 +269,8 @@ export function getCurrentMahadasha(moonLon: number, birthDate: string): DashaIn
     if (today <= dashaEnd) {
       return {
         lord:       dashaLord,
-        startDate:  dashaStart.toISOString().slice(0, 10),
-        endDate:    dashaEnd.toISOString().slice(0, 10),
+        startDate:  localDateIso(dashaStart),
+        endDate:    localDateIso(dashaEnd),
         yearsTotal: DASHA_YEARS[dashaLord],
       };
     }
@@ -234,8 +281,8 @@ export function getCurrentMahadasha(moonLon: number, birthDate: string): DashaIn
   // Fallback (never reached for any living person)
   return {
     lord:       sequence[sequence.length - 1],
-    startDate:  cursor.toISOString().slice(0, 10),
-    endDate:    cursor.toISOString().slice(0, 10),
+    startDate:  localDateIso(cursor),
+    endDate:    localDateIso(cursor),
     yearsTotal: DASHA_YEARS[sequence[sequence.length - 1]],
   };
 }
@@ -259,10 +306,14 @@ export function getChartPositions(profile: {
 }): PlanetPosition[] {
   if (!profile.birthDate) return [];
 
-  const jd      = toJulianDay(profile.birthDate, profile.birthTime ?? undefined);
+  const lng     = profile.birthLng ?? null;
+  const jd      = toJulianDay(profile.birthDate, profile.birthTime ?? undefined, lng);
   const T       = julianCenturies(jd);
-  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
-  const rahuLon = norm(125.0445479 - 1934.1362608 * T);
+  // Note: getMoonLongitudeExact / getRahuDegree both already return sidereal.
+  // Planet mean longitudes from MEAN_LONGITUDE are tropical and must be
+  // converted before slotting into rashi.
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, lng);
+  const rahuLon = toSidereal(norm(125.0445479 - 1934.1362608 * T), jd);
   const ketuLon = norm(rahuLon + 180);
 
   return PLANETS.map((p) => {
@@ -272,7 +323,7 @@ export function getChartPositions(profile: {
     else if (p.name === 'Ketu') degree = ketuLon;
     else {
       const [L0, L1] = MEAN_LONGITUDE[p.name] ?? [0, 0];
-      degree = norm(L0 + L1 * T);
+      degree = toSidereal(norm(L0 + L1 * T), jd);
     }
 
     const signIndex = Math.floor(degree / 30) % 12;
@@ -293,7 +344,7 @@ export function getBigThree(profile: {
 }): BigThree {
   return {
     sun:    getSunSign(profile.birthDate),
-    moon:   getMoonSign(profile.birthDate, profile.birthTime ?? undefined),
+    moon:   getMoonSign(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng),
     rising: getRisingSign(
       profile.birthDate,
       profile.birthTime ?? undefined,
@@ -309,21 +360,33 @@ export function getFullKundli(profile: {
   birthLat?: number | null;
   birthLng?: number | null;
 }): FullKundli {
-  const moonLon  = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
-  const ascDeg   = getAscendantDegree(profile.birthDate, profile.birthTime ?? undefined, profile.birthLat, profile.birthLng);
-  const rahuDeg  = getRahuDegree(profile.birthDate, profile.birthTime ?? undefined);
+  const lng       = profile.birthLng ?? null;
+  const moonLon   = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, lng);
+  const ascDeg    = getAscendantDegree(profile.birthDate, profile.birthTime ?? undefined, profile.birthLat, profile.birthLng);
+  const rahuDeg   = getRahuDegree(profile.birthDate, profile.birthTime ?? undefined, lng);
   const nakshatra = getNakshatra(moonLon);
-  const dasha    = getCurrentMahadasha(moonLon, profile.birthDate);
-  const bigThree = getBigThree(profile);
-  const planets  = getChartPositions(profile);
+  const dasha     = getCurrentMahadasha(moonLon, profile.birthDate);
+  const bigThree  = getBigThree(profile);
+  const planets   = getChartPositions(profile);
 
   return { bigThree, moonLon, ascDeg, rahuDeg, nakshatra, dasha, planets };
 }
 
 // ─── AI context string ────────────────────────────────────────────────────────
 
+function genderLine(gender: string | null | undefined): string | null {
+  switch (gender) {
+    case 'woman':       return 'Gender: woman (she/her). Traditional Vedic spouse karaka: Jupiter (signifies husband). Use she/her pronouns.';
+    case 'man':         return 'Gender: man (he/him). Traditional Vedic spouse karaka: Venus (signifies wife). Use he/him pronouns.';
+    case 'non_binary':  return 'Gender: non-binary. Use they/them pronouns. Skip gendered spouse-karaka conventions; read relationships in a partner-neutral way.';
+    case 'unspecified': return null;  // user opted out — don't pass anything
+    default:            return null;
+  }
+}
+
 export function getAstrologyContext(profile: {
   name: string;
+  gender?: string | null;
   birthDate: string;
   birthTime?: string | null;
   birthCity?: string | null;
@@ -335,6 +398,8 @@ export function getAstrologyContext(profile: {
     `Reading for: ${profile.name}`,
     `Born: ${profile.birthDate}${profile.birthTime ? ' at ' + profile.birthTime : ''}${profile.birthCity ? ' in ' + profile.birthCity : ''}`,
   ];
+  const gLine = genderLine(profile.gender);
+  if (gLine) lines.push(gLine);
   if (kundli.bigThree.sun)    lines.push(`Sun sign: ${kundli.bigThree.sun.name} (${kundli.bigThree.sun.element})`);
   if (kundli.bigThree.moon)   lines.push(`Moon sign: ${kundli.bigThree.moon.name}`);
   if (kundli.bigThree.rising) lines.push(`Rising sign: ${kundli.bigThree.rising.name}`);
@@ -368,7 +433,11 @@ export function getLunarPhase(dateIso: string): string {
 // ─── Today's planetary transits ───────────────────────────────────────────────
 
 export function getTodayTransits(): { name: string; signName: string; degInSign: number }[] {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const y   = now.getFullYear();
+  const m   = String(now.getMonth() + 1).padStart(2, '0');
+  const d   = String(now.getDate()).padStart(2, '0');
+  const today = `${y}-${m}-${d}`;
   const positions = getChartPositions({ birthDate: today, birthTime: '12:00' });
   return positions
     .filter(p => !p.name.match(/^(Rahu|Ketu)$/))

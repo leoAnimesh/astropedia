@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAccent } from '@/hooks/use-accent';
@@ -7,8 +8,10 @@ import { useAstrology } from '@/hooks/use-astrology';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
+import { ShareableHoroscopeCard } from '@/components/molecules/ShareableHoroscopeCard';
 import { todayIso, formatFullDate, todayShort } from '@/utils/format';
 import { getLunarPhase } from '@/utils/astrology';
+import { captureAndShare } from '@/utils/share';
 import { FONTS, RADIUS } from '@/constants/themes';
 
 type Section = { key: keyof import('@/hooks/use-horoscope').HoroscopeSections; label: string; icon: string };
@@ -34,6 +37,12 @@ export default function HoroscopeDetailScreen() {
   const lunarPhase = getLunarPhase(todayIso());
   const firstName  = (profile?.name ?? '').split(' ')[0];
 
+  const shareCardRef = useRef<View>(null);
+
+  const handleShare = () => {
+    captureAndShare(shareCardRef.current, `astropedia-daily-${todayIso()}.png`);
+  };
+
   if (!profile) {
     router.back();
     return null;
@@ -51,7 +60,25 @@ export default function HoroscopeDetailScreen() {
             {todayShort()} · Daily for {firstName}
           </EyebrowLabel>
         </View>
+        {sections?.energy && (
+          <TouchableOpacity onPress={handleShare} hitSlop={8} style={styles.shareBtn}>
+            <Icon name="send" size={18} color={theme.muted} />
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* Offscreen shareable card — kept in tree so view-shot can capture it. */}
+      {sections && (
+        <View pointerEvents="none" style={styles.offscreen}>
+          <ShareableHoroscopeCard
+            ref={shareCardRef}
+            name={profile.name}
+            dateIso={todayIso()}
+            message={sections.energy}
+            mantra={sections.mantra || undefined}
+          />
+        </View>
+      )}
 
       <ScrollView
         style={styles.scroll}
@@ -153,6 +180,13 @@ const styles = StyleSheet.create({
     paddingBottom:     8,
   },
   back: { padding: 4 },
+  shareBtn: { padding: 6 },
+  offscreen: {
+    position: 'absolute',
+    top:      -10000,
+    left:     -10000,
+    opacity:   0,
+  },
   scroll:     { flex: 1 },
   content:    { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 24 },
 

@@ -20,12 +20,13 @@ type SheetProps = {
   activeProfileId: string | null;
   onSelect: (profile: Profile) => void;
   onCreateNew: () => void;
+  onEdit?: (profile: Profile) => void;
 };
 
 export type ProfileSwitcherSheetRef = BottomSheetModal;
 
 export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetProps>(
-  function ProfileSwitcherSheet({ profiles, activeProfileId, onSelect, onCreateNew }, ref) {
+  function ProfileSwitcherSheet({ profiles, activeProfileId, onSelect, onCreateNew, onEdit }, ref) {
     const { theme } = useAccent();
 
     const dismiss = useCallback(() => {
@@ -64,27 +65,39 @@ export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetPro
                 {i > 0 && (
                   <View style={[styles.separator, { backgroundColor: theme.hairline }]} />
                 )}
-                <TouchableOpacity
-                  style={styles.profileRow}
-                  onPress={() => { onSelect(p); dismiss(); }}
-                  activeOpacity={0.75}
-                >
-                  <Avatar name={p.name} size={40} />
-                  <View style={styles.profileText}>
-                    <Text style={[styles.profileName, { color: theme.ink }]}>
-                      {p.name}
-                      {p.isYou && (
-                        <Text style={[styles.youBadge, { color: theme.accent }]}> · You</Text>
-                      )}
-                    </Text>
-                    <Text style={[styles.profileSub, { color: theme.muted }]}>
-                      {sun ? sun.name : 'No birth date'}
-                    </Text>
-                  </View>
-                  {isActive && (
-                    <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />
+                <View style={styles.profileRow}>
+                  <TouchableOpacity
+                    style={styles.profileMain}
+                    onPress={() => { onSelect(p); dismiss(); }}
+                    activeOpacity={0.75}
+                  >
+                    <Avatar name={p.name} size={40} />
+                    <View style={styles.profileText}>
+                      <Text style={[styles.profileName, { color: theme.ink }]}>
+                        {p.name}
+                        {p.isYou && (
+                          <Text style={[styles.youBadge, { color: theme.accent }]}> · You</Text>
+                        )}
+                      </Text>
+                      <Text style={[styles.profileSub, { color: theme.muted }]}>
+                        {sun ? sun.name : 'No birth date'}
+                      </Text>
+                    </View>
+                    {isActive && (
+                      <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />
+                    )}
+                  </TouchableOpacity>
+                  {onEdit && (
+                    <TouchableOpacity
+                      hitSlop={10}
+                      style={styles.editBtn}
+                      onPress={() => { onEdit(p); dismiss(); }}
+                      activeOpacity={0.7}
+                    >
+                      <Icon name="edit" size={16} color={theme.muted} />
+                    </TouchableOpacity>
                   )}
-                </TouchableOpacity>
+                </View>
               </View>
             );
           })}
@@ -139,9 +152,18 @@ const styles = StyleSheet.create({
   profileRow: {
     flexDirection:     'row',
     alignItems:        'center',
-    gap:               12,
-    paddingVertical:   12,
     paddingHorizontal: 26,
+  },
+  profileMain: {
+    flex:            1,
+    flexDirection:   'row',
+    alignItems:      'center',
+    gap:             12,
+    paddingVertical: 12,
+  },
+  editBtn: {
+    padding:    10,
+    marginLeft: 4,
   },
   profileText: {
     flex:     1,
@@ -186,20 +208,21 @@ const styles = StyleSheet.create({
     fontSize:   14,
   },
   trigger: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            8,
-    borderRadius:   RADIUS.pill,
-    borderWidth:    1,
+    flexDirection:   'row',
+    alignItems:      'center',
+    alignSelf:       'flex-start',  // size to content, don't stretch
+    gap:             8,
+    borderRadius:    RADIUS.pill,
+    borderWidth:     1,
     paddingVertical: 5,
-    paddingLeft:    5,
-    paddingRight:   12,
-    maxWidth:       200,
+    paddingLeft:     5,
+    paddingRight:    12,
+    maxWidth:        240,            // cap so a very long name still truncates
   },
   triggerName: {
-    fontFamily:    FONTS.sansRegular,
-    fontSize:      14,
-    letterSpacing: -0.1,
-    flex:          1,
+    fontFamily:      FONTS.sansRegular,
+    fontSize:        14,
+    letterSpacing:   -0.1,
+    flexShrink:      1,
   },
 });

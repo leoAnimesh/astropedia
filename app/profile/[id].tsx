@@ -97,9 +97,12 @@ export default function ProfileDetailScreen() {
           {profile.isYou ? 'Your chart' : `${profile.name.split(' ')[0]}'s chart`}
         </EyebrowLabel>
         <View style={{ flex: 1 }} />
+        <TouchableOpacity onPress={() => router.push(`/profile/edit/${profile.id}`)} style={styles.headerAction}>
+          <Text style={[styles.headerActionText, { color: theme.muted }]}>Edit</Text>
+        </TouchableOpacity>
         {!profile.isYou && (
-          <TouchableOpacity onPress={handleDelete}>
-            <Text style={[styles.removeBtn, { color: theme.muted }]}>Remove</Text>
+          <TouchableOpacity onPress={handleDelete} style={styles.headerAction}>
+            <Text style={[styles.headerActionText, { color: theme.muted }]}>Remove</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -285,6 +288,8 @@ const styles = StyleSheet.create({
   header:         { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
   back:           { padding: 4 },
   removeBtn:      { fontFamily: FONTS.monoRegular, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },
+  headerAction:   { paddingHorizontal: 6, paddingVertical: 4 },
+  headerActionText: { fontFamily: FONTS.monoRegular, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },
   scroll:         { flex: 1 },
   content:        { paddingHorizontal: 26, paddingTop: 8, paddingBottom: 20 },
   profileHeader:  { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 14 },
