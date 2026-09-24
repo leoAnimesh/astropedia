@@ -12,16 +12,15 @@ import {
   type Profile,
   type Thread,
 } from '@/utils/database';
-import { streamAI, askAI, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
+import { streamAI, askAI, type AIMode } from '@/utils/ai';
+import { cleanFinalReply, createThinkStreamFilter, stripMarkdown, stripThinking } from '@/utils/reply-cleanup';
 import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
 import { classifyDeterministic } from '@/utils/deterministic';
 import { consumeSimulatedSendFailure, loadConversation } from '@/utils/conversation-api';
 import { useDevStore } from '@/stores/dev-store';
-import { deriveRecommendations, splitRecsBlock, stripRecsForDisplay } from '@/utils/recommendations';
+import { deriveRecommendations } from '@/utils/recommendations';
 import type { FailureReason, MessageFeedback, ReplySnapshot } from '@/types/conversation';
 
-const THINK_OPEN  = '<think>';
-const THINK_CLOSE = '</think>';
 
 const EMPTY_MESSAGES: Message[] = [];
 
@@ -149,28 +148,16 @@ async function generateThreadTitle(
 
 /**
  * Pump the model's token stream through the <think> filter into the
- * thread's streaming buffer. Unchanged behaviour from the original hook —
- * only extracted so send and retry share it.
+ * thread's streaming buffer. Shared by send and retry.
  */
 async function pumpStream(threadId: string, stream: AsyncGenerator<string>): Promise<void> {
   const { appendToken, setStatus, clearStreaming } = useChatStore.getState();
 
-  // Streaming filter: hide <think>...</think> from the visible buffer,
-  // flip the status to 'streaming' the first time we leave the think block
-  // AND emit real content. Token boundaries can split tags, so we work
-  // off an accumulating buffer.
-  //
-  // Edge cases handled:
-  //  - <think> arrives after some pre-amble was already streamed
-  //    (e.g. "Sure! <think>...") → wipe the pre-amble so the user
-  //    doesn't see hello-text-then-thinking-dots flickering.
-  //  - </think> appears WITHOUT a preceding <think> (orphan close,
-  //    common when the model truncates the opener) → treat everything
-  //    before the </think> as thinking, hide it.
+  // Streaming filter (see createThinkStreamFilter): hides <think>...</think>
+  // from the visible buffer; token boundaries can split tags. The status
+  // flips to 'streaming' the first time real content is emitted.
   // The trailing <recs> block is kept in the buffer (it is parsed after
   // completion) and hidden at render time by stripRecsForDisplay.
-  let buf       = '';
-  let inThink   = false;
   let seenContent = false;
 
   const flushSafe = (textToShow: string) => {
@@ -185,70 +172,21 @@ async function pumpStream(threadId: string, stream: AsyncGenerator<string>): Pro
     setStatus(threadId, 'streaming');
   };
 
-  const enterThinking = () => {
-    // Wipe any text that leaked into the streaming buffer before the
-    // <think> opener appeared, so the user sees a clean "thinking…"
-    // bubble — not "Sure!" plus dots, then a fresh reply later.
-    clearStreaming(threadId);
-    seenContent = false;
-    inThink = true;
-    setStatus(threadId, 'thinking');
-  };
+  const filter = createThinkStreamFilter({
+    emit: flushSafe,
+    enterThinking: () => {
+      // Wipe any text that leaked into the streaming buffer before the
+      // <think> opener appeared, so the user sees a clean "thinking…"
+      // bubble — not "Sure!" plus dots, then a fresh reply later. Status
+      // stays 'thinking' until flushSafe emits real content.
+      clearStreaming(threadId);
+      seenContent = false;
+      setStatus(threadId, 'thinking');
+    },
+  });
 
-  for await (const token of stream) {
-    buf += token;
-
-    // Pump the buffer through the think-tag state machine until no more
-    // boundaries are visible this iteration.
-    while (true) {
-      if (!inThink) {
-        const openIdx  = buf.indexOf(THINK_OPEN);
-        const closeIdx = buf.indexOf(THINK_CLOSE);
-
-        // Orphan </think> with no preceding <think> — model truncated
-        // the opener. Treat everything up to and including the closer
-        // as thinking content and drop it.
-        if (closeIdx !== -1 && (openIdx === -1 || closeIdx < openIdx)) {
-          enterThinking();
-          buf = buf.slice(closeIdx + THINK_CLOSE.length);
-          inThink = false;
-          continue;
-        }
-
-        if (openIdx === -1) {
-          // No tag in buffer — yield safe prefix, keep tail in case of
-          // a partial tag bridging the next chunk.
-          const tail = THINK_OPEN.length - 1;
-          const safeEnd = Math.max(0, buf.length - tail);
-          if (safeEnd > 0) {
-            flushSafe(buf.slice(0, safeEnd));
-            buf = buf.slice(safeEnd);
-          }
-          break;
-        } else {
-          buf = buf.slice(openIdx + THINK_OPEN.length);
-          enterThinking();
-        }
-      } else {
-        const end = buf.indexOf(THINK_CLOSE);
-        if (end === -1) {
-          // Still in thinking — discard most of buffer keeping tail for partial close tag.
-          const tail = THINK_CLOSE.length - 1;
-          const safeEnd = Math.max(0, buf.length - tail);
-          buf = buf.slice(safeEnd);
-          break;
-        } else {
-          buf = buf.slice(end + THINK_CLOSE.length);
-          inThink = false;
-          // Keep status='thinking' until flushSafe actually emits real
-          // content — otherwise we'd show an empty 'streaming' bubble
-          // when the model emits whitespace (or nothing) after </think>.
-        }
-      }
-    }
-  }
-  // Flush any trailing safe content (only if we're not stuck in think).
-  if (!inThink && buf.length > 0) flushSafe(buf);
+  for await (const token of stream) filter.push(token);
+  filter.end();
 }
 
 export function useChat(
@@ -393,22 +331,12 @@ export function useChat(
       }
 
       const rawFinal = useChatStore.getState().streaming[threadId] ?? '';
-      // Split off the <recs> block, then the original cleanup chain. Order
-      // matters — we keep markdown in the text (the chat bubble renders it)
-      // but strip everything else that's harmful or off-format.
-      //  - stripThinking     : remove <think>...</think> blocks
-      //  - stripJargon       : translate Sanskrit + collapse raw ISO dates
-      //  - stripChatArtifacts: remove "Part 1" labels, dedupe Gita prefixes
-      //  - dedupeRepetition  : trim sentence-level loops
-      const { prose } = splitRecsBlock(rawFinal);
-      const finalText = dedupeRepetition(
-        stripChatArtifacts(
-          stripJargon(stripThinking(stripRecsForDisplay(prose))),
-        ),
-      ).trim();
+      // <recs>, <think>, gibberish tails, headlines, jargon, loops — see
+      // cleanFinalReply (utils/reply-cleanup.ts) for the ordered steps.
+      const finalText = cleanFinalReply(rawFinal);
 
-      // Model truncated mid-think or emitted only whitespace — surface it as
-      // a retryable failure instead of silently dropping the turn.
+      // Model truncated mid-think, emitted only whitespace or only gibberish —
+      // surface it as a retryable failure instead of silently dropping the turn.
       if (finalText.length === 0) throw new GenerationFailure('empty-reply');
 
       const aiId = generateId();

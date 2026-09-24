@@ -2,6 +2,7 @@ import { AppState, Platform } from 'react-native';
 import { Storage } from './storage';
 import { detectDeviceTier, type DeviceTier } from './device-tier';
 import { hasRoomForDownload, planModels, upgradeRetryDelayMs, type ModelPlan } from './model-plan';
+import { createReplyBudget } from './reply-cleanup';
 
 // Each tier maps to the best executorch-supported model that fits that
 // device class without crowding out the rest of the app. Keep these stable —
@@ -21,27 +22,17 @@ type ModelDef = {
   label:      string;
   family:     ModelFamily;
   writesRecs: boolean;  // asked for a `<recs>` block (see utils/recommendations.ts)
+  /**
+   * Too small for the full Saga prompt: gets a short plain-prose prompt, a
+   * compact chart summary, less history and a reply-length budget (see
+   * utils/ai.ts), plus its own sampling below.
+   */
+  lite:       boolean;
+  /** Overrides the family's SAMPLING entry for this one model. */
+  sampling?:  SamplingConfig;
 };
 
 const MB = 1024 ** 2;
-
-const MODELS: Record<DeviceTier, ModelDef> = {
-  flagship: { version: 'qwen3_1_7b_q',    constant: 'QWEN3_1_7B_QUANTIZED',           size: '~900 MB', bytes: 900 * MB, label: 'Qwen 3 1.7B', family: 'qwen3', writesRecs: true  },
-  mid:      { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', bytes: 740 * MB, label: 'LFM2.5 1.2B', family: 'lfm2',  writesRecs: true  },
-  // LFM2.5 1.2B is the primary model for 4–6 GB devices (was Llama 3.2 1B
-  // SpinQuant): better instruction following at similar size, faster decode.
-  budget:   { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', bytes: 740 * MB, label: 'LFM2.5 1.2B', family: 'lfm2',  writesRecs: true  },
-  // The 350M model is too small for reliable structured output — the keyword
-  // mapper builds its recommendation cards instead.
-  floor:    { version: 'lfm2_5_350m_q',   constant: 'LFM2_5_350M_QUANTIZED',          size: '~200 MB', bytes: 200 * MB, label: 'LFM2.5 350M', family: 'lfm2',  writesRecs: false },
-};
-
-/**
- * Progressive loading: a fresh install downloads this small model first (with
- * the blocking overlay) so chat works quickly, then fetches the tier's model
- * in the background and hot-swaps to it. See utils/model-plan.ts.
- */
-const STARTER: ModelDef = MODELS.floor;
 
 type SamplingConfig = {
   temperature:       number;
@@ -51,7 +42,32 @@ type SamplingConfig = {
 };
 
 /**
- * Sampling per model family — applied both at load time and before every
+ * LFM2.5 350M: low temperature plus a min-p floor (Liquid's LFM2 guidance)
+ * prunes the low-probability sub-word tail that produced gibberish such as
+ * "[upch]twoch>" on device; a slightly firmer repetition penalty stops loops.
+ */
+const LITE_SAMPLING: SamplingConfig = { temperature: 0.2, topP: 0.9, minP: 0.15, repetitionPenalty: 1.1 };
+
+const MODELS: Record<DeviceTier, ModelDef> = {
+  flagship: { version: 'qwen3_1_7b_q',    constant: 'QWEN3_1_7B_QUANTIZED',           size: '~900 MB', bytes: 900 * MB, label: 'Qwen 3 1.7B', family: 'qwen3', writesRecs: true,  lite: false },
+  mid:      { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', bytes: 740 * MB, label: 'LFM2.5 1.2B', family: 'lfm2',  writesRecs: true,  lite: false },
+  // LFM2.5 1.2B is the primary model for 4–6 GB devices (was Llama 3.2 1B
+  // SpinQuant): better instruction following at similar size, faster decode.
+  budget:   { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', bytes: 740 * MB, label: 'LFM2.5 1.2B', family: 'lfm2',  writesRecs: true,  lite: false },
+  // The 350M model is too small for reliable structured output — the keyword
+  // mapper builds its recommendation cards instead.
+  floor:    { version: 'lfm2_5_350m_q',   constant: 'LFM2_5_350M_QUANTIZED',          size: '~200 MB', bytes: 200 * MB, label: 'LFM2.5 350M', family: 'lfm2',  writesRecs: false, lite: true, sampling: LITE_SAMPLING },
+};
+
+/**
+ * Progressive loading: a fresh install downloads this small model first (with
+ * the blocking overlay) so chat works quickly, then fetches the tier's model
+ * in the background and hot-swaps to it. See utils/model-plan.ts.
+ */
+const STARTER: ModelDef = MODELS.floor;
+
+/**
+ * Sampling per model family (a ModelDef's own `sampling` wins) — applied both at load time and before every
  * generation, so there is a single source of truth.
  *  - qwen3 : Qwen 3 Instruct's published non-thinking settings. Lower temp +
  *            minP + high repetition penalty pushed the 1.7B model into
@@ -68,11 +84,11 @@ const SAMPLING: Record<ModelFamily, SamplingConfig> = {
 
 // The model that is actually loaded in RAM (differs from the preference while
 // a starter model runs or during a swap). null when nothing is loaded.
-let _loadedFamily:  ModelFamily | null = null;
-let _loadedVersion: string | null      = null;
+let _loadedVersion: string | null = null;
 
 function applySampling(mod: import('react-native-executorch').LLMModule): void {
-  const cfg = SAMPLING[_loadedFamily ?? getActiveModelInfo().def.family];
+  const def = getActiveModelInfo().def;
+  const cfg = def.sampling ?? SAMPLING[def.family];
   try {
     mod.configure({ generationConfig: { ...cfg } });
   } catch {
@@ -328,9 +344,8 @@ async function loadModel(target: ModelDef, silent: boolean): Promise<void> {
     );
     _module        = mod;
     _loadedVersion = target.version;
-    // Per-family sampling (see SAMPLING). Same values runLocalLLM applies
+    // Per-model sampling (see SAMPLING). Same values runLocalLLM applies
     // before each generation, so load-time and run-time never disagree.
-    _loadedFamily  = target.family;
     applySampling(mod);
 
     markOnDisk(target.version, true);
@@ -574,7 +589,6 @@ function releaseModule(): void {
   _module        = null;
   _initPromise   = null;
   _loadedVersion = null;
-  _loadedFamily  = null;
   if (mod) {
     try { mod.delete(); } catch {}
   }
@@ -677,6 +691,8 @@ let _activeGeneration: Promise<string> | null = null;
 export async function runLocalLLM(
   messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
   tokenCallback: (token: string) => void,
+  /** `maxChars`: end the reply at the first sentence end past this length. */
+  opts: { maxChars?: number } = {},
 ): Promise<string> {
   // Synchronously cancel any pending idle-unload BEFORE awaiting anything,
   // so a timer that fires in the same tick can't unload mid-init.
@@ -708,10 +724,21 @@ export async function runLocalLLM(
   // the previous one — the output looks like a thesaurus dump with no
   // sentence structure. When detected, interrupt the runner so the user
   // doesn't have to wait for the entire context window to fill with garbage.
+  // An optional length budget does the same once the reply is long enough;
+  // tokens that race the interrupt are dropped so it ends on a full sentence.
   const detector = createDegenerateDetector();
+  const budget   = opts.maxChars ? createReplyBudget(opts.maxChars) : null;
+  let overBudget = false;
   const wrappedCallback = (token: string) => {
-    tokenCallback(token);
-    if (detector.feed(token)) {
+    if (overBudget) return;
+    let text = token;
+    if (budget) {
+      const r = budget.feed(token);
+      text       = r.text;
+      overBudget = r.stop;
+    }
+    if (text) tokenCallback(text);
+    if (overBudget || detector.feed(text)) {
       try { mod.interrupt(); } catch {}
     }
   };

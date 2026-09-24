@@ -24,6 +24,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ChatBubble } from '@/components/molecules/ChatBubble';
 import { ConversationStateView } from '@/components/molecules/ConversationStateView';
+import { LiteModelNotice } from '@/components/molecules/LiteModelNotice';
 import { ModelUpgradeHint } from '@/components/molecules/ModelUpgradeHint';
 import { ChatComposer } from '@/components/organisms/ChatComposer';
 import { ChatTimelineRow } from '@/components/organisms/ChatTimelineRow';
@@ -431,6 +432,8 @@ export default function ChatScreen() {
             ) : null}
           </View>
         )}
+
+        <LiteModelNotice persona={persona} />
 
         {/* Composer — chips render inside when no messages */}
         <ChatComposer

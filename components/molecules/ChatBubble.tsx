@@ -7,7 +7,9 @@ import { DotsLoader } from './DotsLoader';
 import { ReplyQuote } from './ReplyPreview';
 import type { ChatStatus } from '@/stores/chat-store';
 import type { ReplySnapshot } from '@/types/conversation';
-import { stripRecsForDisplay } from '@/utils/recommendation-rules';
+// Defensive scrub: useChat already filters <think>/<recs> from stored text,
+// but a streaming race could briefly leak a partial tag into the buffer.
+import { cleanForDisplay } from '@/utils/reply-cleanup';
 
 export type BubbleRole = 'user' | 'assistant' | 'human';
 
@@ -33,22 +35,6 @@ type Props = {
 function statusLabel(status: Exclude<ChatStatus, 'idle' | 'streaming'>, persona: string): string {
   if (status === 'loading-model') return `${persona} is waking up…`;
   return `${persona} is thinking…`;
-}
-
-/**
- * Defensive scrub — drop any <think>...</think> blocks, orphan tags, raw
- * `<think` fragments and the trailing <recs> block before they reach the
- * markdown renderer. useChat already filters these from stored text, but a
- * streaming race could briefly leak a partial tag into the buffer.
- */
-function cleanForDisplay(raw: string): string {
-  return stripRecsForDisplay(
-    raw
-      .replace(/<think>[\s\S]*?<\/think>/g, '')
-      .replace(/<think>[\s\S]*$/g, '')
-      .replace(/^[\s\S]*?<\/think>/, '')
-      .replace(/<\/?think[^>]*>?/g, ''),
-  ).trim();
 }
 
 function ChatBubbleImpl({

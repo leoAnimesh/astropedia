@@ -241,9 +241,12 @@ Model selection lives in one table in `utils/local-llm.ts`, so a swap is a one-l
   | --- | --- | --- | --- | --- | --- |
   | Qwen 3 | 0.7 | 0.8 | 0 | 1.0 | Published non-thinking settings; lower values caused loops |
   | LFM2.5 | 0.3 | 0.9 | – | 1.05 | |
+  | LFM2.5 350M (override) | 0.2 | 0.9 | 0.15 | 1.1 | min-p floor prunes the sub-word tail behind on-device gibberish |
 
   The same config applies at load time and before every generation.
 * **What decides prompting is the *loaded* model, not the desired one.** While the 350M starter stands in, the `<recs>` block is left out of the prompt and cards come from the keyword mapper; Qwen's `/no_think` switch is only added when Qwen is loaded (`getActiveModelInfo()` in `utils/local-llm.ts`).
+* **The 350M model gets a "lite" Saga** (`ModelDef.lite`): a short plain-prose system prompt with one example (the full prompt's rule lists and `[placeholder]` templates were echoed back as headlines and `[upch]`-style fragments), a four-line chart summary with no RAG, the last 2 messages of history, and a ~360-character reply budget that ends on a sentence boundary (ExecuTorch has no per-call max-tokens setting). While it stands in, the chat shows "Saga is using a lighter model while the full one downloads".
+* **Reply cleanup** (`utils/reply-cleanup.ts`, unit-tested) strips `<think>`/`<recs>`, cuts a tag-shaped gibberish tail back to the last full sentence, drops a Title-Case headline above the answer, translates jargon and trims sentence loops. A reply with nothing usable left fails with a Retry instead of being stored.
 * **Why the library wasn't upgraded to 0.9 / 0.10:**
   * those versions need an iOS 17 deployment target
   * the resource-fetcher API changed

@@ -1,4 +1,5 @@
 import { memo, type ComponentType } from 'react';
+import { View } from 'react-native';
 import { ChatBubble } from '@/components/molecules/ChatBubble';
 import { FeedbackBar } from '@/components/molecules/FeedbackBar';
 import { DateSeparator, MessageStatusLine, SystemEventRow } from '@/components/molecules/TimelineMarkers';
@@ -25,12 +26,18 @@ type RendererProps = TimelineHandlers & {
 };
 
 // ─── One renderer per message type ───────────────────────────────────────────
+//
+// Every renderer returns ONE root view. The list is `inverted`, and in RN 0.81
+// VirtualizedList lays each cell out with `flexDirection: 'column-reverse'`
+// (VirtualizedListCellRenderer) on top of the list's `scaleY: -1`. A Fragment's
+// children become direct children of that cell, so they would render
+// bottom-to-top (feedback → cards → bubble; "Sent" above the bubble).
 
 const UserMessage = ({ row, onLongPress, onRetry, busy }: RendererProps) => {
   const m = row.message;
   const status = m.status ?? 'sent';
   return (
-    <>
+    <View>
       <ChatBubble
         role="user"
         content={m.content}
@@ -48,14 +55,14 @@ const UserMessage = ({ row, onLongPress, onRetry, busy }: RendererProps) => {
           retryDisabled={busy}
         />
       ) : null}
-    </>
+    </View>
   );
 };
 
 const AssistantMessage = ({ row, persona, onLongPress, onFeedback }: RendererProps) => {
   const m = row.message;
   return (
-    <>
+    <View>
       <ChatBubble
         role="assistant"
         content={m.content}
@@ -68,7 +75,7 @@ const AssistantMessage = ({ row, persona, onLongPress, onFeedback }: RendererPro
       />
       <RecommendationCarousel recommendations={m.recommendations} persona={persona} />
       <FeedbackBar messageId={m.id} feedback={m.feedback} onChange={onFeedback} />
-    </>
+    </View>
   );
 };
 
