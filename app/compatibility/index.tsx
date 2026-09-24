@@ -91,7 +91,7 @@ export default function CompatibilityScreen() {
 
         {!result && (!a || !b) && (
           <Text style={[styles.hint, { color: theme.muted }]}>
-            You'll need at least two profiles to compare. Add a partner, family member, or friend from the home screen.
+            You&apos;ll need at least two profiles to compare. Add a partner, family member, or friend from the home screen.
           </Text>
         )}
 

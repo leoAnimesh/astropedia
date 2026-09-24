@@ -23,7 +23,7 @@ import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
-import { initLocalLLM, unloadLocalLLM } from '@/utils/local-llm';
+import { bootLocalLLM, resumeModelUpgrade, unloadLocalLLM } from '@/utils/local-llm';
 import { VedicLoadingOverlay } from '@/components/organisms/VedicLoadingOverlay';
 import {
   setupNotifications,
@@ -61,12 +61,12 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
-        // Only auto-download on first run. After that, model loads on-demand
-        // from disk when the user opens a chat (~2–5 s, shown via typing indicator).
-        // This keeps RAM at ~150 MB on the home screen instead of ~2.9 GB.
-        if (!Storage.getModelDownloaded()) {
-          initLocalLLM().catch(() => {});
-        }
+        // First run: download the small starter model (overlay), then the
+        // tier's model in the background. Later runs: the model loads
+        // on-demand from disk when the user opens a chat (~2–5 s, shown via
+        // typing indicator), keeping RAM at ~150 MB on the home screen; an
+        // unfinished background upgrade restarts.
+        bootLocalLLM();
         const [allProfiles, threads] = await Promise.all([
           getAllProfiles(),
           getAllThreads(),
@@ -113,8 +113,11 @@ export default function RootLayout() {
   }, []);
 
   // Background/foreground hooks:
-  //  - background : free model RAM (~0.5–2 GB depending on tier)
-  //  - active     : re-anchor scheduled notifications to the current local
+  //  - background : free model RAM (~0.5–2 GB depending on tier). A
+  //                 background model upgrade keeps downloading if the OS
+  //                 allows; if the app is killed it restarts next launch.
+  //  - active     : resume a background model upgrade that isn't running.
+  //                 Also re-anchor scheduled notifications to the current local
   //                 timezone so DST shifts and travel don't move the 8 AM
   //                 daily push off-target.
   useEffect(() => {
@@ -122,6 +125,7 @@ export default function RootLayout() {
       if (next === 'background' || next === 'inactive') {
         unloadLocalLLM();
       } else if (next === 'active') {
+        resumeModelUpgrade();
         if (Storage.getDailyHoroscopePush()) scheduleDailyHoroscope().catch(() => {});
         if (Storage.getTransitAlerts())      scheduleTransitAlerts(null).catch(() => {});
       }

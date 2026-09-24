@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.astropedia"
+      "bundleIdentifier": "com.astropedia"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.astropedia"
+      "package": "com.astropedia"
     },
     "web": {
       "output": "static",
@@ -42,7 +42,9 @@
         }
       ],
       "expo-sqlite",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "./plugins/with-min-pod-deployment-target",
+      "./plugins/with-uiscene-lifecycle"
     ],
     "experiments": {
       "typedRoutes": true,

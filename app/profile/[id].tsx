@@ -160,7 +160,7 @@ export default function ProfileDetailScreen() {
         {/* Saga's reading overview */}
         {(reading?.overview || readingLoading) && (
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <EyebrowLabel style={{ marginBottom: 12 }}>Saga's reading</EyebrowLabel>
+            <EyebrowLabel style={{ marginBottom: 12 }}>Saga&apos;s reading</EyebrowLabel>
             {readingLoading && !reading ? (
               <View style={styles.skeletonBlock}>
                 <SkeletonLine color={theme.hairline2} width="92%" />

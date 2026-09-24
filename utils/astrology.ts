@@ -412,6 +412,28 @@ export function getAstrologyContext(profile: {
   return lines.join('\n');
 }
 
+/**
+ * A few plain lines for the smallest on-device model. It echoes whatever
+ * structure it sees, so no degrees, no "[exalted]" brackets, no Sanskrit and
+ * no raw dates — only the facts a short answer can use.
+ */
+export function getCompactAstrologyContext(profile: {
+  name: string;
+  birthDate: string;
+  birthTime?: string | null;
+  birthLat?: number | null;
+  birthLng?: number | null;
+}): string {
+  const kundli = getFullKundli(profile);
+  const lines: string[] = [`Name: ${profile.name}`];
+  if (kundli.bigThree.sun)    lines.push(`Sun sign: ${kundli.bigThree.sun.name}`);
+  if (kundli.bigThree.moon)   lines.push(`Moon sign: ${kundli.bigThree.moon.name}`);
+  if (kundli.bigThree.rising) lines.push(`Rising sign: ${kundli.bigThree.rising.name}`);
+  const endYear = kundli.dasha.endDate.slice(0, 4);
+  lines.push(`Current life phase: ruled by ${kundli.dasha.lord}, lasting until ${endYear}`);
+  return lines.join('\n');
+}
+
 // ─── Lunar phase (approximate, Synodic period) ────────────────────────────────
 
 export function getLunarPhase(dateIso: string): string {

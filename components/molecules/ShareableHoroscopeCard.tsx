@@ -46,9 +46,9 @@ export const ShareableHoroscopeCard = forwardRef<View, Props>(
         {mantra ? (
           <View style={[styles.mantraBlock, { borderColor: theme.accentFg }]}>
             <Text style={[styles.mantraEyebrow, { color: theme.accentFg, opacity: 0.6 }]}>
-              TODAY'S MANTRA
+              TODAY&apos;S MANTRA
             </Text>
-            <Text style={[styles.mantra, { color: theme.accentFg }]}>"{mantra}"</Text>
+            <Text style={[styles.mantra, { color: theme.accentFg }]}>&quot;{mantra}&quot;</Text>
           </View>
         ) : null}
       </View>

@@ -35,10 +35,10 @@ export function DailyTeaser({ text, loading, label }: Props) {
       ) : (
         <>
           <Text style={[styles.quote, { color: theme.ink }]}>
-            "{teaser}"
+            &quot;{teaser}&quot;
           </Text>
           <Text style={[styles.cta, { color: theme.accent }]}>
-            Read today's reading →
+            Read today&apos;s reading →
           </Text>
         </>
       )}

@@ -22,7 +22,16 @@ export type IconName =
   | 'refresh'
   | 'lotus'
   | 'pin'
-  | 'pin-filled';
+  | 'pin-filled'
+  | 'reply'
+  | 'copy'
+  | 'thumbs-up'
+  | 'thumbs-up-filled'
+  | 'thumbs-down'
+  | 'thumbs-down-filled'
+  | 'warning'
+  | 'bug'
+  | 'arrow-down';
 
 type IOSMap = Record<IconName, SymbolViewProps['name']>;
 type AndroidMap = Record<IconName, string>;
@@ -48,6 +57,15 @@ const IOS_MAP: IOSMap = {
   lotus:        'leaf',
   pin:          'pin',
   'pin-filled': 'pin.fill',
+  reply:        'arrowshape.turn.up.left',
+  copy:         'doc.on.doc',
+  'thumbs-up':          'hand.thumbsup',
+  'thumbs-up-filled':   'hand.thumbsup.fill',
+  'thumbs-down':        'hand.thumbsdown',
+  'thumbs-down-filled': 'hand.thumbsdown.fill',
+  warning:      'exclamationmark.circle',
+  bug:          'ladybug',
+  'arrow-down': 'arrow.down',
 };
 
 const ANDROID_MAP: AndroidMap = {
@@ -71,6 +89,15 @@ const ANDROID_MAP: AndroidMap = {
   lotus:        'spa',
   pin:          'push-pin',
   'pin-filled': 'push-pin',
+  reply:        'reply',
+  copy:         'content-copy',
+  'thumbs-up':          'thumb-up-off-alt',
+  'thumbs-up-filled':   'thumb-up',
+  'thumbs-down':        'thumb-down-off-alt',
+  'thumbs-down-filled': 'thumb-down',
+  warning:      'error-outline',
+  bug:          'bug-report',
+  'arrow-down': 'arrow-downward',
 };
 
 type Props = {

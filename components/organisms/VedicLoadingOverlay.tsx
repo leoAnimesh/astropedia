@@ -71,6 +71,15 @@ export function VedicLoadingOverlay() {
     };
   }, [dotScale1, dotScale2, dotScale3]);
 
+  // Re-appear if a blocking download starts after the overlay was hidden
+  // (e.g. a model switch with nothing usable on disk).
+  useEffect(() => {
+    if (state.status === 'downloading' && !visible) {
+      opacity.setValue(1);
+      setVisible(true);
+    }
+  }, [state.status, visible, opacity]);
+
   // Fade out when ready
   useEffect(() => {
     if (state.status === 'ready') {
@@ -112,7 +121,7 @@ export function VedicLoadingOverlay() {
         {/* Rotating phrase */}
         <Text style={[styles.phrase, { color: theme.ink2 }]}>
           {isError
-            ? 'Something went wrong. Please restart the app.'
+            ? (state.reason === 'low-storage' ? state.message : 'Something went wrong. Please restart the app.')
             : PHRASES[phraseIdx]}
         </Text>
       </View>

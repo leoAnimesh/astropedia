@@ -1,9 +1,11 @@
 import { Platform } from 'react-native';
 import type { Profile } from './database';
-import { getAstrologyContext } from './astrology';
-import { isLLMReady, runLocalLLM, initLocalLLM, ensureLocalLLM, getCurrentModelInfo } from './local-llm';
+import { getAstrologyContext, getCompactAstrologyContext } from './astrology';
+import { isLLMReady, runLocalLLM, initLocalLLM, ensureLocalLLM, getActiveModelInfo } from './local-llm';
 import { retrieveContext } from './rag';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
+import { RECS_PROMPT } from './recommendation-rules';
+import { modelWritesRecsBlock } from './recommendations';
 
 /**
  * Models that use a <think>...</think> reasoning block by default. Right now:
@@ -14,23 +16,45 @@ import { classifyDeterministic, deterministicAnswer } from './deterministic';
  */
 function activeModelHasThinkingMode(): boolean {
   try {
-    return getCurrentModelInfo().def.version.startsWith('qwen3');
+    // The loaded model, not the desired one — they differ while a smaller
+    // model stands in during a background upgrade.
+    return getActiveModelInfo().def.family === 'qwen3';
   } catch {
     return false;
   }
 }
+
+/**
+ * The loaded model is the 350M starter (see ModelDef.lite). It gets
+ * SAGA_LITE_SYSTEM, a compact chart, no RAG, less history and a length budget.
+ */
+function activeModelIsLite(): boolean {
+  try {
+    return getActiveModelInfo().def.lite;
+  } catch {
+    return false;
+  }
+}
+
+/** Prior messages sent to the lite model — its own earlier slips compound. */
+const LITE_HISTORY = 2;
+/** ≈ 3 short sentences. The .pte's max-new-tokens can't be lowered per call. */
+const LITE_REPLY_CHARS = 360;
 
 function withNoThinkSwitch(prompt: string): string {
   return activeModelHasThinkingMode() ? `${prompt}\n\n/no_think` : prompt;
 }
 
 export type AIMessage = { role: 'user' | 'assistant'; content: string };
+// 'groq' / 'claude' are legacy values that may exist on old persisted rows;
+// generation is on-device only (see streamAI).
 export type ModelTier = 'executorch' | 'groq' | 'claude' | 'deterministic' | 'cached' | 'pending';
 export type AIMode    = 'saga' | 'krishna';
 
 // If the local model is on disk but hasn't loaded into RAM yet, the chat path
-// waits at most this long before falling through to Groq. The local load
-// continues in the background and will be ready for the next message.
+// waits at most this long before returning the 'pending' tier (the caller
+// shows a retryable failure). The local load continues in the background and
+// will be ready for the next message.
 const LOCAL_LLM_WAIT_MS = 2500;
 
 // Friendly message shown while the on-device model is still loading after a
@@ -47,6 +71,12 @@ export type AIRequest = {
   systemOverride?: string;
   mode?:          AIMode;
   userName?:      string;
+  /**
+   * Ask the model to end its reply with a `<recs>{...}</recs>` block (chat
+   * only). Ignored for Krishna, horoscopes, system overrides and the floor
+   * model tier. The caller must strip the block — see stripRecsForDisplay.
+   */
+  withRecommendations?: boolean;
 };
 
 export type AIStreamResult = {
@@ -98,6 +128,20 @@ Bad answers (never do these):
 - "It depends on your feelings." (hedge)
 - "The time is now. The time is approaching. The time is here." (restatement padding)
 - "你的 career looks promising и full of opportunities." (multilingual leak)`;
+
+/**
+ * Saga for the 350M starter model. The full prompt's rule lists, headed
+ * sections and "[placeholder]" answer templates are echoed back by a model
+ * this small (Title-Case headlines, "[upch]"-style fragments), so this one is
+ * short, flat prose with a single concrete example.
+ */
+const SAGA_LITE_SYSTEM = `You are Saga, a warm astrologer who answers in plain, simple English.
+
+Answer the question in 2 or 3 short, complete sentences. Start with the answer itself: no title, no heading, no greeting, no list. Give one clear prediction with a rough time window, then one practical tip. Use only everyday words. Never use brackets, symbols or made-up words, and never repeat yourself.
+
+Example answer: The next 12 to 18 months look strong for a job change, especially in the second half of next year. Start updating your CV now so you are ready when the right offer comes.
+
+Use these notes about the person silently. Do not list them or mention signs by name unless asked.`;
 
 const HOROSCOPE_SYSTEM = `You are Saga, writing a short daily reading for someone who knows nothing about astrology.
 
@@ -151,6 +195,7 @@ async function buildSystemPrompt(
   userMessage: string | undefined,
   mode:        AIMode,
   userName?:   string,
+  withRecommendations: boolean = false,
 ): Promise<string> {
   if (mode === 'krishna') {
     const ragContext = userMessage
@@ -163,6 +208,12 @@ async function buildSystemPrompt(
       ? `\n\nThe person you're talking to is named ${userName}. You can use this name occasionally — sparingly, like a friend would. Don't start every reply with it.`
       : '\n\nYou don\'t know this person\'s name. Just speak — no address, no "friend", no nickname.';
     return withNoThinkSwitch(`${KRISHNA_SYSTEM}${nameSection}${ragSection}`);
+  }
+
+  if (!isHoroscope && activeModelIsLite()) {
+    // No RAG or recs for the 350M model: every extra block is more text for
+    // it to echo, and it can't write a reliable <recs> block anyway.
+    return `${SAGA_LITE_SYSTEM}\n\n${getCompactAstrologyContext(profile)}`;
   }
 
   const base    = isHoroscope ? HOROSCOPE_SYSTEM : SAGA_SYSTEM;
@@ -193,16 +244,24 @@ async function buildSystemPrompt(
     ? `\n\n## Astrological Reference (use this to answer with precision)\n${ragContext}`
     : '';
 
-  return withNoThinkSwitch(`${base}\n\n${context}${precisionNote}${ragSection}`);
+  // Single-pass recommendations: the chat reply ends with a <recs> block.
+  const recsSection = withRecommendations && !isHoroscope && modelWritesRecsBlock()
+    ? `\n\n${RECS_PROMPT}`
+    : '';
+
+  return withNoThinkSwitch(`${base}\n\n${context}${precisionNote}${ragSection}${recsSection}`);
 }
 
 // ─── On-device LLM (Llama 3.2 1B via ExecuTorch) ─────────────────────────────
 
 async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
-  const system   = req.systemOverride ?? await buildSystemPrompt(req.profile, req.isHoroscope ?? false, req.userMessage, req.mode ?? 'saga', req.userName);
+  const system   = req.systemOverride ?? await buildSystemPrompt(req.profile, req.isHoroscope ?? false, req.userMessage, req.mode ?? 'saga', req.userName, req.withRecommendations ?? false);
+  // Plain Saga chat on the 350M model: short history, short reply.
+  const liteChat = (req.mode ?? 'saga') === 'saga' && !req.isHoroscope && !req.systemOverride && activeModelIsLite();
+  const history  = liteChat ? req.history.slice(-LITE_HISTORY) : req.history;
   const messages = [
     { role: 'system'    as const, content: system },
-    ...req.history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+    ...history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     { role: 'user'      as const, content: req.userMessage },
   ];
 
@@ -217,7 +276,7 @@ async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
     queue.push(token);
     wakeup?.();
     wakeup = null;
-  }).then(() => {
+  }, liteChat ? { maxChars: LITE_REPLY_CHARS } : {}).then(() => {
     finished = true;
     wakeup?.();
   }).catch((err) => {
@@ -237,129 +296,15 @@ async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
   await done;
 }
 
-/**
- * Remove <think>...</think> reasoning blocks that thinking-mode models
- * (Qwen 3) emit before the actual reply. Also handles orphan opening or
- * closing tags — small models sometimes emit a lone "</think>" without ever
- * opening one, or vice versa.
- */
-export function stripThinking(text: string): string {
-  return text
-    .replace(/<think>[\s\S]*?<\/think>/g, '')   // paired
-    .replace(/<think>[\s\S]*$/g, '')             // unclosed open (drop everything after)
-    .replace(/^[\s\S]*?<\/think>/, '')           // orphan close at start
-    .replace(/<\/?think>/g, '')                  // any leftover tags
-    .trim();
-}
-
-/**
- * Defensive post-processing for chat replies — strips astrology jargon and
- * raw dates that small on-device models leak even when explicitly banned in
- * the system prompt. Replaces Sanskrit period names with plain English and
- * collapses ISO-format dates to just the year.
- *
- * Examples:
- *   "during the Mahadasha of Jupiter" → "during the Jupiter phase"
- *   "your current Mahadasha (Saturn)" → "your current Saturn phase"
- *   "by 2031-08-12"                   → "by 2031"
- */
-/**
- * Trim runaway sentence-level repetition that small LLMs fall into when their
- * generation lacks a repetition penalty. We split the reply into sentences
- * and stop the moment we see one we've already shown (case-insensitive).
- *
- * Conservative — only kicks in when there's a near-verbatim duplicate; the
- * model is free to re-use short connectors ("but", "still") without penalty.
- */
-export function dedupeRepetition(text: string): string {
-  const sentences = text.split(/(?<=[.!?])\s+/);
-  if (sentences.length < 4) return text;
-
-  const seen   = new Set<string>();
-  const result: string[] = [];
-  for (const raw of sentences) {
-    const trimmed = raw.trim();
-    if (trimmed.length === 0) continue;
-    const norm = trimmed.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-    // Don't dedupe very short sentences ("Right.", "Yes.") — too false-positive prone.
-    if (norm.length < 15) {
-      result.push(trimmed);
-      continue;
-    }
-    if (seen.has(norm)) {
-      // Loop detected — stop accumulating, drop everything from here.
-      break;
-    }
-    seen.add(norm);
-    result.push(trimmed);
-  }
-  return result.join(' ').trim();
-}
-
-/**
- * Strip structural artifacts small models leak from prompt scaffolding —
- * "Part 1 — your voice", duplicated "— From the Gita:" prefixes, etc.
- * Applied to every chat reply; harmless for replies that don't contain them.
- */
-export function stripChatArtifacts(text: string): string {
-  return text
-    // Drop "Part 1 — heading text" style labels (with em-dash, en-dash, hyphen, or colon)
-    .replace(/^[ \t]*Part\s+\d+\s*[—\-–:][^\n]*\n?/gim, '')
-    .replace(/Part\s+\d+\s*[—\-–:]\s*(your voice|from the gita)[:.]?\s*/gi, '')
-    // Collapse repeated "— From the Gita:" prefixes into a single, normalized one
-    .replace(/(?:[—\-–]\s*From\s+the\s+Gita\s*[:\s]+){2,}/gi, '— From the Gita:\n')
-    // Normalize a single occurrence so it always sits on its own line
-    .replace(/[—\-–]\s*From\s+the\s+Gita\s*:\s*/gi, '\n— From the Gita:\n')
-    // Clean the artifacts of all of the above
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/^\s*\n+/, '')
-    .trim();
-}
-
-export function stripJargon(text: string): string {
-  return text
-    // "(<planet>) Mahadasha" / "Mahadasha of <planet>" → "<planet> phase"
-    .replace(/\bMahadasha\s+of\s+([A-Z][a-z]+)\b/g, '$1 phase')
-    .replace(/\b([A-Z][a-z]+)['']?s?\s+Mahadasha\b/g, '$1 phase')
-    .replace(/\(\s*Mahadasha\s+([A-Z][a-z]+)\s*\)/g, '($1 phase)')
-    .replace(/\(\s*([A-Z][a-z]+)\s+Mahadasha\s*\)/g, '($1 phase)')
-    .replace(/\bMahadasha\b/g, 'life phase')
-    .replace(/\bantardasha\b/gi, 'sub-period')
-    .replace(/\b(maha\s*)?dasha\b/gi, 'phase')
-    // Lone Sanskrit terms that don't have a clean replacement → drop them
-    .replace(/\b(nakshatra|rashi|lagna|kundli|janma\s+star)\b/gi, '')
-    // Collapse raw ISO dates (YYYY-MM-DD) to the year alone
-    .replace(/\b(\d{4})-\d{2}-\d{2}\b/g, '$1')
-    // Clean up artifacts. IMPORTANT: only collapse horizontal whitespace
-    // (spaces, tabs) — never newlines. Markdown paragraphs depend on \n\n.
-    .replace(/[ \t]+([,.;:])/g, '$1')
-    .replace(/\([ \t]+/g, '(')
-    .replace(/[ \t]+\)/g, ')')
-    .replace(/[ \t]{2,}/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-/**
- * Strip markdown formatting that small/medium LLMs leak even when prompted
- * with "no markdown" rules. Defensive post-processing — never trust the model.
- * Exported so `useChat` can clean the final assembled chat reply (the live
- * token stream is left untouched so the UI still feels typed-out).
- */
-export function stripMarkdown(text: string): string {
-  return text
-    .replace(/\*\*([^*\n]+)\*\*/g, '$1')         // **bold**
-    .replace(/__([^_\n]+)__/g, '$1')              // __bold__
-    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '$1') // *italic*
-    .replace(/(?<!_)_([^_\n]+)_(?!_)/g, '$1')     // _italic_
-    .replace(/^#{1,6}\s+/gm, '')                  // ## headers
-    .replace(/^[-*+]\s+/gm, '')                   // - bullets
-    .replace(/^\d+\.\s+/gm, '')                   // 1. ordered list
-    .replace(/`([^`\n]+)`/g, '$1')                // `code`
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')      // [text](url)
-    .replace(/\n{3,}/g, '\n\n')                   // collapse extra blank lines
-    .trim();
-}
+// Reply post-processing lives in ./reply-cleanup (pure, unit-tested);
+// re-exported so existing imports keep working.
+export {
+  dedupeRepetition,
+  stripChatArtifacts,
+  stripJargon,
+  stripMarkdown,
+  stripThinking,
+} from './reply-cleanup';
 
 // ─── Stream helpers ───────────────────────────────────────────────────────────
 

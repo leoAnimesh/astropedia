@@ -1,19 +1,35 @@
-import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { memo, useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useAccent } from '@/hooks/use-accent';
 import { FONTS } from '@/constants/themes';
 import { DotsLoader } from './DotsLoader';
+import { ReplyQuote } from './ReplyPreview';
 import type { ChatStatus } from '@/stores/chat-store';
+import type { ReplySnapshot } from '@/types/conversation';
+// Defensive scrub: useChat already filters <think>/<recs> from stored text,
+// but a streaming race could briefly leak a partial tag into the buffer.
+import { cleanForDisplay } from '@/utils/reply-cleanup';
+
+export type BubbleRole = 'user' | 'assistant' | 'human';
 
 type Props = {
-  role: 'user' | 'assistant';
+  role: BubbleRole;
   content: string;
   isStreaming?: boolean;
   streamText?: string;
   status?: ChatStatus;
   /** Display name for the assistant — used in the loading/thinking labels. */
   persona?: string;
+  /** Sender line above the bubble (first message of a group only). */
+  senderLabel?: string | null;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
+  /** Quoted message this one replies to. */
+  replyTo?: ReplySnapshot | null;
+  /** Dim the bubble (e.g. a failed user message). */
+  muted?: boolean;
+  onLongPress?: () => void;
 };
 
 function statusLabel(status: Exclude<ChatStatus, 'idle' | 'streaming'>, persona: string): string {
@@ -21,21 +37,26 @@ function statusLabel(status: Exclude<ChatStatus, 'idle' | 'streaming'>, persona:
   return `${persona} is thinking…`;
 }
 
-export function ChatBubble({ role, content, isStreaming, streamText, status, persona = 'Saga' }: Props) {
+function ChatBubbleImpl({
+  role,
+  content,
+  isStreaming,
+  streamText,
+  status,
+  persona = 'Saga',
+  senderLabel,
+  isFirstInGroup = true,
+  isLastInGroup = true,
+  replyTo,
+  muted,
+  onLongPress,
+}: Props) {
   const { theme } = useAccent();
-  const isUser = role === 'user';
+  const isUser  = role === 'user';
+  const isHuman = role === 'human';
 
-  // Defensive scrub — drop any <think>...</think> blocks, orphan tags, or
-  // raw `<think` fragments before they reach the markdown renderer. The
-  // streaming filter in useChat already prevents these from being stored,
-  // but a streaming race could briefly leak a partial tag into the buffer.
   const rawText = isStreaming ? streamText ?? '' : content;
-  const displayText = rawText
-    .replace(/<think>[\s\S]*?<\/think>/g, '')
-    .replace(/<think>[\s\S]*$/g, '')
-    .replace(/^[\s\S]*?<\/think>/, '')
-    .replace(/<\/?think[^>]*>?/g, '')
-    .trim();
+  const displayText = useMemo(() => cleanForDisplay(rawText), [rawText]);
 
   const noTextYet   = !displayText && isStreaming;
   const showStatus  = isStreaming && status && status !== 'idle' && status !== 'streaming';
@@ -46,35 +67,79 @@ export function ChatBubble({ role, content, isStreaming, streamText, status, per
   const linkColor = isUser ? theme.bg : theme.accent;
   const mdStyles  = useMemo(() => buildMarkdownStyles(textColor, linkColor), [textColor, linkColor]);
 
-  return (
-    <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperAI]}>
-      <View
-        style={[
-          styles.bubble,
-          isUser
-            ? [styles.bubbleUser, { backgroundColor: theme.ink }]
-            : [styles.bubbleAI,   { backgroundColor: theme.surface2 }],
-        ]}
-      >
-        {showStatus ? (
-          <View style={styles.statusRow}>
-            <DotsLoader />
-            <Text style={[styles.statusText, { color: theme.muted }]}>
-              {statusLabel(status as Exclude<ChatStatus, 'idle' | 'streaming'>, persona)}
-            </Text>
-          </View>
-        ) : noTextYet ? (
+  // Grouped bubbles share a flat edge on the sender's side; only the last in
+  // a run gets the "tail" corner.
+  const shape = isUser
+    ? {
+        borderTopRightRadius:    isFirstInGroup ? 18 : 6,
+        borderBottomRightRadius: isLastInGroup ? 5 : 6,
+      }
+    : {
+        borderTopLeftRadius:    isFirstInGroup ? 18 : 6,
+        borderBottomLeftRadius: isLastInGroup ? 5 : 6,
+      };
+
+  const bubbleColors = isUser
+    ? { backgroundColor: theme.ink }
+    : isHuman
+      ? { backgroundColor: theme.surface, borderColor: theme.accent, borderWidth: 1 }
+      : { backgroundColor: theme.surface2 };
+
+  const bubble = (
+    <View style={[styles.bubble, bubbleColors, shape, muted && styles.muted]}>
+      {replyTo ? <ReplyQuote reply={replyTo} inverted={isUser} /> : null}
+      {showStatus ? (
+        <View style={styles.statusRow}>
           <DotsLoader />
-        ) : isUser ? (
-          // User bubbles stay plain text — no markdown rendering on the user side.
-          <Text style={[styles.text, { color: textColor }]}>{displayText}</Text>
-        ) : (
-          <Markdown style={mdStyles}>{displayText}</Markdown>
-        )}
+          <Text style={[styles.statusText, { color: theme.muted }]}>
+            {statusLabel(status as Exclude<ChatStatus, 'idle' | 'streaming'>, persona)}
+          </Text>
+        </View>
+      ) : noTextYet ? (
+        <DotsLoader />
+      ) : isUser || isHuman ? (
+        // User and human-astrologer bubbles stay plain text — no markdown.
+        <Text style={[styles.text, { color: textColor }]} selectable={false}>{displayText}</Text>
+      ) : (
+        <Markdown style={mdStyles}>{displayText}</Markdown>
+      )}
+    </View>
+  );
+
+  return (
+    <View
+      style={[
+        styles.wrapper,
+        isUser ? styles.wrapperUser : styles.wrapperAI,
+        { marginTop: isFirstInGroup ? 6 : 1.5, marginBottom: isLastInGroup ? 2 : 1.5 },
+      ]}
+    >
+      <View style={[styles.column, isUser ? styles.columnUser : styles.columnAI]}>
+        {senderLabel && isFirstInGroup ? (
+          <Text
+            style={[styles.sender, { color: isHuman ? theme.accent : theme.muted }]}
+            numberOfLines={1}
+          >
+            {senderLabel}
+          </Text>
+        ) : null}
+        {onLongPress ? (
+          <Pressable
+            onLongPress={onLongPress}
+            delayLongPress={320}
+            accessibilityRole="button"
+            accessibilityHint="Long-press for message actions"
+            style={({ pressed }) => [pressed && styles.pressed]}
+          >
+            {bubble}
+          </Pressable>
+        ) : bubble}
       </View>
     </View>
   );
 }
+
+export const ChatBubble = memo(ChatBubbleImpl);
 
 // Markdown style overrides — kept inline since they're tied to bubble theming.
 // Line heights and paragraph margins tuned for readability inside a chat
@@ -108,22 +173,29 @@ function buildMarkdownStyles(textColor: string, linkColor: string) {
 const styles = StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
-    marginVertical: 4,
   },
   wrapperUser: { justifyContent: 'flex-end' },
   wrapperAI:   { justifyContent: 'flex-start' },
+  column: {
+    maxWidth: '84%',
+  },
+  columnUser: { alignItems: 'flex-end' },
+  columnAI:   { alignItems: 'flex-start' },
+  sender: {
+    fontFamily:    FONTS.monoRegular,
+    fontSize:      10.5,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom:  4,
+    marginHorizontal: 4,
+  },
   bubble: {
-    maxWidth:        '84%',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius:    18,
   },
-  bubbleUser: {
-    borderBottomRightRadius: 5,
-  },
-  bubbleAI: {
-    borderBottomLeftRadius: 5,
-  },
+  muted:   { opacity: 0.6 },
+  pressed: { opacity: 0.85 },
   text: {
     fontFamily:  FONTS.sansRegular,
     fontSize:    15.5,
