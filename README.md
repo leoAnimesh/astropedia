@@ -4,7 +4,22 @@ Astropedia is a local-first Vedic astrology app built with React Native (Expo, T
 
 This branch adds the *Next Generation AI Conversation Experience* assessment on top of the existing chat. The chat was not replaced with a mock screen. The timeline, recommendation framework, message actions, feedback, delivery states and loading/error states are all built into the real, persisted, on-device chat.
 
-**Demo video:** _add link here_
+## Demo video
+
+<a href="https://drive.google.com/file/d/1X-Zlx0nXDc_8AuiHILlixpYh11HZL7uO/view?usp=sharing">
+  <img src="https://drive.google.com/thumbnail?id=1X-Zlx0nXDc_8AuiHILlixpYh11HZL7uO&sz=w640" alt="Astropedia demo video: tap to play on Google Drive" width="320" />
+</a>
+
+▶️ **[Watch the demo on Google Drive](https://drive.google.com/file/d/1X-Zlx0nXDc_8AuiHILlixpYh11HZL7uO/view?usp=sharing)**. It was recorded on an iPhone with the on-device model.
+
+<details>
+<summary>Embed code (GitHub strips iframes, so the thumbnail above links to the video)</summary>
+
+```html
+<iframe src="https://drive.google.com/file/d/1X-Zlx0nXDc_8AuiHILlixpYh11HZL7uO/preview" width="360" height="780" allow="autoplay"></iframe>
+```
+
+</details>
 
 ### Tech stack
 
