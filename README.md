@@ -48,6 +48,8 @@ yarn start              # Metro, for later sessions
   * Run `yarn start`, open `ios/astropedia.xcworkspace` in Xcode, pick a simulator and press ⌘R.
   * Run on a real iPhone with `npx expo run:ios --device`.
 * **`IPHONEOS_DEPLOYMENT_TARGET is set to 9.0 / 12.4 …` (e.g. RNSVG, SDWebImage):** Xcode 27 only accepts 15.0 and up. The config plugin `plugins/with-min-pod-deployment-target.js` (registered in `app.json`) raises every pod to 15.1 in the Podfile's `post_install`, so the fix survives `expo prebuild`. After pulling this change, run `cd ios && pod install`, or `npx expo prebuild --clean`.
+* **Crash at launch: `EXC_BREAKPOINT` in `AppDelegate`, with "scene-based life cycle" in the console.** Apps built with the iOS 27 SDK must adopt the UIScene life cycle. `plugins/with-uiscene-lifecycle.js` adds a `UIApplicationSceneManifest` to Info.plist and moves window creation from the AppDelegate into a `SceneDelegate`, which also forwards deep links and universal links. Run `npx expo prebuild --clean` to apply it.
+* **Bundle ID / package:** `com.astropedia` on both platforms.
 
 ### Checks
 
