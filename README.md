@@ -4,6 +4,30 @@ Astropedia is a local-first Vedic astrology app built with React Native (Expo, T
 
 This branch adds the *Next Generation AI Conversation Experience* assessment on top of the existing chat. The chat was not replaced with a mock screen. The timeline, recommendation framework, message actions, feedback, delivery states and loading/error states are all built into the real, persisted, on-device chat.
 
+**Demo video:** _add link here_
+
+### Tech stack
+
+| Area | Choice |
+| --- | --- |
+| Framework | React Native 0.81 · Expo SDK 54 (dev client, New Architecture) · TypeScript |
+| Navigation | `expo-router`, which is built on **React Navigation** (native stack) |
+| State | **Zustand** stores + SQLite (`expo-sqlite`) as the source of truth |
+| AI | `react-native-executorch` 0.8.4: on-device LLM (Qwen 3 / LFM2.5), on-device embeddings for RAG |
+| Tests | `node:test` for the pure logic |
+
+### Contents: the sections the brief asks for
+
+| Required in the brief | Section |
+| --- | --- |
+| Project structure | [Project structure](#project-structure) |
+| Component architecture | [Component architecture](#component-architecture) |
+| State management approach | [State management](#state-management) |
+| Recommendation rendering strategy | [Recommendation rendering strategy](#recommendation-rendering-strategy) |
+| Performance considerations | [Performance considerations](#performance-considerations) |
+| Trade-offs made due to time constraints | [Trade-offs and what's left](#trade-offs-and-whats-left) |
+| Extras | [Assignment coverage](#assignment-coverage) · [Message schema](#message-schema) · [How the local LLM works](#how-the-local-llm-works) · [Edge cases handled](#edge-cases-handled) |
+
 ---
 
 ## Quick start
@@ -17,6 +41,13 @@ yarn start              # Metro, for later sessions
 * **A native build is required.** On-device inference and SQLite are native modules, so Expo Go won't work. If you already had a dev client installed, rebuild it once: this branch adds `expo-clipboard`. Until you rebuild, Copy shows a friendly "rebuild" message instead of crashing.
 * **The first launch downloads the model** (~0.2–0.9 GB depending on the phone's RAM tier, see [Model selection](#model-selection)). A progress overlay shows while it downloads. After that the app works offline.
 * Finish onboarding (name, birth details), then open a conversation from the home screen.
+
+#### Troubleshooting on Xcode 27
+
+* **`Can't determine id of Simulator app`:** Xcode 27 no longer ships a separate `Simulator.app`, and Expo CLI (SDK 54) looks it up before launching. Two ways around it:
+  * Run `yarn start`, open `ios/astropedia.xcworkspace` in Xcode, pick a simulator and press ⌘R.
+  * Run on a real iPhone with `npx expo run:ios --device`.
+* **`IPHONEOS_DEPLOYMENT_TARGET is set to 9.0 / 12.4 …` (e.g. RNSVG, SDWebImage):** Xcode 27 only accepts 15.0 and up. The config plugin `plugins/with-min-pod-deployment-target.js` (registered in `app.json`) raises every pod to 15.1 in the Podfile's `post_install`, so the fix survives `expo prebuild`. After pulling this change, run `cd ios && pod install`, or `npx expo prebuild --clean`.
 
 ### Checks
 
@@ -63,6 +94,36 @@ The empty state (*Start your conversation.*) appears on any new chat.
 
 ---
 
+## Message schema
+
+**Incoming payload.** The brief's payload is accepted verbatim, with two optional extensions. `utils/conversation-normalize.ts` validates and repairs it:
+
+```jsonc
+{
+  "id": "4",
+  "type": "human",                      // system | user | ai | human; other types or empty text are dropped
+  "text": "I also recommend focusing on your upcoming Jupiter transit.",
+  "createdAt": "2026-09-24T10:02:00Z",  // optional; synthesised in order when missing
+  "author": "Pandit Sharma",            // optional; display name for human astrologers
+  "recommendations": [                  // ai messages only
+    { "id": "1", "type": "gemstone", "title": "Blue Sapphire", "subtitle": "Recommended for Saturn",
+      "meta": { "planet": "Saturn" } }  // optional, type-specific data
+  ]
+}
+```
+
+**Stored message.** The domain type lives in `types/conversation.ts` and is persisted in SQLite (migration v5). The stored message adds the client-side state the payload doesn't carry:
+
+| Field | Type |
+| --- | --- |
+| `role` | `'user' \| 'assistant' \| 'human' \| 'system'` |
+| `status` / `failureReason` | `'sending' \| 'sent' \| 'failed'` / `model-unavailable \| generation-failed \| empty-reply \| interrupted \| storage \| simulated` |
+| `feedback` | `{ rating: 'like' \| 'dislike', reasons: ('inaccurate' \| 'too-generic' \| 'didnt-help' \| 'too-long')[] }` |
+| `replyTo` | `{ id, role, author, preview }`, a snapshot so the quote survives deletion of the original |
+| `recommendations` | `{ id, type, title, subtitle?, meta? }[]` |
+
+`Recommendation.type` is an open string (`KnownRecommendationType | (string & {})`). Known types resolve through the registry, and anything else renders the fallback card.
+
 ## Project structure
 
 ```
@@ -92,6 +153,7 @@ utils/
   conversation-normalize.ts  pure: payload validation / repair
   database.ts                SQLite schema + migrations (v5 adds conversation fields)
 constants/demo-conversation.ts   assignment mock payload
+plugins/                     Expo config plugins (pod deployment-target fix for Xcode 27)
 tests/                       node:test unit tests for the pure modules
 ```
 
