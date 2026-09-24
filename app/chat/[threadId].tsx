@@ -24,6 +24,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ChatBubble } from '@/components/molecules/ChatBubble';
 import { ConversationStateView } from '@/components/molecules/ConversationStateView';
+import { ModelUpgradeHint } from '@/components/molecules/ModelUpgradeHint';
 import { ChatComposer } from '@/components/organisms/ChatComposer';
 import { ChatTimelineRow } from '@/components/organisms/ChatTimelineRow';
 import { MessageActionSheet, type MessageAction } from '@/components/organisms/MessageActionSheet';
@@ -35,7 +36,7 @@ import type { Message } from '@/utils/database';
 import type { MessageFeedback } from '@/types/conversation';
 import { buildTimeline, type TimelineRow } from '@/utils/chat-timeline';
 import { seedDemoConversation } from '@/utils/conversation-api';
-import { getCurrentModelInfo } from '@/utils/local-llm';
+import { getActiveModelInfo } from '@/utils/local-llm';
 import { KRISHNA_PROFILE, KRISHNA_STARTERS, isKrishnaProfile } from '@/utils/krishna';
 import type { AIMode } from '@/utils/ai';
 
@@ -289,8 +290,9 @@ export default function ChatScreen() {
             <Text style={[styles.headerName, { color: theme.ink }]} numberOfLines={1}>
               {isKrishna ? 'Krishna' : (profile?.name ?? 'Chat')}
             </Text>
-            <Text style={[styles.headerSub, { color: theme.muted }]}>
+            <Text style={[styles.headerSub, { color: theme.muted }]} numberOfLines={1}>
               {isKrishna ? 'Bhagavad Gita' : 'with Saga'}
+              <ModelUpgradeHint />
             </Text>
           </View>
           {!isNewEmpty && !isKrishna && (
@@ -457,7 +459,7 @@ export default function ChatScreen() {
           onClose={() => setDevOpen(false)}
           onReload={() => reload(true)}
           onSeedDemo={!isKrishna && profile ? handleSeedDemo : undefined}
-          modelLabel={getCurrentModelInfo().def.label}
+          modelLabel={getActiveModelInfo().def.label}
         />
       )}
     </ScreenLayout>

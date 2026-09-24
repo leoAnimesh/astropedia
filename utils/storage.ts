@@ -71,15 +71,25 @@ export const Storage = {
   setActiveProfileId: (id: string): void =>
     getStorage().set('active_profile_id', id),
 
-  // Local LLM download state
-  getModelDownloaded: (): boolean => getStorage().getBoolean('model_downloaded') ?? false,
-  setModelDownloaded: (v: boolean): void => getStorage().set('model_downloaded', v),
-
-  // Tracks which model variant is on disk. If this doesn't match the build's
-  // expected version, treat the cache as cold so the user sees a real download
-  // with progress UI instead of a silent stall.
-  getModelVersion: (): string | null => getStorage().getString('model_version') ?? null,
-  setModelVersion: (v: string): void => getStorage().set('model_version', v),
+  // Local LLM download state: every on-device model version whose files are
+  // fully downloaded (progressive loading keeps a small starter model next to
+  // the target model). Seeded once from the legacy single-model flags
+  // `model_downloaded` + `model_version`.
+  getModelsOnDisk: (): string[] => {
+    const raw = getStorage().getString('models_on_disk');
+    if (raw == null) {
+      const legacy = getStorage().getBoolean('model_downloaded') ? getStorage().getString('model_version') : undefined;
+      return legacy ? [legacy] : [];
+    }
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    } catch {
+      return [];
+    }
+  },
+  setModelsOnDisk: (versions: string[]): void =>
+    getStorage().set('models_on_disk', JSON.stringify(versions)),
 
   // User's manual model choice. 'auto' (default) means follow the detected
   // device tier; a specific tier overrides auto-detection. Values must match
@@ -142,6 +152,6 @@ export const Storage = {
     s.delete('accent_key');
     s.delete('dark_mode');
     s.delete('active_profile_id');
-    // intentionally keep model_downloaded — no need to re-download on reset
+    // intentionally keep models_on_disk — no need to re-download on reset
   },
 };

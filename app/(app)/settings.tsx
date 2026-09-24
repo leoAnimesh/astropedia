@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { router } from 'expo-router';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
+import { useLocalLLM, useModelUpgrade } from '@/hooks/use-local-llm';
 import { useSettingsStore } from '@/stores/settings-store';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
@@ -14,7 +15,7 @@ import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
 import { useOnboardingStore } from '@/stores/onboarding-store';
 import { todayIso } from '@/utils/format';
-import { switchModel, getModelCatalog, getCurrentModelInfo } from '@/utils/local-llm';
+import { switchModel, getModelCatalog, getActiveModelInfo, isModelOnDisk } from '@/utils/local-llm';
 import { detectDeviceTier, type DeviceTier } from '@/utils/device-tier';
 import {
   ensureNotificationPermission,
@@ -35,8 +36,11 @@ export default function SettingsScreen() {
   const [dailyHoroscope,  setDailyHoroscope]  = useState<boolean>(Storage.getDailyHoroscopePush());
   const [transitAlerts,   setTransitAlerts]   = useState<boolean>(Storage.getTransitAlerts());
 
+  // Subscribed so the "Running …" line follows swaps and upgrade progress.
+  useLocalLLM();
+  const upgrade        = useModelUpgrade();
   const catalog        = getModelCatalog();
-  const currentInfo    = getCurrentModelInfo();
+  const currentInfo    = getActiveModelInfo();
   const detectedTier   = detectDeviceTier();
   const TIER_OPTIONS: Array<{ key: 'auto' | DeviceTier; label: string; sub: string }> = [
     { key: 'auto',     label: 'Auto-select',          sub: `Picks the best model for your phone (now: ${catalog[detectedTier].label}, ${catalog[detectedTier].size})` },
@@ -51,7 +55,7 @@ export default function SettingsScreen() {
     const targetTier = preference === 'auto' ? detectedTier : preference;
     const target     = catalog[targetTier];
     const currentSize = currentInfo.def.size;
-    const willDownload = target.version !== currentInfo.def.version;
+    const willDownload = !isModelOnDisk(target.version);
     const confirm = () => {
       setModelPref(preference);
       switchModel(preference);
@@ -59,7 +63,7 @@ export default function SettingsScreen() {
     if (willDownload) {
       Alert.alert(
         'Switch offline model?',
-        `This will download ${target.label} (${target.size}) in the background. Currently using ${currentInfo.def.label} (${currentSize}).`,
+        `This will download ${target.label} (${target.size}) in the background. Saga keeps using ${currentInfo.def.label} (${currentSize}) until it's ready.`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Switch', onPress: confirm },
@@ -224,6 +228,13 @@ export default function SettingsScreen() {
                 );
               })}
             </View>
+            <Text style={[styles.modelSub, styles.modelStatus, { color: theme.muted }]}>
+              {`Running ${currentInfo.def.label}`}
+              {upgrade.status === 'downloading' && ` · downloading ${upgrade.label} ${Math.floor(upgrade.progress * 100)}%`}
+              {upgrade.status === 'paused' && (upgrade.reason === 'low-storage'
+                ? ` · ${upgrade.label} paused: low storage`
+                : ` · ${upgrade.label} download will retry`)}
+            </Text>
           </>
         )}
 
@@ -378,6 +389,10 @@ const styles = StyleSheet.create({
   modelLabel: {
     fontFamily: FONTS.serifRegular,
     fontSize:   15,
+  },
+  modelStatus: {
+    marginTop:        8,
+    marginHorizontal: 4,
   },
   modelSub: {
     fontFamily: FONTS.sansRegular,

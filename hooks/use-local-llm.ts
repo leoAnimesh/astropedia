@@ -2,9 +2,12 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 import {
   getLLMState,
+  getUpgradeState,
   subscribeToLLMState,
+  subscribeToUpgradeState,
   initLocalLLM,
   type LLMState,
+  type UpgradeState,
 } from '@/utils/local-llm';
 
 export function useLocalLLM(): {
@@ -33,4 +36,9 @@ export function useAutoDownloadLLM() {
   }, []);
 
   return state;
+}
+
+/** Quiet background-upgrade status (bigger model downloading after the starter). */
+export function useModelUpgrade(): UpgradeState {
+  return useSyncExternalStore(subscribeToUpgradeState, getUpgradeState, getUpgradeState);
 }

@@ -17,6 +17,7 @@
   "files": [
     "tests/chat-timeline.test.ts",
     "tests/recommendation-rules.test.ts",
-    "tests/conversation-normalize.test.ts"
+    "tests/conversation-normalize.test.ts",
+    "tests/model-plan.test.ts"
   ]
 }

@@ -7,14 +7,15 @@
  *      sanitised to the fixed category list.
  *   2. Deterministic keyword → category mapper over the real reply text,
  *      personalised with the profile's current life-period ruler. Always used
- *      on the floor tier (the 350M model isn't asked for a block at all).
+ *      while the 350M model is loaded (it isn't asked for a block at all) —
+ *      including while it stands in for a bigger model still downloading.
  */
 import { Platform } from 'react-native';
 import type { Profile } from './database';
 import type { AIMode } from './ai';
 import type { Recommendation } from '@/types/conversation';
 import { getFullKundli } from './astrology';
-import { getCurrentModelInfo } from './local-llm';
+import { getActiveModelInfo } from './local-llm';
 import {
   PLANETS,
   RECS_JSON_SCHEMA,
@@ -27,10 +28,14 @@ import {
 
 export { splitRecsBlock, stripRecsForDisplay } from './recommendation-rules';
 
-/** The 350M floor model is too small for reliable structured output. */
+/**
+ * The 350M model is too small for reliable structured output. Follows the
+ * model actually loaded (progressive loading may run the 350M starter while
+ * the tier's model downloads), never the desired one.
+ */
 export function modelWritesRecsBlock(): boolean {
   try {
-    return getCurrentModelInfo().tier !== 'floor';
+    return getActiveModelInfo().def.writesRecs;
   } catch {
     return false;
   }

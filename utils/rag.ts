@@ -120,6 +120,31 @@ type TextEmbeddingsModuleType = import('react-native-executorch').TextEmbeddings
 let _embedModule: TextEmbeddingsModuleType | null = null;
 let _usingNeural = false;
 let _neuralLoadPromise: Promise<void> | null = null;
+let _prefetchPromise: Promise<void> | null = null;
+
+/**
+ * Download the embeddings model's files without loading them. The on-device
+ * LLM's background upgrade calls this first, so the small MiniLM download
+ * never competes with the big one and a later load finds it on disk.
+ */
+export function prefetchEmbeddingModel(): Promise<void> {
+  if (Platform.OS === 'web') return Promise.resolve();
+  if (_prefetchPromise) return _prefetchPromise;
+  _prefetchPromise = (async () => {
+    try {
+      const { ResourceFetcher, ALL_MINILM_L6_V2, initExecutorch } =
+        require('react-native-executorch') as typeof import('react-native-executorch');
+      const { ExpoResourceFetcher } =
+        require('react-native-executorch-expo-resource-fetcher') as
+        typeof import('react-native-executorch-expo-resource-fetcher');
+      initExecutorch({ resourceFetcher: ExpoResourceFetcher });
+      await ResourceFetcher.fetch(undefined, ALL_MINILM_L6_V2.modelSource, ALL_MINILM_L6_V2.tokenizerSource);
+    } catch {
+      // Offline or failed — tryLoadNeuralEmbeddings downloads on demand.
+    }
+  })();
+  return _prefetchPromise;
+}
 
 async function tryLoadNeuralEmbeddings(): Promise<void> {
   if (_neuralLoadPromise) return _neuralLoadPromise;
@@ -139,7 +164,10 @@ async function tryLoadNeuralEmbeddings(): Promise<void> {
       initExecutorch({ resourceFetcher: ExpoResourceFetcher });
 
       const module = await Promise.race<TextEmbeddingsModuleType | null>([
-        TextEmbeddingsModule.fromModelName(ALL_MINILM_L6_V2),
+        // If a prefetch is downloading the same files, wait for it — a second
+        // fetch of an in-flight file is rejected by the resource fetcher.
+        (_prefetchPromise ?? Promise.resolve())
+          .then(() => TextEmbeddingsModule.fromModelName(ALL_MINILM_L6_V2)),
         new Promise<null>(resolve => setTimeout(() => resolve(null), 4000)),
       ]);
 

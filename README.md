@@ -39,7 +39,7 @@ yarn start              # Metro, for later sessions
 ```
 
 * **A native build is required.** On-device inference and SQLite are native modules, so Expo Go won't work. If you already had a dev client installed, rebuild it once: this branch adds `expo-clipboard`. Until you rebuild, Copy shows a friendly "rebuild" message instead of crashing.
-* **The first launch downloads the model** (~0.2–0.9 GB depending on the phone's RAM tier, see [Model selection](#model-selection)). A progress overlay shows while it downloads. After that the app works offline.
+* **The first launch downloads a small model** (~0.2 GB) behind a progress overlay, so chat works quickly. The phone's full model (up to ~0.9 GB, depending on its RAM tier; see [Model selection](#model-selection)) then downloads in the background and swaps in when it's ready ([Progressive loading](#progressive-loading)). After that the app works offline.
 * Finish onboarding (name, birth details), then open a conversation from the home screen.
 
 #### Troubleshooting on Xcode 27
@@ -146,7 +146,8 @@ hooks/use-chat.ts            conversation controller (load, send, retry, delete,
 stores/                      Zustand stores (chat, threads, profiles, settings, dev)
 types/conversation.ts        domain types (roles, status, feedback, recommendations)
 utils/
-  local-llm.ts               model selection + ExecuTorch lifecycle (download, load, unload, sampling)
+  local-llm.ts               model selection + ExecuTorch lifecycle (download, load, unload, hot swap, sampling)
+  model-plan.ts              pure: which model to load / download first / upgrade to, retry backoff, disk check
   ai.ts                      prompts, RAG, deterministic answers, streaming bridge
   chat-timeline.ts           pure: rows, date separators, grouping
   recommendation-rules.ts    pure: <recs> protocol, sanitising, keyword fallback
@@ -216,8 +217,8 @@ No second `generate()` call is made. Krishna mode shows no cards on purpose.
 ## How the local LLM works
 
 1. **Model selection** (`utils/local-llm.ts`, `MODELS` + `SAMPLING`) picks a model by RAM tier, detected once with `expo-device` and overridable in Settings (dev builds).
-2. **Download and load.** On first run the model downloads in the background with a progress overlay. Later launches load it from disk on demand when you open a chat. That keeps the home screen at ~150 MB instead of ~2.9 GB.
-3. **Unloading.** The model is freed from RAM on background and after 3 min idle, and reloads in ~2–5 s ("Saga is waking up…").
+2. **Progressive download.** On first run the small **LFM2.5 350M** (~200 MB) downloads with the progress overlay (usually while onboarding is still on screen), so chat works as soon as it loads. The device's target model then downloads **in the background**, shown only as a quiet `WITH SAGA · UPGRADING 42%` in the chat header, and is **hot-swapped** in once it's on disk (details in [Progressive loading](#progressive-loading)). On floor-tier phones the 350M model *is* the target, so there's a single download. Later launches load the best model on disk on demand when you open a chat. That keeps the home screen at ~150 MB instead of ~2.9 GB.
+3. **Unloading.** The model is freed from RAM on background and after 3 min idle, and reloads in ~2–5 s ("Saga is waking up…"). A reload always picks the best model currently on disk.
 4. **Prompt.** Each prompt contains the persona system prompt, the birth-chart context computed on-device, and **RAG** (2 chunks from the bundled astrology or Gita corpus, embedded on-device). History is capped at the last 6 messages, plus the optional `<recs>` instructions. Qwen 3 gets `/no_think`, and `<think>` blocks are stripped from the stream.
 5. **Deterministic answers.** Simple chart lookups (sun sign, current period, moon phase…) are answered instantly and never wait for the model.
 6. **Cleanup.** Output is post-processed (jargon, repetition loops, artifacts). A degenerate-output detector interrupts runaway generations.
@@ -242,6 +243,7 @@ Model selection lives in one table in `utils/local-llm.ts`, so a swap is a one-l
   | LFM2.5 | 0.3 | 0.9 | – | 1.05 | |
 
   The same config applies at load time and before every generation.
+* **What decides prompting is the *loaded* model, not the desired one.** While the 350M starter stands in, the `<recs>` block is left out of the prompt and cards come from the keyword mapper; Qwen's `/no_think` switch is only added when Qwen is loaded (`getActiveModelInfo()` in `utils/local-llm.ts`).
 * **Why the library wasn't upgraded to 0.9 / 0.10:**
   * those versions need an iOS 17 deployment target
   * the resource-fetcher API changed
@@ -252,6 +254,30 @@ Model selection lives in one table in `utils/local-llm.ts`, so a swap is a one-l
   * Memory figures for LFM2.5 and Qwen 3 on real devices are **not benchmarked** yet.
   * The **LFM 1.0 license needs legal review before commercial use**.
 
+### Progressive loading
+
+The decision logic is pure and unit-tested (`utils/model-plan.ts`, `tests/model-plan.test.ts`): given the target model and what is on disk, it returns what to **load** now, what to download in the **foreground** (overlay), what to fetch in the **background**, and what is **removable**.
+
+| On disk | Target | Result |
+| --- | --- | --- |
+| nothing | 1.2B or Qwen | overlay downloads 350M → chat works → target downloads in the background |
+| nothing | 350M (floor) | overlay downloads 350M, no upgrade |
+| 350M | 1.2B or Qwen | load 350M, resume the background download |
+| target (+ 350M) | – | load the target; the 350M files are deleted after it loads |
+| only models *bigger* than the target (e.g. after a downgrade in Settings) | – | never loaded; treated as "nothing usable" |
+
+How it behaves:
+
+* **One download at a time.** The order is 350M (blocking) → MiniLM embeddings for RAG (small; prefetched so a chat never races the big download) → target model. The background download only fetches files through the resource fetcher and doesn't load them, so **only one LLM is ever in RAM**.
+* **Hot swap.** When the target finishes, the swap waits for any in-flight load or generation (**never mid-reply**), deletes the old module, and then loads the new one. A message sent during the swap waits for it, so Saga just "wakes up" a little longer. If the chat model isn't in RAM at that moment, nothing happens; the next load picks the target.
+* **What's on disk** is persisted (`models_on_disk` in MMKV, seeded from the old single-model flags) and reconciled at launch with the files the fetcher actually has. That covers downloads from older builds and files removed by the OS.
+* **Cleanup.** Once the target has loaded successfully, the 350M files are removed with the fetcher's own `deleteResources` (it only touches its own directory), freeing ~200 MB. Other models on disk, such as one left over from a Settings switch, are left alone.
+* **Downloads don't resume after the app is killed.** `react-native-executorch-expo-resource-fetcher` 0.8 downloads each file with `expo-file-system`'s `createDownloadResumable` (background session) into the cache directory, and moves it into place only when it's complete. Pause and resume work only within one app session, because the resume data is never persisted. If the app is **killed**, the next launch restarts that file **from zero**. Files that finished (tokenizers) are skipped, but the model is one large `.pte`, so in practice the upgrade starts over. If the app is only backgrounded, the OS may keep the download going (iOS background `URLSession`); either way the upgrade is restarted or resumed when the app becomes active or on the next launch.
+* **Failures are quiet.** A failed or interrupted upgrade keeps chat on the current model and retries with backoff (30 s, 2 min, 8 min, 32 min, then hourly). No error UI is shown; the header hint simply disappears.
+* **Low disk.** Before any download, free space is checked against the model size plus 500 MB of headroom. In the background the upgrade pauses and re-checks with the same backoff. For the first (blocking) download, the overlay says how much space is needed.
+* **Settings picker during an upgrade** (dev builds). An in-flight download of a model you no longer want is cancelled. If something usable is on disk, chat keeps using it while the new choice downloads in the background, and switches when idle. The blocking overlay appears only when nothing usable is on disk.
+* **A model that is on disk but fails to load** (for example, memory pressure) is skipped for the rest of the session, and the next-best model loads instead.
+
 ## Performance considerations
 
 * **Virtualization.** Inverted `FlatList` with `initialNumToRender=12`, `maxToRenderPerBatch=8`, `windowSize=11`, and `removeClippedSubviews` on Android. Keys are stable ids (`date-YYYY-M-D` for separators).
@@ -260,6 +286,7 @@ Model selection lives in one table in `utils/local-llm.ts`, so a swap is a one-l
 * **Timeline.** Built once per message-list change (O(n)), then reversed for the inverted list.
 * **Carousels.** Horizontal lists render all their cards up front (≤ 4) with snap scrolling, so there's no virtualization churn.
 * **Lazy loading.** The ExecuTorch package, the clipboard module and the article corpus load lazily, so nothing heavy happens on the home screen.
+* **Time to first chat.** On a fresh install, chat is ready after a ~200 MB download instead of 0.7–0.9 GB. The larger model arrives in the background, never more than one download at a time and never more than one LLM in RAM. The swap costs one extra disk load (~2–5 s) at an idle moment. Upgrade progress re-renders only the header hint, at most once per percent.
 * **Stale-while-revalidate.** Re-opening a thread shows cached messages instantly and refreshes from SQLite in the background; there's no spinner flash.
 
 ## Edge cases handled
@@ -267,6 +294,7 @@ Model selection lives in one table in `utils/local-llm.ts`, so a swap is a one-l
 * Empty or whitespace-only messages never send. Messages are capped at 2,000 characters, with a counter near the limit.
 * **Rapid double-send:** a synchronous lock is taken before any `await`, and the composer keeps the draft if a send is rejected.
 * **Sending while the model is generating:** typing stays enabled; Send, starter chips and Retry wait for the reply (the native runner does one generation at a time).
+* **Target model still downloading in the background:** chat works on the 350M model (keyword-mapper cards), then swaps when idle. See [Progressive loading](#progressive-loading) for kills, failures, low disk and model switches.
 * **Model still downloading, failing to load, or on web:** the message fails with `model-unavailable` and a Retry, instead of posting a fake "error" reply. Deterministic chart answers still work.
 * **Empty or truncated model reply:** the message fails with a Retry instead of being dropped silently.
 * **App killed mid-send:** on the next load, the stuck "sending" message shows as *Failed · Interrupted* with a Retry.
@@ -294,4 +322,5 @@ Model selection lives in one table in `utils/local-llm.ts`, so a swap is a one-l
 * **Tapping a reply quote** doesn't yet jump to the original message.
 * **Feedback** is stored locally only; there's nowhere to send it yet.
 * **Tests** cover the pure logic (timeline, recommendation protocol and parsing, normalization). There are no component or E2E tests, because the project has no Jest/Detox setup and adding one was out of scope.
+* **Progressive loading trades answer quality for time-to-first-chat.** The first few conversations on a fresh install use the 350M model, which gives weaker answers and keyword-only cards, until the upgrade lands. Because the fetcher can't resume across app kills, a user who keeps killing the app on a slow connection may stay on 350M for a while. The hot swap and resume paths are covered by unit tests of the planning logic only; they haven't been exercised on a device yet.
 * **Birth-city geocoding** still uses OpenStreetMap Nominatim, a network call that is not related to the AI. All AI generation is on-device.

@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import type { Profile } from './database';
 import { getAstrologyContext } from './astrology';
-import { isLLMReady, runLocalLLM, initLocalLLM, ensureLocalLLM, getCurrentModelInfo } from './local-llm';
+import { isLLMReady, runLocalLLM, initLocalLLM, ensureLocalLLM, getActiveModelInfo } from './local-llm';
 import { retrieveContext } from './rag';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
 import { RECS_PROMPT } from './recommendation-rules';
@@ -16,7 +16,9 @@ import { modelWritesRecsBlock } from './recommendations';
  */
 function activeModelHasThinkingMode(): boolean {
   try {
-    return getCurrentModelInfo().def.version.startsWith('qwen3');
+    // The loaded model, not the desired one — they differ while a smaller
+    // model stands in during a background upgrade.
+    return getActiveModelInfo().def.family === 'qwen3';
   } catch {
     return false;
   }
