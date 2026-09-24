@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { Message } from '@/utils/database';
+import type { Message, MessagePatch } from '@/utils/database';
+import type { ReplySnapshot } from '@/types/conversation';
 
 /**
  * Visible status of a chat thread's in-flight AI reply.
@@ -10,6 +11,14 @@ import type { Message } from '@/utils/database';
  */
 export type ChatStatus = 'idle' | 'loading-model' | 'thinking' | 'streaming';
 
+/**
+ * Lifecycle of loading a thread's history.
+ *  - 'loading' : "Loading conversation..."
+ *  - 'error'   : "Unable to load conversation." + Retry
+ *  - 'ready'   : timeline (or the "Start your conversation." empty state)
+ */
+export type LoadState = 'loading' | 'ready' | 'error';
+
 type ChatStore = {
   // messages keyed by threadId
   messages:  Record<string, Message[]>;
@@ -17,6 +26,9 @@ type ChatStore = {
   status:    Record<string, ChatStatus>;
   // streaming: partial text of the in-progress AI message (after <think> strip)
   streaming: Record<string, string>;
+  loadState: Record<string, LoadState>;
+  /** Message the composer is currently replying to, per thread. */
+  replyTo:   Record<string, ReplySnapshot | null>;
 
   setMessages:    (threadId: string, messages: Message[]) => void;
   appendMessage:  (threadId: string, message: Message) => void;
@@ -26,6 +38,12 @@ type ChatStore = {
   appendToken:    (threadId: string, token: string) => void;
   commitStreaming: (threadId: string, messageId: string) => void;
   clearStreaming:  (threadId: string) => void;
+  /** Shallow-merge fields into one message. No-op if the id is gone. */
+  patchMessage:   (threadId: string, messageId: string, patch: MessagePatch) => void;
+  /** Remove a message; also clears the reply target if it pointed at it. */
+  removeMessage:  (threadId: string, messageId: string) => void;
+  setLoadState:   (threadId: string, state: LoadState) => void;
+  setReplyTo:     (threadId: string, reply: ReplySnapshot | null) => void;
 };
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -33,6 +51,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   isTyping:  {},
   status:    {},
   streaming: {},
+  loadState: {},
+  replyTo:   {},
 
   setMessages: (threadId, messages) =>
     set((s) => ({ messages: { ...s.messages, [threadId]: messages } })),
@@ -84,4 +104,34 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   clearStreaming: (threadId) =>
     set((s) => ({ streaming: { ...s.streaming, [threadId]: '' } })),
+
+  patchMessage: (threadId, messageId, patch) =>
+    set((s) => {
+      const list = s.messages[threadId];
+      if (!list || !list.some((m) => m.id === messageId)) return s;
+      return {
+        messages: {
+          ...s.messages,
+          [threadId]: list.map((m) => (m.id === messageId ? { ...m, ...patch } : m)),
+        },
+      };
+    }),
+
+  removeMessage: (threadId, messageId) =>
+    set((s) => ({
+      messages: {
+        ...s.messages,
+        [threadId]: (s.messages[threadId] ?? []).filter((m) => m.id !== messageId),
+      },
+      replyTo:
+        s.replyTo[threadId]?.id === messageId
+          ? { ...s.replyTo, [threadId]: null }
+          : s.replyTo,
+    })),
+
+  setLoadState: (threadId, state) =>
+    set((s) => ({ loadState: { ...s.loadState, [threadId]: state } })),
+
+  setReplyTo: (threadId, reply) =>
+    set((s) => ({ replyTo: { ...s.replyTo, [threadId]: reply } })),
 }));

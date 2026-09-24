@@ -1,16 +1,33 @@
-import { useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { Chip } from '@/components/atoms/Chip';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { DotsLoader } from '@/components/molecules/DotsLoader';
+import { ReplyPreviewBar } from '@/components/molecules/ReplyPreview';
 import type { StarterChip } from '@/constants/starters';
+import type { ReplySnapshot } from '@/types/conversation';
+
+/** Hard cap on a single message — keeps prompts inside the model's context. */
+export const MAX_MESSAGE_LENGTH = 2000;
+const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
 type Props = {
-  onSend:    (text: string) => void;
+  /**
+   * Returns false if the message was rejected (e.g. a reply is already
+   * generating); the draft is then kept instead of cleared.
+   */
+  onSend:    (text: string) => boolean | void;
+  /** Disables sending (not typing) — e.g. while a reply is generating. */
   disabled?: boolean;
   starters?: StarterChip[];
+  /** Message being replied to, shown above the input. */
+  replyTo?:  ReplySnapshot | null;
+  onCancelReply?: () => void;
+  placeholder?: string;
+  /** When this changes to a non-null value the input is focused (e.g. Reply). */
+  focusKey?: string | null;
 };
 
 // WAV recording options for 16kHz mono PCM — required by on-device Whisper
@@ -45,13 +62,25 @@ function wavToFloat32(bytes: Uint8Array): Float32Array {
   return float32;
 }
 
-export function ChatComposer({ onSend, disabled, starters }: Props) {
+export function ChatComposer({
+  onSend,
+  disabled,
+  starters,
+  replyTo,
+  onCancelReply,
+  placeholder = 'Ask Saga anything…',
+  focusKey,
+}: Props) {
   const { theme } = useAccent();
   const [text, setText]             = useState('');
   const [recording, setRecording]   = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [recObj, setRecObj]         = useState<any>(null);
   const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (focusKey) inputRef.current?.focus();
+  }, [focusKey]);
 
   // On-device Whisper STT (lazy-loaded from react-native-executorch)
   type STTModule = import('react-native-executorch').SpeechToTextModule;
@@ -75,15 +104,21 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
       const mod = await SpeechToTextModule.fromModelName(WHISPER_TINY_EN);
       sttRef.current = mod;
     } catch {
-      // STT unavailable — Groq fallback used
+      // STT unavailable — voice input stays hidden/no-op (no cloud fallback)
     }
   };
 
   const handleSend = () => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    onSend(trimmed);
-    setText('');
+    // Whitespace-only and busy states never reach the hook.
+    if (!trimmed || disabled) return;
+    const accepted = onSend(trimmed);
+    if (accepted !== false) setText('');
+  };
+
+  const handleStarter = (prompt: string) => {
+    if (disabled) return;
+    onSend(prompt);
   };
 
   const startRecording = async () => {
@@ -168,6 +203,9 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
 
   return (
     <View style={[styles.wrapper, { borderTopColor: theme.hairline }]}>
+      {replyTo && onCancelReply ? (
+        <ReplyPreviewBar reply={replyTo} onCancel={onCancelReply} />
+      ) : null}
       {showChips && (
         <ScrollView
           horizontal
@@ -176,7 +214,7 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           {starters!.map((s) => (
-            <Chip key={s.id} label={s.label} onPress={() => onSend(s.prompt)} />
+            <Chip key={s.id} label={s.label} onPress={() => handleStarter(s.prompt)} />
           ))}
         </ScrollView>
       )}
@@ -191,22 +229,29 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           <TextInput
             ref={inputRef}
             style={[styles.input, { color: theme.ink }]}
-            placeholder="Ask Saga anything…"
+            placeholder={placeholder}
             placeholderTextColor={theme.faint}
             value={text}
             onChangeText={setText}
             onSubmitEditing={handleSend}
             returnKeyType="send"
-            multiline={false}
-            editable={!disabled}
+            // Grows up to ~5 lines for long questions; Return still sends.
+            multiline
+            submitBehavior="submit"
+            maxLength={MAX_MESSAGE_LENGTH}
+            // Typing stays enabled while a reply generates — only Send waits.
+            accessibilityLabel="Message"
           />
         )}
 
         {!isBusy && text.trim() ? (
           <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: theme.accent }]}
+            style={[styles.iconBtn, { backgroundColor: theme.accent, opacity: disabled ? 0.4 : 1 }]}
             onPress={handleSend}
             disabled={disabled}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            accessibilityState={{ disabled: !!disabled }}
           >
             <Icon name="send" size={18} color={theme.accentFg} />
           </TouchableOpacity>
@@ -223,6 +268,11 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           </TouchableOpacity>
         ) : null}
       </View>
+      {text.length >= COUNTER_THRESHOLD ? (
+        <Text style={[styles.counter, { color: text.length >= MAX_MESSAGE_LENGTH ? '#C0492F' : theme.muted }]}>
+          {text.length} / {MAX_MESSAGE_LENGTH}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -241,9 +291,11 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection:  'row',
-    alignItems:     'center',
+    alignItems:     'flex-end',
     gap:            8,
-    borderRadius:   RADIUS.pill,
+    // Fixed radius (not a pill) so the field still looks right when it
+    // grows to several lines.
+    borderRadius:   26,
     paddingVertical: 4,
     paddingLeft:    18,
     paddingRight:   4,
@@ -254,10 +306,19 @@ const styles = StyleSheet.create({
     fontFamily:     FONTS.sansRegular,
     fontSize:       15.5,
     paddingVertical: 8,
+    maxHeight:      120,
+  },
+  counter: {
+    fontFamily: FONTS.monoRegular,
+    fontSize:   10.5,
+    textAlign:  'right',
+    marginTop:  4,
+    marginRight: 8,
   },
   iconBtn: {
     width:          42,
     height:         42,
+    marginBottom:   1,
     borderRadius:   RADIUS.pill,
     alignItems:     'center',
     justifyContent: 'center',

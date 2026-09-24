@@ -139,7 +139,7 @@ export default function HomeScreen() {
           >
             <View style={{ flex: 1 }}>
               <EyebrowLabel size={9} style={{ color: theme.accentFg, opacity: 0.7, marginBottom: 6 }}>
-                Saga's been waiting
+                Saga&apos;s been waiting
               </EyebrowLabel>
               <Text style={[styles.starterTitle, { color: theme.accentFg }]}>{starterCopy.title}</Text>
               <Text style={[styles.starterSub, { color: theme.accentFg, opacity: 0.78 }]}>{starterCopy.sub}</Text>
@@ -178,7 +178,7 @@ export default function HomeScreen() {
               Talk to <Text style={styles.krishnaTitleItalic}>Krishna</Text>
             </Text>
             <Text style={[styles.krishnaSub, { color: theme.muted }]}>
-              A quiet conversation with a friend who's heard everything before.
+              A quiet conversation with a friend who&apos;s heard everything before.
             </Text>
           </View>
           <Icon name="chevron" size={16} color={theme.muted} />
@@ -198,7 +198,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.krishnaText}>
             <Text style={[styles.krishnaTitle, { color: theme.ink }]}>
-              Today's <Text style={styles.krishnaTitleItalic}>Panchang</Text>
+              Today&apos;s <Text style={styles.krishnaTitleItalic}>Panchang</Text>
             </Text>
             <Text style={[styles.krishnaSub, { color: theme.muted }]}>
               Tithi, nakshatra, sunrise, and the right times to begin or pause.

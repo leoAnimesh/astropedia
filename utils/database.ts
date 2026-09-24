@@ -1,4 +1,12 @@
 import * as SQLite from 'expo-sqlite';
+import type {
+  FailureReason,
+  MessageFeedback,
+  MessageRole,
+  MessageStatus,
+  Recommendation,
+  ReplySnapshot,
+} from '@/types/conversation';
 
 export type Profile = {
   id: string;
@@ -38,12 +46,28 @@ export type Thread = {
 export type Message = {
   id: string;
   threadId: string;
-  role: 'user' | 'assistant';
+  role: MessageRole;
   content: string;
   modelTier: 'executorch' | 'groq' | 'claude' | 'deterministic' | 'cached' | 'pending' | null;
   createdAt: string;
   syncedAt: string | null;
+  // ── v5 conversation fields (all optional so legacy rows stay valid) ──
+  /** Delivery state — user messages only. Legacy rows have none (= sent). */
+  status?: MessageStatus | null;
+  failureReason?: FailureReason | null;
+  /** Recommendation cards attached to an assistant reply. */
+  recommendations?: Recommendation[];
+  feedback?: MessageFeedback | null;
+  replyTo?: ReplySnapshot | null;
+  /** Display name for human-astrologer messages. */
+  authorName?: string | null;
 };
+
+/** Fields of a message that can change after it is inserted. */
+export type MessagePatch = Partial<Pick<
+  Message,
+  'content' | 'modelTier' | 'status' | 'failureReason' | 'recommendations' | 'feedback' | 'createdAt'
+>>;
 
 let db: SQLite.SQLiteDatabase;
 
@@ -112,6 +136,19 @@ const MIGRATIONS = [
     version: 4,
     sql: [
       `ALTER TABLE profiles ADD COLUMN gender TEXT`,
+    ],
+  },
+  {
+    // Conversation experience: delivery status, recommendations, feedback,
+    // replies, human-astrologer author names. JSON columns are nullable TEXT.
+    version: 5,
+    sql: [
+      `ALTER TABLE messages ADD COLUMN status          TEXT`,
+      `ALTER TABLE messages ADD COLUMN failure_reason  TEXT`,
+      `ALTER TABLE messages ADD COLUMN recommendations TEXT`,
+      `ALTER TABLE messages ADD COLUMN feedback        TEXT`,
+      `ALTER TABLE messages ADD COLUMN reply_to        TEXT`,
+      `ALTER TABLE messages ADD COLUMN author_name     TEXT`,
     ],
   },
 ];
@@ -298,32 +335,74 @@ export async function deleteThread(id: string): Promise<void> {
 
 // ─── Message queries ───────────────────────────────────────────────────
 
+function parseJson<T>(value: unknown, fallback: T): T {
+  if (typeof value !== 'string' || value.length === 0) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function toJson(value: unknown): string | null {
+  if (value == null) return null;
+  if (Array.isArray(value) && value.length === 0) return null;
+  return JSON.stringify(value);
+}
+
 function rowToMessage(row: Record<string, unknown>): Message {
+  const recommendations = parseJson<Recommendation[]>(row.recommendations, []);
   return {
-    id:         row.id as string,
-    threadId:   row.thread_id as string,
-    role:       row.role as 'user' | 'assistant',
-    content:    row.content as string,
-    modelTier:  row.model_tier as Message['modelTier'],
-    createdAt:  row.created_at as string,
-    syncedAt:   row.synced_at as string | null,
+    id:              row.id as string,
+    threadId:        row.thread_id as string,
+    role:            row.role as MessageRole,
+    content:         row.content as string,
+    modelTier:       row.model_tier as Message['modelTier'],
+    createdAt:       row.created_at as string,
+    syncedAt:        row.synced_at as string | null,
+    status:          (row.status as MessageStatus | null) ?? null,
+    failureReason:   (row.failure_reason as FailureReason | null) ?? null,
+    recommendations: Array.isArray(recommendations) ? recommendations : [],
+    feedback:        parseJson<MessageFeedback | null>(row.feedback, null),
+    replyTo:         parseJson<ReplySnapshot | null>(row.reply_to, null),
+    authorName:      (row.author_name as string | null) ?? null,
   };
 }
 
 export async function getMessagesByThread(threadId: string): Promise<Message[]> {
+  // rowid breaks ties between messages created in the same millisecond
+  // (e.g. seeded demo payloads) so insertion order is preserved.
   const rows = await db.getAllAsync<Record<string, unknown>>(
-    `SELECT * FROM messages WHERE thread_id = ? ORDER BY created_at ASC`,
+    `SELECT * FROM messages WHERE thread_id = ? ORDER BY created_at ASC, rowid ASC`,
     [threadId],
   );
   return rows.map(rowToMessage);
 }
 
 export async function insertMessage(
-  m: Omit<Message, 'createdAt' | 'syncedAt'>,
+  m: Omit<Message, 'createdAt' | 'syncedAt'> & { createdAt?: string },
 ): Promise<Message> {
+  // created_at is written explicitly (ISO-8601) when the caller has one, so
+  // the in-memory ordering and the persisted ordering always agree.
   await db.runAsync(
-    `INSERT INTO messages (id, thread_id, role, content, model_tier) VALUES (?, ?, ?, ?, ?)`,
-    [m.id, m.threadId, m.role, m.content, m.modelTier ?? null],
+    `INSERT INTO messages
+       (id, thread_id, role, content, model_tier, created_at,
+        status, failure_reason, recommendations, feedback, reply_to, author_name)
+     VALUES (?, ?, ?, ?, ?, COALESCE(?, datetime('now')), ?, ?, ?, ?, ?, ?)`,
+    [
+      m.id,
+      m.threadId,
+      m.role,
+      m.content,
+      m.modelTier ?? null,
+      m.createdAt ?? null,
+      m.status ?? null,
+      m.failureReason ?? null,
+      toJson(m.recommendations),
+      toJson(m.feedback),
+      toJson(m.replyTo),
+      m.authorName ?? null,
+    ],
   );
   const row = await db.getFirstAsync<Record<string, unknown>>(
     `SELECT * FROM messages WHERE id = ?`, [m.id],
@@ -337,6 +416,35 @@ export async function updateMessageContent(id: string, content: string, modelTie
     `UPDATE messages SET content = ?, model_tier = ? WHERE id = ?`,
     [content, modelTier ?? null, id],
   );
+}
+
+const MESSAGE_PATCH_COLUMNS: Record<keyof MessagePatch, { column: string; json: boolean }> = {
+  content:         { column: 'content',         json: false },
+  modelTier:       { column: 'model_tier',      json: false },
+  status:          { column: 'status',          json: false },
+  failureReason:   { column: 'failure_reason',  json: false },
+  recommendations: { column: 'recommendations', json: true  },
+  feedback:        { column: 'feedback',        json: true  },
+  createdAt:       { column: 'created_at',      json: false },
+};
+
+export async function updateMessage(id: string, patch: MessagePatch): Promise<void> {
+  const sets: string[] = [];
+  const vals: (string | null)[] = [];
+  for (const key of Object.keys(patch) as (keyof MessagePatch)[]) {
+    const spec = MESSAGE_PATCH_COLUMNS[key];
+    if (!spec) continue;
+    const value = patch[key];
+    sets.push(`${spec.column} = ?`);
+    vals.push(spec.json ? toJson(value) : ((value as string | null | undefined) ?? null));
+  }
+  if (sets.length === 0) return;
+  vals.push(id);
+  await db.runAsync(`UPDATE messages SET ${sets.join(', ')} WHERE id = ?`, vals);
+}
+
+export async function deleteMessage(id: string): Promise<void> {
+  await db.runAsync(`DELETE FROM messages WHERE id = ?`, [id]);
 }
 
 export async function clearAllData(): Promise<void> {

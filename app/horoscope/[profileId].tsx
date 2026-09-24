@@ -145,21 +145,21 @@ export default function HoroscopeDetailScreen() {
         {sections?.mantra ? (
           <View style={[styles.mantraCard, { backgroundColor: theme.accent }]}>
             <EyebrowLabel size={9} style={{ marginBottom: 10, color: theme.accentFg, opacity: 0.7 }}>
-              Today's mantra
+              Today&apos;s mantra
             </EyebrowLabel>
             <Text style={[styles.mantraText, { color: theme.accentFg }]}>
-              "{sections.mantra}"
+              &quot;{sections.mantra}&quot;
             </Text>
           </View>
         ) : null}
 
-        {/* No key state */}
+        {/* Unavailable state — readings are generated on-device only, so the
+            only way to land here is the model still downloading/loading. */}
         {!loading && !sections && (
           <View style={[styles.sectionCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
             <Text style={[styles.sectionText, { color: theme.ink }]}>
-              Add a free Groq API key to your .env file to unlock daily readings.{'\n\n'}
-              Get one free (no credit card) at console.groq.com, then set:{'\n\n'}
-              EXPO_PUBLIC_GROQ_KEY=your_key_here
+              Today&apos;s reading isn&apos;t ready yet. Saga writes it on your phone, and the
+              on-device model is still getting ready. Come back in a moment.
             </Text>
           </View>
         )}

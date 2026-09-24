@@ -4,6 +4,8 @@ import { getAstrologyContext } from './astrology';
 import { isLLMReady, runLocalLLM, initLocalLLM, ensureLocalLLM, getCurrentModelInfo } from './local-llm';
 import { retrieveContext } from './rag';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
+import { RECS_PROMPT } from './recommendation-rules';
+import { modelWritesRecsBlock } from './recommendations';
 
 /**
  * Models that use a <think>...</think> reasoning block by default. Right now:
@@ -25,12 +27,15 @@ function withNoThinkSwitch(prompt: string): string {
 }
 
 export type AIMessage = { role: 'user' | 'assistant'; content: string };
+// 'groq' / 'claude' are legacy values that may exist on old persisted rows;
+// generation is on-device only (see streamAI).
 export type ModelTier = 'executorch' | 'groq' | 'claude' | 'deterministic' | 'cached' | 'pending';
 export type AIMode    = 'saga' | 'krishna';
 
 // If the local model is on disk but hasn't loaded into RAM yet, the chat path
-// waits at most this long before falling through to Groq. The local load
-// continues in the background and will be ready for the next message.
+// waits at most this long before returning the 'pending' tier (the caller
+// shows a retryable failure). The local load continues in the background and
+// will be ready for the next message.
 const LOCAL_LLM_WAIT_MS = 2500;
 
 // Friendly message shown while the on-device model is still loading after a
@@ -47,6 +52,12 @@ export type AIRequest = {
   systemOverride?: string;
   mode?:          AIMode;
   userName?:      string;
+  /**
+   * Ask the model to end its reply with a `<recs>{...}</recs>` block (chat
+   * only). Ignored for Krishna, horoscopes, system overrides and the floor
+   * model tier. The caller must strip the block — see stripRecsForDisplay.
+   */
+  withRecommendations?: boolean;
 };
 
 export type AIStreamResult = {
@@ -151,6 +162,7 @@ async function buildSystemPrompt(
   userMessage: string | undefined,
   mode:        AIMode,
   userName?:   string,
+  withRecommendations: boolean = false,
 ): Promise<string> {
   if (mode === 'krishna') {
     const ragContext = userMessage
@@ -193,13 +205,18 @@ async function buildSystemPrompt(
     ? `\n\n## Astrological Reference (use this to answer with precision)\n${ragContext}`
     : '';
 
-  return withNoThinkSwitch(`${base}\n\n${context}${precisionNote}${ragSection}`);
+  // Single-pass recommendations: the chat reply ends with a <recs> block.
+  const recsSection = withRecommendations && !isHoroscope && modelWritesRecsBlock()
+    ? `\n\n${RECS_PROMPT}`
+    : '';
+
+  return withNoThinkSwitch(`${base}\n\n${context}${precisionNote}${ragSection}${recsSection}`);
 }
 
 // ─── On-device LLM (Llama 3.2 1B via ExecuTorch) ─────────────────────────────
 
 async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
-  const system   = req.systemOverride ?? await buildSystemPrompt(req.profile, req.isHoroscope ?? false, req.userMessage, req.mode ?? 'saga', req.userName);
+  const system   = req.systemOverride ?? await buildSystemPrompt(req.profile, req.isHoroscope ?? false, req.userMessage, req.mode ?? 'saga', req.userName, req.withRecommendations ?? false);
   const messages = [
     { role: 'system'    as const, content: system },
     ...req.history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),

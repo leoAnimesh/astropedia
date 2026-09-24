@@ -165,7 +165,7 @@ export default function EditProfileScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={[styles.display, { color: theme.ink }]}>
-          Update <Text style={styles.italic}>{profile.name.split(' ')[0] || 'their'}'s</Text> details
+          Update <Text style={styles.italic}>{profile.name.split(' ')[0] || 'their'}&apos;s</Text> details
         </Text>
 
         <Input

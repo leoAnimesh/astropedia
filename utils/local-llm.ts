@@ -5,19 +5,65 @@ import { detectDeviceTier, type DeviceTier } from './device-tier';
 // Each tier maps to the best executorch-supported model that fits that
 // device class without crowding out the rest of the app. Keep these stable —
 // the `version` strings are persisted on disk and used as cache keys.
+//
+// ── MODEL SELECTION ──────────────────────────────────────────────────────────
+// This table (plus SAMPLING below) is the ONLY place that decides which model
+// runs. Swapping a model is a one-line change here; see README "Model
+// selection" for the reasoning behind each tier.
+type ModelFamily = 'qwen3' | 'lfm2' | 'llama';
+
 type ModelDef = {
   version:  string;
   constant: string;   // exported name in 'react-native-executorch'
   size:     string;   // human-readable for the UI
   label:    string;
+  family:   ModelFamily;
 };
 
 const MODELS: Record<DeviceTier, ModelDef> = {
-  flagship: { version: 'qwen3_1_7b_q',    constant: 'QWEN3_1_7B_QUANTIZED',           size: '~900 MB', label: 'Qwen 3 1.7B' },
-  mid:      { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', label: 'LFM2.5 1.2B' },
-  budget:   { version: 'llama3_2_1b_sq',  constant: 'LLAMA3_2_1B_SPINQUANT',          size: '~600 MB', label: 'Llama 3.2 1B' },
-  floor:    { version: 'lfm2_5_350m_q',   constant: 'LFM2_5_350M_QUANTIZED',          size: '~200 MB', label: 'LFM2.5 350M' },
+  flagship: { version: 'qwen3_1_7b_q',    constant: 'QWEN3_1_7B_QUANTIZED',           size: '~900 MB', label: 'Qwen 3 1.7B', family: 'qwen3' },
+  mid:      { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', label: 'LFM2.5 1.2B', family: 'lfm2'  },
+  // LFM2.5 1.2B is the primary model for 4–6 GB devices (was Llama 3.2 1B
+  // SpinQuant): better instruction following at similar size, faster decode.
+  budget:   { version: 'lfm2_5_1_2b_q',   constant: 'LFM2_5_1_2B_INSTRUCT_QUANTIZED', size: '~700 MB', label: 'LFM2.5 1.2B', family: 'lfm2'  },
+  floor:    { version: 'lfm2_5_350m_q',   constant: 'LFM2_5_350M_QUANTIZED',          size: '~200 MB', label: 'LFM2.5 350M', family: 'lfm2'  },
 };
+
+type SamplingConfig = {
+  temperature:       number;
+  topP:              number;
+  minP?:             number;
+  repetitionPenalty: number;
+};
+
+/**
+ * Sampling per model family — applied both at load time and before every
+ * generation, so there is a single source of truth.
+ *  - qwen3 : Qwen 3 Instruct's published non-thinking settings. Lower temp +
+ *            minP + high repetition penalty pushed the 1.7B model into
+ *            "thesaurus walk" loops, so these stay canonical.
+ *  - lfm2  : Liquid recommends low temperature for LFM2.5; a light repetition
+ *            penalty keeps the 350M/1.2B models from looping.
+ *  - llama : kept for anyone who pins it manually in future.
+ */
+const SAMPLING: Record<ModelFamily, SamplingConfig> = {
+  qwen3: { temperature: 0.7, topP: 0.8, minP: 0, repetitionPenalty: 1.0 },
+  lfm2:  { temperature: 0.3, topP: 0.9,          repetitionPenalty: 1.05 },
+  llama: { temperature: 0.6, topP: 0.9,          repetitionPenalty: 1.1 },
+};
+
+// Family of the model that is actually loaded in RAM (may lag the preference
+// during a switch). Falls back to the desired model before first load.
+let _loadedFamily: ModelFamily | null = null;
+
+function applySampling(mod: import('react-native-executorch').LLMModule): void {
+  const cfg = SAMPLING[_loadedFamily ?? desiredModel().family];
+  try {
+    mod.configure({ generationConfig: { ...cfg } });
+  } catch {
+    // non-fatal; model falls back to its own defaults
+  }
+}
 
 function selectedTier(): DeviceTier {
   const explicit = Storage.getPreferredModelTier();
@@ -141,22 +187,10 @@ function loadModule(silent: boolean): Promise<void> {
         },
       );
 
-      // Stable sampling for small models. Qwen 3's published recommended
-      // values (temperature 0.6, topP 0.95) are conservative enough to
-      // avoid tokenizer chaos like Chinese characters bleeding into English
-      // output and missing spaces — symptoms of over-sampling on a 1.7B
-      // model. repetitionPenalty 1.1 prevents sentence-level looping.
-      try {
-        _module.configure({
-          generationConfig: {
-            temperature:        0.6,
-            topP:               0.95,
-            repetitionPenalty:  1.1,
-          },
-        });
-      } catch {
-        // non-fatal; model falls back to its own defaults
-      }
+      // Per-family sampling (see SAMPLING). Same values runLocalLLM applies
+      // before each generation, so load-time and run-time never disagree.
+      _loadedFamily = target.family;
+      applySampling(_module);
 
       Storage.setModelDownloaded(true);
       Storage.setModelVersion(target.version);
@@ -286,21 +320,9 @@ export async function runLocalLLM(
   if (_activeGeneration) {
     try { await _activeGeneration; } catch { /* ignore prior error */ }
   }
-  // Match Qwen 3 Instruct's officially-recommended sampling exactly. Lower
-  // temperature + minP > 0 + high repetitionPenalty (the combination I had
-  // earlier) pushes small models into degenerate "thesaurus walk" loops
-  // where every next token is the most-similar-but-different word. The
-  // canonical config below avoids that failure mode.
-  try {
-    _module.configure({
-      generationConfig: {
-        temperature:       0.7,
-        topP:              0.8,
-        minP:              0,
-        repetitionPenalty: 1.0,
-      },
-    });
-  } catch { /* non-fatal */ }
+  // Re-apply the loaded model family's sampling (see SAMPLING) — other
+  // callers may have reconfigured the shared module.
+  applySampling(_module);
   // Wrap the token callback with degenerate-output detection. Small models
   // can fall into "thesaurus walks" where every next token is a synonym of
   // the previous one — the output looks like a thesaurus dump with no

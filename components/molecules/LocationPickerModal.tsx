@@ -93,7 +93,7 @@ export function LocationPickerModal({
             onPress={() => handleSelect({ label: query.trim(), value: query.trim() })}
           >
             <Text style={[styles.manualText, { color: theme.accent }]}>
-              Use "{query.trim()}"
+              Use &quot;{query.trim()}&quot;
             </Text>
             <Text style={[styles.manualSub, { color: theme.muted }]}>
               Will be geocoded automatically

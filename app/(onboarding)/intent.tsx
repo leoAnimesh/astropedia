@@ -46,7 +46,7 @@ export default function IntentScreen() {
 
       <View style={styles.content}>
         <Text style={[styles.display, { color: theme.ink }]}>
-          What's on{'\n'}
+          What&apos;s on{'\n'}
           <Text style={styles.italic}>your mind?</Text>
         </Text>
 

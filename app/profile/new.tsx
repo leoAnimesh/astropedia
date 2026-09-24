@@ -298,7 +298,7 @@ export default function NewProfileScreen() {
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.signGlyph, { color: theme.accent }]}>{sun.glyph}</Text>
             <View>
-              <EyebrowLabel size={10}>{name || 'They'}'s sun</EyebrowLabel>
+              <EyebrowLabel size={10}>{name || 'They'}&apos;s sun</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
                 <Text style={styles.italic}>{sun.name}</Text>
                 {'  '}

@@ -42,7 +42,7 @@ export default function SettingsScreen() {
     { key: 'auto',     label: 'Auto-select',          sub: `Picks the best model for your phone (now: ${catalog[detectedTier].label}, ${catalog[detectedTier].size})` },
     { key: 'flagship', label: catalog.flagship.label, sub: `${catalog.flagship.size} · best quality` },
     { key: 'mid',      label: catalog.mid.label,      sub: `${catalog.mid.size} · solid quality` },
-    { key: 'budget',   label: catalog.budget.label,   sub: `${catalog.budget.size} · faster on older phones` },
+    { key: 'budget',   label: catalog.budget.label,   sub: `${catalog.budget.size} · primary for 4–6 GB phones` },
     { key: 'floor',    label: catalog.floor.label,    sub: `${catalog.floor.size} · minimum, weakest answers` },
   ];
 
