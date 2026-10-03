@@ -1,0 +1,64 @@
+{
+  "welcome": {
+    "titleA": "The stars,",
+    "titleB": "annotated.",
+    "body": "A friendly, grounded astrology companion. Build a profile for yourself or anyone you love — then ask anything.",
+    "begin": "Begin"
+  },
+  "name": {
+    "step": "01 / 05 — You",
+    "titleA": "What should I",
+    "titleB": "call you?",
+    "label": "First name",
+    "placeholder": "Your name"
+  },
+  "gender": {
+    "step": "02 / 05 — You",
+    "titleA": "How should I",
+    "titleB": "refer to you?",
+    "hint": "Helps Saga pick the right pronouns and (when relevant) the traditional Vedic conventions around partner readings.",
+    "woman": { "label": "Woman", "sub": "She / her" },
+    "man": { "label": "Man", "sub": "He / him" },
+    "non_binary": { "label": "Non-binary", "sub": "Or another identity" },
+    "unspecified": { "label": "Prefer not to say", "sub": "I'll skip this for now" }
+  },
+  "birthDate": {
+    "step": "03 / 05 — Birthday",
+    "titleA": "When were",
+    "titleB": "you born?",
+    "fieldLabel": "Date of birth",
+    "moonLabel": "Moon sign · Rashi",
+    "approxNote": "approximate — your birth time refines this next",
+    "futureTitle": "That date is in the future",
+    "futureBody": "Pick the date you were actually born — we can't read a chart for a moment that hasn't happened yet."
+  },
+  "birthTime": {
+    "step": "04 / 05 — Time",
+    "titleA": "What time did",
+    "titleB": "you arrive?",
+    "hint": "Birth time gives us your Rising sign and precise house placements — the most personal part of your chart.",
+    "fieldLabel": "Time of birth",
+    "selected": "Selected time",
+    "moonLabel": "Moon sign · Rashi",
+    "exactNote": "now exact — this is your Rashi"
+  },
+  "birthPlace": {
+    "step": "05 / 05 — Place",
+    "titleA": "Where did you",
+    "titleB": "first breathe?",
+    "hint": "Your birth location anchors your chart to the sky at exactly that moment and place on Earth.",
+    "preview": "Your chart preview",
+    "privacy": "Your chart stays on your device. Saga reads it gently — like a thoughtful friend who happens to know astrology.",
+    "cta": "Open my chart"
+  },
+  "intent": {
+    "step": "One more · what brought you here",
+    "titleA": "What's on",
+    "titleB": "your mind?",
+    "hint": "Pick one to give Saga a starting point. You can ask about anything else, anytime.",
+    "love": { "title": "Love & connection", "sub": "Relationships, intimacy, the heart." },
+    "career": { "title": "Career & purpose", "sub": "Work, direction, what to build." },
+    "self": { "title": "Understand myself", "sub": "Your patterns, your inner weather." },
+    "curious": { "title": "Just curious", "sub": "No agenda — show me around." }
+  }
+}

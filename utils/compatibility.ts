@@ -4,11 +4,13 @@
  * and Bhakoot (rashi distance). Returns a friendly narrative summary too.
  *
  * Deterministic. No LLM. Uses each profile's moon longitude + moon sign.
+ * Verdict/summary/dimension text comes from the `compatibility` namespace.
  */
 
 import type { Profile } from './database';
 import { getBigThree, getMoonLongitudeExact } from './astrology';
 import { NAKSHATRAS } from '@/constants/astrology';
+import i18n from './i18n';
 
 // ─── Nakshatra metadata (gana + nadi) ─────────────────────────────────────────
 
@@ -128,50 +130,37 @@ export function computeCompatibility(a: Profile, b: Profile): CompatibilityResul
   const max      = 21;
   const outOfTen = Math.round((total / max) * 20) / 2;
 
+  // Display text in the app language (this result is only shown on screen,
+  // never sent to the model). Call again after a language change.
+  const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`compatibility:${key}`, opts);
+
   const dimensions: CompatibilityDimension[] = [
     {
-      name:   'Temperament (Gana)',
+      name:   t('dim.gana.name'),
       score:  gana,
       max:    6,
-      flavor: gana >= 5
-        ? 'Your inner natures move in the same key.'
-        : gana >= 3
-        ? 'Different temperaments, but workable with care.'
-        : 'Two very different inner rhythms — you\'ll need to translate often.',
+      flavor: t(gana >= 5 ? 'dim.gana.high' : gana >= 3 ? 'dim.gana.mid' : 'dim.gana.low'),
     },
     {
-      name:   'Health & vitality (Nadi)',
+      name:   t('dim.nadi.name'),
       score:  nadi,
       max:    8,
-      flavor: nadi === 8
-        ? 'Your constitutions complement each other well.'
-        : 'Similar constitutions — traditionally a caution flag for shared depletion.',
+      flavor: t(nadi === 8 ? 'dim.nadi.good' : 'dim.nadi.same'),
     },
     {
-      name:   'Lifestyle harmony (Bhakoot)',
+      name:   t('dim.bhakoot.name'),
       score:  bhakoot,
       max:    7,
-      flavor: bhakoot === 7
-        ? 'Your day-to-day rhythms can sync easily.'
-        : 'Your moon signs sit in a classically restless angle to each other.',
+      flavor: t(bhakoot === 7 ? 'dim.bhakoot.good' : 'dim.bhakoot.dosha'),
     },
   ];
 
   const firstA = a.name.split(' ')[0];
   const firstB = b.name.split(' ')[0];
 
-  let verdict: string;
-  let summary: string;
-  if (outOfTen >= 8) {
-    verdict = 'Strong match';
-    summary = `${firstA} and ${firstB} share a naturally compatible chart pairing — temperament, vitality, and daily rhythm all line up well. A friendship or partnership here has good wind behind it.`;
-  } else if (outOfTen >= 5.5) {
-    verdict = 'Workable, with effort';
-    summary = `${firstA} and ${firstB} have real points of harmony, plus a few traditional friction points. Communication and patience matter more than they would in an effortless pairing — but that's true of most lasting bonds.`;
-  } else {
-    verdict = 'Challenging pairing';
-    summary = `Traditional matching marks this as a careful pairing for ${firstA} and ${firstB}. That doesn't mean it can't work — many real-life partnerships do — but the chart asks for awareness, not autopilot.`;
-  }
+  const level = outOfTen >= 8 ? 'strong' : outOfTen >= 5.5 ? 'workable' : 'challenging';
+  const verdict = t(`verdict.${level}`);
+  const summary = t(`summary.${level}`, { a: firstA, b: firstB });
 
   return { total, max, outOfTen, verdict, summary, dimensions };
 }

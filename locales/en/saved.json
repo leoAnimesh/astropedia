@@ -1,0 +1,27 @@
+{
+  "back": "Back",
+  "count": "{{count}} saved",
+  "count_one": "{{count}} saved",
+  "count_other": "{{count}} saved",
+  "title": "Saved <em>answers.</em>",
+  "filters": {
+    "all": "All",
+    "saga": "Saga",
+    "krishna": "Krishna"
+  },
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "openChat": "Open chat →",
+  "chatDeleted": "Chat deleted",
+  "a11y": {
+    "share": "Share answer",
+    "remove": "Remove from saved answers",
+    "openHint": "Opens the conversation"
+  },
+  "empty": {
+    "all": "Nothing saved <em>yet.</em>",
+    "saga": "No Saga answers <em>saved.</em>",
+    "krishna": "No Krishna answers <em>saved.</em>",
+    "sub": "Tap Save under any reply in a chat to keep it here."
+  }
+}

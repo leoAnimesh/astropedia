@@ -1,0 +1,42 @@
+{
+  "title": "Compatibility",
+  "back": "Go back",
+  "heading1": "How do your",
+  "heading2": "charts meet?",
+  "tapToChange": "tap to change",
+  "addAProfile": "add a profile",
+  "addProfileCta": "+ add profile",
+  "hintSame": "Pick two different profiles to see how their charts meet.",
+  "hintNeedTwo": "You'll need at least two profiles to compare. Add a partner, family member, or friend from the home screen.",
+  "outOf": " / 10",
+  "pieces": "The pieces",
+  "footer": "Vedic charts hint at patterns, not destinies. The way two people show up for each other day after day matters more than any score.",
+  "verdict": {
+    "strong": "Strong match",
+    "workable": "Workable, with effort",
+    "challenging": "Challenging pairing"
+  },
+  "summary": {
+    "strong": "{{a}} and {{b}} share a naturally compatible chart pairing — temperament, vitality, and daily rhythm all line up well. A friendship or partnership here has good wind behind it.",
+    "workable": "{{a}} and {{b}} have real points of harmony, plus a few traditional friction points. Communication and patience matter more than they would in an effortless pairing — but that's true of most lasting bonds.",
+    "challenging": "Traditional matching marks this as a careful pairing for {{a}} and {{b}}. That doesn't mean it can't work — many real-life partnerships do — but the chart asks for awareness, not autopilot."
+  },
+  "dim": {
+    "gana": {
+      "name": "Temperament (Gana)",
+      "high": "Your inner natures move in the same key.",
+      "mid": "Different temperaments, but workable with care.",
+      "low": "Two very different inner rhythms — you'll need to translate often."
+    },
+    "nadi": {
+      "name": "Health & vitality (Nadi)",
+      "good": "Your constitutions complement each other well.",
+      "same": "Similar constitutions — traditionally a caution flag for shared depletion."
+    },
+    "bhakoot": {
+      "name": "Lifestyle harmony (Bhakoot)",
+      "good": "Your day-to-day rhythms can sync easily.",
+      "dosha": "Your moon signs sit in a classically restless angle to each other."
+    }
+  }
+}

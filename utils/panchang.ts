@@ -16,6 +16,7 @@
 
 import { NAKSHATRAS } from '@/constants/astrology';
 import { getMoonLongitudeExact } from './astrology';
+import i18n, { intlLocale } from './i18n';
 
 const RAD = Math.PI / 180;
 const DEG = 180 / Math.PI;
@@ -277,3 +278,28 @@ export function formatHour(h: number): string {
 export function formatWindow(w: Window): string {
   return `${formatHour(w.startHour)} – ${formatHour(w.endHour)}`;
 }
+
+// ─── Display helpers (app language) ──────────────────────────────────────────
+// formatHour/formatWindow above stay English (other callers and model context
+// rely on them). Screens use these for user-facing text.
+
+/** Decimal local hour → "6:12 am" / "সকাল ৬:১২" in the app language. */
+export function formatHourLocal(h: number): string {
+  const total = Math.round(h * 60);
+  const d = new Date();
+  d.setHours(Math.floor(total / 60) % 24, total % 60, 0, 0);
+  try {
+    return d.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return formatHour(h);
+  }
+}
+
+export function formatWindowLocal(w: Window): string {
+  return `${formatHourLocal(w.startHour)} – ${formatHourLocal(w.endHour)}`;
+}
+
+/** Yoga / karana / vara names in the app language (English data unchanged). */
+export const tYoga   = (name: string) => i18n.t(`panchang:yoga.${name}`,   { defaultValue: name });
+export const tKarana = (name: string) => i18n.t(`panchang:karana.${name}`, { defaultValue: name });
+export const tVara   = (name: string) => i18n.t(`panchang:vara.${name}`,   { defaultValue: name });

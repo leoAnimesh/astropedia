@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Button } from '@/components/atoms/Button';
 import { Icon } from '@/components/atoms/Icon';
@@ -12,6 +13,8 @@ import OnboardingStore from './_store';
 
 export default function NameScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const [name, setName] = useState(OnboardingStore.name ?? '');
 
   const handleContinue = () => {
@@ -25,13 +28,13 @@ export default function NameScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>01 / 05 — You</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('name.step')}</Text>
       </View>
 
       <View style={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          What should I{'\n'}
-          <Text style={styles.italic}>call you?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('name.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('name.titleB')}</Text>
         </Text>
 
         {name.trim().length > 0 && (
@@ -41,8 +44,8 @@ export default function NameScreen() {
         )}
 
         <Input
-          label="First name"
-          placeholder="Your name"
+          label={t('name.label')}
+          placeholder={t('name.placeholder')}
           value={name}
           onChangeText={setName}
           autoFocus
@@ -55,7 +58,7 @@ export default function NameScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Continue"
+          label={t('common:continue')}
           variant="accent"
           fullWidth
           disabled={!name.trim()}
@@ -95,6 +98,7 @@ const styles = StyleSheet.create({
     lineHeight: 44,
     marginBottom: 32,
   },
+  displayIndic: { lineHeight: 56 },
   italic: {
     fontFamily: FONTS.serifItalic,
   },

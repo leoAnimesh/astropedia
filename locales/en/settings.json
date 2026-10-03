@@ -1,0 +1,52 @@
+{
+  "title": "Settings",
+  "back": "Back",
+  "appearance": {
+    "section": "Appearance",
+    "accentColor": "Accent color",
+    "darkMode": "Dark mode",
+    "darkModeSub": "Easier on the eyes after dusk."
+  },
+  "accent": {
+    "amber": "Amber",
+    "sage": "Sage",
+    "lilac": "Lilac",
+    "blush": "Blush",
+    "ink": "Ink"
+  },
+  "language": {
+    "section": "Language",
+    "label": "App language",
+    "note": "Saga and Krishna reply in English for now.",
+    "selectedA11y": "{{language}}, selected"
+  },
+  "notifications": {
+    "section": "Notifications",
+    "daily": "Daily reading",
+    "dailySub": "A gentle 8 AM nudge so you don't forget today's reading.",
+    "transit": "Transit alerts",
+    "transitSub": "A day-before heads-up when Sun, Mars, Jupiter, or Saturn shifts sign.",
+    "offTitle": "Notifications off",
+    "offDaily": "Enable notifications for Astropedia in your phone settings to receive daily readings.",
+    "offTransit": "Enable notifications for Astropedia in your phone settings to receive transit alerts."
+  },
+  "conversations": {
+    "section": "Conversations",
+    "archived": "Archived chats",
+    "saved": "Saved answers"
+  },
+  "dev": {
+    "section": "Dev",
+    "clearCache": "Clear AI cache",
+    "clearCacheSub": "Force regenerate horoscope & chart readings",
+    "clearedTitle": "Cache cleared",
+    "clearedMessage": "Horoscope, chart readings, and chat cache will regenerate on next open."
+  },
+  "reset": {
+    "button": "Reset all data",
+    "title": "Reset all data",
+    "message": "This will delete all profiles, chats, and settings. Cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Reset"
+  }
+}

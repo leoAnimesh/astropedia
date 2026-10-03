@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { FONTS, RADIUS } from '@/constants/themes';
@@ -36,6 +37,7 @@ export function LocationPickerModal({
 }: Props) {
   const { theme }  = useAccent();
   const insets     = useSafeAreaInsets();
+  const { t }      = useTranslation('common');
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -67,7 +69,12 @@ export function LocationPickerModal({
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
           <Text style={[styles.title, { color: theme.ink }]}>{title}</Text>
-          <TouchableOpacity onPress={handleClose} hitSlop={12}>
+          <TouchableOpacity
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t('close')}
+          >
             <Icon name="close" size={20} color={theme.muted} />
           </TouchableOpacity>
         </View>
@@ -77,7 +84,7 @@ export function LocationPickerModal({
           <Icon name="search" size={16} color={theme.muted} />
           <TextInput
             style={[styles.searchInput, { color: theme.ink }]}
-            placeholder="Search…"
+            placeholder={t('search')}
             placeholderTextColor={theme.muted}
             value={query}
             onChangeText={setQuery}
@@ -93,10 +100,10 @@ export function LocationPickerModal({
             onPress={() => handleSelect({ label: query.trim(), value: query.trim() })}
           >
             <Text style={[styles.manualText, { color: theme.accent }]}>
-              Use "{query.trim()}"
+              {t('location.useQuery', { query: query.trim() })}
             </Text>
             <Text style={[styles.manualSub, { color: theme.muted }]}>
-              Will be geocoded automatically
+              {t('location.geocodedNote')}
             </Text>
           </TouchableOpacity>
         )}
@@ -130,7 +137,7 @@ export function LocationPickerModal({
           )}
           ListEmptyComponent={
             !showManual ? (
-              <Text style={[styles.empty, { color: theme.muted }]}>No results</Text>
+              <Text style={[styles.empty, { color: theme.muted }]}>{t('noResults')}</Text>
             ) : null
           }
         />

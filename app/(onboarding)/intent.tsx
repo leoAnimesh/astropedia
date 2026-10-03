@@ -1,4 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
@@ -7,27 +8,21 @@ import { useOnboardingStore } from '@/stores/onboarding-store';
 import { resetOnboardingDraft } from './_store';
 import { FONTS, RADIUS } from '@/constants/themes';
 
-type Intent = {
-  key:      'love' | 'career' | 'self' | 'curious';
-  title:    string;
-  subtitle: string;
-};
+type IntentKey = 'love' | 'career' | 'self' | 'curious';
 
-const INTENTS: Intent[] = [
-  { key: 'love',    title: 'Love & connection',  subtitle: 'Relationships, intimacy, the heart.' },
-  { key: 'career',  title: 'Career & purpose',   subtitle: 'Work, direction, what to build.' },
-  { key: 'self',    title: 'Understand myself',  subtitle: 'Your patterns, your inner weather.' },
-  { key: 'curious', title: "Just curious",       subtitle: 'No agenda — show me around.' },
-];
+// Stored as these codes; labels come from onboarding:intent.<key>.
+const INTENTS: IntentKey[] = ['love', 'career', 'self', 'curious'];
 
 export default function IntentScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
 
   const setOnboardingDone = useOnboardingStore((s) => s.setDone);
 
   // No imperative navigation needed — flipping the store causes the
   // <Stack.Protected> guards in the root layout to swap stacks automatically.
-  const handlePick = (key: Intent['key']) => {
+  const handlePick = (key: IntentKey) => {
     Storage.setStarterIntent(key);
     resetOnboardingDraft();
     setOnboardingDone(true);
@@ -41,37 +36,37 @@ export default function IntentScreen() {
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <Text style={[styles.step, { color: theme.muted }]}>One more · what brought you here</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('intent.step')}</Text>
       </View>
 
       <View style={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          What's on{'\n'}
-          <Text style={styles.italic}>your mind?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('intent.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('intent.titleB')}</Text>
         </Text>
 
         <Text style={[styles.hint, { color: theme.ink2 }]}>
-          Pick one to give Saga a starting point. You can ask about anything else, anytime.
+          {t('intent.hint')}
         </Text>
 
         <View style={styles.list}>
-          {INTENTS.map((intent) => (
+          {INTENTS.map((key) => (
             <TouchableOpacity
-              key={intent.key}
+              key={key}
               activeOpacity={0.85}
-              onPress={() => handlePick(intent.key)}
+              onPress={() => handlePick(key)}
               style={[styles.option, { backgroundColor: theme.surface, borderColor: theme.hairline }]}
             >
               <View style={{ flex: 1 }}>
-                <Text style={[styles.optionTitle, { color: theme.ink }]}>{intent.title}</Text>
-                <Text style={[styles.optionSub, { color: theme.muted }]}>{intent.subtitle}</Text>
+                <Text style={[styles.optionTitle, { color: theme.ink }]}>{t(`intent.${key}.title`)}</Text>
+                <Text style={[styles.optionSub, { color: theme.muted }]}>{t(`intent.${key}.sub`)}</Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity onPress={handleSkip} style={styles.skip}>
-          <EyebrowLabel size={11}>Skip for now</EyebrowLabel>
+          <EyebrowLabel size={11}>{t('common:skipForNow')}</EyebrowLabel>
         </TouchableOpacity>
       </View>
     </ScreenLayout>
@@ -101,6 +96,7 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 16,
   },
+  displayIndic: { lineHeight: 56 },
   italic: { fontFamily: FONTS.serifItalic },
   hint: {
     fontFamily:   FONTS.sansRegular,

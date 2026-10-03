@@ -1,0 +1,58 @@
+{
+  "back": "Back",
+  "eyebrow": "Muhurat",
+  "eyebrowCity": "Muhurat · {{city}}",
+  "title": {
+    "before": "Find a good ",
+    "em": "time",
+    "after": "."
+  },
+  "planning": "What are you planning?",
+  "activity": {
+    "work": {
+      "label": "Start work",
+      "windows": "Windows to start work",
+      "avoidFor": "for new work"
+    },
+    "travel": {
+      "label": "Travel",
+      "windows": "Windows to travel",
+      "avoidFor": "for journeys"
+    },
+    "buy": {
+      "label": "Buy",
+      "windows": "Windows to buy",
+      "avoidFor": "for purchases"
+    },
+    "sign": {
+      "label": "Sign",
+      "windows": "Windows to sign",
+      "avoidFor": "for signing"
+    }
+  },
+  "todayLabel": "Today · {{day}}",
+  "todayCard": "Today · {{day}} · {{tithi}}",
+  "sunrise": "Sunrise",
+  "sunset": "Sunset",
+  "abhijit": "Abhijit",
+  "avoidRahu": "Avoid Rahu Kaal",
+  "passed": "Already passed today",
+  "noWindow": "No window · {{reason}}",
+  "note": "A simplified traditional rule set: Abhijit muhurat, clear of Rahu Kaal, on a suitable tithi.",
+  "timesFor": "Times are for {{city}}.",
+  "timesApprox": "Times are approximate for your timezone.",
+  "ask": "Ask Saga which suits me best →",
+  "reason": {
+    "wednesday": "Wednesday: Abhijit is skipped by tradition",
+    "amavasya": "Amavasya (new moon): traditionally avoided",
+    "rikta": "{{tithi}} is a Rikta tithi, avoided {{avoidFor}}",
+    "avoided": "{{tithi}}: traditionally avoided {{avoidFor}}",
+    "rahuCovers": "Rahu Kaal covers most of Abhijit",
+    "abhijit": "Abhijit",
+    "favouredWaxing": "favoured tithi, waxing moon",
+    "favoured": "favoured tithi",
+    "waxing": "waxing moon",
+    "trimmed": "trimmed to avoid Rahu Kaal",
+    "clear": "clear of Rahu Kaal"
+  }
+}

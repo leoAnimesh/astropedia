@@ -9,23 +9,39 @@ import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { ShareableHoroscopeCard } from '@/components/molecules/ShareableHoroscopeCard';
-import { todayIso, formatFullDate, todayShort } from '@/utils/format';
+import { useTranslation } from 'react-i18next';
+import { todayIso } from '@/utils/format';
+import { intlLocale, tNakshatra, tPlanet, tSign } from '@/utils/i18n';
 import { getLunarPhase } from '@/utils/astrology';
 import { captureAndShare } from '@/utils/share';
 import { FONTS, RADIUS } from '@/constants/themes';
 
-type Section = { key: keyof import('@/hooks/use-horoscope').HoroscopeSections; label: string; icon: string };
+type Section = { key: keyof import('@/hooks/use-horoscope').HoroscopeSections; icon: string };
 
+// Labels come from horoscope:sections.<key>.
 const SECTIONS: Section[] = [
-  { key: 'energy',   label: 'Overall Energy',   icon: '✦' },
-  { key: 'love',     label: 'Love & Connection', icon: '♡' },
-  { key: 'career',   label: 'Career & Purpose',  icon: '◈' },
-  { key: 'wellness', label: 'Mind & Body',        icon: '◎' },
-  { key: 'guidance', label: "Saga's Guidance",   icon: '✧' },
+  { key: 'energy',   icon: '✦' },
+  { key: 'love',     icon: '♡' },
+  { key: 'career',   icon: '◈' },
+  { key: 'wellness', icon: '◎' },
+  { key: 'guidance', icon: '✧' },
 ];
+
+// getLunarPhase() returns English names; these are their horoscope:phase keys.
+const PHASE_KEY: Record<string, string> = {
+  'New Moon':        'newMoon',
+  'Waxing Crescent': 'waxingCrescent',
+  'First Quarter':   'firstQuarter',
+  'Waxing Gibbous':  'waxingGibbous',
+  'Full Moon':       'fullMoon',
+  'Waning Gibbous':  'waningGibbous',
+  'Last Quarter':    'lastQuarter',
+  'Waning Crescent': 'waningCrescent',
+};
 
 export default function HoroscopeDetailScreen() {
   const { theme }       = useAccent();
+  const { t }           = useTranslation('horoscope');
   const { profileId }   = useLocalSearchParams<{ profileId: string }>();
   const { profiles }    = useProfiles();
   const profile         = profiles.find(p => p.id === profileId);
@@ -34,7 +50,11 @@ export default function HoroscopeDetailScreen() {
     profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null },
   );
 
-  const lunarPhase = getLunarPhase(todayIso());
+  const lunarPhaseEn = getLunarPhase(todayIso());
+  const lunarPhase   = PHASE_KEY[lunarPhaseEn] ? t(`phase.${PHASE_KEY[lunarPhaseEn]}`) : lunarPhaseEn;
+  const now          = new Date();
+  const shortDate    = now.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric' });
+  const fullDate     = now.toLocaleDateString(intlLocale(), { month: 'long', day: 'numeric', year: 'numeric' });
   const firstName  = (profile?.name ?? '').split(' ')[0];
 
   const shareCardRef = useRef<View>(null);
@@ -52,16 +72,16 @@ export default function HoroscopeDetailScreen() {
     <ScreenLayout edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8} accessibilityLabel={t('backA11y')}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <EyebrowLabel style={{ marginBottom: 0 }}>
-            {todayShort()} · Daily for {firstName}
+            {t('eyebrow', { date: shortDate, name: firstName })}
           </EyebrowLabel>
         </View>
         {sections?.energy && (
-          <TouchableOpacity onPress={handleShare} hitSlop={8} style={styles.shareBtn}>
+          <TouchableOpacity onPress={handleShare} hitSlop={8} style={styles.shareBtn} accessibilityLabel={t('shareA11y')}>
             <Icon name="send" size={18} color={theme.muted} />
           </TouchableOpacity>
         )}
@@ -87,7 +107,7 @@ export default function HoroscopeDetailScreen() {
       >
         {/* Hero heading */}
         <Text style={[styles.display, { color: theme.ink }]}>
-          {formatFullDate(new Date())}
+          {fullDate}
         </Text>
 
         {/* Cosmic context row */}
@@ -95,7 +115,7 @@ export default function HoroscopeDetailScreen() {
           {sunSign && (
             <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
               <Text style={[styles.contextChipText, { color: theme.ink2 }]}>
-                {sunSign.glyph} {sunSign.name}
+                {sunSign.glyph} {tSign(sunSign.name)}
               </Text>
             </View>
           )}
@@ -105,13 +125,13 @@ export default function HoroscopeDetailScreen() {
           {dasha && (
             <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
               <Text style={[styles.contextChipText, { color: theme.ink2 }]}>
-                {dasha.lord} Dasha
+                {t('dashaChip', { lord: tPlanet(dasha.lord) })}
               </Text>
             </View>
           )}
           {nakshatra && (
             <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
-              <Text style={[styles.contextChipText, { color: theme.ink2 }]}>{nakshatra.name}</Text>
+              <Text style={[styles.contextChipText, { color: theme.ink2 }]}>{tNakshatra(nakshatra.name)}</Text>
             </View>
           )}
         </View>
@@ -121,20 +141,20 @@ export default function HoroscopeDetailScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.accent} />
             <Text style={[styles.loadingText, { color: theme.muted }]}>
-              Saga is reading the stars for {firstName}…
+              {t('loading', { name: firstName })}
             </Text>
           </View>
         )}
 
         {/* Horoscope sections */}
-        {sections && SECTIONS.map(({ key, label, icon }) => {
+        {sections && SECTIONS.map(({ key, icon }) => {
           const text = sections[key];
           if (!text) return null;
           return (
             <View key={key} style={[styles.sectionCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
               <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionIcon, { color: theme.accent }]}>{icon}</Text>
-                <EyebrowLabel size={10}>{label}</EyebrowLabel>
+                <EyebrowLabel size={10}>{t(`sections.${key}`)}</EyebrowLabel>
               </View>
               <Text style={[styles.sectionText, { color: theme.ink }]}>{text}</Text>
             </View>
@@ -145,21 +165,19 @@ export default function HoroscopeDetailScreen() {
         {sections?.mantra ? (
           <View style={[styles.mantraCard, { backgroundColor: theme.accent }]}>
             <EyebrowLabel size={9} style={{ marginBottom: 10, color: theme.accentFg, opacity: 0.7 }}>
-              Today's mantra
+              {t('mantraEyebrow')}
             </EyebrowLabel>
             <Text style={[styles.mantraText, { color: theme.accentFg }]}>
-              "{sections.mantra}"
+              “{sections.mantra}”
             </Text>
           </View>
         ) : null}
 
-        {/* No key state */}
+        {/* Reading couldn't be built (e.g. missing birth details) */}
         {!loading && !sections && (
           <View style={[styles.sectionCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
             <Text style={[styles.sectionText, { color: theme.ink }]}>
-              Add a free Groq API key to your .env file to unlock daily readings.{'\n\n'}
-              Get one free (no credit card) at console.groq.com, then set:{'\n\n'}
-              EXPO_PUBLIC_GROQ_KEY=your_key_here
+              {t('notReady')}
             </Text>
           </View>
         )}

@@ -1,0 +1,69 @@
+{
+  "form": {
+    "nameLabel": "नाम",
+    "namePlaceholder": "जैसे माँ, समीर, प्रिया",
+    "relLabel": "रिश्ता · वैकल्पिक",
+    "relLabelFor": "{{name}} से रिश्ता · वैकल्पिक",
+    "relPlaceholder": "जीवनसाथी, दोस्त, माता-पिता…",
+    "relPlaceholderFor": "{{name}} के जीवनसाथी, दोस्त, माता-पिता…",
+    "genderLabel": "जेंडर · वैकल्पिक",
+    "dobLabel": "जन्म तिथि",
+    "tobLabel": "जन्म का समय · वैकल्पिक",
+    "futureTitle": "यह तारीख़ अभी आई ही नहीं",
+    "futureBody": "बीती हुई असली जन्म तिथि चुनें — कुंडली उसी पल की बनती है जो बीत चुका हो।"
+  },
+  "new": {
+    "eyebrow": "नई कुंडली",
+    "titleA": "किसी अपने की",
+    "titleB": "कुंडली।",
+    "locationLabel": "जन्म स्थान · वैकल्पिक",
+    "sunOf": "{{name}} की सूर्य राशि",
+    "sunOfThem": "सूर्य राशि",
+    "save": "कुंडली सेव करें"
+  },
+  "edit": {
+    "eyebrow": "कुंडली बदलें",
+    "titleBefore": "",
+    "titleName": "{{name}}",
+    "titleAfter": " की जानकारी बदलें",
+    "titleNoName": "जानकारी बदलें",
+    "locationLabel": "जन्म स्थान",
+    "changeLocation": "स्थान बदलें",
+    "cancelLocationChange": "स्थान न बदलें",
+    "save": "बदलाव सेव करें"
+  },
+  "detail": {
+    "yourChart": "आपकी कुंडली",
+    "namedChart": "{{name}} की कुंडली",
+    "noBirthDate": "जन्म तिथि नहीं दी गई",
+    "rising": "लग्न",
+    "noTime": "समय नहीं",
+    "sagaReading": "Saga की रीडिंग",
+    "positions": "ग्रहों की स्थिति",
+    "moonNakshatra": "चंद्र नक्षत्र",
+    "ruledBy": "स्वामी: {{lord}}",
+    "mahadasha": "चल रही महादशा",
+    "yearPeriod_one": "{{count}} साल की अवधि",
+    "yearPeriod_other": "{{count}} साल की अवधि",
+    "born": "जन्म",
+    "time": "समय",
+    "place": "स्थान",
+    "dailyReading": "{{date}} · आज की रीडिंग",
+    "removeTitle": "कुंडली हटाएँ",
+    "removeBody": "इस प्रोफ़ाइल से जुड़ी सारी बातचीत भी मिट जाएगी।"
+  },
+  "block": {
+    "kundliTitle": "कुंडली · जन्म चार्ट",
+    "pinned": "पिन किया",
+    "conversation": "बातचीत",
+    "tapToStart": "बातचीत शुरू करने के लिए टैप करें"
+  },
+  "switcher": {
+    "title": "कुंडली बदलें",
+    "addChart": "नई कुंडली जोड़ें",
+    "editA11y": "{{name}} की जानकारी बदलें"
+  },
+  "chart": {
+    "asc": "लग्न"
+  }
+}

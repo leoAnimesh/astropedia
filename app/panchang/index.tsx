@@ -1,16 +1,21 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
-import { todayIso, formatFullDate, todayShort } from '@/utils/format';
-import { getPanchang, formatHour, formatWindow } from '@/utils/panchang';
+import { todayIso } from '@/utils/format';
+import { getPanchang, formatHourLocal, formatWindowLocal, tYoga, tKarana, tVara } from '@/utils/panchang';
+import { intlLocale, tNakshatra, tPlanet, tTithi, tWeekday } from '@/utils/i18n';
 import { FONTS, RADIUS } from '@/constants/themes';
 
 export default function PanchangScreen() {
   const { theme }     = useAccent();
+  const { t, i18n }   = useTranslation('panchang');
+  // Devanagari/Bengali need more line height for vowel marks above/below.
+  const tallScript    = i18n.language !== 'en';
   const { profiles, activeProfile } = useProfiles();
   const profile       = activeProfile ?? profiles[0] ?? null;
 
@@ -21,45 +26,67 @@ export default function PanchangScreen() {
     profile?.birthLng ?? null,
   );
 
-  const rows: Array<{ label: string; value: string; sub?: string }> = [
-    { label: 'Tithi',     value: panchang.tithi.name, sub: `${panchang.tithi.paksha} paksha · day ${panchang.tithi.index}` },
-    { label: 'Vara',      value: panchang.vara.name, sub: `${panchang.vara.english} · ruled by ${panchang.vara.lord}` },
-    { label: 'Nakshatra', value: panchang.nakshatra.name, sub: `lord: ${panchang.nakshatra.lord}` },
-    { label: 'Yoga',      value: panchang.yoga.name, sub: `yoga ${panchang.yoga.index} of 27` },
-    { label: 'Karana',    value: panchang.karana.name },
+  const rows: Array<{ key: string; label: string; value: string; sub?: string }> = [
+    {
+      key:   'tithi',
+      label: t('row.tithi'),
+      value: tTithi(panchang.tithi.name),
+      sub:   t('tithiSub', {
+        paksha: i18n.t(`astro:paksha.${panchang.tithi.paksha}`, { defaultValue: panchang.tithi.paksha }),
+        index:  panchang.tithi.index,
+      }),
+    },
+    {
+      key:   'vara',
+      label: t('row.vara'),
+      value: tVara(panchang.vara.name),
+      sub:   t('varaSub', { weekday: tWeekday(panchang.vara.english), lord: tPlanet(panchang.vara.lord) }),
+    },
+    {
+      key:   'nakshatra',
+      label: t('row.nakshatra'),
+      value: tNakshatra(panchang.nakshatra.name),
+      sub:   t('nakshatraSub', { lord: tPlanet(panchang.nakshatra.lord) }),
+    },
+    { key: 'yoga',   label: t('row.yoga'),   value: tYoga(panchang.yoga.name), sub: t('yogaSub', { index: panchang.yoga.index }) },
+    { key: 'karana', label: t('row.karana'), value: tKarana(panchang.karana.name) },
   ];
 
   const locationNote = profile?.birthCity
-    ? `Times for ${profile.birthCity}`
-    : 'Times approximated for your timezone';
+    ? t('timesFor', { city: profile.birthCity })
+    : t('timesApprox');
+
+  const todayDate  = new Date(today + 'T12:00:00');
+  const shortDate  = todayDate.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
+  const fullDate   = todayDate.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('back')}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <EyebrowLabel style={{ marginBottom: 0 }}>{todayShort()} · Panchang</EyebrowLabel>
+          <EyebrowLabel style={{ marginBottom: 0 }}>{t('eyebrow', { date: shortDate })}</EyebrowLabel>
         </View>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          {formatFullDate(new Date(today + 'T12:00:00'))}
+        <Text style={[styles.display, { color: theme.ink }, tallScript && { lineHeight: 48 }]}>
+          {fullDate}
         </Text>
         <EyebrowLabel size={10} style={{ marginTop: 6, marginBottom: 24 }}>{locationNote}</EyebrowLabel>
 
         {/* Five limbs */}
-        <EyebrowLabel size={10.5} style={styles.sectionLabel}>Five limbs</EyebrowLabel>
+        <EyebrowLabel size={10.5} style={styles.sectionLabel}>{t('section.limbs')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           {rows.map((r, idx) => (
-            <View key={r.label}>
+            <View key={r.key}>
               <View style={styles.row}>
                 <Text style={[styles.rowLabel, { color: theme.ink2 }]}>{r.label}</Text>
                 <View style={{ alignItems: 'flex-end', flex: 1 }}>
-                  <Text style={[styles.rowValue, { color: theme.ink }]}>{r.value}</Text>
-                  {r.sub && <Text style={[styles.rowSub, { color: theme.muted }]}>{r.sub}</Text>}
+                  <Text style={[styles.rowValue, { color: theme.ink, textAlign: 'right' }]}>{r.value}</Text>
+                  {r.sub && <Text style={[styles.rowSub, { color: theme.muted, textAlign: 'right' }]}>{r.sub}</Text>}
                 </View>
               </View>
               {idx < rows.length - 1 && <View style={[styles.divider, { backgroundColor: theme.hairline }]} />}
@@ -68,43 +95,43 @@ export default function PanchangScreen() {
         </View>
 
         {/* Daylight */}
-        <EyebrowLabel size={10.5} style={[styles.sectionLabel, { marginTop: 26 }]}>Sun</EyebrowLabel>
+        <EyebrowLabel size={10.5} style={[styles.sectionLabel, { marginTop: 26 }]}>{t('section.sun')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <View style={styles.row}>
-            <Text style={[styles.rowLabel, { color: theme.ink2 }]}>Sunrise</Text>
-            <Text style={[styles.rowValue, { color: theme.ink }]}>{formatHour(panchang.sunrise)}</Text>
+            <Text style={[styles.rowLabel, { color: theme.ink2 }]}>{t('sunrise')}</Text>
+            <Text style={[styles.rowValue, { color: theme.ink }]}>{formatHourLocal(panchang.sunrise)}</Text>
           </View>
           <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
           <View style={styles.row}>
-            <Text style={[styles.rowLabel, { color: theme.ink2 }]}>Sunset</Text>
-            <Text style={[styles.rowValue, { color: theme.ink }]}>{formatHour(panchang.sunset)}</Text>
+            <Text style={[styles.rowLabel, { color: theme.ink2 }]}>{t('sunset')}</Text>
+            <Text style={[styles.rowValue, { color: theme.ink }]}>{formatHourLocal(panchang.sunset)}</Text>
           </View>
         </View>
 
         {/* Muhurat windows */}
-        <EyebrowLabel size={10.5} style={[styles.sectionLabel, { marginTop: 26 }]}>Muhurat</EyebrowLabel>
+        <EyebrowLabel size={10.5} style={[styles.sectionLabel, { marginTop: 26 }]}>{t('section.muhurat')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: theme.ink2 }]}>Abhijit (auspicious)</Text>
+              <Text style={[styles.rowLabel, { color: theme.ink2 }]}>{t('abhijit.label')}</Text>
               <Text style={[styles.rowSub, { color: theme.muted, marginTop: 2 }]}>
-                A short window of clear, favorable energy around midday.
+                {t('abhijit.desc')}
               </Text>
             </View>
             <Text style={[styles.rowValue, { color: theme.ink, marginLeft: 12 }]}>
-              {formatWindow(panchang.abhijit)}
+              {formatWindowLocal(panchang.abhijit)}
             </Text>
           </View>
           <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: theme.ink2 }]}>Rahu Kaal (avoid)</Text>
+              <Text style={[styles.rowLabel, { color: theme.ink2 }]}>{t('rahuKaal.label')}</Text>
               <Text style={[styles.rowSub, { color: theme.muted, marginTop: 2 }]}>
-                Best avoided for starting anything new — sign offs, journeys, big decisions.
+                {t('rahuKaal.desc')}
               </Text>
             </View>
             <Text style={[styles.rowValue, { color: theme.ink, marginLeft: 12 }]}>
-              {formatWindow(panchang.rahuKaal)}
+              {formatWindowLocal(panchang.rahuKaal)}
             </Text>
           </View>
         </View>

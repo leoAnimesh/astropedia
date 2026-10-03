@@ -1,0 +1,81 @@
+{
+  "greeting": {
+    "lateNight": "Still up",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "line": "{{greeting}},",
+    "name": "{{name}}."
+  },
+  "friend": "friend",
+  "a11y": {
+    "alerts": "Sky alerts",
+    "settings": "Settings",
+    "phase": "Life phase: {{lord}} chapter, {{pct}} percent through. Open timeline"
+  },
+  "empty": {
+    "title": "Add a <em>chart</em> to begin",
+    "sub": "Your daily reading, conversations with Saga, and compatibility readings all start here."
+  },
+  "starter": {
+    "eyebrow": "Saga's been waiting",
+    "love": {
+      "title": "Start with love & connection",
+      "sub": "A first read on your relationships, in plain English."
+    },
+    "career": {
+      "title": "Start with career & purpose",
+      "sub": "What your chart hints at for the work ahead."
+    },
+    "self": {
+      "title": "Start with knowing yourself",
+      "sub": "The one thing about you Saga would say first."
+    },
+    "curious": {
+      "title": "Take a quick look around",
+      "sub": "Ask anything — Saga can meet you where you are."
+    }
+  },
+  "today": {
+    "eyebrow": "{{date}} · Today for {{name}}",
+    "readLink": "Read today’s reading →",
+    "moonIn": "Moon in",
+    "tithi": "Tithi"
+  },
+  "phase": {
+    "eyebrow": "Your life phase",
+    "through": "{{pct}}% through",
+    "title": "{{lord}} <em>chapter</em><until> · until {{date}}</until>",
+    "subEnds": "{{lord}} sub-period ends <b>{{date}}</b>",
+    "nextAfter": " · {{lord}} after"
+  },
+  "ask": {
+    "eyebrow": "Ask Saga",
+    "placeholder": "Ask about love, work, timing…",
+    "you": {
+      "job": "When will I get a new job?",
+      "love": "How is love this year?",
+      "phase": "When does this phase end?",
+      "strength": "What is my biggest strength?"
+    },
+    "other": {
+      "job": "When will {{name}} get a new job?",
+      "love": "How is love for {{name}} this year?",
+      "phase": "When does {{name}}'s phase end?",
+      "strength": "What is {{name}}'s biggest strength?"
+    }
+  },
+  "tiles": {
+    "krishna": { "title": "Krishna", "sub": "Talk it through" },
+    "muhurat": { "title": "Muhurat", "sub": "Good times" },
+    "family": { "title": "Family", "sub": "Everyone’s phase" },
+    "forecast": { "title": "Your year", "sub": "12 months ahead" },
+    "journal": { "title": "Journal", "sub": "Mood & notes" },
+    "panchang": { "title": "Panchang" }
+  },
+  "recent": {
+    "eyebrow": "Recent",
+    "saved": "Saved",
+    "addProfile": "+ Add profile"
+  }
+}

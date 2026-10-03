@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
@@ -9,6 +10,7 @@ import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getMoonSign } from '@/utils/astrology';
+import { intlLocale, tSign } from '@/utils/i18n';
 import OnboardingStore from './_store';
 
 function parseStoredTime(stored: string): Date | null {
@@ -21,6 +23,8 @@ function parseStoredTime(stored: string): Date | null {
 
 export default function BirthTimeScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
 
   const [time, setTime] = useState<Date | null>(
     parseStoredTime(OnboardingStore.birthTime),
@@ -35,7 +39,7 @@ export default function BirthTimeScreen() {
   };
 
   const timeLabel = time
-    ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ? time.toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit' })
     : null;
 
   // Refined moon sign using the user's actual birth time. This is the same
@@ -55,20 +59,20 @@ export default function BirthTimeScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>04 / 05 — Time</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthTime.step')}</Text>
       </View>
 
       <View style={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          What time did{'\n'}
-          <Text style={styles.italic}>you arrive?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('birthTime.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('birthTime.titleB')}</Text>
         </Text>
 
         <Text style={[styles.hint, { color: theme.ink2 }]}>
-          Birth time gives us your Rising sign and precise house placements — the most personal part of your chart.
+          {t('birthTime.hint')}
         </Text>
 
-        <EyebrowLabel style={styles.fieldLabel}>Time of birth</EyebrowLabel>
+        <EyebrowLabel style={styles.fieldLabel}>{t('birthTime.fieldLabel')}</EyebrowLabel>
 
         <View style={[styles.pickerCard, { backgroundColor: theme.surface2 }]}>
           <DateTimePicker
@@ -84,7 +88,7 @@ export default function BirthTimeScreen() {
 
         {timeLabel && (
           <View style={[styles.preview, { backgroundColor: theme.surface2 }]}>
-            <Text style={[styles.previewLabel, { color: theme.muted }]}>Selected time</Text>
+            <Text style={[styles.previewLabel, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthTime.selected')}</Text>
             <Text style={[styles.previewValue, { color: theme.ink }]}>{timeLabel}</Text>
           </View>
         )}
@@ -93,14 +97,14 @@ export default function BirthTimeScreen() {
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.signGlyph, { color: theme.accent }]}>{refinedMoon.glyph}</Text>
             <View style={styles.signInfo}>
-              <EyebrowLabel size={10}>Moon sign · Rashi</EyebrowLabel>
+              <EyebrowLabel size={10}>{t('birthTime.moonLabel')}</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{refinedMoon.name}</Text>
+                <Text style={styles.italic}>{tSign(refinedMoon.name)}</Text>
                 {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{refinedMoon.element}</Text>
+                <Text style={[styles.signElement, { color: theme.muted }]}>{t(`common:element.${refinedMoon.element}`)}</Text>
               </Text>
               <Text style={[styles.signNote, { color: theme.muted }]}>
-                now exact — this is your Rashi
+                {t('birthTime.exactNote')}
               </Text>
             </View>
           </View>
@@ -109,7 +113,7 @@ export default function BirthTimeScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Continue"
+          label={t('common:continue')}
           variant="accent"
           fullWidth
           disabled={!time}
@@ -147,6 +151,7 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 16,
   },
+  displayIndic: { lineHeight: 56 },
   italic: { fontFamily: FONTS.serifItalic },
   hint: {
     fontFamily:   FONTS.sansRegular,

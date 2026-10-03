@@ -1,5 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View, FlatList } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useAllArchivedThreads } from '@/hooks/use-threads';
 import { useProfileStore } from '@/stores/profile-store';
@@ -9,11 +11,20 @@ import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS } from '@/constants/themes';
-import { formatRelativeTime } from '@/utils/format';
 import type { Thread } from '@/utils/database';
+
+/** "just now" / "5m ago" / "3h ago" / "2d ago" in the app language. */
+function relativeTime(ts: number, t: TFunction): string {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60)    return t('time.justNow');
+  if (s < 3600)  return t('time.minutes', { n: Math.floor(s / 60) });
+  if (s < 86400) return t('time.hours',   { n: Math.floor(s / 3600) });
+  return t('time.days', { n: Math.floor(s / 86400) });
+}
 
 export default function ArchivedScreen() {
   const { theme } = useAccent();
+  const { t: tr } = useTranslation('chat');
   const { archived, unarchiveThread, removeThread } = useAllArchivedThreads();
   const profiles = useProfileStore((s) => s.profiles);
 
@@ -25,12 +36,12 @@ export default function ArchivedScreen() {
       <SwipeRow
         actions={[
           {
-            label:    'Unarchive',
+            label:    tr('archived.unarchive'),
             color:    '#5E9970',
             onAction: () => unarchiveThread(t),
           },
           {
-            label:    'Delete',
+            label:    tr('archived.delete'),
             color:    '#C44444',
             onAction: () => removeThread(t),
           },
@@ -42,14 +53,14 @@ export default function ArchivedScreen() {
           <Avatar name={profile.name} size={40} />
           <View style={styles.text}>
             <Text style={[styles.title, { color: theme.ink }]} numberOfLines={1}>
-              {t.title ?? 'Conversation'}
+              {t.title ?? tr('archived.fallbackTitle')}
             </Text>
             <Text style={[styles.sub, { color: theme.muted }]} numberOfLines={1}>
               {profile.name}
             </Text>
           </View>
           <Text style={[styles.time, { color: theme.faint }]}>
-            {t.archivedAt ? formatRelativeTime(new Date(t.archivedAt).getTime()) : ''}
+            {t.archivedAt ? relativeTime(new Date(t.archivedAt).getTime(), tr) : ''}
           </Text>
         </View>
       </SwipeRow>
@@ -59,26 +70,26 @@ export default function ArchivedScreen() {
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityLabel={tr('archived.back')}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <EyebrowLabel>Archive</EyebrowLabel>
+        <EyebrowLabel>{tr('archived.eyebrow')}</EyebrowLabel>
       </View>
 
       <Text style={[styles.pageTitle, { color: theme.ink }]}>
-        <Text style={styles.italic}>Archived</Text>
+        <Text style={styles.italic}>{tr('archived.title')}</Text>
       </Text>
 
       {archived.length === 0 ? (
         <View style={styles.empty}>
           <Text style={[styles.emptyText, { color: theme.muted }]}>
-            No archived chats.{'\n'}Swipe a conversation on Home to archive it.
+            {tr('archived.empty')}
           </Text>
         </View>
       ) : (
         <>
           <Text style={[styles.hint, { color: theme.muted }]}>
-            Swipe a row left to unarchive or delete.
+            {tr('archived.hint')}
           </Text>
           <FlatList
             data={archived}

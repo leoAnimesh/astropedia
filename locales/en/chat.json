@@ -1,0 +1,111 @@
+{
+  "persona": {
+    "saga": "Saga",
+    "krishna": "Krishna"
+  },
+  "unavailable": {
+    "title": "Conversation unavailable",
+    "message": "The profile this chat belonged to has been removed.",
+    "ok": "OK"
+  },
+  "header": {
+    "back": "Back",
+    "krishnaSub": "Bhagavad Gita",
+    "sagaSub": "with Saga",
+    "fallback": "Chat",
+    "archive": "Archive",
+    "pin": "Pin chat",
+    "unpin": "Unpin chat"
+  },
+  "followUps": {
+    "when": "When exactly?",
+    "do": "What should I do now?",
+    "know": "How will I know?"
+  },
+  "contextNote": "Saga only remembers the last few messages in this thread.",
+  "empty": {
+    "krishnaNamed": "What's on your mind, <em>{{name}}?</em>",
+    "krishna": "What's on <em>your mind?</em>",
+    "krishnaSub": "Krishna is listening — quietly, like an old friend.",
+    "sagaSelf": "Ask anything about <em>yourself.</em>",
+    "sagaOther": "Ask anything about <em>{{name}}.</em>",
+    "sagaUnknown": "Ask anything about <em>them.</em>",
+    "sagaSubSelf": "Saga reads your chart and chats like a thoughtful friend.",
+    "sagaSubOther": "Saga reads their chart and chats like a thoughtful friend."
+  },
+  "menu": {
+    "save": "Save answer",
+    "remove": "Remove from saved",
+    "share": "Share as card",
+    "cancel": "Cancel"
+  },
+  "bubble": {
+    "waking": "{{persona}} is waking up…",
+    "thinking": "{{persona}} is thinking…",
+    "save": "Save",
+    "saved": "Saved",
+    "share": "Share",
+    "a11ySave": "Save answer",
+    "a11yRemove": "Remove from saved answers",
+    "a11yShare": "Share answer"
+  },
+  "composer": {
+    "placeholder": "Ask Saga anything…",
+    "send": "Send"
+  },
+  "starters": {
+    "love": "Love",
+    "career": "Career",
+    "money": "Money",
+    "family": "Family",
+    "self": "Self",
+    "today": "Today",
+    "vibes": "Vibes"
+  },
+  "krishnaStarters": {
+    "lost": "Feeling lost",
+    "fear": "Too much fear",
+    "tension": "Too much worry",
+    "failure": "I keep failing",
+    "overthink": "Can't stop thinking",
+    "purpose": "What's my purpose?"
+  },
+  "errors": {
+    "modelLoad": "I couldn't load the on-device model right now. Try again in a moment.",
+    "generic": "Something went wrong — please try again."
+  },
+  "archived": {
+    "back": "Back",
+    "eyebrow": "Archive",
+    "title": "Archived",
+    "empty": "No archived chats.\nSwipe a conversation on Home to archive it.",
+    "hint": "Swipe a row left to unarchive or delete.",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "fallbackTitle": "Conversation"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutes": "{{n}}m ago",
+    "hours": "{{n}}h ago",
+    "days": "{{n}}d ago"
+  },
+  "share": {
+    "eyebrow": "Share card",
+    "title": "Share this <em>answer.</em>",
+    "close": "Close",
+    "empty": "Nothing to share.",
+    "style": "Style",
+    "light": "Light",
+    "dark": "Dark",
+    "hideQuestion": "Hide my question",
+    "shareText": "Share text",
+    "shareImage": "Share…",
+    "signature": "— {{who}} · Astropedia"
+  },
+  "card": {
+    "forName": "For {{name}} · ",
+    "sagaTag": "Vedic chart",
+    "krishnaTag": "Bhagavad Gita"
+  }
+}

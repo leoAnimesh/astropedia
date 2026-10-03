@@ -1,0 +1,93 @@
+{
+  "back": "Back",
+  "eyebrow": {
+    "you": "Your life phase",
+    "other": "{{name}}'s life phase"
+  },
+  "title": {
+    "you": {
+      "before": "You’re in your ",
+      "after": " chapter."
+    },
+    "other": {
+      "before": "{{name}} is in their ",
+      "after": " chapter."
+    }
+  },
+  "progress_one": "{{pct}}% · {{count}} year left",
+  "progress_other": "{{pct}}% · {{count}} years left",
+  "rightNow": "Right now · until {{date}}",
+  "subPeriod": "sub-period",
+  "ask": {
+    "you": "Ask Saga what this means for me →",
+    "other": "Ask Saga what this means for {{name}} →"
+  },
+  "next": "What’s next",
+  "kind": {
+    "chapter": "{{planet}} chapter",
+    "sub": "{{planet}} sub-period"
+  },
+  "wholeLife": {
+    "you": "Your whole life",
+    "other": "{{name}}'s whole life"
+  },
+  "birth": "Birth",
+  "chapters": {
+    "you_one": "{{count}} chapter · you’re in the {{ord}}",
+    "you_other": "{{count}} chapters · you’re in the {{ord}}",
+    "other_one": "{{count}} chapter · {{name}}’s in the {{ord}}",
+    "other_other": "{{count}} chapters · {{name}}’s in the {{ord}}"
+  },
+  "ordinal": {
+    "1": "1st",
+    "2": "2nd",
+    "3": "3rd",
+    "4": "4th",
+    "5": "5th",
+    "6": "6th",
+    "7": "7th",
+    "8": "8th",
+    "9": "9th",
+    "10": "10th",
+    "11": "11th",
+    "12": "12th"
+  },
+  "meaning": {
+    "Sun": {
+      "chapter": "Visibility and authority. A time to step forward, lead and be seen.",
+      "sub": "Recognition, and some friction with people in charge."
+    },
+    "Moon": {
+      "chapter": "Feelings, home and family come first. Life moves with the people closest to you.",
+      "sub": "Emotional and family-focused. Home matters more."
+    },
+    "Mars": {
+      "chapter": "Energy, courage and drive. You push hard and things move fast.",
+      "sub": "Energy to act. Move, but watch your temper."
+    },
+    "Rahu": {
+      "chapter": "Big appetite, unusual paths. Ambition pulls you toward the new, and fast rises are possible if you stay grounded.",
+      "sub": "Restless and hungry for change. New directions open, not all of them lasting."
+    },
+    "Jupiter": {
+      "chapter": "Growth, learning and good fortune. Teachers, mentors and opportunities show up.",
+      "sub": "Support and growth. Good advice and open doors."
+    },
+    "Saturn": {
+      "chapter": "Slow, steady building. Effort counts for more than luck, and what you build now lasts.",
+      "sub": "Hard work that pays later. Progress feels slow, but what you build now holds."
+    },
+    "Mercury": {
+      "chapter": "Skills, talk and trade. A good time to learn, write, sell and connect.",
+      "sub": "Lighter and quicker. Good for study, deals and new connections."
+    },
+    "Ketu": {
+      "chapter": "Letting go and turning inward. Less about getting, more about understanding.",
+      "sub": "A quieter time to finish things and let go."
+    },
+    "Venus": {
+      "chapter": "Love, comfort and beauty. Relationships, money and enjoyment come forward.",
+      "sub": "Love, comfort and money come forward."
+    }
+  }
+}

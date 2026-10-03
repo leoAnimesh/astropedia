@@ -42,3 +42,25 @@ app-example
 /ios
 /android
 .env
+
+# ML pipeline
+ml/.venv/
+ml/.venv-gemma/
+ml/models/
+ml/out/
+ml/data/raw/
+.env.local
+ml/.env
+ml/data/sft/
+ml/data/profiles.jsonl
+ml/train/colab_upload/
+
+# Bundled on-device model (90 MB) — see plugins/with-bundled-model.js
+assets/model/*.pte
+assets/model/*.json
+
+# ML: generated training sets, Colab bundles, Python caches
+ml/data/sft_gemma/
+ml/train/colab_upload_gemma/
+**/__pycache__/
+ml/outputs/

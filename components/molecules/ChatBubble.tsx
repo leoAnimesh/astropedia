@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { FONTS } from '@/constants/themes';
+import { Icon } from '@/components/atoms/Icon';
 import { DotsLoader } from './DotsLoader';
 import type { ChatStatus } from '@/stores/chat-store';
 
@@ -14,15 +16,22 @@ type Props = {
   status?: ChatStatus;
   /** Display name for the assistant — used in the loading/thinking labels. */
   persona?: string;
+  /** Save / Share row under a finished assistant reply. Omit to hide it. */
+  actions?: {
+    saved:        boolean;
+    onToggleSave: () => void;
+    onShare:      () => void;
+  };
+  /** Long-press on the bubble (assistant replies open a save/share menu). */
+  onLongPress?: () => void;
 };
 
-function statusLabel(status: Exclude<ChatStatus, 'idle' | 'streaming'>, persona: string): string {
-  if (status === 'loading-model') return `${persona} is waking up…`;
-  return `${persona} is thinking…`;
-}
 
-export function ChatBubble({ role, content, isStreaming, streamText, status, persona = 'Saga' }: Props) {
+export function ChatBubble({
+  role, content, isStreaming, streamText, status, persona = 'Saga', actions, onLongPress,
+}: Props) {
   const { theme } = useAccent();
+  const { t }     = useTranslation('chat');
   const isUser = role === 'user';
 
   // Defensive scrub — drop any <think>...</think> blocks, orphan tags, or
@@ -48,7 +57,10 @@ export function ChatBubble({ role, content, isStreaming, streamText, status, per
 
   return (
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperAI]}>
-      <View
+      <Pressable
+        onLongPress={onLongPress}
+        disabled={!onLongPress}
+        delayLongPress={350}
         style={[
           styles.bubble,
           isUser
@@ -60,7 +72,9 @@ export function ChatBubble({ role, content, isStreaming, streamText, status, per
           <View style={styles.statusRow}>
             <DotsLoader />
             <Text style={[styles.statusText, { color: theme.muted }]}>
-              {statusLabel(status as Exclude<ChatStatus, 'idle' | 'streaming'>, persona)}
+              {status === 'loading-model'
+                ? t('bubble.waking', { persona })
+                : t('bubble.thinking', { persona })}
             </Text>
           </View>
         ) : noTextYet ? (
@@ -71,7 +85,39 @@ export function ChatBubble({ role, content, isStreaming, streamText, status, per
         ) : (
           <Markdown style={mdStyles}>{displayText}</Markdown>
         )}
-      </View>
+      </Pressable>
+
+      {actions && !isStreaming ? (
+        <View style={styles.actions}>
+          <TouchableOpacity
+            onPress={actions.onToggleSave}
+            style={styles.actionBtn}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={actions.saved ? t('bubble.a11yRemove') : t('bubble.a11ySave')}
+            accessibilityState={{ selected: actions.saved }}
+          >
+            <Icon
+              name={actions.saved ? 'bookmark-filled' : 'bookmark'}
+              size={14}
+              color={actions.saved ? theme.accent : theme.muted}
+            />
+            <Text style={[styles.actionLabel, { color: actions.saved ? theme.accent : theme.muted }]}>
+              {actions.saved ? t('bubble.saved') : t('bubble.save')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={actions.onShare}
+            style={styles.actionBtn}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={t('bubble.a11yShare')}
+          >
+            <Icon name="share" size={14} color={theme.muted} />
+            <Text style={[styles.actionLabel, { color: theme.muted }]}>{t('bubble.share')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -107,11 +153,10 @@ function buildMarkdownStyles(textColor: string, linkColor: string) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    flexDirection: 'row',
     marginVertical: 4,
   },
-  wrapperUser: { justifyContent: 'flex-end' },
-  wrapperAI:   { justifyContent: 'flex-start' },
+  wrapperUser: { alignItems: 'flex-end' },
+  wrapperAI:   { alignItems: 'flex-start' },
   bubble: {
     maxWidth:        '84%',
     paddingVertical: 12,
@@ -129,6 +174,25 @@ const styles = StyleSheet.create({
     fontSize:    15.5,
     lineHeight:  24,
     letterSpacing: -0.1,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap:           4,
+    marginTop:     2,
+    marginLeft:    2,
+  },
+  actionBtn: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               5,
+    minHeight:         36,
+    paddingHorizontal: 8,
+  },
+  actionLabel: {
+    fontFamily:    FONTS.monoRegular,
+    fontSize:      10.5,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   statusRow: {
     flexDirection: 'row',

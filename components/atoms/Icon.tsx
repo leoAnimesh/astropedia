@@ -22,7 +22,16 @@ export type IconName =
   | 'refresh'
   | 'lotus'
   | 'pin'
-  | 'pin-filled';
+  | 'pin-filled'
+  | 'bell'
+  | 'bookmark'
+  | 'bookmark-filled'
+  | 'share'
+  | 'calendar'
+  | 'book'
+  | 'people'
+  | 'clock'
+  | 'moon';
 
 type IOSMap = Record<IconName, SymbolViewProps['name']>;
 type AndroidMap = Record<IconName, string>;
@@ -48,6 +57,15 @@ const IOS_MAP: IOSMap = {
   lotus:        'leaf',
   pin:          'pin',
   'pin-filled': 'pin.fill',
+  bell:              'bell',
+  bookmark:          'bookmark',
+  'bookmark-filled': 'bookmark.fill',
+  share:             'square.and.arrow.up',
+  calendar:          'calendar',
+  book:              'book',
+  people:            'person.2',
+  clock:             'clock',
+  moon:              'moon',
 };
 
 const ANDROID_MAP: AndroidMap = {
@@ -71,6 +89,15 @@ const ANDROID_MAP: AndroidMap = {
   lotus:        'spa',
   pin:          'push-pin',
   'pin-filled': 'push-pin',
+  bell:              'notifications-none',
+  bookmark:          'bookmark-border',
+  'bookmark-filled': 'bookmark',
+  share:             'ios-share',
+  calendar:          'calendar-today',
+  book:              'menu-book',
+  people:            'group',
+  clock:             'schedule',
+  moon:              'dark-mode',
 };
 
 type Props = {
@@ -79,8 +106,14 @@ type Props = {
   color?: string;
 };
 
+// SF Symbols are off for now: mounting expo-symbols' SymbolView corrupts the
+// Hermes heap on React Native 0.86.2+'s prebuilt iOS core and crashes the app
+// at launch (react-native#57916). Material Icons are used on every platform
+// until React Native ships a fix or we build the core from source.
+const USE_SF_SYMBOLS = false;
+
 export function Icon({ name, size = 20, color = 'currentColor' }: Props) {
-  if (Platform.OS === 'ios') {
+  if (USE_SF_SYMBOLS && Platform.OS === 'ios') {
     return (
       <SymbolView
         name={IOS_MAP[name]}

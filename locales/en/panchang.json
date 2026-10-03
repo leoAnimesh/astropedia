@@ -1,0 +1,84 @@
+{
+  "title": "Panchang",
+  "eyebrow": "{{date}} · Panchang",
+  "back": "Go back",
+  "timesFor": "Times for {{city}}",
+  "timesApprox": "Times approximated for your timezone",
+  "section": {
+    "limbs": "Five limbs",
+    "sun": "Sun",
+    "muhurat": "Muhurat"
+  },
+  "row": {
+    "tithi": "Tithi",
+    "vara": "Vara",
+    "nakshatra": "Nakshatra",
+    "yoga": "Yoga",
+    "karana": "Karana"
+  },
+  "tithiSub": "{{paksha}} paksha · day {{index}}",
+  "varaSub": "{{weekday}} · ruled by {{lord}}",
+  "nakshatraSub": "lord: {{lord}}",
+  "yogaSub": "yoga {{index}} of 27",
+  "sunrise": "Sunrise",
+  "sunset": "Sunset",
+  "abhijit": {
+    "label": "Abhijit (auspicious)",
+    "desc": "A short window of clear, favorable energy around midday."
+  },
+  "rahuKaal": {
+    "label": "Rahu Kaal (avoid)",
+    "desc": "Best avoided for starting anything new — sign offs, journeys, big decisions."
+  },
+  "vara": {
+    "Ravivara": "Ravivara",
+    "Somavara": "Somavara",
+    "Mangalavara": "Mangalavara",
+    "Budhavara": "Budhavara",
+    "Guruvara": "Guruvara",
+    "Shukravara": "Shukravara",
+    "Shanivara": "Shanivara"
+  },
+  "yoga": {
+    "Vishkambha": "Vishkambha",
+    "Priti": "Priti",
+    "Ayushman": "Ayushman",
+    "Saubhagya": "Saubhagya",
+    "Shobhana": "Shobhana",
+    "Atiganda": "Atiganda",
+    "Sukarma": "Sukarma",
+    "Dhriti": "Dhriti",
+    "Shula": "Shula",
+    "Ganda": "Ganda",
+    "Vriddhi": "Vriddhi",
+    "Dhruva": "Dhruva",
+    "Vyaghata": "Vyaghata",
+    "Harshana": "Harshana",
+    "Vajra": "Vajra",
+    "Siddhi": "Siddhi",
+    "Vyatipata": "Vyatipata",
+    "Variyan": "Variyan",
+    "Parigha": "Parigha",
+    "Shiva": "Shiva",
+    "Siddha": "Siddha",
+    "Sadhya": "Sadhya",
+    "Shubha": "Shubha",
+    "Shukla": "Shukla",
+    "Brahma": "Brahma",
+    "Indra": "Indra",
+    "Vaidhriti": "Vaidhriti"
+  },
+  "karana": {
+    "Bava": "Bava",
+    "Balava": "Balava",
+    "Kaulava": "Kaulava",
+    "Taitila": "Taitila",
+    "Garaja": "Garaja",
+    "Vanija": "Vanija",
+    "Vishti": "Vishti",
+    "Shakuni": "Shakuni",
+    "Chatushpada": "Chatushpada",
+    "Naga": "Naga",
+    "Kimstughna": "Kimstughna"
+  }
+}

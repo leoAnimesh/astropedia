@@ -287,6 +287,120 @@ export function getCurrentMahadasha(moonLon: number, birthDate: string): DashaIn
   };
 }
 
+// ─── Vimshottari sub-periods (antardasha) ─────────────────────────────────────
+
+export type DashaPeriod = { lord: string; start: Date; end: Date };
+
+export type DashaTimeline = {
+  maha:      DashaPeriod;   // current life phase
+  antar:     DashaPeriod;   // current sub-period inside it
+  nextAntar: DashaPeriod;   // the sub-period after this one
+  nextMaha:  DashaPeriod;   // the life phase after this one
+};
+
+/**
+ * Current and next Vimshottari periods. Each mahadasha divides into nine
+ * antardashas in dasha order starting from its own lord, each lasting
+ * mahaYears × antarYears / 120 years. The birth mahadasha is already partly
+ * elapsed at birth, so its nominal start lies before the birth date.
+ */
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+
+function dashaPeriod(lord: string, start: Date, years: number): DashaPeriod {
+  return { lord, start, end: new Date(start.getTime() + years * MS_PER_YEAR) };
+}
+
+/** The nine sub-periods of a life phase, in dasha order from its own lord. */
+function dashaSubPeriods(maha: DashaPeriod): DashaPeriod[] {
+  const out: DashaPeriod[] = [];
+  let cursor = maha.start;
+  const first = DASHA_ORDER.indexOf(maha.lord);
+  for (let i = 0; i < DASHA_ORDER.length; i++) {
+    const lord = DASHA_ORDER[(first + i) % DASHA_ORDER.length];
+    const p = dashaPeriod(lord, cursor, DASHA_YEARS[maha.lord] * DASHA_YEARS[lord] / 120);
+    out.push(p);
+    cursor = p.end;
+  }
+  return out;
+}
+
+/** The life phase running at birth, with its nominal (pre-birth) start. */
+function birthDasha(moonLon: number, birthDate: string): { idx: number; start: Date } {
+  const nakIdx = Math.min(Math.floor(moonLon / NAK_SIZE), 26);
+  const firstLord = NAKSHATRAS[nakIdx].lord;
+  const fractionElapsed = Math.max(0, Math.min(1, (moonLon - NAKSHATRAS[nakIdx].startDeg) / NAK_SIZE));
+  const birth = new Date(birthDate + 'T00:00:00');
+  return {
+    idx:   DASHA_ORDER.indexOf(firstLord),
+    start: new Date(birth.getTime() - fractionElapsed * DASHA_YEARS[firstLord] * MS_PER_YEAR),
+  };
+}
+
+export function getDashaTimeline(moonLon: number, birthDate: string, now: Date = new Date()): DashaTimeline {
+  const atBirth = birthDasha(moonLon, birthDate);
+  let mahaStart = atBirth.start;
+  let mahaIdx = atBirth.idx;
+
+  // Walk forward until the life phase containing `now` (two full cycles is
+  // 240 years, far beyond any lifetime).
+  for (let i = 0; i < 18; i++) {
+    const lord = DASHA_ORDER[mahaIdx % DASHA_ORDER.length];
+    const maha = dashaPeriod(lord, mahaStart, DASHA_YEARS[lord]);
+    const nextLord = DASHA_ORDER[(mahaIdx + 1) % DASHA_ORDER.length];
+    const nextMaha = dashaPeriod(nextLord, maha.end, DASHA_YEARS[nextLord]);
+    if (now < maha.end) {
+      const subs = dashaSubPeriods(maha);
+      const k = Math.max(0, subs.findIndex(s => now < s.end));
+      const nextAntar = k + 1 < subs.length ? subs[k + 1] : dashaSubPeriods(nextMaha)[0];
+      return { maha, antar: subs[k], nextAntar, nextMaha };
+    }
+    mahaStart = maha.end;
+    mahaIdx++;
+  }
+  // Unreachable for any living person; keep the type total.
+  const lord = DASHA_ORDER[mahaIdx % DASHA_ORDER.length];
+  const maha = dashaPeriod(lord, mahaStart, DASHA_YEARS[lord]);
+  const subs = dashaSubPeriods(maha);
+  return { maha, antar: subs[0], nextAntar: subs[1], nextMaha: maha };
+}
+
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function monthYear(d: Date): string {
+  return `${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** "in 5 months", "in 2 years", "in 1 year 4 months", "now". */
+function relativeFrom(now: Date, d: Date): string {
+  const months = Math.round((d.getTime() - now.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+  if (months <= 0) return 'now';
+  if (months < 12) return `in ${months} month${months === 1 ? '' : 's'}`;
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  const yPart = `${y} year${y === 1 ? '' : 's'}`;
+  return m === 0 ? `in ${yPart}` : `in ${yPart} ${m} month${m === 1 ? '' : 's'}`;
+}
+
+/**
+ * Ready-made timing for the on-device model, so it never has to do date
+ * arithmetic: when the current sub-period and life phase change, as month +
+ * year and relative to today.
+ */
+export function getTimingContext(
+  profile: { birthDate: string; birthTime?: string | null; birthLng?: number | null },
+  now: Date = new Date(),
+): string {
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng);
+  const t = getDashaTimeline(moonLon, profile.birthDate, now);
+  return [
+    `Timing (use these; never invent other dates):`,
+    `- Current sub-period: ${t.antar.lord}, ends ${monthYear(t.antar.end)} (${relativeFrom(now, t.antar.end)})`,
+    `- Next sub-period: ${t.nextAntar.lord}, ${monthYear(t.nextAntar.start)} to ${monthYear(t.nextAntar.end)}`,
+    `- Current life phase: ${t.maha.lord}, ends ${monthYear(t.maha.end)} (${relativeFrom(now, t.maha.end)})`,
+    `- Next life phase: ${t.nextMaha.lord}, from ${monthYear(t.nextMaha.start)}`,
+  ].join('\n');
+}
+
 // ─── Planet positions (VSOP87 L0+L1 mean longitudes) ─────────────────────────
 
 const MEAN_LONGITUDE: Record<string, [number, number]> = {
@@ -400,7 +514,8 @@ export function getAstrologyContext(profile: {
   ];
   const gLine = genderLine(profile.gender);
   if (gLine) lines.push(gLine);
-  if (kundli.bigThree.sun)    lines.push(`Sun sign: ${kundli.bigThree.sun.name} (${kundli.bigThree.sun.element})`);
+  // Sun sign is the Western (tropical) one users know; everything below is Vedic (sidereal).
+  if (kundli.bigThree.sun)    lines.push(`Sun sign (Western): ${kundli.bigThree.sun.name} (${kundli.bigThree.sun.element})`);
   if (kundli.bigThree.moon)   lines.push(`Moon sign: ${kundli.bigThree.moon.name}`);
   if (kundli.bigThree.rising) lines.push(`Rising sign: ${kundli.bigThree.rising.name}`);
   lines.push(`Moon nakshatra: ${kundli.nakshatra.name} (lord: ${kundli.nakshatra.lord})`);
@@ -408,7 +523,7 @@ export function getAstrologyContext(profile: {
   const planetSummary = kundli.planets
     .map(p => `${p.name} in ${ZODIAC[p.signIndex].name} ${p.degInSign}°${p.dignity !== 'neutral' ? ' [' + p.dignity + ']' : ''}`)
     .join(', ');
-  if (planetSummary) lines.push(`Planets: ${planetSummary}`);
+  if (planetSummary) lines.push(`Planets (Vedic): ${planetSummary}`);
   return lines.join('\n');
 }
 
@@ -442,4 +557,83 @@ export function getTodayTransits(): { name: string; signName: string; degInSign:
   return positions
     .filter(p => !p.name.match(/^(Rahu|Ketu)$/))
     .map(p => ({ name: p.name, signName: ZODIAC[p.signIndex].name, degInSign: p.degInSign }));
+}
+
+// ─── Life chapters (for the life-phase screen) ───────────────────────────────
+
+/** Plain-English meaning of each planet as a life chapter and as a sub-period. */
+export const PHASE_MEANINGS: Record<string, { chapter: string; sub: string }> = {
+  Sun:     { chapter: 'Visibility and authority. A time to step forward, lead and be seen.',
+             sub:     'Recognition, and some friction with people in charge.' },
+  Moon:    { chapter: 'Feelings, home and family come first. Life moves with the people closest to you.',
+             sub:     'Emotional and family-focused. Home matters more.' },
+  Mars:    { chapter: 'Energy, courage and drive. You push hard and things move fast.',
+             sub:     'Energy to act. Move, but watch your temper.' },
+  Rahu:    { chapter: 'Big appetite, unusual paths. Ambition pulls you toward the new, and fast rises are possible if you stay grounded.',
+             sub:     'Restless and hungry for change. New directions open, not all of them lasting.' },
+  Jupiter: { chapter: 'Growth, learning and good fortune. Teachers, mentors and opportunities show up.',
+             sub:     'Support and growth. Good advice and open doors.' },
+  Saturn:  { chapter: 'Slow, steady building. Effort counts for more than luck, and what you build now lasts.',
+             sub:     'Hard work that pays later. Progress feels slow, but what you build now holds.' },
+  Mercury: { chapter: 'Skills, talk and trade. A good time to learn, write, sell and connect.',
+             sub:     'Lighter and quicker. Good for study, deals and new connections.' },
+  Ketu:    { chapter: 'Letting go and turning inward. Less about getting, more about understanding.',
+             sub:     'A quieter time to finish things and let go.' },
+  Venus:   { chapter: 'Love, comfort and beauty. Relationships, money and enjoyment come forward.',
+             sub:     'Love, comfort and money come forward.' },
+};
+
+export type LifeChapters = {
+  /** Life phases from the one running at birth through age `untilAge`. */
+  chapters:     DashaPeriod[];
+  currentIndex: number;
+  /** 0..1 through the current life phase. */
+  progress:     number;
+  /** Sub-periods of the current life phase, and which one is running. */
+  subs:         DashaPeriod[];
+  currentSub:   number;
+  /** The next few changes: sub-periods, then the next life phase. */
+  upcoming:     { kind: 'sub' | 'chapter'; period: DashaPeriod }[];
+  /** Age in years now, and the span the chapters cover. */
+  ageNow:       number;
+  untilAge:     number;
+};
+
+export function getLifeChapters(
+  profile: { birthDate: string; birthTime?: string | null; birthLng?: number | null },
+  now: Date = new Date(),
+  untilAge = 90,
+): LifeChapters {
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng);
+  const birth = new Date(profile.birthDate + 'T00:00:00');
+  const lastDay = new Date(birth.getTime() + untilAge * MS_PER_YEAR);
+
+  const chapters: DashaPeriod[] = [];
+  let { idx, start } = birthDasha(moonLon, profile.birthDate);
+  while (start < lastDay) {
+    const lord = DASHA_ORDER[idx % DASHA_ORDER.length];
+    const p = dashaPeriod(lord, start, DASHA_YEARS[lord]);
+    chapters.push(p);
+    start = p.end;
+    idx++;
+  }
+
+  const currentIndex = Math.max(0, chapters.findIndex((c) => now < c.end));
+  const current = chapters[currentIndex];
+  const progress = Math.min(1, Math.max(0,
+    (now.getTime() - current.start.getTime()) / (current.end.getTime() - current.start.getTime())));
+  const subs = dashaSubPeriods(current);
+  const currentSub = Math.max(0, subs.findIndex((s) => now < s.end));
+
+  const upcoming: LifeChapters['upcoming'] = subs
+    .slice(currentSub + 1, currentSub + 3)
+    .map((period) => ({ kind: 'sub' as const, period }));
+  const next = chapters[currentIndex + 1];
+  if (next) upcoming.push({ kind: 'chapter', period: next });
+
+  return {
+    chapters, currentIndex, progress, subs, currentSub, upcoming,
+    ageNow: (now.getTime() - birth.getTime()) / MS_PER_YEAR,
+    untilAge,
+  };
 }

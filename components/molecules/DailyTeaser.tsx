@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { DotsLoader } from './DotsLoader';
@@ -12,6 +13,7 @@ type Props = {
 
 export function DailyTeaser({ text, loading, label }: Props) {
   const { theme } = useAccent();
+  const { t } = useTranslation('common');
 
   const teaser = text
     ? (() => {
@@ -38,7 +40,7 @@ export function DailyTeaser({ text, loading, label }: Props) {
             "{teaser}"
           </Text>
           <Text style={[styles.cta, { color: theme.accent }]}>
-            Read today's reading →
+            {t('readTodaysReading')}
           </Text>
         </>
       )}

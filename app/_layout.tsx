@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router, type Href } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -17,14 +18,14 @@ import {
 } from '@expo-google-fonts/geist';
 import { GeistMono_400Regular } from '@expo-google-fonts/geist-mono';
 import 'react-native-reanimated';
+import '@/utils/i18n';   // initialise translations before first render
 
 import { initDatabase, getAllProfiles, getAllThreads, isSystemProfile } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
-import { initLocalLLM, unloadLocalLLM } from '@/utils/local-llm';
-import { VedicLoadingOverlay } from '@/components/organisms/VedicLoadingOverlay';
+import { unloadLocalLLM } from '@/utils/local-llm';
 import {
   setupNotifications,
   scheduleDailyHoroscope,
@@ -61,12 +62,8 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
-        // Only auto-download on first run. After that, model loads on-demand
-        // from disk when the user opens a chat (~2–5 s, shown via typing indicator).
-        // This keeps RAM at ~150 MB on the home screen instead of ~2.9 GB.
-        if (!Storage.getModelDownloaded()) {
-          initLocalLLM().catch(() => {});
-        }
+        // The on-device model ships inside the app and loads on demand (~1 s)
+        // the first time a chat or chart reading needs it.
         const [allProfiles, threads] = await Promise.all([
           getAllProfiles(),
           getAllThreads(),
@@ -113,7 +110,7 @@ export default function RootLayout() {
   }, []);
 
   // Background/foreground hooks:
-  //  - background : free model RAM (~0.5–2 GB depending on tier)
+  //  - background : free model RAM (~150 MB)
   //  - active     : re-anchor scheduled notifications to the current local
   //                 timezone so DST shifts and travel don't move the 8 AM
   //                 daily push off-target.
@@ -128,6 +125,28 @@ export default function RootLayout() {
     });
     return () => sub.remove();
   }, []);
+
+  // Notification taps open the screen named in the notification's data
+  // (an alert detail, or home for the daily reading). Waits for the stores to
+  // be hydrated and onboarding to be done, so the target route exists. Also
+  // handles the tap that launched the app.
+  useEffect(() => {
+    if (!dbReady || !onboardingDone) return;
+    const open = (response: Notifications.NotificationResponse | null) => {
+      const route = response?.notification.request.content.data?.route;
+      if (typeof route === 'string' && route !== '/') router.push(route as Href);
+    };
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (!response) return;
+        open(response);
+        // Handled once; don't reopen the same screen on the next launch.
+        return Notifications.clearLastNotificationResponseAsync();
+      })
+      .catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
+    return () => sub.remove();
+  }, [dbReady, onboardingDone]);
 
   // Hide the splash once fonts + DB are ready. Routing is handled declaratively
   // below via <Stack.Protected> — no imperative router.replace needed.
@@ -160,6 +179,15 @@ export default function RootLayout() {
           <Stack.Screen name="profile/edit/[id]" options={MODAL_OPTIONS} />
           <Stack.Screen name="chat/[threadId]" />
           <Stack.Screen name="horoscope/[profileId]" />
+          <Stack.Screen name="phase/[profileId]" />
+          <Stack.Screen name="saved" />
+          <Stack.Screen name="share-answer" options={MODAL_OPTIONS} />
+          <Stack.Screen name="muhurat" />
+          <Stack.Screen name="forecast/[profileId]" />
+          <Stack.Screen name="family" />
+          <Stack.Screen name="journal/[profileId]" />
+          <Stack.Screen name="alerts/index" />
+          <Stack.Screen name="alerts/[alertId]" />
           <Stack.Screen name="panchang/index" />
           <Stack.Screen name="compatibility/index" />
           <Stack.Screen name="archived" />
@@ -170,7 +198,6 @@ export default function RootLayout() {
           and stays mounted across every app screen so a model swap from
           Settings (or a re-download after a version bump) shows progress
           everywhere, not just on home. */}
-      {onboardingDone && <VedicLoadingOverlay />}
       </KeyboardProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

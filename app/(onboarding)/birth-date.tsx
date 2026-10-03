@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
@@ -10,10 +11,13 @@ import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getMoonSign } from '@/utils/astrology';
 import { localDateIso } from '@/utils/format';
+import { tSign } from '@/utils/i18n';
 import OnboardingStore from './_store';
 
 export default function BirthDateScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
 
   const initialDate = OnboardingStore.birthDate
     ? new Date(OnboardingStore.birthDate)
@@ -28,8 +32,8 @@ export default function BirthDateScreen() {
     // are nonsensical.
     if (date.getTime() > Date.now() + 60_000) {
       Alert.alert(
-        'That date is in the future',
-        "Pick the date you were actually born — we can't read a chart for a moment that hasn't happened yet.",
+        t('birthDate.futureTitle'),
+        t('birthDate.futureBody'),
       );
       return;
     }
@@ -48,16 +52,16 @@ export default function BirthDateScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>03 / 05 — Birthday</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthDate.step')}</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          When were{'\n'}
-          <Text style={styles.italic}>you born?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('birthDate.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('birthDate.titleB')}</Text>
         </Text>
 
-        <EyebrowLabel style={styles.fieldLabel}>Date of birth</EyebrowLabel>
+        <EyebrowLabel style={styles.fieldLabel}>{t('birthDate.fieldLabel')}</EyebrowLabel>
 
         <View style={[styles.pickerCard, { backgroundColor: theme.surface2 }]}>
           <DateTimePicker
@@ -75,14 +79,14 @@ export default function BirthDateScreen() {
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.signGlyph, { color: theme.accent }]}>{moon.glyph}</Text>
             <View style={styles.signInfo}>
-              <EyebrowLabel size={10}>Moon sign · Rashi</EyebrowLabel>
+              <EyebrowLabel size={10}>{t('birthDate.moonLabel')}</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{moon.name}</Text>
+                <Text style={styles.italic}>{tSign(moon.name)}</Text>
                 {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{moon.element}</Text>
+                <Text style={[styles.signElement, { color: theme.muted }]}>{t(`common:element.${moon.element}`)}</Text>
               </Text>
               <Text style={[styles.signNote, { color: theme.muted }]}>
-                approximate — your birth time refines this next
+                {t('birthDate.approxNote')}
               </Text>
             </View>
           </View>
@@ -91,7 +95,7 @@ export default function BirthDateScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Continue"
+          label={t('common:continue')}
           variant="accent"
           fullWidth
           disabled={!date}
@@ -130,6 +134,7 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 32,
   },
+  displayIndic: { lineHeight: 56 },
   italic:     { fontFamily: FONTS.serifItalic },
   fieldLabel: { marginBottom: 12 },
   pickerCard: {

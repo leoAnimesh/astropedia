@@ -10,11 +10,61 @@ import {
   type Profile,
   type Thread,
 } from '@/utils/database';
-import { streamAI, askAI, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
+import { streamAI, askThreadTitle, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
 import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
+import { GITA_QUOTE_START } from '@/utils/gita';
+import i18n from '@/utils/i18n';
 
 const THINK_OPEN  = '<think>';
 const THINK_CLOSE = '</think>';
+
+// Typewriter pacing for streamed replies. The on-device model produces text
+// faster than it reads comfortably, so tokens are queued and revealed at a
+// steady ~50 chars/s; a long backlog speeds up gently so the bubble never
+// lags far behind the model.
+const TYPE_TICK_MS         = 40;
+const TYPE_CHARS_PER_TICK  = 2;
+const TYPE_CATCHUP_DIVISOR = 150;
+
+function createTypewriter(emit: (text: string) => void) {
+  let queue = '';
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let onDrained: (() => void) | null = null;
+
+  const finish = () => {
+    if (timer) clearInterval(timer);
+    timer = null;
+    onDrained?.();
+    onDrained = null;
+  };
+
+  const tick = () => {
+    if (!queue) return finish();
+    let n = Math.max(TYPE_CHARS_PER_TICK, Math.ceil(queue.length / TYPE_CATCHUP_DIVISOR));
+    // Don't split a surrogate pair (emoji) across ticks.
+    const code = queue.charCodeAt(n - 1);
+    if (code >= 0xd800 && code <= 0xdbff) n++;
+    emit(queue.slice(0, n));
+    queue = queue.slice(n);
+  };
+
+  return {
+    push(text: string) {
+      queue += text;
+      if (!timer) timer = setInterval(tick, TYPE_TICK_MS);
+    },
+    /** Resolves once everything queued so far has been shown. */
+    drain(): Promise<void> {
+      if (!timer) return Promise.resolve();
+      return new Promise((resolve) => { onDrained = resolve; });
+    },
+    /** Drop anything not yet shown. */
+    stop() {
+      queue = '';
+      finish();
+    },
+  };
+}
 
 const EMPTY_MESSAGES: Message[] = [];
 
@@ -30,12 +80,9 @@ async function generateThreadTitle(
   aiReply:    string,
 ): Promise<void> {
   try {
-    const { text } = await askAI({
-      profile,
-      history:        [{ role: 'user', content: userMsg }, { role: 'assistant', content: aiReply }],
-      userMessage:    'Give this conversation a title.',
-      systemOverride: 'You output ONLY a 2–4 word title. No quotes, no period, no explanation, no markdown, no thinking, no preamble. Just the title.',
-    });
+    // Leave out Krishna's appended verse; titles describe the exchange itself.
+    const text = await askThreadTitle(userMsg, aiReply.split(GITA_QUOTE_START)[0].trim());
+    if (!text) return;
 
     // Clean the title against everything models tend to leak:
     //  - <think>...</think> reasoning blocks (Qwen 3)
@@ -146,11 +193,13 @@ export function useChat(
       // resolves once isLLMReady() will return true.
       const ready = await ensureLocalLLM(60_000);
       if (!ready || !isLLMReady()) {
+        // Saved in English (stored messages are fed back to the model as
+        // history); the bubble shown now uses the app language.
         const errorMsg = {
           ...buildAiMsgBase(threadId),
           content: "I couldn't load the on-device model right now. Try again in a moment.",
         };
-        storeAppend(threadId, errorMsg);
+        storeAppend(threadId, { ...errorMsg, content: i18n.t('chat:errors.modelLoad') });
         storeClearStreaming(threadId);
         storeSetStatus(threadId, 'idle');
         storeSetTyping(threadId, false);
@@ -162,15 +211,21 @@ export function useChat(
     storeSetStatus(threadId, 'thinking');  // assumed thinking until we see real content
 
     const aiMsgBase: Message = buildAiMsgBase(threadId);
+    let activeTyper: ReturnType<typeof createTypewriter> | null = null;
 
     try {
       // Cap history to the last few turns so the prompt fits in the model's
       // context window. On-device models have a small max_seq_len (typically
       // 2048 tokens); the system prompt + chart + RAG eat most of it, so we
       // can only carry a short tail of the conversation forward.
+      // Translated error bubbles go back to the model in English.
+      const toEnglish: Record<string, string> = {
+        [i18n.t('chat:errors.modelLoad')]: i18n.t('chat:errors.modelLoad', { lng: 'en' }),
+        [i18n.t('chat:errors.generic')]:   i18n.t('chat:errors.generic', { lng: 'en' }),
+      };
       const recentHistory = messages.slice(-6).map((m) => ({
         role: m.role as 'user' | 'assistant',
-        content: m.content,
+        content: toEnglish[m.content] ?? m.content,
       }));
       const { stream, tier } = await streamAI({ profile, history: recentHistory, userMessage: text.trim(), mode, userName });
 
@@ -197,6 +252,8 @@ export function useChat(
       let buf       = '';
       let inThink   = false;
       let seenContent = false;
+      const typer = createTypewriter((chunk) => storeAppendToken(threadId, chunk));
+      activeTyper = typer;
 
       const flushSafe = (textToShow: string) => {
         if (!textToShow) return;
@@ -206,11 +263,12 @@ export function useChat(
           if (chunk.length === 0) return;
           seenContent = true;
         }
-        storeAppendToken(threadId, chunk);
+        typer.push(chunk);
         storeSetStatus(threadId, 'streaming');
       };
 
       const enterThinking = () => {
+        typer.stop();
         // Wipe any text that leaked into the streaming buffer before the
         // <think> opener appeared, so the user sees a clean "thinking…"
         // bubble — not "Sure!" plus dots, then a fresh reply later.
@@ -274,6 +332,9 @@ export function useChat(
       }
       // Flush any trailing safe content (only if we're not stuck in think).
       if (!inThink && buf.length > 0) flushSafe(buf);
+      // Let the typewriter finish revealing before the final cleanup reads
+      // the streamed text.
+      await typer.drain();
 
       const rawFinal  = useChatStore.getState().streaming[threadId] ?? '';
       // Final cleanup chain. Order matters — we keep markdown in the text
@@ -317,8 +378,10 @@ export function useChat(
         generateThreadTitle(threadId, thread.profileId, profile, text.trim(), finalText);
       }
     } catch (err) {
+      activeTyper?.stop();
       console.error('[useChat] AI error:', err);
-      const errorMsg = { ...aiMsgBase, content: "Something went wrong — please try again." };
+      // Shown only (not saved), so it can be in the app language.
+      const errorMsg = { ...aiMsgBase, content: i18n.t('chat:errors.generic') };
       storeAppend(threadId, errorMsg);
       storeClearStreaming(threadId);
       storeSetStatus(threadId, 'idle');

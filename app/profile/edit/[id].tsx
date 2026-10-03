@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Country, State, City } from 'country-state-city';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
@@ -18,6 +19,8 @@ type Picker = 'country' | 'state' | 'city' | null;
 
 export default function EditProfileScreen() {
   const { theme }                = useAccent();
+  const { t, i18n }              = useTranslation('profile');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const { id }                   = useLocalSearchParams<{ id: string }>();
   const { profiles, editProfile } = useProfiles();
   const profile                  = profiles.find((p) => p.id === id);
@@ -120,8 +123,8 @@ export default function EditProfileScreen() {
     if (!valid || !profile) return;
     if (date && date.getTime() > Date.now() + 60_000) {
       Alert.alert(
-        'That date is in the future',
-        "Pick a real past birth date — a chart needs a moment that's already happened.",
+        t('form.futureTitle'),
+        t('form.futureBody'),
       );
       return;
     }
@@ -154,43 +157,51 @@ export default function EditProfileScreen() {
     return null;
   }
 
+  const firstName = profile.name.split(' ')[0];
+
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <EyebrowLabel>Edit chart</EyebrowLabel>
+        <EyebrowLabel>{t('edit.eyebrow')}</EyebrowLabel>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.display, { color: theme.ink }]}>
-          Update <Text style={styles.italic}>{profile.name.split(' ')[0] || 'their'}'s</Text> details
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {firstName ? (
+            <>
+              {t('edit.titleBefore')}
+              <Text style={styles.italic}>{t('edit.titleName', { name: firstName })}</Text>
+              {t('edit.titleAfter')}
+            </>
+          ) : t('edit.titleNoName')}
         </Text>
 
         <Input
-          label="Name"
-          placeholder="e.g. Mom, Sam, Priya"
+          label={t('form.nameLabel')}
+          placeholder={t('form.namePlaceholder')}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
           containerStyle={styles.field}
         />
         <Input
-          label="Relationship · optional"
-          placeholder="Partner, friend, parent…"
+          label={t('form.relLabel')}
+          placeholder={t('form.relPlaceholder')}
           value={rel}
           onChangeText={setRel}
           containerStyle={styles.field}
         />
 
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Gender · optional</EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.genderLabel')}</EyebrowLabel>
         <View style={styles.genderRow}>
           {([
-            { key: 'woman',       label: 'Woman' },
-            { key: 'man',         label: 'Man' },
-            { key: 'non_binary',  label: 'Non-binary' },
-            { key: 'unspecified', label: 'Skip' },
+            { key: 'woman',       label: t('common:gender.woman') },
+            { key: 'man',         label: t('common:gender.man') },
+            { key: 'non_binary',  label: t('common:gender.non_binary') },
+            { key: 'unspecified', label: t('common:skip') },
           ] as const).map((opt) => {
             const isSelected = gender === opt.key;
             return (
@@ -214,7 +225,7 @@ export default function EditProfileScreen() {
           })}
         </View>
 
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Date of birth</EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.dobLabel')}</EyebrowLabel>
         <DateTimePicker
           value={date ?? new Date(2000, 0, 1)}
           mode="date"
@@ -225,7 +236,7 @@ export default function EditProfileScreen() {
           themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
         />
 
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Time of birth · optional</EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.tobLabel')}</EyebrowLabel>
         <DateTimePicker
           value={time ?? new Date(0, 0, 0, 12, 0)}
           mode="time"
@@ -237,42 +248,42 @@ export default function EditProfileScreen() {
         />
 
         {/* Location — show current + a "change" toggle */}
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Birth location</EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('edit.locationLabel')}</EyebrowLabel>
         {!editingLocation ? (
           <View>
             <View style={[styles.locationField, { backgroundColor: theme.surface2 }]}>
               <Text style={[styles.locationValue, { color: profile.birthCity ? theme.ink : theme.muted }]} numberOfLines={1}>
-                {profile.birthCity ?? 'Unknown'}
+                {profile.birthCity ?? t('common:unknown')}
               </Text>
             </View>
             <TouchableOpacity onPress={() => setEditingLocation(true)} style={styles.linkBtn}>
-              <Text style={[styles.linkText, { color: theme.accent }]}>Change location</Text>
+              <Text style={[styles.linkText, { color: theme.accent }]}>{t('edit.changeLocation')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <EyebrowLabel style={styles.subLabel}>Country</EyebrowLabel>
+            <EyebrowLabel style={styles.subLabel}>{t('common:location.country')}</EyebrowLabel>
             <TouchableOpacity
               style={[styles.locationField, { backgroundColor: theme.surface2 }]}
               onPress={() => setActivePicker('country')}
               activeOpacity={0.7}
             >
               <Text style={[styles.locationValue, { color: countryName ? theme.ink : theme.muted }]} numberOfLines={1}>
-                {countryName || 'Select country…'}
+                {countryName || t('common:location.selectCountry')}
               </Text>
               <Icon name="chevron-down" size={16} color={theme.muted} />
             </TouchableOpacity>
 
             {countryCode && hasStates && (
               <>
-                <EyebrowLabel style={styles.subLabel}>State / Province</EyebrowLabel>
+                <EyebrowLabel style={styles.subLabel}>{t('common:location.state')}</EyebrowLabel>
                 <TouchableOpacity
                   style={[styles.locationField, { backgroundColor: theme.surface2 }]}
                   onPress={() => setActivePicker('state')}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.locationValue, { color: stateName ? theme.ink : theme.muted }]} numberOfLines={1}>
-                    {stateName || 'Select state…'}
+                    {stateName || t('common:location.selectState')}
                   </Text>
                   <Icon name="chevron-down" size={16} color={theme.muted} />
                 </TouchableOpacity>
@@ -281,14 +292,14 @@ export default function EditProfileScreen() {
 
             {countryCode && (!hasStates || stateCode) && (
               <>
-                <EyebrowLabel style={styles.subLabel}>City</EyebrowLabel>
+                <EyebrowLabel style={styles.subLabel}>{t('common:location.city')}</EyebrowLabel>
                 <TouchableOpacity
                   style={[styles.locationField, { backgroundColor: theme.surface2 }]}
                   onPress={() => setActivePicker('city')}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.locationValue, { color: cityName ? theme.ink : theme.muted }]} numberOfLines={1}>
-                    {cityName || 'Select or type city…'}
+                    {cityName || t('common:location.selectCity')}
                   </Text>
                   <Icon name="chevron-down" size={16} color={theme.muted} />
                 </TouchableOpacity>
@@ -296,7 +307,7 @@ export default function EditProfileScreen() {
             )}
 
             <TouchableOpacity onPress={() => { setEditingLocation(false); setCountryCode(''); setCountryName(''); setStateCode(''); setStateName(''); setCityName(''); }} style={styles.linkBtn}>
-              <Text style={[styles.linkText, { color: theme.muted }]}>Cancel location change</Text>
+              <Text style={[styles.linkText, { color: theme.muted }]}>{t('edit.cancelLocationChange')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -304,7 +315,7 @@ export default function EditProfileScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Save changes"
+          label={t('edit.save')}
           variant="accent"
           fullWidth
           disabled={!valid}
@@ -315,7 +326,7 @@ export default function EditProfileScreen() {
 
       <LocationPickerModal
         visible={activePicker === 'country'}
-        title="Select Country"
+        title={t('common:location.pickCountryTitle')}
         items={countryItems}
         selectedValue={countryCode}
         onSelect={handleSelectCountry}
@@ -323,7 +334,7 @@ export default function EditProfileScreen() {
       />
       <LocationPickerModal
         visible={activePicker === 'state'}
-        title="Select State / Province"
+        title={t('common:location.pickStateTitle')}
         items={stateItems}
         selectedValue={stateCode}
         onSelect={handleSelectState}
@@ -331,7 +342,7 @@ export default function EditProfileScreen() {
       />
       <LocationPickerModal
         visible={activePicker === 'city'}
-        title="Select City"
+        title={t('common:location.pickCityTitle')}
         items={cityItems}
         selectedValue={cityName}
         onSelect={handleSelectCity}
@@ -348,6 +359,7 @@ const styles = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { padding: 32, paddingTop: 12, paddingBottom: 40 },
   display: { fontFamily: FONTS.serifRegular, fontSize: 32, lineHeight: 38, marginBottom: 22 },
+  displayIndic: { lineHeight: 46 },
   italic:  { fontFamily: FONTS.serifItalic },
   field:   { marginTop: 22 },
   subLabel:{ marginTop: 14, marginBottom: 8 },

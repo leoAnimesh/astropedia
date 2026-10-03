@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Country, State, City } from 'country-state-city';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
@@ -12,12 +13,15 @@ import { LocationPickerModal, type PickerItem } from '@/components/molecules/Loc
 import { Storage } from '@/utils/storage';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getSunSign } from '@/utils/astrology';
+import { tSign } from '@/utils/i18n';
 import OnboardingStore from './_store';
 
 type Picker = 'country' | 'state' | 'city' | null;
 
 export default function BirthPlaceScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const { createProfile } = useProfiles();
 
   const [countryCode, setCountryCode] = useState(OnboardingStore.countryCode);
@@ -136,21 +140,21 @@ export default function BirthPlaceScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>05 / 05 — Place</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthPlace.step')}</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.display, { color: theme.ink }]}>
-          Where did you{'\n'}
-          <Text style={styles.italic}>first breathe?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('birthPlace.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('birthPlace.titleB')}</Text>
         </Text>
 
         <Text style={[styles.hint, { color: theme.ink2 }]}>
-          Your birth location anchors your chart to the sky at exactly that moment and place on Earth.
+          {t('birthPlace.hint')}
         </Text>
 
         {/* Country */}
-        <EyebrowLabel style={styles.fieldLabel}>Country</EyebrowLabel>
+        <EyebrowLabel style={styles.fieldLabel}>{t('common:location.country')}</EyebrowLabel>
         <TouchableOpacity
           style={[styles.field, { backgroundColor: theme.surface2 }]}
           onPress={() => setActivePicker('country')}
@@ -163,7 +167,7 @@ export default function BirthPlaceScreen() {
             ]}
             numberOfLines={1}
           >
-            {countryName || 'Select country…'}
+            {countryName || t('common:location.selectCountry')}
           </Text>
           <Icon name="chevron-down" size={16} color={theme.muted} />
         </TouchableOpacity>
@@ -172,7 +176,7 @@ export default function BirthPlaceScreen() {
         {countryCode && (
           <>
             <EyebrowLabel style={styles.fieldLabel}>
-              {hasStates ? 'State / Province' : 'State / Province · none for this country'}
+              {hasStates ? t('common:location.state') : t('common:location.stateNone')}
             </EyebrowLabel>
             {hasStates ? (
               <TouchableOpacity
@@ -187,13 +191,13 @@ export default function BirthPlaceScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {stateName || 'Select state…'}
+                  {stateName || t('common:location.selectState')}
                 </Text>
                 <Icon name="chevron-down" size={16} color={theme.muted} />
               </TouchableOpacity>
             ) : (
               <View style={[styles.field, { backgroundColor: theme.surface2, opacity: 0.5 }]}>
-                <Text style={[styles.fieldValue, { color: theme.muted }]}>N/A</Text>
+                <Text style={[styles.fieldValue, { color: theme.muted }]}>{t('common:notApplicable')}</Text>
               </View>
             )}
           </>
@@ -202,7 +206,7 @@ export default function BirthPlaceScreen() {
         {/* City */}
         {countryCode && (!hasStates || stateCode) && (
           <>
-            <EyebrowLabel style={styles.fieldLabel}>City</EyebrowLabel>
+            <EyebrowLabel style={styles.fieldLabel}>{t('common:location.city')}</EyebrowLabel>
             <TouchableOpacity
               style={[styles.field, { backgroundColor: theme.surface2 }]}
               onPress={() => setActivePicker('city')}
@@ -215,7 +219,7 @@ export default function BirthPlaceScreen() {
                 ]}
                 numberOfLines={1}
               >
-                {cityName || 'Select or type city…'}
+                {cityName || t('common:location.selectCity')}
               </Text>
               <Icon name="chevron-down" size={16} color={theme.muted} />
             </TouchableOpacity>
@@ -225,15 +229,15 @@ export default function BirthPlaceScreen() {
         {/* Preview card */}
         {sun && fullLocation && (
           <View style={[styles.summaryCard, { backgroundColor: theme.surface2 }]}>
-            <EyebrowLabel size={10} style={styles.summaryEyebrow}>Your chart preview</EyebrowLabel>
+            <EyebrowLabel size={10} style={styles.summaryEyebrow}>{t('birthPlace.preview')}</EyebrowLabel>
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryGlyph, { color: theme.accent }]}>{sun.glyph}</Text>
               <View style={styles.summaryText}>
                 <Text style={[styles.summaryName, { color: theme.ink }]}>
-                  <Text style={styles.italic}>{OnboardingStore.name || 'You'}</Text>
+                  <Text style={styles.italic}>{OnboardingStore.name || t('common:you')}</Text>
                 </Text>
                 <Text style={[styles.summaryMeta, { color: theme.muted }]}>
-                  {sun.name} · {fullLocation}
+                  {tSign(sun.name)} · {fullLocation}
                 </Text>
                 {cityLat !== null && (
                   <Text style={[styles.summaryCoords, { color: theme.muted }]}>
@@ -246,13 +250,13 @@ export default function BirthPlaceScreen() {
         )}
 
         <Text style={[styles.privacy, { color: theme.muted }]}>
-          Your chart stays on your device. Saga reads it gently — like a thoughtful friend who happens to know astrology.
+          {t('birthPlace.privacy')}
         </Text>
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          label="Open my chart"
+          label={t('birthPlace.cta')}
           variant="accent"
           fullWidth
           disabled={!canContinue}
@@ -264,7 +268,7 @@ export default function BirthPlaceScreen() {
       {/* Pickers */}
       <LocationPickerModal
         visible={activePicker === 'country'}
-        title="Select Country"
+        title={t('common:location.pickCountryTitle')}
         items={countryItems}
         selectedValue={countryCode}
         onSelect={handleSelectCountry}
@@ -272,7 +276,7 @@ export default function BirthPlaceScreen() {
       />
       <LocationPickerModal
         visible={activePicker === 'state'}
-        title="Select State / Province"
+        title={t('common:location.pickStateTitle')}
         items={stateItems}
         selectedValue={stateCode}
         onSelect={handleSelectState}
@@ -280,7 +284,7 @@ export default function BirthPlaceScreen() {
       />
       <LocationPickerModal
         visible={activePicker === 'city'}
-        title="Select City"
+        title={t('common:location.pickCityTitle')}
         items={cityItems}
         selectedValue={cityName}
         onSelect={handleSelectCity}
@@ -315,6 +319,7 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 16,
   },
+  displayIndic: { lineHeight: 56 },
   italic: { fontFamily: FONTS.serifItalic },
   hint: {
     fontFamily:   FONTS.sansRegular,

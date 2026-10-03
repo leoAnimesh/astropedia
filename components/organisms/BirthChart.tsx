@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useAstrology } from '@/hooks/use-astrology';
 import { ZODIAC, ELEMENT_COLORS } from '@/constants/astrology';
@@ -25,6 +26,7 @@ function arcPath(cx: number, cy: number, r1: number, r2: number, startDeg: numbe
 
 export function BirthChart({ profile, size = 290 }: Props) {
   const { theme } = useAccent();
+  const { t } = useTranslation('profile');
   const { sunSign, chartPositions, ascDeg } = useAstrology(profile);
 
   const cx = size / 2;
@@ -113,7 +115,7 @@ export function BirthChart({ profile, size = 290 }: Props) {
               const [ax, ay] = polar(cx, cy, rHouseNum - 4, ascDeg);
               return (
                 <SvgText x={ax} y={ay} textAnchor="middle" alignmentBaseline="central" fontSize={7} fill={theme.accent}>
-                  ASC
+                  {t('chart.asc')}
                 </SvgText>
               );
             })()}

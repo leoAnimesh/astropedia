@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Country, State, City } from 'country-state-city';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
@@ -14,11 +15,14 @@ import { LocationPickerModal, type PickerItem } from '@/components/molecules/Loc
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getSunSign } from '@/utils/astrology';
 import { localDateIso } from '@/utils/format';
+import { tSign } from '@/utils/i18n';
 
 type Picker = 'country' | 'state' | 'city' | null;
 
 export default function NewProfileScreen() {
   const { theme }                    = useAccent();
+  const { t, i18n } = useTranslation('profile');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const { createProfile, profiles }  = useProfiles();
   // The primary profile is whichever was created first — the one onboarded
   // through the app's setup flow. `isYou` is the canonical flag, but profile
@@ -117,8 +121,8 @@ export default function NewProfileScreen() {
     if (!valid) return;
     if (date && date.getTime() > Date.now() + 60_000) {
       Alert.alert(
-        'That date is in the future',
-        "Pick a real past birth date — a chart needs a moment that's already happened.",
+        t('form.futureTitle'),
+        t('form.futureBody'),
       );
       return;
     }
@@ -147,7 +151,7 @@ export default function NewProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.back}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <EyebrowLabel>New chart</EyebrowLabel>
+        <EyebrowLabel>{t('new.eyebrow')}</EyebrowLabel>
       </View>
 
       <ScrollView
@@ -155,14 +159,14 @@ export default function NewProfileScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={[styles.display, { color: theme.ink }]}>
-          A chart for{'\n'}
-          <Text style={styles.italic}>someone you love.</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('new.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('new.titleB')}</Text>
         </Text>
 
         <Input
-          label="Name"
-          placeholder="e.g. Mom, Sam, Priya"
+          label={t('form.nameLabel')}
+          placeholder={t('form.namePlaceholder')}
           value={name}
           onChangeText={setName}
           autoFocus
@@ -170,20 +174,20 @@ export default function NewProfileScreen() {
           containerStyle={styles.field}
         />
         <Input
-          label={primaryName ? `Relationship to ${primaryName} · optional` : 'Relationship · optional'}
-          placeholder={primaryName ? `${primaryName}'s partner, friend, parent…` : 'Partner, friend, parent…'}
+          label={primaryName ? t('form.relLabelFor', { name: primaryName }) : t('form.relLabel')}
+          placeholder={primaryName ? t('form.relPlaceholderFor', { name: primaryName }) : t('form.relPlaceholder')}
           value={rel}
           onChangeText={setRel}
           containerStyle={styles.field}
         />
 
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Gender · optional</EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.genderLabel')}</EyebrowLabel>
         <View style={styles.genderRow}>
           {([
-            { key: 'woman',       label: 'Woman' },
-            { key: 'man',         label: 'Man' },
-            { key: 'non_binary',  label: 'Non-binary' },
-            { key: 'unspecified', label: 'Skip' },
+            { key: 'woman',       label: t('common:gender.woman') },
+            { key: 'man',         label: t('common:gender.man') },
+            { key: 'non_binary',  label: t('common:gender.non_binary') },
+            { key: 'unspecified', label: t('common:skip') },
           ] as const).map((opt) => {
             const isSelected = gender === opt.key;
             return (
@@ -208,7 +212,7 @@ export default function NewProfileScreen() {
           })}
         </View>
 
-        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>Date of birth</EyebrowLabel>
+        <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.dobLabel')}</EyebrowLabel>
         <DateTimePicker
           value={date ?? new Date(2000, 0, 1)}
           mode="date"
@@ -220,7 +224,7 @@ export default function NewProfileScreen() {
         />
 
         <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>
-          Time of birth · optional
+          {t('form.tobLabel')}
         </EyebrowLabel>
         <DateTimePicker
           value={time ?? new Date(0, 0, 0, 12, 0)}
@@ -234,11 +238,11 @@ export default function NewProfileScreen() {
 
         {/* Location section */}
         <EyebrowLabel style={[styles.field, { marginBottom: 14 }]}>
-          Birth location · optional
+          {t('new.locationLabel')}
         </EyebrowLabel>
 
         {/* Country */}
-        <EyebrowLabel style={styles.subLabel}>Country</EyebrowLabel>
+        <EyebrowLabel style={styles.subLabel}>{t('common:location.country')}</EyebrowLabel>
         <TouchableOpacity
           style={[styles.locationField, { backgroundColor: theme.surface2 }]}
           onPress={() => setActivePicker('country')}
@@ -248,7 +252,7 @@ export default function NewProfileScreen() {
             style={[styles.locationValue, { color: countryName ? theme.ink : theme.muted }]}
             numberOfLines={1}
           >
-            {countryName || 'Select country…'}
+            {countryName || t('common:location.selectCountry')}
           </Text>
           <Icon name="chevron-down" size={16} color={theme.muted} />
         </TouchableOpacity>
@@ -256,7 +260,7 @@ export default function NewProfileScreen() {
         {/* State */}
         {countryCode && hasStates && (
           <>
-            <EyebrowLabel style={styles.subLabel}>State / Province</EyebrowLabel>
+            <EyebrowLabel style={styles.subLabel}>{t('common:location.state')}</EyebrowLabel>
             <TouchableOpacity
               style={[styles.locationField, { backgroundColor: theme.surface2 }]}
               onPress={() => setActivePicker('state')}
@@ -266,7 +270,7 @@ export default function NewProfileScreen() {
                 style={[styles.locationValue, { color: stateName ? theme.ink : theme.muted }]}
                 numberOfLines={1}
               >
-                {stateName || 'Select state…'}
+                {stateName || t('common:location.selectState')}
               </Text>
               <Icon name="chevron-down" size={16} color={theme.muted} />
             </TouchableOpacity>
@@ -276,7 +280,7 @@ export default function NewProfileScreen() {
         {/* City */}
         {countryCode && (!hasStates || stateCode) && (
           <>
-            <EyebrowLabel style={styles.subLabel}>City</EyebrowLabel>
+            <EyebrowLabel style={styles.subLabel}>{t('common:location.city')}</EyebrowLabel>
             <TouchableOpacity
               style={[styles.locationField, { backgroundColor: theme.surface2 }]}
               onPress={() => setActivePicker('city')}
@@ -286,7 +290,7 @@ export default function NewProfileScreen() {
                 style={[styles.locationValue, { color: cityName ? theme.ink : theme.muted }]}
                 numberOfLines={1}
               >
-                {cityName || 'Select or type city…'}
+                {cityName || t('common:location.selectCity')}
               </Text>
               <Icon name="chevron-down" size={16} color={theme.muted} />
             </TouchableOpacity>
@@ -298,11 +302,11 @@ export default function NewProfileScreen() {
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.signGlyph, { color: theme.accent }]}>{sun.glyph}</Text>
             <View>
-              <EyebrowLabel size={10}>{name || 'They'}'s sun</EyebrowLabel>
+              <EyebrowLabel size={10}>{name.trim() ? t('new.sunOf', { name: name.trim() }) : t('new.sunOfThem')}</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{sun.name}</Text>
+                <Text style={styles.italic}>{tSign(sun.name)}</Text>
                 {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{sun.element}</Text>
+                <Text style={[styles.signElement, { color: theme.muted }]}>{t(`common:element.${sun.element}`)}</Text>
               </Text>
               {fullLocation ? (
                 <Text style={[styles.signLocation, { color: theme.muted }]}>{fullLocation}</Text>
@@ -314,7 +318,7 @@ export default function NewProfileScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Save chart"
+          label={t('new.save')}
           variant="primary"
           fullWidth
           disabled={!valid}
@@ -326,7 +330,7 @@ export default function NewProfileScreen() {
       {/* Pickers */}
       <LocationPickerModal
         visible={activePicker === 'country'}
-        title="Select Country"
+        title={t('common:location.pickCountryTitle')}
         items={countryItems}
         selectedValue={countryCode}
         onSelect={handleSelectCountry}
@@ -334,7 +338,7 @@ export default function NewProfileScreen() {
       />
       <LocationPickerModal
         visible={activePicker === 'state'}
-        title="Select State / Province"
+        title={t('common:location.pickStateTitle')}
         items={stateItems}
         selectedValue={stateCode}
         onSelect={handleSelectState}
@@ -342,7 +346,7 @@ export default function NewProfileScreen() {
       />
       <LocationPickerModal
         visible={activePicker === 'city'}
-        title="Select City"
+        title={t('common:location.pickCityTitle')}
         items={cityItems}
         selectedValue={cityName}
         onSelect={handleSelectCity}
@@ -359,6 +363,7 @@ const styles = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { padding: 32, paddingTop: 12, paddingBottom: 40 },
   display: { fontFamily: FONTS.serifRegular, fontSize: 36, lineHeight: 40, marginBottom: 28 },
+  displayIndic: { lineHeight: 50 },
   italic:  { fontFamily: FONTS.serifItalic },
   field:   { marginTop: 22 },
   genderRow: {

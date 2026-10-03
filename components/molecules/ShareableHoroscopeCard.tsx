@@ -2,7 +2,8 @@ import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccent } from '@/hooks/use-accent';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { formatFullDate } from '@/utils/format';
+import { useTranslation } from 'react-i18next';
+import { intlLocale } from '@/utils/i18n';
 
 type Props = {
   name:     string;
@@ -19,6 +20,7 @@ type Props = {
 export const ShareableHoroscopeCard = forwardRef<View, Props>(
   function ShareableHoroscopeCard({ name, dateIso, message, mantra }, ref) {
     const { theme } = useAccent();
+    const { t }     = useTranslation('horoscope');
     const firstName = name.split(' ')[0];
 
     return (
@@ -28,15 +30,15 @@ export const ShareableHoroscopeCard = forwardRef<View, Props>(
         style={[styles.card, { backgroundColor: theme.accent }]}
       >
         <View style={styles.top}>
-          <Text style={[styles.brand, { color: theme.accentFg, opacity: 0.7 }]}>ASTROPEDIA</Text>
+          <Text style={[styles.brand, { color: theme.accentFg, opacity: 0.7 }]}>{t('card.brand')}</Text>
           <Text style={[styles.subhead, { color: theme.accentFg, opacity: 0.8 }]}>
-            Daily reading for {firstName}
+            {t('card.subhead', { name: firstName })}
           </Text>
         </View>
 
         <View style={styles.body}>
           <Text style={[styles.date, { color: theme.accentFg }]}>
-            {formatFullDate(new Date(dateIso + 'T12:00:00'))}
+            {new Date(dateIso + 'T12:00:00').toLocaleDateString(intlLocale(), { month: 'long', day: 'numeric', year: 'numeric' })}
           </Text>
           <Text style={[styles.message, { color: theme.accentFg }]}>
             {message}
@@ -46,9 +48,9 @@ export const ShareableHoroscopeCard = forwardRef<View, Props>(
         {mantra ? (
           <View style={[styles.mantraBlock, { borderColor: theme.accentFg }]}>
             <Text style={[styles.mantraEyebrow, { color: theme.accentFg, opacity: 0.6 }]}>
-              TODAY'S MANTRA
+              {t('card.mantraEyebrow')}
             </Text>
-            <Text style={[styles.mantra, { color: theme.accentFg }]}>"{mantra}"</Text>
+            <Text style={[styles.mantra, { color: theme.accentFg }]}>“{mantra}”</Text>
           </View>
         ) : null}
       </View>

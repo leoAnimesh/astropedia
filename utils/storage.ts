@@ -41,6 +41,9 @@ function getStorage(): StorageBackend {
   return _storage;
 }
 
+const chartReadingKey = (profileId: string, lang: string) =>
+  lang === 'en' ? `chart_reading_v2_${profileId}` : `chart_reading_v2_${profileId}_${lang}`;
+
 export const Storage = {
   // Onboarding
   getOnboardingDone: (): boolean => getStorage().getBoolean('onboarding_done') ?? false,
@@ -71,29 +74,12 @@ export const Storage = {
   setActiveProfileId: (id: string): void =>
     getStorage().set('active_profile_id', id),
 
-  // Local LLM download state
-  getModelDownloaded: (): boolean => getStorage().getBoolean('model_downloaded') ?? false,
-  setModelDownloaded: (v: boolean): void => getStorage().set('model_downloaded', v),
-
-  // Tracks which model variant is on disk. If this doesn't match the build's
-  // expected version, treat the cache as cold so the user sees a real download
-  // with progress UI instead of a silent stall.
-  getModelVersion: (): string | null => getStorage().getString('model_version') ?? null,
-  setModelVersion: (v: string): void => getStorage().set('model_version', v),
-
-  // User's manual model choice. 'auto' (default) means follow the detected
-  // device tier; a specific tier overrides auto-detection. Values must match
-  // the tiers defined in utils/device-tier.ts.
-  getPreferredModelTier: (): string => getStorage().getString('preferred_model_tier') ?? 'auto',
-  setPreferredModelTier: (v: string): void => getStorage().set('preferred_model_tier', v),
-
-  // Cached result of detectDeviceTier(), so we don't re-probe RAM every launch.
-  getDeviceTier:   (): string | null => getStorage().getString('cached_device_tier') ?? null,
-  setDeviceTier:   (v: string): void => getStorage().set('cached_device_tier', v),
-  clearDeviceTier: (): void => getStorage().delete('cached_device_tier'),
-
   // What the user told us they're here for during onboarding. Used to seed a
   // starter prompt on the home screen until the user starts their first chat.
+  // App language chosen on the first onboarding screen ('en' | 'hi' | 'bn').
+  getLanguage: (): string | null => getStorage().getString('language') ?? null,
+  setLanguage: (v: string): void => getStorage().set('language', v),
+
   getStarterIntent: (): string | null => getStorage().getString('starter_intent') ?? null,
   setStarterIntent: (v: string): void => getStorage().set('starter_intent', v),
   clearStarterIntent: (): void => getStorage().delete('starter_intent'),
@@ -127,13 +113,15 @@ export const Storage = {
   setDailyMessageCount: (date: string, count: number): void =>
     getStorage().set(`daily_msgs_${date}`, String(count)),
 
-  // AI-generated chart readings (cached per profile)
-  getChartReading: (profileId: string): string | null =>
-    getStorage().getString(`chart_reading_v2_${profileId}`) ?? null,
-  setChartReading: (profileId: string, json: string): void =>
-    getStorage().set(`chart_reading_v2_${profileId}`, json),
-  deleteChartReading: (profileId: string): void =>
-    getStorage().delete(`chart_reading_v2_${profileId}`),
+  // AI-generated chart readings (cached per profile and reply language;
+  // English keeps the original key).
+  getChartReading: (profileId: string, lang = 'en'): string | null =>
+    getStorage().getString(chartReadingKey(profileId, lang)) ?? null,
+  setChartReading: (profileId: string, json: string, lang = 'en'): void =>
+    getStorage().set(chartReadingKey(profileId, lang), json),
+  deleteChartReading: (profileId: string): void => {
+    for (const lang of ['en', 'hi', 'bn']) getStorage().delete(chartReadingKey(profileId, lang));
+  },
 
   // Clear everything (used by reset)
   clear: (): void => {
@@ -142,6 +130,5 @@ export const Storage = {
     s.delete('accent_key');
     s.delete('dark_mode');
     s.delete('active_profile_id');
-    // intentionally keep model_downloaded — no need to re-download on reset
   },
 };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Button } from '@/components/atoms/Button';
 import { Icon } from '@/components/atoms/Icon';
@@ -10,15 +11,13 @@ import OnboardingStore from './_store';
 
 type GenderKey = 'woman' | 'man' | 'non_binary' | 'unspecified';
 
-const OPTIONS: Array<{ key: GenderKey; label: string; sub: string }> = [
-  { key: 'woman',       label: 'Woman',          sub: 'She / her' },
-  { key: 'man',         label: 'Man',            sub: 'He / him' },
-  { key: 'non_binary',  label: 'Non-binary',     sub: 'Or another identity' },
-  { key: 'unspecified', label: 'Prefer not to say', sub: "I'll skip this for now" },
-];
+// Stored as these codes; labels come from onboarding:gender.<key>.
+const OPTIONS: GenderKey[] = ['woman', 'man', 'non_binary', 'unspecified'];
 
 export default function GenderScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const [selected, setSelected] = useState<GenderKey | ''>(
     (OnboardingStore.gender as GenderKey) || '',
   );
@@ -35,27 +34,27 @@ export default function GenderScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>02 / 05 — You</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('gender.step')}</Text>
       </View>
 
       <View style={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          How should I{'\n'}
-          <Text style={styles.italic}>refer to you?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('gender.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('gender.titleB')}</Text>
         </Text>
 
         <Text style={[styles.hint, { color: theme.ink2 }]}>
-          Helps Saga pick the right pronouns and (when relevant) the traditional Vedic conventions around partner readings.
+          {t('gender.hint')}
         </Text>
 
         <View style={styles.list}>
-          {OPTIONS.map((opt) => {
-            const isSelected = selected === opt.key;
+          {OPTIONS.map((key) => {
+            const isSelected = selected === key;
             return (
               <TouchableOpacity
-                key={opt.key}
+                key={key}
                 activeOpacity={0.85}
-                onPress={() => setSelected(opt.key)}
+                onPress={() => setSelected(key)}
                 style={[
                   styles.option,
                   {
@@ -66,8 +65,8 @@ export default function GenderScreen() {
                 ]}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.optionLabel, { color: theme.ink }]}>{opt.label}</Text>
-                  <Text style={[styles.optionSub, { color: theme.muted }]}>{opt.sub}</Text>
+                  <Text style={[styles.optionLabel, { color: theme.ink }]}>{t(`gender.${key}.label`)}</Text>
+                  <Text style={[styles.optionSub, { color: theme.muted }]}>{t(`gender.${key}.sub`)}</Text>
                 </View>
                 {isSelected && <Icon name="check" size={16} color={theme.accent} />}
               </TouchableOpacity>
@@ -78,7 +77,7 @@ export default function GenderScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Continue"
+          label={t('common:continue')}
           variant="accent"
           fullWidth
           disabled={!selected}
@@ -116,6 +115,7 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 16,
   },
+  displayIndic: { lineHeight: 56 },
   italic: { fontFamily: FONTS.serifItalic },
   hint: {
     fontFamily:   FONTS.sansRegular,

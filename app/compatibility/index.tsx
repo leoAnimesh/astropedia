@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
@@ -13,6 +14,9 @@ import type { Profile } from '@/utils/database';
 
 export default function CompatibilityScreen() {
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('compatibility');
+  // Devanagari/Bengali need more line height for vowel marks above/below.
+  const tallScript = i18n.language !== 'en';
   const { profiles, activeProfile } = useProfiles();
 
   // Default: active profile on the left, first other profile on the right.
@@ -32,16 +36,16 @@ export default function CompatibilityScreen() {
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('back')}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <EyebrowLabel style={{ marginBottom: 0 }}>Compatibility</EyebrowLabel>
+        <EyebrowLabel style={{ marginBottom: 0 }}>{t('title')}</EyebrowLabel>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          How do your{'\n'}
-          <Text style={styles.italic}>charts meet?</Text>
+        <Text style={[styles.display, { color: theme.ink }, tallScript && { lineHeight: 48 }]}>
+          {t('heading1')}{'\n'}
+          <Text style={styles.italic}>{t('heading2')}</Text>
         </Text>
 
         {/* Pair pickers */}
@@ -55,10 +59,10 @@ export default function CompatibilityScreen() {
               <>
                 <Avatar name={a.name} size={48} />
                 <Text style={[styles.profileName, { color: theme.ink }]}>{a.name.split(' ')[0]}</Text>
-                <Text style={[styles.profileSub, { color: theme.muted }]}>tap to change</Text>
+                <Text style={[styles.profileSub, { color: theme.muted }]}>{t('tapToChange')}</Text>
               </>
             ) : (
-              <Text style={[styles.profileSub, { color: theme.muted }]}>add a profile</Text>
+              <Text style={[styles.profileSub, { color: theme.muted }]}>{t('addAProfile')}</Text>
             )}
           </TouchableOpacity>
 
@@ -73,11 +77,11 @@ export default function CompatibilityScreen() {
               <>
                 <Avatar name={b.name} size={48} />
                 <Text style={[styles.profileName, { color: theme.ink }]}>{b.name.split(' ')[0]}</Text>
-                <Text style={[styles.profileSub, { color: theme.muted }]}>tap to change</Text>
+                <Text style={[styles.profileSub, { color: theme.muted }]}>{t('tapToChange')}</Text>
               </>
             ) : (
               <TouchableOpacity onPress={() => router.push('/profile/new')}>
-                <Text style={[styles.profileSub, { color: theme.accent }]}>+ add profile</Text>
+                <Text style={[styles.profileSub, { color: theme.accent }]}>{t('addProfileCta')}</Text>
               </TouchableOpacity>
             )}
           </TouchableOpacity>
@@ -85,13 +89,13 @@ export default function CompatibilityScreen() {
 
         {!result && a && b && a.id === b.id && (
           <Text style={[styles.hint, { color: theme.muted }]}>
-            Pick two different profiles to see how their charts meet.
+            {t('hintSame')}
           </Text>
         )}
 
         {!result && (!a || !b) && (
           <Text style={[styles.hint, { color: theme.muted }]}>
-            You'll need at least two profiles to compare. Add a partner, family member, or friend from the home screen.
+            {t('hintNeedTwo')}
           </Text>
         )}
 
@@ -104,7 +108,7 @@ export default function CompatibilityScreen() {
               </EyebrowLabel>
               <Text style={[styles.scoreNumber, { color: theme.accentFg }]}>
                 {result.outOfTen.toFixed(1)}
-                <Text style={[styles.scoreDenom, { color: theme.accentFg, opacity: 0.6 }]}> / 10</Text>
+                <Text style={[styles.scoreDenom, { color: theme.accentFg, opacity: 0.6 }]}>{t('outOf')}</Text>
               </Text>
             </View>
 
@@ -114,7 +118,7 @@ export default function CompatibilityScreen() {
             </View>
 
             {/* Dimensions */}
-            <EyebrowLabel size={10.5} style={[styles.sectionLabel, { marginTop: 24 }]}>The pieces</EyebrowLabel>
+            <EyebrowLabel size={10.5} style={[styles.sectionLabel, { marginTop: 24 }]}>{t('pieces')}</EyebrowLabel>
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
               {result.dimensions.map((dim, idx) => (
                 <View key={dim.name}>
@@ -133,7 +137,7 @@ export default function CompatibilityScreen() {
             </View>
 
             <Text style={[styles.footer, { color: theme.muted }]}>
-              Vedic charts hint at patterns, not destinies. The way two people show up for each other day after day matters more than any score.
+              {t('footer')}
             </Text>
           </>
         )}
@@ -187,6 +191,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.sansRegular,
     fontSize:   11,
     marginTop:  -2,
+    textAlign:  'center',
   },
   amp: {
     fontFamily: FONTS.serifItalic,

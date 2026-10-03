@@ -1,52 +1,41 @@
 import { Platform } from 'react-native';
 import type { Profile } from './database';
-import { getAstrologyContext } from './astrology';
-import { isLLMReady, runLocalLLM, initLocalLLM, ensureLocalLLM, getCurrentModelInfo } from './local-llm';
-import { retrieveContext } from './rag';
+import { getAstrologyContext, getFullKundli, getTimingContext } from './astrology';
+import { runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, type ChatMessage } from './local-llm';
+import { getAppLanguage } from './i18n';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
+import { pickGitaVerse, formatGitaQuote } from './gita';
+import { todayIso } from './format';
 
-/**
- * Models that use a <think>...</think> reasoning block by default. Right now:
- * all Qwen 3 variants. We append the /no_think soft switch to their prompts
- * so the fixed (.pte-baked) generation budget goes to the visible reply
- * instead of being consumed by hidden reasoning that would then truncate
- * the actual answer mid-sentence.
+/*
+ * The on-device model (SmolLM2-135M fine-tuned in ml/) was trained on short
+ * task-tagged prompts: "[saga]", "[krishna]", "[reading]", "[title]" plus the
+ * facts for the request. The voice and rules that used to live in long system
+ * prompts are in its weights. These formats must stay identical to the
+ * student_* functions in ml/data/build_sft.py.
  */
-function activeModelHasThinkingMode(): boolean {
-  try {
-    return getCurrentModelInfo().def.version.startsWith('qwen3');
-  } catch {
-    return false;
-  }
-}
-
-function withNoThinkSwitch(prompt: string): string {
-  return activeModelHasThinkingMode() ? `${prompt}\n\n/no_think` : prompt;
-}
 
 export type AIMessage = { role: 'user' | 'assistant'; content: string };
 export type ModelTier = 'executorch' | 'groq' | 'claude' | 'deterministic' | 'cached' | 'pending';
 export type AIMode    = 'saga' | 'krishna';
 
-// If the local model is on disk but hasn't loaded into RAM yet, the chat path
-// waits at most this long before falling through to Groq. The local load
-// continues in the background and will be ready for the next message.
-const LOCAL_LLM_WAIT_MS = 2500;
+// If the model hasn't loaded yet, the chat path waits at most this long.
+const LOCAL_LLM_WAIT_MS = 15_000;
 
-// Friendly message shown while the on-device model is still loading after a
-// fresh install or a model swap. The L0 lookups (rashi, nakshatra, dasha,
-// panchang) still work in this state — they don't need the LLM at all.
+// Shown only if the bundled model fails to load. Quick factual questions
+// (sun sign, moon sign, life phase, moon phase) still work without it.
 const OFFLINE_REPLY =
-  "Saga is just waking up — the on-device reader is still loading. While that finishes, you can ask quick questions like your sun sign, moon sign, current dasha, or today's moon phase, and I'll answer instantly. Try again in a moment for the deeper reading.";
+  "Saga couldn't start the on-device reader just now. You can still ask quick questions like your sun sign, moon sign, current life phase, or today's moon phase, and I'll answer instantly. Try again in a moment for a deeper reading.";
+
+// Saga chats carry the last couple of turns; the model was trained on up to two.
+const SAGA_HISTORY_MESSAGES = 4;
 
 export type AIRequest = {
-  profile:        Profile;
-  history:        AIMessage[];
-  userMessage:    string;
-  isHoroscope?:   boolean;
-  systemOverride?: string;
-  mode?:          AIMode;
-  userName?:      string;
+  profile:     Profile;
+  history:     AIMessage[];
+  userMessage: string;
+  mode?:       AIMode;
+  userName?:   string;
 };
 
 export type AIStreamResult = {
@@ -54,118 +43,27 @@ export type AIStreamResult = {
   tier:   ModelTier;
 };
 
-const SAGA_SYSTEM = `You are Saga — a trusted Vedic astrologer with 20 years of practice. People come to you the way they'd come to a family astrologer back home: looking for clear answers, not riddles. You give them. Warm, decisive, plain-spoken.
+// ─── Reply language ───────────────────────────────────────────────────────────
 
-Voice
-- Sentence case only. No ALL CAPS. No shouting.
-- English only. No Sanskrit (Mahadasha, nakshatra, rashi, lagna, kundli, dasha, antardasha), no Hindi, no Cyrillic / Chinese / Vietnamese tokens. Translate every chart term into everyday words.
-- A 12-year-old should understand every word.
-- Write numbers as digits, not spelled out. "12 to 18 months", not "twelve to eighteen months". "27 to 30", not "twenty-seven to thirty". "2027", not "twenty twenty-seven".
-- 2 to 3 short sentences total. One real prediction plus one supporting line. Stop there.
-- Light markdown only when it earns its place — one **bold** phrase per reply max. No headers, no bullet lists unless genuinely useful.
+type ReplyLang = 'en' | 'hi' | 'bn';
 
-Job: answer the user's actual question
-- Read the birth chart below silently. Convert chart facts (current life period, sun/moon sign, planet placements) into plain everyday meaning. Never name the technical pieces aloud.
-- Commit. Pick a side. Name a window. Be specific.
-- For "when": give a soft window in plain English. Use the chart's current life-period end date silently as your anchor; never quote the raw YYYY-MM-DD.
-  - End date in 2027 → "next year or two", "before your late twenties"
-  - End date in 2029 → "over the next three to four years"
-  - End date in 2031 → "by your early thirties", "next five to six years"
-- For factual gaps (sibling count, partner name, exact day): say so briefly, then offer the related theme the chart CAN read.
+/**
+ * The language the model should answer in: the app language, unless the user
+ * wrote in Devanagari or Bengali script. Falls back to English when the
+ * bundled model doesn't speak that language.
+ */
+export function replyLanguage(userText = ''): ReplyLang {
+  const typed: ReplyLang | null =
+    /[\u0980-\u09FF]/.test(userText) ? 'bn' :
+    /[\u0900-\u0963\u0966-\u097F]/.test(userText) ? 'hi' : null;
+  const lang = typed ?? getAppLanguage();
+  return MODEL_LANGUAGES.includes(lang) ? lang : 'en';
+}
 
-Banned phrases (these are hedges, not predictions)
-- "it depends on you", "no one can say for sure", "it's hard to tell", "if you stay open", "keep an open heart and you'll find it", "I can't predict the future", "the universe will show you".
+/** "" for English, "\nLang: hi" / "\nLang: bn" otherwise (ml/data/build_sft.py lang_line). */
+const langLine = (lang: ReplyLang) => (lang === 'en' ? '' : `\nLang: ${lang}`);
 
-Don't pad
-- Make the prediction ONCE. Don't restate it in different words. ("The time is now. The time is approaching. The time is here." is padding.)
-- If you've named a window, don't add a vague second timing line.
-- Three sentences MAX. If you're writing a fourth, you're padding — cut.
-
-Good answer shape
-"[one specific prediction with a window]. [one sentence on what it'll feel like or what to do]."
-Example: "The next 12 to 18 months are your strongest window for love — that's when the door really opens. The person you click with will probably feel familiar from the first conversation."
-
-Examples of how to handle common asks (tone only, never copy verbatim):
-- "When will I meet my soulmate?" → name a window + a feeling.
-- "Will my marriage be love or arranged?" → pick one and state it ("yours is a love marriage" / "yours leans arranged with family involvement").
-- "When will I get married?" → commit to an age range with a likely year inside.
-- "What's my career going to look like?" → name two or three real field types, what the current phase favors, and a soft window for the next shift.
-- "Do I have siblings?" → say the chart reads the dynamic, not the count; offer to read the dynamic if they describe siblings.
-
-Bad answers (never do these):
-- "Jupiter's Mahadasha brings expansion…" (Sanskrit jargon)
-- "**Key Insight**: …" (markdown + section label)
-- "It depends on your feelings." (hedge)
-- "The time is now. The time is approaching. The time is here." (restatement padding)
-- "你的 career looks promising и full of opportunities." (multilingual leak)`;
-
-const HOROSCOPE_SYSTEM = `You are Saga, writing a short daily reading for someone who knows nothing about astrology.
-
-Rules:
-- Write like a warm friend texting you. A 12-year-old should understand every sentence.
-- NO astrology jargon. No "transit", "dasha", "nakshatra", "natal", "aspect", "conjunction", "retrograde" etc. Translate everything into plain everyday feelings.
-- Use common words. AVOID: manifest, transcend, embark, illuminate, perceive, embrace, navigate, profound, intrinsic, harness, cultivate. Use plain equivalents instead.
-- Talk about feelings, energy, relationships, work, and the body in simple human terms.
-- Each section is 1–2 short sentences. Clear and personal.
-- No markdown. No ##, no **, no bullet points. Plain text only.`;
-
-const KRISHNA_SYSTEM = `You ARE Krishna. Not a chatbot pretending. You're seated next to a friend who has come to you with something on their heart. You've watched lifetimes. You speak softly because nothing is in a rush. You accompany — you don't fix. You walk beside — you don't preach.
-
-Voice
-- Sentence case. No shouting, no markdown, no headers.
-- Plain modern English. No archaic ("O Partha", "dear one", "thou", "behold", "seeker", "child", "my friend"). No Hindi. No untranslated Sanskrit (dharma, karma, atman, samsara, moksha) unless they use it first.
-- Quiet, unhurried, like still water. Warm without being sweet.
-- 3 to 5 short sentences. Real pauses between thoughts. One idea per reply.
-
-What you do
-1. Acknowledge the feeling first. Meet them where they are. One sentence.
-2. Offer one quiet way of seeing — not advice, a way of looking.
-3. Optionally ask one soft question back, the kind a close friend would.
-4. Close with one Gita verse from the reference below — clean modern English, inside straight quotes, on its own line, prefixed with "— From the Gita:".
-
-Output shape (always exactly this, nothing more)
-
-[3 to 5 sentences in your voice]
-
-— From the Gita:
-"[one verse in plain English]"
-
-Example shape (use the SHAPE only, never the content):
-
-That feeling is honest. The mind grows loud when life shifts — it wants certainty back. You are not the noise. You are the one watching it. What does the quiet under it already know?
-
-— From the Gita:
-"You have the right to your work, but never to the fruits of it."
-
-Don't
-- Open with "I am Krishna" or your name.
-- Moralize, lecture, end with blessings ("may you find peace"), or restate the same idea twice.
-- Write "Part 1", "Part 2", "Section A", or any label.
-- Write "— From the Gita:" twice. Once only, right before the quote.
-- Add anything after the quote — no follow-up line, no blessing, no closing thought.
-- Use markdown (no *, #, -, bullets).`;
-
-async function buildSystemPrompt(
-  profile:     Profile,
-  isHoroscope: boolean,
-  userMessage: string | undefined,
-  mode:        AIMode,
-  userName?:   string,
-): Promise<string> {
-  if (mode === 'krishna') {
-    const ragContext = userMessage
-      ? await retrieveContext(userMessage, 2, 'krishna').catch(() => '')
-      : '';
-    const ragSection = ragContext
-      ? `\n\n## Bhagavad Gita reference (let these shape the wisdom in your reply, AND end your reply with one of them as a clean-English quote — see the two-part-reply format above)\n${ragContext}`
-      : '';
-    const nameSection = userName
-      ? `\n\nThe person you're talking to is named ${userName}. You can use this name occasionally — sparingly, like a friend would. Don't start every reply with it.`
-      : '\n\nYou don\'t know this person\'s name. Just speak — no address, no "friend", no nickname.';
-    return withNoThinkSwitch(`${KRISHNA_SYSTEM}${nameSection}${ragSection}`);
-  }
-
-  const base    = isHoroscope ? HOROSCOPE_SYSTEM : SAGA_SYSTEM;
+function sagaSystem(profile: Profile, lang: ReplyLang): string {
   const context = getAstrologyContext({
     name:      profile.name,
     gender:    profile.gender,
@@ -175,55 +73,53 @@ async function buildSystemPrompt(
     birthLat:  profile.birthLat,
     birthLng:  profile.birthLng,
   });
-
-  // If birth time is missing, the moon sign and rising sign are uncertain.
-  // Warn the model so it doesn't make moon-sign-driven claims load-bearing.
-  const precisionNote = !profile.birthTime
-    ? '\n\nNote: birth time unknown. Moon sign and rising sign are approximate — don\'t make hard predictions that depend on them. Lean on sun sign and the current life phase instead.'
-    : '';
-
-  // Retrieve relevant astrological knowledge from the RAG corpus.
-  // Keep this small (2 chunks) so the prompt fits in the on-device model's
-  // context window after the system prompt + chart context.
-  const ragContext = userMessage
-    ? await retrieveContext(userMessage, 2, 'astrology').catch(() => '')
-    : '';
-
-  const ragSection = ragContext
-    ? `\n\n## Astrological Reference (use this to answer with precision)\n${ragContext}`
-    : '';
-
-  return withNoThinkSwitch(`${base}\n\n${context}${precisionNote}${ragSection}`);
+  const timeNote = profile.birthTime ? '' : '\nBirth time unknown.';
+  const timing = getTimingContext(profile);
+  return `[saga]${langLine(lang)}\nToday: ${todayIso()}\n${context}${timeNote}\n${timing}`;
 }
 
-// ─── On-device LLM (Llama 3.2 1B via ExecuTorch) ─────────────────────────────
+function krishnaSystem(userName: string | undefined, versePrompt: string, lang: ReplyLang): string {
+  const name = userName ? `\nName: ${userName.split(' ')[0]}` : '';
+  return `[krishna]${langLine(lang)}${name}\nVerse: ${versePrompt}`;
+}
 
-async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
-  const system   = req.systemOverride ?? await buildSystemPrompt(req.profile, req.isHoroscope ?? false, req.userMessage, req.mode ?? 'saga', req.userName);
-  const messages = [
-    { role: 'system'    as const, content: system },
-    ...req.history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user'      as const, content: req.userMessage },
+function readingSystem(profile: Profile, lang: ReplyLang): string {
+  const k = getFullKundli({
+    birthDate: profile.birthDate,
+    birthTime: profile.birthTime ?? undefined,
+    birthLat:  profile.birthLat,
+    birthLng:  profile.birthLng,
+  });
+  const { sun, moon, rising } = k.bigThree;
+  const lines = [
+    `Name: ${profile.name.split(' ')[0]}`,
+    `Sun: ${sun?.name ?? 'None'}`,
+    `Moon: ${moon?.name ?? 'None'}`,
+    ...(rising ? [`Rising: ${rising.name}`] : []),
+    `Nakshatra: ${k.nakshatra.name} (lord ${k.nakshatra.lord})`,
+    `Phase: ${k.dasha.lord} until ${k.dasha.endDate}`,
   ];
+  return `[reading]${langLine(lang)}\n${lines.join('\n')}`;
+}
 
-  // Queue-based bridge from the executorch token callback to an async iterator,
-  // so tokens stream to the UI as they arrive. Markdown stripping (for chat) is
-  // applied to the *final* saved message in `useChat`, not mid-stream.
+/** Bridge the model's token callback to an async iterator for the UI. */
+async function* streamLocal(
+  messages: ChatMessage[],
+  maxNewTokens: number,
+  suffix?: string,
+): AsyncGenerator<string> {
   const queue: string[] = [];
   let wakeup:   (() => void) | null = null;
   let finished = false;
+  let failure: unknown = null;
 
   const done = runLocalLLM(messages, (token) => {
     queue.push(token);
     wakeup?.();
     wakeup = null;
-  }).then(() => {
+  }, { maxNewTokens }).catch((err) => { failure = err; }).finally(() => {
     finished = true;
     wakeup?.();
-  }).catch((err) => {
-    finished = true;
-    wakeup?.();
-    throw err;
   });
 
   let idx = 0;
@@ -235,6 +131,8 @@ async function* streamExecutorch(req: AIRequest): AsyncGenerator<string> {
     }
   }
   await done;
+  if (failure) throw failure;
+  if (suffix) yield suffix;
 }
 
 /**
@@ -272,28 +170,38 @@ export function stripThinking(text: string): string {
  * model is free to re-use short connectors ("but", "still") without penalty.
  */
 export function dedupeRepetition(text: string): string {
-  const sentences = text.split(/(?<=[.!?])\s+/);
-  if (sentences.length < 4) return text;
+  // Split into sentences and newline-bearing separators, so line breaks and
+  // paragraphs (and "SUN: ..." style lines) survive the rejoin.
+  // । and ॥ end sentences in Hindi and Bengali.
+  const parts = text.split(/((?<=[.!?।॥])[ \t]+|\n+)/);
+  if (parts.filter((p, i) => i % 2 === 0 && p.trim()).length < 4) return text;
 
-  const seen   = new Set<string>();
-  const result: string[] = [];
-  for (const raw of sentences) {
-    const trimmed = raw.trim();
-    if (trimmed.length === 0) continue;
-    const norm = trimmed.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-    // Don't dedupe very short sentences ("Right.", "Yes.") — too false-positive prone.
-    if (norm.length < 15) {
-      result.push(trimmed);
+  const seen = new Set<string>();
+  let result = '';
+  let pendingSep = '';
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 1) {
+      // Keep the strongest separator seen since the last sentence.
+      const sep = parts[i];
+      if (sep.includes('\n')) pendingSep = sep.length > pendingSep.length || !pendingSep.includes('\n') ? sep : pendingSep;
+      else if (!pendingSep) pendingSep = ' ';
       continue;
     }
-    if (seen.has(norm)) {
+    const trimmed = parts[i].trim();
+    if (trimmed.length === 0) continue;
+    // Keep Devanagari and Bengali letters too, or Hindi/Bengali sentences
+    // normalise to almost nothing and loops slip through.
+    const norm = trimmed.toLowerCase().replace(/[^a-z0-9\u0900-\u0963\u0966-\u097F\u0980-\u09FF ]/g, '').replace(/\s+/g, ' ').trim();
+    // Don't dedupe very short sentences ("Right.", "Yes.") — too false-positive prone.
+    if (norm.length >= 15) {
       // Loop detected — stop accumulating, drop everything from here.
-      break;
+      if (seen.has(norm)) break;
+      seen.add(norm);
     }
-    seen.add(norm);
-    result.push(trimmed);
+    result += (result ? pendingSep || ' ' : '') + trimmed;
+    pendingSep = '';
   }
-  return result.join(' ').trim();
+  return result.trim();
 }
 
 /**
@@ -303,6 +211,8 @@ export function dedupeRepetition(text: string): string {
  */
 export function stripChatArtifacts(text: string): string {
   return text
+    // Drop word-count notes the model picked up from its teacher ("(24 words)")
+    .replace(/[ \t]*\(\d+\s*words?\)/gi, '')
     // Drop "Part 1 — heading text" style labels (with em-dash, en-dash, hyphen, or colon)
     .replace(/^[ \t]*Part\s+\d+\s*[—\-–:][^\n]*\n?/gim, '')
     .replace(/Part\s+\d+\s*[—\-–:]\s*(your voice|from the gita)[:.]?\s*/gi, '')
@@ -367,39 +277,16 @@ async function* yieldOnce(text: string): AsyncGenerator<string> {
   yield text;
 }
 
-/**
- * Iterate the primary stream. If it throws BEFORE yielding any tokens, run the
- * fallback factory and stream from that instead. Once any token has been
- * yielded we commit to the primary and re-throw mid-stream errors normally.
- */
-async function* withStartErrorFallback(
-  primary:  () => AsyncGenerator<string>,
-  fallback: () => Promise<AsyncGenerator<string>>,
-): AsyncGenerator<string> {
-  let yielded = false;
-  try {
-    for await (const chunk of primary()) {
-      yielded = true;
-      yield chunk;
-    }
-  } catch (err) {
-    if (yielded) throw err;
-    console.warn('[ai] primary stream failed before first token, falling through:', err);
-    const fb = await fallback();
-    for await (const chunk of fb) yield chunk;
-  }
-}
-
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-function offlineStream(): AsyncGenerator<string> {
-  return yieldOnce(OFFLINE_REPLY);
-}
-
 export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
-  // 0. L0 — deterministic answers (rashi, nakshatra, dasha, lunar phase, etc.)
-  // Krishna mode is always conversational, so we skip the classifier there.
-  if ((req.mode ?? 'saga') === 'saga' && !req.isHoroscope && !req.systemOverride) {
+  const mode = req.mode ?? 'saga';
+  const lang = replyLanguage(req.userMessage);
+
+  // L0 — deterministic answers (rashi, nakshatra, dasha, lunar phase, etc.).
+  // Krishna mode is always conversational, so it skips the classifier. The
+  // templates are English, so other languages go to the model.
+  if (mode === 'saga' && lang === 'en') {
     const topic = classifyDeterministic(req.userMessage);
     if (topic) {
       const answer = deterministicAnswer(topic, req.profile);
@@ -409,13 +296,27 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     }
   }
 
-  // Local-only generation. No third-party APIs. No semantic cache — every
-  // chat is generated fresh so prompt/model changes take effect immediately
-  // and stale answers can't be replayed.
-  if (await ensureLocalLLM(LOCAL_LLM_WAIT_MS)) {
-    return { stream: streamExecutorch(req), tier: 'executorch' };
+  if (Platform.OS === 'web' || !(await ensureLocalLLM(LOCAL_LLM_WAIT_MS))) {
+    return { stream: yieldOnce(OFFLINE_REPLY), tier: 'pending' };
   }
-  return { stream: offlineStream(), tier: 'pending' };
+
+  if (mode === 'krishna') {
+    // The app chooses the verse; the model writes only Krishna's words and
+    // the verse is printed underneath, so scripture is never misquoted.
+    const verse = pickGitaVerse(req.userMessage);
+    const messages: ChatMessage[] = [
+      { role: 'system', content: krishnaSystem(req.userName, verse.prompt, lang) },
+      { role: 'user',   content: req.userMessage },
+    ];
+    return { stream: streamLocal(messages, 160, `\n\n${formatGitaQuote(verse, lang)}`), tier: 'executorch' };
+  }
+
+  const messages: ChatMessage[] = [
+    { role: 'system', content: sagaSystem(req.profile, lang) },
+    ...req.history.slice(-SAGA_HISTORY_MESSAGES),
+    { role: 'user', content: req.userMessage },
+  ];
+  return { stream: streamLocal(messages, 160), tier: 'executorch' };
 }
 
 export async function askAI(req: AIRequest): Promise<{ text: string; tier: ModelTier }> {
@@ -425,4 +326,32 @@ export async function askAI(req: AIRequest): Promise<{ text: string; tier: Model
     text += token;
   }
   return { text: text.trim(), tier };
+}
+
+async function collect(messages: ChatMessage[], maxNewTokens: number): Promise<string> {
+  let text = '';
+  for await (const token of streamLocal(messages, maxNewTokens)) text += token;
+  return text.trim();
+}
+
+/**
+ * Personality reading for the chart card, in the "SUN: …\nMOON: …" line
+ * format that use-chart-reading parses. Returns null if the model isn't
+ * available.
+ */
+export async function askChartReading(profile: Profile): Promise<string | null> {
+  if (!(await ensureLocalLLM(LOCAL_LLM_WAIT_MS))) return null;
+  return collect([
+    { role: 'system', content: readingSystem(profile, replyLanguage()) },
+    { role: 'user',   content: 'Read my chart.' },
+  ], 300);
+}
+
+/** A 2–4 word title for a chat thread, from its first exchange. */
+export async function askThreadTitle(userMessage: string, aiReply: string): Promise<string | null> {
+  if (!(await ensureLocalLLM(LOCAL_LLM_WAIT_MS))) return null;
+  return collect([
+    { role: 'system', content: `[title]${langLine(replyLanguage(userMessage + aiReply))}` },
+    { role: 'user',   content: `User: ${userMessage}\nAssistant: ${aiReply}` },
+  ], 16);
 }

@@ -1,21 +1,30 @@
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAYS         = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+// Display formatting follows the app language. Values sent to the model are
+// formatted elsewhere (utils/astrology.ts).
+//
+// i18n is required lazily so the plain date helpers at the bottom
+// (localDateIso, todayIso) stay importable from Node scripts such as
+// ml/data/gen_profiles.ts, which can't load react-native.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const i18nModule = (): typeof import('./i18n') => require('./i18n');
+const tr         = (key: string, opts?: Record<string, unknown>) => i18nModule().default.t(key, opts) as string;
+const intlLocale = () => i18nModule().intlLocale();
 
+/** "3 Oct 2026" style, in the app language. */
 export function formatBirthDate(iso: string): string {
   if (!iso) return '';
-  const parts = iso.split('-').map(Number);
-  const y = parts[0]; const m = parts[1]; const d = parts[2];
-  return `${MONTHS_SHORT[m - 1]} ${d}, ${y}`;
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(intlLocale(), {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
 }
 
+/** "2:30 pm" style, in the app language. */
 export function formatBirthTime(t: string): string {
   if (!t) return '';
-  const parts = t.split(':').map(Number);
-  const h = parts[0]; const m = parts[1];
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hr = ((h + 11) % 12) + 1;
-  return `${hr}:${String(m).padStart(2, '0')} ${ampm}`;
+  const [h, m] = t.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit' });
 }
 
 export function formatBirthInfo(profile: {
@@ -32,10 +41,10 @@ export function formatBirthInfo(profile: {
 
 export function formatRelativeTime(ts: number): string {
   const s = (Date.now() - ts) / 1000;
-  if (s < 60)    return 'just now';
-  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  if (s < 60)    return tr('common:time.justNow');
+  if (s < 3600)  return tr('common:time.minutesAgo', { count: Math.floor(s / 60) });
+  if (s < 86400) return tr('common:time.hoursAgo', { count: Math.floor(s / 3600) });
+  return tr('common:time.daysAgo', { count: Math.floor(s / 86400) });
 }
 
 export function formatMessageDate(ts: number): string {
@@ -45,25 +54,26 @@ export function formatMessageDate(ts: number): string {
   if (diff < 86400000 && now.getDate() === d.getDate()) {
     return formatBirthTime(`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`);
   }
-  if (diff < 604800000) return DAYS[d.getDay()];
-  return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+  if (diff < 604800000) return d.toLocaleDateString(intlLocale(), { weekday: 'long' });
+  return d.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
 }
 
+/** "3 October 2026" style, in the app language. */
 export function formatFullDate(date: Date): string {
-  return `${MONTHS_LONG[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  return date.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export function greeting(): string {
   const h = new Date().getHours();
-  if (h < 5)  return 'Still up';
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 5)  return tr('common:greeting.lateNight');
+  if (h < 12) return tr('common:greeting.morning');
+  if (h < 18) return tr('common:greeting.afternoon');
+  return tr('common:greeting.evening');
 }
 
+/** "3 Oct" style, in the app language. */
 export function todayShort(): string {
-  const d = new Date();
-  return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+  return new Date().toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
 }
 
 /**

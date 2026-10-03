@@ -1,0 +1,69 @@
+{
+  "form": {
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Mom, Sam, Priya",
+    "relLabel": "Relationship · optional",
+    "relLabelFor": "Relationship to {{name}} · optional",
+    "relPlaceholder": "Partner, friend, parent…",
+    "relPlaceholderFor": "{{name}}'s partner, friend, parent…",
+    "genderLabel": "Gender · optional",
+    "dobLabel": "Date of birth",
+    "tobLabel": "Time of birth · optional",
+    "futureTitle": "That date is in the future",
+    "futureBody": "Pick a real past birth date — a chart needs a moment that's already happened."
+  },
+  "new": {
+    "eyebrow": "New chart",
+    "titleA": "A chart for",
+    "titleB": "someone you love.",
+    "locationLabel": "Birth location · optional",
+    "sunOf": "{{name}}'s sun",
+    "sunOfThem": "Their sun",
+    "save": "Save chart"
+  },
+  "edit": {
+    "eyebrow": "Edit chart",
+    "titleBefore": "Update ",
+    "titleName": "{{name}}'s",
+    "titleAfter": " details",
+    "titleNoName": "Update details",
+    "locationLabel": "Birth location",
+    "changeLocation": "Change location",
+    "cancelLocationChange": "Cancel location change",
+    "save": "Save changes"
+  },
+  "detail": {
+    "yourChart": "Your chart",
+    "namedChart": "{{name}}'s chart",
+    "noBirthDate": "No birth date",
+    "rising": "Rising",
+    "noTime": "No time",
+    "sagaReading": "Saga's reading",
+    "positions": "Planetary positions",
+    "moonNakshatra": "Moon nakshatra",
+    "ruledBy": "Ruled by {{lord}}",
+    "mahadasha": "Current Mahadasha",
+    "yearPeriod_one": "{{count}} yr period",
+    "yearPeriod_other": "{{count}} yr period",
+    "born": "Born",
+    "time": "Time",
+    "place": "Place",
+    "dailyReading": "{{date}} · Daily reading",
+    "removeTitle": "Remove chart",
+    "removeBody": "This will delete all conversations with this profile."
+  },
+  "block": {
+    "kundliTitle": "Kundli · Birth chart",
+    "pinned": "Pinned",
+    "conversation": "Conversation",
+    "tapToStart": "Tap to start the conversation"
+  },
+  "switcher": {
+    "title": "Switch chart",
+    "addChart": "Add a chart",
+    "editA11y": "Edit {{name}}"
+  },
+  "chart": {
+    "asc": "ASC"
+  }
+}
