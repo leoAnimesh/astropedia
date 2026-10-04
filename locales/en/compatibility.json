@@ -1,5 +1,5 @@
 {
-  "title": "Compatibility",
+  "title": "Kundli matching",
   "back": "Go back",
   "heading1": "How do your",
   "heading2": "charts meet?",
@@ -38,5 +38,216 @@
       "good": "Your day-to-day rhythms can sync easily.",
       "dosha": "Your moon signs sit in a classically restless angle to each other."
     }
+  },
+  "match": {
+    "eyebrow": "Kundli matching · 36 gunas",
+    "heading": {
+      "before": "Guna ",
+      "em": "milan"
+    },
+    "lead": "The traditional eight-part match, read from both Moons. Choose the bride and the groom.",
+    "bride": "Bride",
+    "groom": "Groom",
+    "swap": "Swap bride and groom",
+    "choose": "Choose",
+    "change": "Change",
+    "pickTitle": {
+      "bride": "Choose the bride",
+      "groom": "Choose the groom"
+    },
+    "moonLine": "Moon in {{sign}} · {{nakshatra}} · pada {{pada}}",
+    "noDetails": "No birth details yet",
+    "addDetails": "Add {{name}}'s birth details →",
+    "noTimeNote": "No birth time for {{name}}, so the Moon (and Manglik) are approximate.",
+    "addTime": "Add birth time →",
+    "outOf": "/ 36",
+    "gunas": "gunas",
+    "verdict": {
+      "excellent": "Excellent match",
+      "good": "Good match",
+      "average": "Average match",
+      "low": "Low match"
+    },
+    "verdictLine": {
+      "excellent": "A rare, very harmonious pairing by the traditional count.",
+      "good": "A good match. Most of the eight parts sit well together.",
+      "average": "Workable. Families usually go ahead in this range, with a little care.",
+      "low": "Below 18, so the tradition doesn't usually recommend it. Many couples look at the full charts before deciding."
+    },
+    "kootas": "The eight kootas",
+    "koota": {
+      "varna": {
+        "name": "Varna",
+        "full": "Your values and outlook line up.",
+        "none": "Different outlooks on work and duty."
+      },
+      "vashya": {
+        "name": "Vashya",
+        "full": "A natural pull towards each other.",
+        "some": "Some give and take in who leads.",
+        "none": "Neither naturally yields to the other."
+      },
+      "tara": {
+        "name": "Tara",
+        "full": "Your birth stars favour each other.",
+        "some": "Your birth stars agree one way, not both.",
+        "none": "Your birth stars don't favour each other."
+      },
+      "yoni": {
+        "name": "Yoni",
+        "full": "Very easy closeness and instinct.",
+        "some": "Physical closeness is fair to good.",
+        "none": "Very different instincts — worth talking about."
+      },
+      "maitri": {
+        "name": "Graha Maitri",
+        "full": "Your Moon lords are friends — easy to understand each other.",
+        "some": "Your minds meet with some effort.",
+        "none": "Your Moon lords don't get along — patience helps."
+      },
+      "gana": {
+        "name": "Gana",
+        "full": "Your temperaments match.",
+        "some": "Different temperaments, mostly in tune.",
+        "none": "Very different temperaments."
+      },
+      "bhakoot": {
+        "name": "Bhakoot",
+        "full": "Your Moon signs sit well together.",
+        "none": "Your Moon signs sit at a tricky angle."
+      },
+      "nadi": {
+        "name": "Nadi",
+        "full": "Different nadis — the ideal.",
+        "none": "The same nadi."
+      }
+    },
+    "doshas": "Things to consider",
+    "dosha": {
+      "nadi": {
+        "title": "Nadi dosha",
+        "none": "No Nadi dosha. Your nadis are different.",
+        "present": "You share the same nadi ({{nadi}}). Tradition gives this the most weight, so it's worth discussing with a family astrologer.",
+        "cancelled": "You share the same nadi ({{nadi}}), so Nadi scores 0 points — but traditionally it's considered cancelled because {{reason}}."
+      },
+      "bhakoot": {
+        "title": "Bhakoot dosha",
+        "none": "No Bhakoot dosha. Your Moon signs sit well together.",
+        "present": "Your Moon signs sit in a {{count}} position, which tradition marks as Bhakoot dosha. Something to consider, not to fear.",
+        "cancelled": "Your Moon signs sit in a {{count}} position, so Bhakoot scores 0 points — but traditionally it's considered cancelled because {{reason}}."
+      },
+      "reason": {
+        "sameSign": "your Moon is in the same sign but in different nakshatras",
+        "sameNakshatra": "you share a nakshatra but your Moons are in different signs",
+        "sameLord": "both Moon signs are ruled by the same planet ({{planet}})",
+        "friendlyLords": "the lords of your Moon signs ({{a}} and {{b}}) are friends",
+        "differentPada": "you share a nakshatra but your Moons fall in different padas ({{padaA}} and {{padaB}})"
+      },
+      "manglik": {
+        "title": "Manglik",
+        "level": {
+          "none": "Not Manglik.",
+          "mild": "Mildly Manglik — from {{refs}} only.",
+          "present": "Manglik — from {{refs}}.",
+          "cancelled": "Mars sits in a Manglik house, but {{exemption}}, so it's traditionally considered cancelled."
+        },
+        "basis": {
+          "lagna": "the ascendant",
+          "moon": "the Moon",
+          "venus": "Venus"
+        },
+        "refJoin": ", ",
+        "refItem": "From {{ref}}: house {{house}}",
+        "refFlag": {
+          "flagged": " (Manglik house)",
+          "exempt": " (exempted)"
+        },
+        "exemption": {
+          "ownSign": "Mars is in its own sign, {{sign}}",
+          "exalted": "Mars is exalted in {{sign}}",
+          "houseSign": "Mars in house {{house}} in {{sign}} is a classical exception",
+          "jupiter": "Jupiter sits with or aspects Mars"
+        },
+        "approx": {
+          "time": "Approximate: no birth time, so there's no ascendant — counted from the Moon and Venus.",
+          "place": "No birth place, so there's no ascendant — counted from the Moon and Venus."
+        },
+        "ageNote": "Past 28 — many families see Manglik as weaker from this age (a note, not a cancellation).",
+        "status": {
+          "none": "Neither of you is Manglik.",
+          "exempt": "Any Manglik placement here is cancelled by a classical exception.",
+          "cancelled": "You're both Manglik (mildly or fully), which traditionally balances out.",
+          "one": "Only one of you is Manglik. Tradition has many exceptions here; it's a point to look at calmly with the full charts."
+        },
+        "refJoinLast": " and "
+      },
+      "gana": {
+        "title": "Gana dosha",
+        "none": "No Gana dosha. Your temperaments sit well together.",
+        "present": "Your Ganas are {{a}} and {{b}}, which tradition counts as Gana dosha. Worth knowing, not worrying about.",
+        "softened": "Your Ganas are {{a}} and {{b}}, a traditional mismatch — but {{reason}}, which is usually seen as softening it. The Gana points stay as they are.",
+        "reason": {
+          "maitri": "your Moon lords get along well (Graha Maitri {{score}} of 5)",
+          "bhakoot": "your Moon signs sit well together (full Bhakoot)"
+        }
+      }
+    },
+    "ask": "Ask Saga about this match →",
+    "footer": "Guna milan is one traditional lens. How two people care for each other, day after day, matters far more than any score.",
+    "nadiName": {
+      "Aadi": "Aadi",
+      "Madhya": "Madhya",
+      "Antya": "Antya"
+    },
+    "notes": {
+      "noTimeBoth": "Neither profile has a birth time, so both Moons and all the Manglik readings are approximate.",
+      "noPlace": "No birth place for {{name}}, so there's no ascendant; Manglik is read from the Moon and Venus only.",
+      "addPlace": "Add birth place →",
+      "minor": "{{name}} is under 18. Kundli matching is meant for adults, so treat this as just for interest.",
+      "ageGap": "There's an age gap of about {{years}} years. The kootas don't look at age; it's simply something families often talk through.",
+      "identical": "These two profiles have exactly the same birth details. Is one of them a duplicate?",
+      "roles": "You choose who's the bride and who's the groom here. A few kootas count from the bride, so swapping (⇄) can shift the score a little."
+    },
+    "ganaName": {
+      "Deva": "Deva",
+      "Manushya": "Manushya",
+      "Rakshasa": "Rakshasa"
+    }
+  },
+  "question": {
+    "intro": "Kundli matching for {{bride}} (bride, Moon in {{brideSign}}, {{brideNak}}) and {{groom}} (groom, Moon in {{groomSign}}, {{groomNak}}): Ashtakoota score {{total}} out of 36 ({{parts}}).",
+    "part": "{{name}} {{score}}/{{max}}",
+    "dosha": "Nadi dosha: {{nadi}}. Bhakoot dosha: {{bhakoot}}. Gana dosha: {{gana}}.",
+    "status": {
+      "none": "none",
+      "present": "present",
+      "cancelled": "0 points but traditionally cancelled ({{reason}})",
+      "softened": "present but softened ({{reason}})"
+    },
+    "manglik": {
+      "none": "{{name}} is not Manglik (checked from {{refs}}{{approx}})",
+      "mild": "{{name}} is mildly Manglik (from {{refs}} only{{approx}}{{age}})",
+      "present": "{{name}} is Manglik (from {{refs}}{{approx}}{{age}})",
+      "cancelled": "{{name}} has Mars in a Manglik house, but it is traditionally cancelled (because {{exemption}}{{approx}})"
+    },
+    "basis": {
+      "lagna": "the ascendant",
+      "moon": "the Moon",
+      "venus": "Venus"
+    },
+    "approx": ", approximate",
+    "ask": {
+      "us": "What does this match mean for us, and what should we keep in mind?",
+      "them": "What does this match mean for them, and what should they keep in mind?"
+    },
+    "manglikPair": "{{a}}; {{b}}.",
+    "refJoin": ", ",
+    "age": ", past 28",
+    "pair": {
+      "exempt": "Any Manglik placement is cancelled by a classical exception.",
+      "cancelled": "Both are Manglik, which traditionally balances out.",
+      "one": "Only one of them is Manglik."
+    },
+    "refJoinLast": " and "
   }
 }

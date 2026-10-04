@@ -101,5 +101,10 @@
       "other": "{{planet}} enters {{sign}} tomorrow."
     },
     "phaseTitle": "{{title}} next week"
+  },
+  "question": {
+    "chapter": "My {{planet}} life chapter starts on {{date}}. What does it mean for me?",
+    "sub": "My {{planet}} sub-period starts on {{date}}. What does it mean for me?",
+    "transit": "{{planet}} moves into {{sign}} on {{date}}. What does this mean for me?"
   }
 }

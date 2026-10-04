@@ -6,8 +6,9 @@
  *   - the sub-period running at the start of the month
  *   - any sub-period or life-chapter change inside the month
  *   - Jupiter, Saturn and Rahu/Ketu sign changes inside the month
- *     (mean positions from getChartPositions, sampled every few days and
- *     refined to the day)
+ *     (true positions from getChartPositions — mean node for Rahu — sampled
+ *     every few days and refined to the day; a retrograde loop reports each
+ *     sign's first entry only)
  *
  * Month labels, tags and lines are display text in the app language
  * (namespace `forecast`); planet and sign names stay English in the data.
@@ -45,15 +46,28 @@ export function subPeriodsOf(chapter: DashaPeriod): DashaPeriod[] {
 
 // ─── Slow-planet sign changes ────────────────────────────────────────────────
 
-export type SignChange = { planet: string; date: Date; sign: string };
+export type SignChange = {
+  planet: string;
+  date: Date;
+  sign: string;
+  /** Jupiter/Saturn moving backward into the sign (Rahu always moves backward; never flagged). */
+  retrograde?: boolean;
+};
 
 const SLOW_PLANETS = ['Jupiter', 'Saturn', 'Rahu'];
 const STEP_DAYS = 4;
 
-function signsOn(d: Date): Record<string, number> {
+function positionsOn(d: Date): Record<string, { sign: number; retrograde: boolean }> {
   const pos = getChartPositions({ birthDate: localDateIso(d), birthTime: '12:00' });
+  const out: Record<string, { sign: number; retrograde: boolean }> = {};
+  for (const p of pos) if (SLOW_PLANETS.includes(p.name)) out[p.name] = { sign: p.signIndex, retrograde: p.retrograde };
+  return out;
+}
+
+function signsOn(d: Date): Record<string, number> {
+  const pos = positionsOn(d);
   const out: Record<string, number> = {};
-  for (const p of pos) if (SLOW_PLANETS.includes(p.name)) out[p.name] = p.signIndex;
+  for (const name of Object.keys(pos)) out[name] = pos[name].sign;
   return out;
 }
 
@@ -61,9 +75,15 @@ function addDays(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
 }
 
-/** Sign changes of Jupiter, Saturn and Rahu between `from` and `to`. */
+/**
+ * Sign changes of Jupiter, Saturn and Rahu between `from` and `to`.
+ * Retrograde loops (e.g. Jupiter Pisces → Aries → back to Pisces → Aries)
+ * report the first entry into each sign once, so the year view isn't
+ * cluttered with the same ingress repeated.
+ */
 export function findSlowSignChanges(from: Date, to: Date): SignChange[] {
   const out: SignChange[] = [];
+  const entered = new Set<string>();
   let prevDay = new Date(from.getFullYear(), from.getMonth(), from.getDate(), 12);
   let prev = signsOn(prevDay);
   while (prevDay < to) {
@@ -77,7 +97,17 @@ export function findSlowSignChanges(from: Date, to: Date): SignChange[] {
         const d = addDays(prevDay, k);
         if (signsOn(d)[planet] !== prev[planet]) { hit = d; break; }
       }
-      if (hit < to) out.push({ planet, date: hit, sign: ZODIAC[cur[planet]].name });
+      const key = `${planet}:${cur[planet]}`;
+      if (hit < to && !entered.has(key)) {
+        entered.add(key);
+        const at = positionsOn(hit)[planet];
+        out.push({
+          planet,
+          date: hit,
+          sign: ZODIAC[at?.sign ?? cur[planet]].name,
+          retrograde: planet !== 'Rahu' && !!at?.retrograde,
+        });
+      }
     }
     prevDay = day;
     prev = cur;
@@ -131,7 +161,7 @@ export function transitLabel(t: SignChange): string {
 }
 
 export function getYearAhead(
-  profile: { birthDate: string; birthTime?: string | null; birthLng?: number | null },
+  profile: { birthDate: string; birthTime?: string | null; birthLng?: number | null; birthTz?: string | null },
   now: Date = new Date(),
   months = 12,
 ): ForecastMonth[] {

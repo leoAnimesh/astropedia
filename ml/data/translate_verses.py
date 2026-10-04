@@ -50,7 +50,7 @@ def valid(text: str, lang: str) -> bool:
 async def main(langs: list[str], force: bool) -> None:
     data = json.loads(CURATED.read_text())
     g.load_env()
-    t = g.Teacher(os.environ.get("TEACHER_MODEL", "nvidia/nemotron-3-super-120b-a12b"), concurrency=3, rpm=12)
+    t = g.Teacher(os.environ.get("TEACHER_MODEL", g.DEFAULT_MODEL), concurrency=2, rpm=8)
 
     async def one(vid: str, v: dict, lang: str) -> None:
         key = f"text_{lang}"

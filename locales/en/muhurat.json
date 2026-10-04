@@ -54,5 +54,15 @@
     "waxing": "waxing moon",
     "trimmed": "trimmed to avoid Rahu Kaal",
     "clear": "clear of Rahu Kaal"
+  },
+  "question": {
+    "verb": {
+      "work": "start work",
+      "travel": "travel",
+      "buy": "buy something",
+      "sign": "sign something"
+    },
+    "windows": "I want to {{verb}} this week. Which of these windows suits me best: {{windows}}?",
+    "none": "I want to {{verb}} this week. When is a good time for me?"
   }
 }

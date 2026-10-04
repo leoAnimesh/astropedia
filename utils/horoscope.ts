@@ -108,6 +108,7 @@ export function generateDailyHoroscope(profile: Profile, dateIso: string): Horos
     birthTime: profile.birthTime ?? undefined,
     birthLat:  profile.birthLat,
     birthLng:  profile.birthLng,
+    birthTz:   profile.birthTz,
   });
 
   const { sun, moon } = kundli.bigThree;

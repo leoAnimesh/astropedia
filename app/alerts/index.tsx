@@ -33,7 +33,7 @@ export default function AlertsScreen() {
     // Recompute per day, when the birth details change, and on language change
     // (explanations are translated).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [today, activeProfile?.birthDate, activeProfile?.birthTime, activeProfile?.birthLng, i18n.language],
+    [today, activeProfile?.birthDate, activeProfile?.birthTime, activeProfile?.birthLng, activeProfile?.birthTz, i18n.language],
   );
   const thisYear = new Date().getFullYear();
 

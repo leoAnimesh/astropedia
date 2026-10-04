@@ -8,7 +8,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { todayIso } from '@/utils/format';
-import { formatDayDate, intlLocale, tTithi } from '@/utils/i18n';
+import { askLanguage, formatDayDate, intlLocale, tAsk, tTithi } from '@/utils/i18n';
 import { ACTIVITIES, findMuhurats, getTodayTimings, shortDay, type Activity } from '@/utils/muhurat';
 import { FONTS, RADIUS } from '@/constants/themes';
 
@@ -40,13 +40,19 @@ export default function MuhuratScreen() {
   const range = `${shortDate(days[0].date)} – ${shortDate(days[days.length - 1].date)}`;
   const city  = profile?.birthCity?.split(',')[0];
 
-  // English on purpose: the question goes to the on-device model.
+  // Sent in the app language when the model speaks it (tAsk), else English.
   const askSaga = () => {
     if (!profile) return;
-    const good = days.filter((d) => d.window && !d.passed).map((d) => `${shortDay(d.date)} ${d.timeLabel}`);
+    const en   = askLanguage() === 'en';
+    const good = days
+      .filter((d) => d.window && !d.passed)
+      .map((d) => en
+        ? `${shortDay(d.date)} ${d.timeLabel}`
+        : `${formatDayDate(new Date(d.date + 'T12:00:00'))} ${d.displayTime}`);
+    const verb = tAsk(`muhurat:question.verb.${activity}`);
     const q = good.length
-      ? `I want to ${act.verb} this week. Which of these windows suits me best: ${good.join('; ')}?`
-      : `I want to ${act.verb} this week. When is a good time for me?`;
+      ? tAsk('muhurat:question.windows', { verb, windows: good.join('; ') })
+      : tAsk('muhurat:question.none', { verb });
     const tempId = 't_' + Math.random().toString(36).slice(2, 11);
     router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
   };

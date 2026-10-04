@@ -26,16 +26,13 @@ import { buildPersonalizedStarters } from '@/constants/starters';
 import { getSavedMessageIds, saveAnswer, unsaveAnswer, type Message } from '@/utils/database';
 import { KRISHNA_PROFILE, getKrishnaStarters, isKrishnaProfile } from '@/utils/krishna';
 import { stripMarkdown, type AIMode } from '@/utils/ai';
+import { tAsk } from '@/utils/i18n';
 
 /**
- * Quick follow-ups offered under Saga's latest reply. `prompt` is sent to the
- * model (English only); the chip shows the translated chat:followUps.<key>.
+ * Quick follow-ups offered under Saga's latest reply. The chip shows
+ * chat:followUps.<key>; tAsk() sends it in the language the model speaks.
  */
-const FOLLOW_UPS = [
-  { key: 'when', prompt: 'When exactly?' },
-  { key: 'do',   prompt: 'What should I do now?' },
-  { key: 'know', prompt: 'How will I know?' },
-];
+const FOLLOW_UPS = ['when', 'do', 'know'];
 
 export default function ChatScreen() {
   const { theme } = useAccent();
@@ -319,14 +316,14 @@ export default function ChatScreen() {
               />
             ) : showFollowUps ? (
               <View style={styles.followUps}>
-                {FOLLOW_UPS.map((q) => (
+                {FOLLOW_UPS.map((key) => (
                   <TouchableOpacity
-                    key={q.key}
-                    onPress={() => sendMessage(q.prompt)}
+                    key={key}
+                    onPress={() => sendMessage(tAsk(`chat:followUps.${key}`))}
                     style={[styles.followUp, { backgroundColor: theme.surface, borderColor: theme.hairline2 }]}
                     accessibilityRole="button"
                   >
-                    <Text style={[styles.followUpText, { color: theme.ink }]}>{t(`followUps.${q.key}`)}</Text>
+                    <Text style={[styles.followUpText, { color: theme.ink }]}>{t(`followUps.${key}`)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

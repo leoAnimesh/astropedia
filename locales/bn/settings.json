@@ -17,7 +17,6 @@
   "language": {
     "section": "ভাষা",
     "label": "অ্যাপের ভাষা",
-    "note": "Saga আর কৃষ্ণ আপাতত ইংরেজিতেই উত্তর দেন।",
     "selectedA11y": "{{language}}, বেছে নেওয়া হয়েছে"
   },
   "notifications": {

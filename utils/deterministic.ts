@@ -84,14 +84,14 @@ function answerBigThree(profile: Profile): string | null {
 
 function answerNakshatra(profile: Profile): string | null {
   if (!profile.birthDate) return null;
-  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const nak     = getNakshatra(moonLon);
   return `Your moon nakshatra is ${nak.name}, ruled by ${nak.lord}. It shapes the texture of your mind and your dasha cycle.`;
 }
 
 function answerCurrentDasha(profile: Profile): string | null {
   if (!profile.birthDate) return null;
-  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const dasha   = getCurrentMahadasha(moonLon, profile.birthDate);
   const months  = monthsUntil(dasha.endDate);
   const ends    = prettyDate(dasha.endDate);

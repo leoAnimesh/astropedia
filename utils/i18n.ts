@@ -6,11 +6,13 @@
  * first onboarding screen and stored in MMKV; until then the phone's language
  * is used when it's one we support.
  *
- * Only user-facing text is translated. Prompts and context sent to the
- * on-device model stay in English (the model's training format).
+ * The context blocks sent to the on-device model stay in English (its training
+ * format). Questions the app asks on the user's behalf (chips, "Ask Saga"
+ * links) use tAsk(): the app language when the model speaks it, else English.
  */
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { MODEL_LANGUAGES } from './local-llm';
 import { Storage } from './storage';
 
 export const LANGUAGES = [
@@ -127,9 +129,31 @@ export async function setAppLanguage(code: AppLanguage): Promise<void> {
   await i18n.changeLanguage(code);
 }
 
-/** BCP 47 tag for Intl date/number formatting in the current language. */
-export function intlLocale(): string {
-  return { en: 'en-IN', hi: 'hi-IN', bn: 'bn-IN' }[getAppLanguage()];
+/** BCP 47 tag for Intl date/number formatting in the current language (or `lng`). */
+export function intlLocale(lng: AppLanguage = getAppLanguage()): string {
+  return { en: 'en-IN', hi: 'hi-IN', bn: 'bn-IN' }[lng];
+}
+
+// ─── Questions sent to the model ─────────────────────────────────────────────
+
+/** True when the bundled model reads and answers this language. */
+export function modelSpeaks(lang: AppLanguage = getAppLanguage()): boolean {
+  return MODEL_LANGUAGES.includes(lang);
+}
+
+/** Language for questions the app sends on the user's behalf. */
+export function askLanguage(): AppLanguage {
+  const lang = getAppLanguage();
+  return modelSpeaks(lang) ? lang : 'en';
+}
+
+/**
+ * A question the app sends to the chat for the user (chip, "Ask Saga" link),
+ * in askLanguage(). The same text becomes the user's chat bubble. Pass
+ * askLanguage() to tPlanet/tSign/formatMonthYear for interpolated values.
+ */
+export function tAsk(key: string, vars?: Record<string, unknown>): string {
+  return i18n.t(key, { ...vars, lng: askLanguage() });
 }
 
 export default i18n;
@@ -138,12 +162,12 @@ export default i18n;
 // Code keeps English names (they also go to the model); these translate them
 // for display. Unknown names fall back to the English name.
 
-const astroName = (group: string, name: string) =>
-  i18n.t(`astro:${group}.${name}`, { defaultValue: name });
+const astroName = (group: string, name: string, lng?: AppLanguage) =>
+  i18n.t(`astro:${group}.${name}`, { defaultValue: name, lng });
 
-export const tPlanet    = (name: string) => astroName('planet', name);
-export const tSign      = (name: string) => astroName('sign', name);
-export const tNakshatra = (name: string) => astroName('nakshatra', name);
+export const tPlanet    = (name: string, lng?: AppLanguage) => astroName('planet', name, lng);
+export const tSign      = (name: string, lng?: AppLanguage) => astroName('sign', name, lng);
+export const tNakshatra = (name: string, lng?: AppLanguage) => astroName('nakshatra', name, lng);
 export const tWeekday   = (english: string) => astroName('weekday', english);
 
 /** "Krishna Shashthi" / "Shukla Dashami" / "Purnima" / "Amavasya". */
@@ -159,9 +183,9 @@ export function tTithi(name: string): string {
 // utils/astrology.ts monthYear() stays English because it feeds the model's
 // timing block. Screens use these instead.
 
-/** "Oct 2027" in the app language. */
-export function formatMonthYear(d: Date): string {
-  return d.toLocaleDateString(intlLocale(), { month: 'short', year: 'numeric' });
+/** "Oct 2027" in the app language (or `lng`). */
+export function formatMonthYear(d: Date, lng?: AppLanguage): string {
+  return d.toLocaleDateString(intlLocale(lng), { month: 'short', year: 'numeric' });
 }
 
 /** "Sat, 3 Oct" in the app language. */

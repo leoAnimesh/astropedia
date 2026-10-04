@@ -89,5 +89,9 @@
       "chapter": "Love, comfort and beauty. Relationships, money and enjoyment come forward.",
       "sub": "Love, comfort and money come forward."
     }
+  },
+  "question": {
+    "you": "What does my {{planet}} sub-period, until {{date}}, mean for me?",
+    "other": "What does {{name}}'s {{planet}} sub-period, until {{date}}, mean for them?"
   }
 }

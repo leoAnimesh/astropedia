@@ -80,7 +80,7 @@ export default function JournalScreen() {
   const todayCtx = useMemo(
     () => (birthInfo ? dayContext(birthInfo, today) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [birthInfo?.birthDate, birthInfo?.birthTime, birthInfo?.birthLng, today],
+    [birthInfo?.birthDate, birthInfo?.birthTime, birthInfo?.birthLng, birthInfo?.birthTz, today],
   );
   const todayNak = useMemo(() => getPanchang(today).nakshatra.name, [today]);
 
@@ -94,14 +94,14 @@ export default function JournalScreen() {
           nak:   getPanchang(e.date).nakshatra.name,
         })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, today, birthInfo?.birthDate, birthInfo?.birthTime, birthInfo?.birthLng],
+    [entries, today, birthInfo?.birthDate, birthInfo?.birthTime, birthInfo?.birthLng, birthInfo?.birthTz],
   );
 
   const insight = useMemo(
     () => (birthInfo ? journalInsight(birthInfo, entries) : null),
     // The insight sentence is translated, so recompute on language change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, birthInfo?.birthDate, birthInfo?.birthTime, birthInfo?.birthLng, i18n.language],
+    [entries, birthInfo?.birthDate, birthInfo?.birthTime, birthInfo?.birthLng, birthInfo?.birthTz, i18n.language],
   );
 
   if (!profile) {

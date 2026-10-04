@@ -15,7 +15,7 @@
  */
 
 import { NAKSHATRAS } from '@/constants/astrology';
-import { getMoonLongitudeExact } from './astrology';
+import { getMoonLongitudeExact, getSunLongitudeExact } from './astrology';
 import i18n, { intlLocale } from './i18n';
 
 const RAD = Math.PI / 180;
@@ -25,24 +25,14 @@ function norm(deg: number): number {
   return ((deg % 360) + 360) % 360;
 }
 
-function toJulianDay(dateIso: string, hourUT: number): number {
-  const [yr, mo, dy] = dateIso.split('-').map(Number);
-  const Y = mo <= 2 ? yr - 1 : yr;
-  const M = mo <= 2 ? mo + 12 : mo;
-  const A = Math.floor(Y / 100);
-  const B = 2 - A + Math.floor(A / 4);
-  return Math.floor(365.25 * (Y + 4716))
-       + Math.floor(30.6001 * (M + 1))
-       + dy + B - 1524.5 + hourUT / 24;
-}
-
-function julianCenturies(jd: number): number {
-  return (jd - 2451545.0) / 36525;
-}
-
-function sunLongitude(dateIso: string, hourUT: number): number {
-  const T = julianCenturies(toJulianDay(dateIso, hourUT));
-  return norm(280.46646 + 36000.76983 * T);
+/**
+ * SIDEREAL (Lahiri) true Sun at 12:00 UT on the date — same frame as
+ * getMoonLongitudeExact, so tithi/karana (Moon − Sun) and yoga (Moon + Sun)
+ * come out right. (Previously a tropical *mean* Sun was mixed with the
+ * sidereal Moon, which put tithi and yoga ~24° — about two tithis — off.)
+ */
+function sunLongitude(dateIso: string): number {
+  return getSunLongitudeExact(dateIso, '12:00');
 }
 
 // ─── Tithi (1–30, with paksha) ────────────────────────────────────────────────
@@ -63,7 +53,7 @@ const TITHI_NAMES = [
 
 export function getTithi(dateIso: string): Tithi {
   const moon = getMoonLongitudeExact(dateIso, '12:00');
-  const sun  = sunLongitude(dateIso, 12);
+  const sun  = sunLongitude(dateIso);
   const elong = norm(moon - sun);
   const idx   = Math.min(29, Math.floor(elong / 12)); // 0..29
 
@@ -113,7 +103,7 @@ export type Yoga = { index: number; name: string };
 
 export function getYoga(dateIso: string): Yoga {
   const moon = getMoonLongitudeExact(dateIso, '12:00');
-  const sun  = sunLongitude(dateIso, 12);
+  const sun  = sunLongitude(dateIso);
   const sum  = norm(moon + sun);
   const idx  = Math.min(26, Math.floor(sum / (360 / 27)));
   return { index: idx + 1, name: YOGAS[idx] };
@@ -130,7 +120,7 @@ export type Karana = { index: number; name: string };
 
 export function getKarana(dateIso: string): Karana {
   const moon = getMoonLongitudeExact(dateIso, '12:00');
-  const sun  = sunLongitude(dateIso, 12);
+  const sun  = sunLongitude(dateIso);
   const elong = norm(moon - sun);
   const half  = Math.min(59, Math.floor(elong / 6)); // 0..59 half-tithis in month
 

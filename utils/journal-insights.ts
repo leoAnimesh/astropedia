@@ -22,7 +22,7 @@ export const MIN_ENTRIES = 10;
 export const MIN_GROUP   = 3;
 const MIN_LIFT = 0.25;
 
-type BirthInfo = { birthDate: string; birthTime?: string | null; birthLng?: number | null };
+type BirthInfo = { birthDate: string; birthTime?: string | null; birthLng?: number | null; birthTz?: string | null };
 type EntryLike = { date: string; mood: string };
 
 export type DayContext = {

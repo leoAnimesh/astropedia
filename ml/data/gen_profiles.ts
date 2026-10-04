@@ -8,6 +8,7 @@
 
 import { writeFileSync } from 'node:fs';
 import { getAstrologyContext, getFullKundli, getTimingContext } from '@/utils/astrology';
+import { guessTimeZone } from '@/utils/timezone';
 
 const [, , countArg = '2000', outPath = 'ml/data/profiles.jsonl', seedArg = '42'] = process.argv;
 
@@ -56,7 +57,9 @@ function randomProfile(i: number) {
   const birthDate = `${year}-${pad(month)}-${pad(day)}`;
   const birthTime = rand() < 0.8 ? `${pad(Math.floor(rand() * 24))}:${pad(Math.floor(rand() * 60))}` : null;
   const [birthCity, lat, lng] = pick(CITIES);
-  return { id: `p${String(i).padStart(5, '0')}`, name, gender, birthDate, birthTime, birthCity, birthLat: lat, birthLng: lng };
+  // Same time zone the app derives for a profile, so charts match the app's.
+  const birthTz = guessTimeZone({ place: birthCity, lat, lng });
+  return { id: `p${String(i).padStart(5, '0')}`, name, gender, birthDate, birthTime, birthCity, birthLat: lat, birthLng: lng, birthTz };
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '');
@@ -64,7 +67,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-
 const lines: string[] = [];
 for (let i = 0; i < Number(countArg); i++) {
   const p = randomProfile(i);
-  const k = getFullKundli({ birthDate: p.birthDate, birthTime: p.birthTime ?? undefined, birthLat: p.birthLat, birthLng: p.birthLng });
+  const k = getFullKundli({ birthDate: p.birthDate, birthTime: p.birthTime ?? undefined, birthLat: p.birthLat, birthLng: p.birthLng, birthTz: p.birthTz });
   const { sun, moon, rising } = k.bigThree;
   lines.push(JSON.stringify({
     ...p,

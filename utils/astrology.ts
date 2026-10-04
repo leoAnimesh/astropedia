@@ -1,5 +1,7 @@
 import { ZODIAC, PLANETS, NAKSHATRAS, DASHA_YEARS, ELEMENT_COLORS, type ZodiacSign, type Nakshatra } from '@/constants/astrology';
 import { localDateIso } from './format';
+import { civilToUtcMs } from './timezone';
+import { dailyMotion, tropicalLongitude, type Body } from './ephemeris';
 
 export type { ZodiacSign, Nakshatra };
 
@@ -16,6 +18,10 @@ export type PlanetPosition = {
   signIndex: number; // 0–11
   degInSign: number; // 0–29 degrees within sign
   dignity: 'exalted' | 'debilitated' | 'own' | 'neutral';
+  /** Daily motion in degrees (negative while retrograde). */
+  speed: number;
+  /** Apparent backward motion. Always true for the (mean) nodes Rahu/Ketu. */
+  retrograde: boolean;
 };
 
 export type DashaInfo = {
@@ -33,6 +39,21 @@ export type FullKundli = {
   nakshatra: Nakshatra;
   dasha: DashaInfo;
   planets: PlanetPosition[];
+};
+
+/**
+ * Birth data as the chart functions take it. `birthTime` is the civil clock
+ * time at the birth place; `birthTz` is that place's IANA zone (e.g.
+ * "Asia/Kolkata"), which fixes the UT instant including historical offsets
+ * and daylight saving. Without a zone, the time is read as local mean time
+ * from `birthLng` (longitude / 15°), and without either as UT.
+ */
+export type BirthData = {
+  birthDate: string;
+  birthTime?: string | null;
+  birthLat?: number | null;
+  birthLng?: number | null;
+  birthTz?: string | null;
 };
 
 // ─── Math helpers ─────────────────────────────────────────────────────────────
@@ -66,20 +87,24 @@ function toSidereal(tropicalLon: number, jd: number): number {
 }
 
 /**
- * Convert a local birth date + time to a continuous Julian Day.
+ * Convert a local birth date + time to a continuous Julian Day (UT).
  *
- * `time` is the LOCAL clock time at the birth location (e.g. "14:30" IST).
- * `lng` is the birth longitude in degrees — used to convert local time to UT
- * at ~15° per hour. When `lng` is unknown the time is treated as UT (the
- * old, slightly-off behaviour).
+ * `time` is the civil clock time at the birth place (e.g. "14:30" IST).
+ * With `tz` (IANA zone) the zone's UTC offset at that moment is used —
+ * historical offsets and DST included. Otherwise `lng` gives local mean time
+ * (~15° per hour), and with neither the time is treated as UT.
  *
  * Julian Days are continuous, so a negative `ut` (e.g. early-morning local
  * birth that maps to the previous UT day) correctly produces a JD on the
  * earlier calendar day without any explicit rollback.
  */
-function toJulianDay(date: string, time?: string, lng?: number | null): number {
+function toJulianDay(date: string, time?: string | null, lng?: number | null, tz?: string | null): number {
   const [yr, mo, dy] = date.split('-').map(Number);
-  const [h = 12, min = 0] = (time ?? '12:00').split(':').map(Number);
+  const [h = 12, min = 0] = (time || '12:00').split(':').map(Number);
+  if (tz) {
+    const ms = civilToUtcMs(tz, yr, mo, dy, h, min);
+    if (ms != null) return ms / 86400000 + 2440587.5;
+  }
   let ut = h + min / 60;
   if (lng != null && Number.isFinite(lng)) {
     ut -= lng / 15;
@@ -93,8 +118,28 @@ function toJulianDay(date: string, time?: string, lng?: number | null): number {
        + dy + B - 1524.5 + ut / 24;
 }
 
+/** Julian Day (UT) of a birth, using the same conversion as every chart function. */
+export function birthJulianDay(p: BirthData): number {
+  return toJulianDay(p.birthDate, p.birthTime, p.birthLng, p.birthTz);
+}
+
+/** UT instant of a birth as a Date (same conversion as birthJulianDay). */
+export function birthInstant(p: BirthData): Date {
+  return new Date(Math.round((birthJulianDay(p) - 2440587.5) * 86400000));
+}
+
 function julianCenturies(jd: number): number {
   return (jd - 2451545.0) / 36525;
+}
+
+/** SIDEREAL (Lahiri) geocentric longitude of a body at a Julian Day (UT). */
+export function siderealLongitudeAt(body: Body, jd: number): number {
+  return toSidereal(tropicalLongitude(body, jd), jd);
+}
+
+/** SIDEREAL (Lahiri) true Sun longitude at a local date/time — see toJulianDay for the time conventions. */
+export function getSunLongitudeExact(date: string, time?: string | null, lng?: number | null, tz?: string | null): number {
+  return siderealLongitudeAt('Sun', toJulianDay(date, time, lng, tz));
 }
 
 // ─── Dignity lookup tables (Vedic) ────────────────────────────────────────────
@@ -117,115 +162,106 @@ export function getPlanetDignity(planetName: string, signIndex: number): 'exalte
   return 'neutral';
 }
 
-// ─── Sun sign (tropical date-range) ──────────────────────────────────────────
+// ─── Sun sign (Western, tropical) ────────────────────────────────────────────
 
-export function getSunSign(birthDate: string): ZodiacSign | null {
+/**
+ * Western (tropical) Sun sign from the Sun's true longitude at birth — exact
+ * on cusp days, unlike a fixed date table. Without a time, local noon is used.
+ */
+export function getSunSign(
+  birthDate: string,
+  birthTime?: string | null,
+  birthLng?: number | null,
+  birthTz?: string | null,
+): ZodiacSign | null {
   if (!birthDate) return null;
-  const [, mo, dy] = birthDate.split('-').map(Number);
-  if (!mo || !dy) return null;
-  for (const z of ZODIAC) {
-    if (z.startMonth > z.endMonth) {
-      if ((mo === z.startMonth && dy >= z.startDay) || (mo === z.endMonth && dy <= z.endDay)) return z;
-    } else {
-      if ((mo === z.startMonth && dy >= z.startDay) || (mo === z.endMonth && dy <= z.endDay)) return z;
-    }
-  }
-  return null;
+  const [yr, mo, dy] = birthDate.split('-').map(Number);
+  if (!yr || !mo || !dy) return null;
+  const jd = toJulianDay(birthDate, birthTime, birthLng, birthTz);
+  return ZODIAC[Math.floor(tropicalLongitude('Sun', jd) / 30) % 12];
 }
 
-// ─── Moon longitude (Jean Meeus 10-term, accurate ~0.3°) ─────────────────────
+// ─── Moon longitude (Meeus ch. 47, ~0.01°) ───────────────────────────────────
 
 /**
  * Returns the moon's SIDEREAL ecliptic longitude (Lahiri ayanamsa applied),
  * which is what Vedic moon sign + nakshatra + dasha math expects.
+ * Pass `birthTz` (IANA zone) whenever the profile has one — see BirthData.
  */
-export function getMoonLongitudeExact(birthDate: string, birthTime?: string, birthLng?: number | null): number {
-  const jd = toJulianDay(birthDate, birthTime, birthLng);
-  const T  = julianCenturies(jd);
-
-  const L  = norm(218.3164477 + 481267.88123421 * T);
-  const Mm = norm(134.9633964 + 477198.8675055  * T);
-  const Ms = norm(357.5291092 + 35999.0502909   * T);
-  const D  = norm(297.8501921 + 445267.1114034  * T);
-  const F  = norm(93.2720950  + 483202.0175233  * T);
-
-  const delta =
-    6.289 * Math.sin(Mm * RAD)
-  + 1.274 * Math.sin((2 * D - Mm) * RAD)
-  + 0.658 * Math.sin(2 * D * RAD)
-  - 0.186 * Math.sin(Ms * RAD)
-  - 0.114 * Math.sin(2 * F * RAD)
-  + 0.059 * Math.sin((2 * D - 2 * Mm) * RAD)
-  + 0.057 * Math.sin((2 * D - Ms - Mm) * RAD)
-  + 0.053 * Math.sin((2 * D + Mm) * RAD)
-  + 0.046 * Math.sin((2 * D - Ms) * RAD)
-  + 0.041 * Math.sin((Mm - Ms) * RAD);
-
-  const tropical = norm(L + delta);
-  return toSidereal(tropical, jd);
+export function getMoonLongitudeExact(
+  birthDate: string,
+  birthTime?: string | null,
+  birthLng?: number | null,
+  birthTz?: string | null,
+): number {
+  return siderealLongitudeAt('Moon', toJulianDay(birthDate, birthTime, birthLng, birthTz));
 }
 
-export function getMoonSign(birthDate: string, birthTime?: string, birthLng?: number | null): ZodiacSign | null {
+export function getMoonSign(
+  birthDate: string,
+  birthTime?: string | null,
+  birthLng?: number | null,
+  birthTz?: string | null,
+): ZodiacSign | null {
   if (!birthDate) return null;
-  const moonLon = getMoonLongitudeExact(birthDate, birthTime, birthLng);
+  const moonLon = getMoonLongitudeExact(birthDate, birthTime, birthLng, birthTz);
   return ZODIAC[Math.floor(moonLon / 30)];
 }
 
 // ─── Rahu (mean lunar node) ───────────────────────────────────────────────────
 
-export function getRahuDegree(birthDate: string, birthTime?: string, birthLng?: number | null): number {
-  const jd = toJulianDay(birthDate, birthTime, birthLng);
-  const T  = julianCenturies(jd);
-  const tropical = norm(125.0445479 - 1934.1362608 * T);
-  return toSidereal(tropical, jd);
+export function getRahuDegree(
+  birthDate: string,
+  birthTime?: string | null,
+  birthLng?: number | null,
+  birthTz?: string | null,
+): number {
+  return siderealLongitudeAt('Rahu', toJulianDay(birthDate, birthTime, birthLng, birthTz));
 }
 
-// ─── Ascendant (Placidus via LST) ─────────────────────────────────────────────
+// ─── Ascendant (via local sidereal time) ──────────────────────────────────────
 
 export function getAscendantDegree(
   birthDate: string,
-  birthTime?: string,
+  birthTime?: string | null,
   birthLat?: number | null,
   birthLng?: number | null,
+  birthTz?: string | null,
 ): number | null {
   if (!birthDate || !birthTime || birthLat == null || birthLng == null) return null;
 
-  // For the ascendant we still need a JD anchored to UT to compute GMST/LST
-  // correctly. The existing GMST/LST formulas below already use `birthLng` to
-  // do the local-sidereal conversion, so we must pass UT (not local-converted)
-  // to toJulianDay here.
-  const jd = toJulianDay(birthDate, birthTime);
+  // birthTime is civil clock time at the birth place: convert to UT (zone
+  // offset, or local mean time from the longitude), then take sidereal time
+  // from the full UT JD.
+  const jd = toJulianDay(birthDate, birthTime, birthLng, birthTz);
   const T  = julianCenturies(jd);
 
   const obliq = 23.4393 - 0.0130042 * T;
-  const jd0   = Math.floor(jd - 0.5) + 0.5;
-  const T0    = julianCenturies(jd0);
-  const GMST0 = norm(100.4606184 + 36000.77004 * T0 + 0.000387933 * T0 * T0);
-
-  const [h = 12, min = 0] = birthTime.split(':').map(Number);
-  const UT = h + min / 60;
-
-  const LST = norm(GMST0 + 360.98564724 * (UT / 24) + birthLng);
+  const GMST  = norm(280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * T * T);
+  const LST   = norm(GMST + birthLng);
 
   const R = LST * RAD;
   const E = obliq * RAD;
   const P = birthLat * RAD;
 
+  // Meeus (Astronomical Algorithms, ch. 14): tan λ = −cos θ / (sin ε tan φ + cos ε sin θ).
+  // atan2 of the raw pair lands on the descendant; +180° gives the rising point.
   const y = -Math.cos(R);
   const x = Math.sin(E) * Math.tan(P) + Math.cos(E) * Math.sin(R);
 
   if (!isFinite(x) || !isFinite(y)) return null;
-  const tropical = norm(Math.atan2(y, x) * DEG);
+  const tropical = norm(Math.atan2(y, x) * DEG + 180);
   return toSidereal(tropical, jd);
 }
 
 export function getRisingSign(
   birthDate: string,
-  birthTime?: string,
+  birthTime?: string | null,
   birthLat?: number | null,
   birthLng?: number | null,
+  birthTz?: string | null,
 ): ZodiacSign | null {
-  const asc = getAscendantDegree(birthDate, birthTime, birthLat, birthLng);
+  const asc = getAscendantDegree(birthDate, birthTime, birthLat, birthLng, birthTz);
   if (asc === null) return null;
   return ZODIAC[Math.floor(asc / 30)];
 }
@@ -387,10 +423,10 @@ function relativeFrom(now: Date, d: Date): string {
  * year and relative to today.
  */
 export function getTimingContext(
-  profile: { birthDate: string; birthTime?: string | null; birthLng?: number | null },
+  profile: BirthData,
   now: Date = new Date(),
 ): string {
-  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng);
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const t = getDashaTimeline(moonLon, profile.birthDate, now);
   return [
     `Timing (use these; never invent other dates):`,
@@ -401,85 +437,75 @@ export function getTimingContext(
   ].join('\n');
 }
 
-// ─── Planet positions (VSOP87 L0+L1 mean longitudes) ─────────────────────────
+// ─── Planet positions (true geocentric, utils/ephemeris.ts) ──────────────────
 
-const MEAN_LONGITUDE: Record<string, [number, number]> = {
-  Sun:     [280.46646,  36000.76983],
-  Mercury: [252.25084, 149472.67411],
-  Venus:   [181.97973,  58517.81539],
-  Mars:    [355.43329,  19140.29934],
-  Jupiter: [ 34.35151,   3034.90567],
-  Saturn:  [ 50.07744,   1222.11379],
+const BODY_OF: Record<string, Body> = {
+  Sun: 'Sun', Moon: 'Moon', Mercury: 'Mercury', Venus: 'Venus', Mars: 'Mars',
+  Jupiter: 'Jupiter', Saturn: 'Saturn', Rahu: 'Rahu', Ketu: 'Rahu',
 };
 
-export function getChartPositions(profile: {
-  birthDate: string;
-  birthTime?: string | null;
-  birthLat?: number | null;
-  birthLng?: number | null;
-}): PlanetPosition[] {
+/**
+ * Sidereal (Lahiri) positions of the nine grahas at birth (or at any
+ * date/time — transits call this with birthTime '12:00' and no place, i.e.
+ * 12:00 UT). Sun–Saturn are true geocentric longitudes, so sign changes land
+ * on the right day and retrograde loops are real; Rahu/Ketu are the mean node.
+ */
+export function getChartPositions(profile: BirthData): PlanetPosition[] {
   if (!profile.birthDate) return [];
 
-  const lng     = profile.birthLng ?? null;
-  const jd      = toJulianDay(profile.birthDate, profile.birthTime ?? undefined, lng);
-  const T       = julianCenturies(jd);
-  // Note: getMoonLongitudeExact / getRahuDegree both already return sidereal.
-  // Planet mean longitudes from MEAN_LONGITUDE are tropical and must be
-  // converted before slotting into rashi.
-  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, lng);
-  const rahuLon = toSidereal(norm(125.0445479 - 1934.1362608 * T), jd);
-  const ketuLon = norm(rahuLon + 180);
+  const jd = birthJulianDay(profile);
 
   return PLANETS.map((p) => {
-    let degree: number;
-    if      (p.name === 'Moon') degree = moonLon;
-    else if (p.name === 'Rahu') degree = rahuLon;
-    else if (p.name === 'Ketu') degree = ketuLon;
-    else {
-      const [L0, L1] = MEAN_LONGITUDE[p.name] ?? [0, 0];
-      degree = toSidereal(norm(L0 + L1 * T), jd);
-    }
+    const body = BODY_OF[p.name] ?? 'Sun';
+    let degree = siderealLongitudeAt(body, jd);
+    if (p.name === 'Ketu') degree = norm(degree + 180);
+    // Ayanamsa changes ~0.00004°/day — irrelevant to the sign of the motion.
+    const speed = dailyMotion(body, jd);
 
     const signIndex = Math.floor(degree / 30) % 12;
     const degInSign = Math.floor(degree % 30);
     const dignity   = getPlanetDignity(p.name, signIndex);
 
-    return { name: p.name, glyph: p.glyph, degree, signIndex, degInSign, dignity };
+    return { name: p.name, glyph: p.glyph, degree, signIndex, degInSign, dignity, speed, retrograde: speed < 0 };
   });
+}
+
+/**
+ * Mars' SIDEREAL geocentric ecliptic longitude (Lahiri). Same true position
+ * getChartPositions() now uses; kept as its own export for the Manglik check.
+ */
+export function getMarsLongitudeTrue(
+  birthDate: string,
+  birthTime?: string | null,
+  birthLng?: number | null,
+  birthTz?: string | null,
+): number {
+  return siderealLongitudeAt('Mars', toJulianDay(birthDate, birthTime, birthLng, birthTz));
 }
 
 // ─── Full Kundli ──────────────────────────────────────────────────────────────
 
-export function getBigThree(profile: {
-  birthDate: string;
-  birthTime?: string | null;
-  birthLat?: number | null;
-  birthLng?: number | null;
-}): BigThree {
+export function getBigThree(profile: BirthData): BigThree {
   return {
-    sun:    getSunSign(profile.birthDate),
-    moon:   getMoonSign(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng),
+    sun:    getSunSign(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz),
+    moon:   getMoonSign(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz),
     rising: getRisingSign(
       profile.birthDate,
-      profile.birthTime ?? undefined,
+      profile.birthTime,
       profile.birthLat,
       profile.birthLng,
+      profile.birthTz,
     ),
   };
 }
 
-export function getFullKundli(profile: {
-  birthDate: string;
-  birthTime?: string | null;
-  birthLat?: number | null;
-  birthLng?: number | null;
-}): FullKundli {
-  const lng       = profile.birthLng ?? null;
-  const moonLon   = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, lng);
-  const ascDeg    = getAscendantDegree(profile.birthDate, profile.birthTime ?? undefined, profile.birthLat, profile.birthLng);
-  const rahuDeg   = getRahuDegree(profile.birthDate, profile.birthTime ?? undefined, lng);
+export function getFullKundli(profile: BirthData): FullKundli {
+  const { birthDate, birthTime, birthLat, birthLng, birthTz } = profile;
+  const moonLon   = getMoonLongitudeExact(birthDate, birthTime, birthLng, birthTz);
+  const ascDeg    = getAscendantDegree(birthDate, birthTime, birthLat, birthLng, birthTz);
+  const rahuDeg   = getRahuDegree(birthDate, birthTime, birthLng, birthTz);
   const nakshatra = getNakshatra(moonLon);
-  const dasha     = getCurrentMahadasha(moonLon, profile.birthDate);
+  const dasha     = getCurrentMahadasha(moonLon, birthDate);
   const bigThree  = getBigThree(profile);
   const planets   = getChartPositions(profile);
 
@@ -498,14 +524,10 @@ function genderLine(gender: string | null | undefined): string | null {
   }
 }
 
-export function getAstrologyContext(profile: {
+export function getAstrologyContext(profile: BirthData & {
   name: string;
   gender?: string | null;
-  birthDate: string;
-  birthTime?: string | null;
   birthCity?: string | null;
-  birthLat?: number | null;
-  birthLng?: number | null;
 }): string {
   const kundli = getFullKundli(profile);
   const lines: string[] = [
@@ -531,10 +553,8 @@ export function getAstrologyContext(profile: {
 
 export function getLunarPhase(dateIso: string): string {
   const jd = toJulianDay(dateIso, '12:00');
-  const SYNODIC = 29.53058867;
-  const NEW_MOON_REF = 2451549.5; // Jan 6 2000 new moon (JD)
-  const phase = ((jd - NEW_MOON_REF) % SYNODIC + SYNODIC) % SYNODIC;
-  const f = phase / SYNODIC;
+  // Fraction of the lunation from the true Sun–Moon elongation (0 = new, 0.5 = full).
+  const f = norm(tropicalLongitude('Moon', jd) - tropicalLongitude('Sun', jd)) / 360;
   if (f < 0.03 || f > 0.97) return 'New Moon';
   if (f < 0.22) return 'Waxing Crescent';
   if (f < 0.28) return 'First Quarter';
@@ -600,11 +620,11 @@ export type LifeChapters = {
 };
 
 export function getLifeChapters(
-  profile: { birthDate: string; birthTime?: string | null; birthLng?: number | null },
+  profile: BirthData,
   now: Date = new Date(),
   untilAge = 90,
 ): LifeChapters {
-  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng);
+  const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const birth = new Date(profile.birthDate + 'T00:00:00');
   const lastDay = new Date(birth.getTime() + untilAge * MS_PER_YEAR);
 

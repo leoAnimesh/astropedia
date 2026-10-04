@@ -13,6 +13,7 @@ type Profile = {
   birthTime?: string | null;
   birthLat?: number | null;
   birthLng?: number | null;
+  birthTz?: string | null;
 };
 
 type AstrologyResult = {
@@ -50,6 +51,7 @@ export function useAstrology(profile: Profile): AstrologyResult {
       birthTime: profile.birthTime,
       birthLat:  profile.birthLat,
       birthLng:  profile.birthLng,
+      birthTz:   profile.birthTz,
     });
 
     return {
@@ -64,5 +66,5 @@ export function useAstrology(profile: Profile): AstrologyResult {
       moonLon:        kundli.moonLon,
       ascDeg:         kundli.ascDeg,
     };
-  }, [profile.birthDate, profile.birthTime, profile.birthLat, profile.birthLng]);
+  }, [profile.birthDate, profile.birthTime, profile.birthLat, profile.birthLng, profile.birthTz]);
 }

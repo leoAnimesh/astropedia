@@ -5,7 +5,7 @@
  * notification scheduler.
  *
  * Explanations are display text in the app language (namespace `alerts`).
- * alertQuestion() stays English: it is sent to the on-device model.
+ * alertQuestion() uses tAsk(): the app language when the model speaks it, else English.
  */
 
 import { ZODIAC } from '@/constants/astrology';
@@ -16,7 +16,7 @@ import {
   PHASE_MEANINGS,
 } from './astrology';
 import { localDateIso } from './format';
-import i18n, { formatMonthYear, tPlanet, tSign } from './i18n';
+import i18n, { askLanguage, formatMonthYear, intlLocale, tAsk, tPlanet, tSign } from './i18n';
 
 export const TRANSIT_PLANETS = ['Sun', 'Mars', 'Jupiter', 'Saturn'] as const;
 export const TRANSIT_LOOKAHEAD_DAYS = 90;
@@ -31,6 +31,11 @@ export type TransitAlert = {
   date:     Date;
   fromSign: string;
   toSign:   string;
+  /**
+   * The planet is moving backward at the change — a retrograde slip back
+   * into the sign it just left (e.g. Jupiter re-entering Pisces).
+   */
+  retrograde: boolean;
 };
 
 export type PhaseAlert = {
@@ -49,6 +54,7 @@ type BirthInfo = {
   birthDate:  string;
   birthTime?: string | null;
   birthLng?:  number | null;
+  birthTz?:   string | null;
 };
 
 function startOfDay(d: Date): Date {
@@ -61,7 +67,10 @@ function startOfDay(d: Date): Date {
 
 /**
  * Walk day-by-day for each tracked planet, looking for the first sign change
- * within `lookaheadDays`. At most one change per planet — the next shift.
+ * within `lookaheadDays`. At most one change per planet — the next shift —
+ * so a retrograde loop across a sign boundary yields one alert at a time
+ * (flagged `retrograde` when the planet is slipping back). Positions are
+ * true geocentric longitudes at 12:00 UT, so dates are right to the day.
  * Sorted by date.
  */
 export function getUpcomingTransits(
@@ -88,6 +97,7 @@ export function getUpcomingTransits(
         date:     d,
         fromSign: ZODIAC[startSign[p.name]].name,
         toSign:   ZODIAC[p.signIndex].name,
+        retrograde: p.retrograde,
       });
       searching.delete(p.name);
     }
@@ -164,7 +174,7 @@ function durationLabel(start: Date, end: Date): string {
 
 export function moonSignIndex(profile: BirthInfo | null | undefined): number | null {
   if (!profile?.birthDate) return null;
-  const lon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng);
+  const lon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   return Math.floor(lon / 30) % 12;
 }
 
@@ -213,11 +223,15 @@ export function explainTransit(alert: SkyAlert, profile: BirthInfo | null | unde
   };
 }
 
-/** Question sent to Saga from the alert detail screen. English on purpose: the model reads English. */
+/** Question sent to Saga from the alert detail screen, via tAsk(). */
 export function alertQuestion(alert: SkyAlert): string {
-  const when = alert.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const lng    = askLanguage();
+  const date   = alert.date.toLocaleDateString(lng === 'en' ? 'en-US' : intlLocale(lng), {
+    month: lng === 'en' ? 'short' : 'long', day: 'numeric', year: 'numeric',
+  });
+  const planet = tPlanet(alert.planet, lng);
   if (alert.kind === 'phase') {
-    return `My ${alert.planet} ${alert.phaseKind === 'chapter' ? 'life chapter' : 'sub-period'} starts on ${when}. What does it mean for me?`;
+    return tAsk(`alerts:question.${alert.phaseKind === 'chapter' ? 'chapter' : 'sub'}`, { planet, date });
   }
-  return `${alert.planet} moves into ${alert.toSign} on ${when}. What does this mean for me?`;
+  return tAsk('alerts:question.transit', { planet, sign: tSign(alert.toSign, lng), date });
 }

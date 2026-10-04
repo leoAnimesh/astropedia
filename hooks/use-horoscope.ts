@@ -48,7 +48,7 @@ export function useHoroscope(profile: Profile | null, refreshKey = 0): Horoscope
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, profile?.birthDate, profile?.birthTime, profile?.birthLat, profile?.birthLng, refreshKey, i18n.language]);
+  }, [profile?.id, profile?.birthDate, profile?.birthTime, profile?.birthLat, profile?.birthLng, profile?.birthTz, refreshKey, i18n.language]);
 
   return state;
 }

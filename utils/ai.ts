@@ -72,6 +72,7 @@ function sagaSystem(profile: Profile, lang: ReplyLang): string {
     birthCity: profile.birthCity ?? undefined,
     birthLat:  profile.birthLat,
     birthLng:  profile.birthLng,
+    birthTz:   profile.birthTz,
   });
   const timeNote = profile.birthTime ? '' : '\nBirth time unknown.';
   const timing = getTimingContext(profile);
@@ -89,6 +90,7 @@ function readingSystem(profile: Profile, lang: ReplyLang): string {
     birthTime: profile.birthTime ?? undefined,
     birthLat:  profile.birthLat,
     birthLng:  profile.birthLng,
+    birthTz:   profile.birthTz,
   });
   const { sun, moon, rising } = k.bigThree;
   const lines = [

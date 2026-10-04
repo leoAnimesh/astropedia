@@ -1,452 +1,576 @@
 {
- "themes": {
-  "anger": [
-   "gita-2-47",
-   "gita-2-48",
-   "gita-2-55",
-   "gita-2-56",
-   "gita-2-57",
-   "gita-2-58",
-   "gita-2-59",
-   "gita-2-60",
-   "gita-2-61",
-   "gita-2-62",
-   "gita-2-63",
-   "gita-2-64",
-   "gita-2-65",
-   "gita-2-66",
-   "gita-2-70"
-  ],
-  "anxiety": [
-   "gita-2-47",
-   "gita-2-48",
-   "gita-2-50",
-   "gita-2-55",
-   "gita-2-56",
-   "gita-2-62",
-   "gita-2-63",
-   "gita-2-64",
-   "gita-2-65",
-   "gita-2-66",
-   "gita-2-70",
-   "gita-2-71",
-   "gita-3-30",
-   "gita-4-18",
-   "gita-5-10"
-  ],
-  "duty": [
-   "gita-2-47",
-   "gita-2-48",
-   "gita-2-50",
-   "gita-2-31",
-   "gita-2-33",
-   "gita-2-38",
-   "gita-3-8",
-   "gita-3-9",
-   "gita-3-19",
-   "gita-3-20",
-   "gita-3-30",
-   "gita-3-35",
-   "gita-4-18",
-   "gita-4-20",
-   "gita-4-23"
-  ],
-  "failure": [
-   "gita-2-47",
-   "gita-2-14",
-   "gita-2-16",
-   "gita-2-27",
-   "gita-2-38",
-   "gita-2-48",
-   "gita-2-50",
-   "gita-2-55",
-   "gita-2-56",
-   "gita-3-30",
-   "gita-4-18",
-   "gita-5-10",
-   "gita-6-5",
-   "gita-6-35",
-   "gita-6-36"
-  ],
-  "gratitude": [
-   "gita-9-27",
-   "gita-10-8",
-   "gita-10-9",
-   "gita-10-10",
-   "gita-10-41",
-   "gita-11-55",
-   "gita-12-13",
-   "gita-12-14",
-   "gita-12-15",
-   "gita-12-16",
-   "gita-12-17",
-   "gita-12-18",
-   "gita-12-19",
-   "gita-12-20",
-   "gita-17-28"
-  ],
-  "loss": [
-   "gita-2-13",
-   "gita-2-14",
-   "gita-2-20",
-   "gita-2-22",
-   "gita-2-23",
-   "gita-2-27",
-   "gita-2-38",
-   "gita-2-47",
-   "gita-2-55",
-   "gita-2-56",
-   "gita-2-62",
-   "gita-2-63",
-   "gita-2-66",
-   "gita-4-7",
-   "gita-4-18"
-  ],
-  "purpose": [
-   "gita-2-47",
-   "gita-2-48",
-   "gita-2-50",
-   "gita-3-30",
-   "gita-3-35",
-   "gita-4-18",
-   "gita-4-24",
-   "gita-5-10",
-   "gita-6-5",
-   "gita-6-22",
-   "gita-6-23",
-   "gita-6-35",
-   "gita-6-36",
-   "gita-9-22",
-   "gita-9-27"
-  ],
-  "relationships": [
-   "gita-2-14",
-   "gita-2-47",
-   "gita-2-48",
-   "gita-2-55",
-   "gita-2-56",
-   "gita-2-57",
-   "gita-2-62",
-   "gita-2-63",
-   "gita-2-64",
-   "gita-2-70",
-   "gita-4-18",
-   "gita-5-10",
-   "gita-5-29",
-   "gita-6-5",
-   "gita-6-6"
-  ]
- },
- "verses": {
-  "gita-2-47": {
-   "ref": "2.47",
-   "text": "Your right is only to work, but not to its results; do not let the results of action be your motive, nor let your attachment be to inaction.",
-   "prompt": "Bhagavad Gita 2.47 — Your right is only to work, but not to its results; do not let the results of action be your motive, nor let your attachment be to inaction."
+  "themes": {
+    "anger": [
+      "gita-2-47",
+      "gita-2-48",
+      "gita-2-55",
+      "gita-2-56",
+      "gita-2-57",
+      "gita-2-58",
+      "gita-2-59",
+      "gita-2-60",
+      "gita-2-61",
+      "gita-2-62",
+      "gita-2-63",
+      "gita-2-64",
+      "gita-2-65",
+      "gita-2-66",
+      "gita-2-70"
+    ],
+    "anxiety": [
+      "gita-2-47",
+      "gita-2-48",
+      "gita-2-50",
+      "gita-2-55",
+      "gita-2-56",
+      "gita-2-62",
+      "gita-2-63",
+      "gita-2-64",
+      "gita-2-65",
+      "gita-2-66",
+      "gita-2-70",
+      "gita-2-71",
+      "gita-3-30",
+      "gita-4-18",
+      "gita-5-10"
+    ],
+    "duty": [
+      "gita-2-47",
+      "gita-2-48",
+      "gita-2-50",
+      "gita-2-31",
+      "gita-2-33",
+      "gita-2-38",
+      "gita-3-8",
+      "gita-3-9",
+      "gita-3-19",
+      "gita-3-20",
+      "gita-3-30",
+      "gita-3-35",
+      "gita-4-18",
+      "gita-4-20",
+      "gita-4-23"
+    ],
+    "failure": [
+      "gita-2-47",
+      "gita-2-14",
+      "gita-2-16",
+      "gita-2-27",
+      "gita-2-38",
+      "gita-2-48",
+      "gita-2-50",
+      "gita-2-55",
+      "gita-2-56",
+      "gita-3-30",
+      "gita-4-18",
+      "gita-5-10",
+      "gita-6-5",
+      "gita-6-35",
+      "gita-6-36"
+    ],
+    "gratitude": [
+      "gita-9-27",
+      "gita-10-8",
+      "gita-10-9",
+      "gita-10-10",
+      "gita-10-41",
+      "gita-11-55",
+      "gita-12-13",
+      "gita-12-14",
+      "gita-12-15",
+      "gita-12-16",
+      "gita-12-17",
+      "gita-12-18",
+      "gita-12-19",
+      "gita-12-20",
+      "gita-17-28"
+    ],
+    "loss": [
+      "gita-2-13",
+      "gita-2-14",
+      "gita-2-20",
+      "gita-2-22",
+      "gita-2-23",
+      "gita-2-27",
+      "gita-2-38",
+      "gita-2-47",
+      "gita-2-55",
+      "gita-2-56",
+      "gita-2-62",
+      "gita-2-63",
+      "gita-2-66",
+      "gita-4-7",
+      "gita-4-18"
+    ],
+    "purpose": [
+      "gita-2-47",
+      "gita-2-48",
+      "gita-2-50",
+      "gita-3-30",
+      "gita-3-35",
+      "gita-4-18",
+      "gita-4-24",
+      "gita-5-10",
+      "gita-6-5",
+      "gita-6-22",
+      "gita-6-23",
+      "gita-6-35",
+      "gita-6-36",
+      "gita-9-22",
+      "gita-9-27"
+    ],
+    "relationships": [
+      "gita-2-14",
+      "gita-2-47",
+      "gita-2-48",
+      "gita-2-55",
+      "gita-2-56",
+      "gita-2-57",
+      "gita-2-62",
+      "gita-2-63",
+      "gita-2-64",
+      "gita-2-70",
+      "gita-4-18",
+      "gita-5-10",
+      "gita-5-29",
+      "gita-6-5",
+      "gita-6-6"
+    ]
   },
-  "gita-2-48": {
-   "ref": "2.48",
-   "text": "Perform action, O Arjuna, being steadfast in Yoga, abandoning attachment and balanced in success and failure; evenness of mind is called Yoga.",
-   "prompt": "Bhagavad Gita 2.48 — Perform action, O Arjuna, being steadfast in Yoga, abandoning attachment and balanced in success and failure; evenness of mind is called Yoga."
-  },
-  "gita-2-55": {
-   "ref": "2.55",
-   "text": "When a man completely casts off, O Arjuna, all the desires of the mind and is satisfied in the Self by the Self, then he is said to be one of steady wisdom.",
-   "prompt": "Bhagavad Gita 2.55 — The Blessed Lord said, \"When a man completely casts off, O Arjuna, all the desires of the mind and is satisfied in the Self by the Self, then he is said to be one of steady wisdom.\""
-  },
-  "gita-2-56": {
-   "ref": "2.56",
-   "text": "He whose mind is not shaken by adversity, who does not long for pleasures, and is free from attachment, fear, and anger, is called a sage of steady wisdom.",
-   "prompt": "Bhagavad Gita 2.56 — He whose mind is not shaken by adversity, who does not long for pleasures, and is free from attachment, fear, and anger, is called a sage of steady wisdom."
-  },
-  "gita-2-57": {
-   "ref": "2.57",
-   "text": "He who is everywhere without attachment, upon encountering anything good or bad, neither rejoices nor hastens; his wisdom is firm.",
-   "prompt": "Bhagavad Gita 2.57 — He who is everywhere without attachment, upon encountering anything good or bad, neither rejoices nor hastens; his wisdom is firm."
-  },
-  "gita-2-58": {
-   "ref": "2.58",
-   "text": "When, like the tortoise which withdraws all its limbs on all sides, he withdraws his senses from the sense-objects, then his wisdom becomes steady.",
-   "prompt": "Bhagavad Gita 2.58 — When, like the tortoise which withdraws all its limbs on all sides, he withdraws his senses from the sense-objects, then his wisdom becomes steady."
-  },
-  "gita-2-59": {
-   "ref": "2.59",
-   "text": "The objects of the senses turn away from the abstinent man, leaving the longing behind; but his longing also turns away upon seeing the Supreme.",
-   "prompt": "Bhagavad Gita 2.59 — The objects of the senses turn away from the abstinent man, leaving the longing behind; but his longing also turns away upon seeing the Supreme."
-  },
-  "gita-2-60": {
-   "ref": "2.60",
-   "text": "The turbulent senses, O Arjuna, can violently carry away the mind of a wise person, even though they are striving to control them.",
-   "prompt": "Bhagavad Gita 2.60 — The turbulent senses, O Arjuna, can violently carry away the mind of a wise person, even though they are striving to control them."
-  },
-  "gita-2-61": {
-   "ref": "2.61",
-   "text": "Having restrained them all, he should sit steadfast, intent on Me; his wisdom is steady whose senses are under control.",
-   "prompt": "Bhagavad Gita 2.61 — Having restrained them all, he should sit steadfast, intent on Me; his wisdom is steady whose senses are under control."
-  },
-  "gita-2-62": {
-   "ref": "2.62",
-   "text": "When one thinks of objects, attachment to them arises; from attachment, desire is born; from desire, anger arises.",
-   "prompt": "Bhagavad Gita 2.62 — When one thinks of objects, attachment to them arises; from attachment, desire is born; from desire, anger arises."
-  },
-  "gita-2-63": {
-   "ref": "2.63",
-   "text": "Anger leads to delusion, which causes loss of memory; this, in turn, leads to the destruction of discrimination, resulting in destruction.",
-   "prompt": "Bhagavad Gita 2.63 — Anger leads to delusion, which causes loss of memory; this, in turn, leads to the destruction of discrimination, resulting in destruction."
-  },
-  "gita-2-64": {
-   "ref": "2.64",
-   "text": "But the self-controlled man, moving among objects with the senses restrained and free from attraction and repulsion, attains peace.",
-   "prompt": "Bhagavad Gita 2.64 — But the self-controlled man, moving among objects with the senses restrained and free from attraction and repulsion, attains peace."
-  },
-  "gita-2-65": {
-   "ref": "2.65",
-   "text": "In that peace, all pains are destroyed; for the intellect of the tranquil-minded soon becomes steady.",
-   "prompt": "Bhagavad Gita 2.65 — In that peace, all pains are destroyed; for the intellect of the tranquil-minded soon becomes steady."
-  },
-  "gita-2-66": {
-   "ref": "2.66",
-   "text": "There is no knowledge of the Self for the unsteady, and no meditation is possible for the unsteady, and no peace for the unmeditative, and how can there be happiness for one who has no peace?",
-   "prompt": "Bhagavad Gita 2.66 — There is no knowledge of the Self for the unsteady, and no meditation is possible for the unsteady, and no peace for the unmeditative, and how can there be happiness for one who has no peace?"
-  },
-  "gita-2-70": {
-   "ref": "2.70",
-   "text": "He attains peace into whom all desires enter, just as waters enter the ocean which, filled from all sides, remains unmoved; but not the man who is full of desires.",
-   "prompt": "Bhagavad Gita 2.70 — He attains peace into whom all desires enter, just as waters enter the ocean which, filled from all sides, remains unmoved; but not the man who is full of desires."
-  },
-  "gita-2-50": {
-   "ref": "2.50",
-   "text": "Endowed with wisdom and evenness of mind, one casts off in this life both good and evil deeds; therefore, devote yourself to Yoga; Yoga is skill in action.",
-   "prompt": "Bhagavad Gita 2.50 — Endowed with wisdom and evenness of mind, one casts off in this life both good and evil deeds; therefore, devote yourself to Yoga; Yoga is skill in action."
-  },
-  "gita-2-71": {
-   "ref": "2.71",
-   "text": "That person attains peace who, abandoning all desires, moves about without longing, without the sense of ownership, and without egoism.",
-   "prompt": "Bhagavad Gita 2.71 — That person attains peace who, abandoning all desires, moves about without longing, without the sense of ownership, and without egoism."
-  },
-  "gita-3-30": {
-   "ref": "3.30",
-   "text": "Renouncing all actions in Me, with the mind centered on the Self, free from hope and egoism, and from mental fever, fight thou.",
-   "prompt": "Bhagavad Gita 3.30 — Renouncing all actions in Me, with the mind centered on the Self, free from hope and egoism, and from mental fever, fight thou."
-  },
-  "gita-4-18": {
-   "ref": "4.18",
-   "text": "He who sees inaction in action and action in inaction, he is wise among men; he is a yogi and performer of all actions.",
-   "prompt": "Bhagavad Gita 4.18 — He who sees inaction in action and action in inaction, he is wise among men; he is a yogi and performer of all actions."
-  },
-  "gita-5-10": {
-   "ref": "5.10",
-   "text": "He who does actions, offering them to Brahman and abandoning attachment, is not tainted by sin, just as a lotus leaf is not tainted by water.",
-   "prompt": "Bhagavad Gita 5.10 — He who does actions, offering them to Brahman and abandoning attachment, is not tainted by sin, just as a lotus leaf is not tainted by water."
-  },
-  "gita-2-31": {
-   "ref": "2.31",
-   "text": "Further, having regard to your duty, you should not waver, for there is nothing higher for a Kshatriya than a righteous war.",
-   "prompt": "Bhagavad Gita 2.31 — Further, having regard to your duty, you should not waver, for there is nothing higher for a Kshatriya than a righteous war."
-  },
-  "gita-2-33": {
-   "ref": "2.33",
-   "text": "But if you will not fight this righteous war, then having abandoned your own duty and reputation, you will incur sin.",
-   "prompt": "Bhagavad Gita 2.33 — But if you will not fight this righteous war, then having abandoned your own duty and reputation, you will incur sin."
-  },
-  "gita-2-38": {
-   "ref": "2.38",
-   "text": "Having made pleasure and pain, gain and loss, victory and defeat equal, engage in battle for the sake of battle; thus, you shall not incur sin.",
-   "prompt": "Bhagavad Gita 2.38 — Having made pleasure and pain, gain and loss, victory and defeat equal, engage in battle for the sake of battle; thus, you shall not incur sin."
-  },
-  "gita-3-8": {
-   "ref": "3.8",
-   "text": "Perform your bounden duty, for action is superior to inaction, and even the maintenance of the body would not be possible for you through inaction.",
-   "prompt": "Bhagavad Gita 3.8 — Perform your bounden duty, for action is superior to inaction, and even the maintenance of the body would not be possible for you through inaction."
-  },
-  "gita-3-9": {
-   "ref": "3.9",
-   "text": "The world is bound by actions other than those performed for the sake of sacrifice; do thou, therefore, O son of Kunti (Arjuna), perform actions for that sake alone, free from attachment.",
-   "prompt": "Bhagavad Gita 3.9 — The world is bound by actions other than those performed for the sake of sacrifice; do thou, therefore, O son of Kunti (Arjuna), perform actions for that sake alone, free from attachment."
-  },
-  "gita-3-19": {
-   "ref": "3.19",
-   "text": "Therefore, without attachment, always perform the actions that should be done; for by performing actions without attachment, one reaches the Supreme.",
-   "prompt": "Bhagavad Gita 3.19 — Therefore, without attachment, always perform the actions that should be done; for by performing actions without attachment, one reaches the Supreme."
-  },
-  "gita-3-20": {
-   "ref": "3.20",
-   "text": "Janaka and others attained perfection indeed through action alone; even with the intention of protecting the masses, you should perform action.",
-   "prompt": "Bhagavad Gita 3.20 — Janaka and others attained perfection indeed through action alone; even with the intention of protecting the masses, you should perform action."
-  },
-  "gita-3-35": {
-   "ref": "3.35",
-   "text": "Better is one's own duty, though devoid of merit, than the duty of another well discharged. Better is death in one's own duty; the duty of another is fraught with fear.",
-   "prompt": "Bhagavad Gita 3.35 — Better is one's own duty, though devoid of merit, than the duty of another well discharged. Better is death in one's own duty; the duty of another is fraught with fear."
-  },
-  "gita-4-20": {
-   "ref": "4.20",
-   "text": "Having abandoned attachment to the fruits of the action, ever content, depending on nothing, he does not do anything even while being engaged in activity.",
-   "prompt": "Bhagavad Gita 4.20 — Having abandoned attachment to the fruits of the action, ever content, depending on nothing, he does not do anything even while being engaged in activity."
-  },
-  "gita-4-23": {
-   "ref": "4.23",
-   "text": "To one who is devoid of attachment, who is liberated, whose mind is established in knowledge, and who works for the sake of sacrifice (for the sake of God), the whole action is dissolved.",
-   "prompt": "Bhagavad Gita 4.23 — To one who is devoid of attachment, who is liberated, whose mind is established in knowledge, and who works for the sake of sacrifice (for the sake of God), the whole action is dissolved."
-  },
-  "gita-2-14": {
-   "ref": "2.14",
-   "text": "The contact of the senses with the objects, O son of Kunti, which causes heat and cold, pleasure and pain, has a beginning and an end; they are impermanent; endure them bravely, O Arjuna.",
-   "prompt": "Bhagavad Gita 2.14 — The contact of the senses with the objects, O son of Kunti, which causes heat and cold, pleasure and pain, has a beginning and an end; they are impermanent; endure them bravely, O Arjuna."
-  },
-  "gita-2-16": {
-   "ref": "2.16",
-   "text": "The unreal has no being; there is no non-being of the real; the truth about both has been seen by the knowers of the truth (or the seers of the essence).",
-   "prompt": "Bhagavad Gita 2.16 — The unreal has no being; there is no non-being of the real; the truth about both has been seen by the knowers of the truth (or the seers of the essence)."
-  },
-  "gita-2-27": {
-   "ref": "2.27",
-   "text": "For the born, death is certain, and for the dead, birth is certain; therefore, you should not grieve over the inevitable.",
-   "prompt": "Bhagavad Gita 2.27 — For the born, death is certain, and for the dead, birth is certain; therefore, you should not grieve over the inevitable."
-  },
-  "gita-6-5": {
-   "ref": "6.5",
-   "text": "One should raise oneself by one's own self alone; let not one lower oneself; for the self alone is one's own friend, and the self alone is one's own enemy.",
-   "prompt": "Bhagavad Gita 6.5 — One should raise oneself by one's own self alone; let not one lower oneself; for the self alone is one's own friend, and the self alone is one's own enemy."
-  },
-  "gita-6-35": {
-   "ref": "6.35",
-   "text": "Undoubtedly, O mighty-armed Arjuna, the mind is difficult to control and restless; but with practice and dispassion, it can be restrained.",
-   "prompt": "Bhagavad Gita 6.35 — The Blessed Lord said, \"Undoubtedly, O mighty-armed Arjuna, the mind is difficult to control and restless; but with practice and dispassion, it can be restrained.\""
-  },
-  "gita-6-36": {
-   "ref": "6.36",
-   "text": "I think Yoga is hard to be attained by one with an uncontrolled self, but the self-controlled and striving one can attain it by the appropriate means.",
-   "prompt": "Bhagavad Gita 6.36 — I think Yoga is hard to be attained by one with an uncontrolled self, but the self-controlled and striving one can attain it by the appropriate means."
-  },
-  "gita-9-27": {
-   "ref": "9.27",
-   "text": "Whatever you do, whatever you eat, whatever you offer in sacrifice, whatever you give, whatever austerity you practice, O Arjuna, do it as an offering to Me.",
-   "prompt": "Bhagavad Gita 9.27 — Whatever you do, whatever you eat, whatever you offer in sacrifice, whatever you give, whatever austerity you practice, O Arjuna, do it as an offering to Me."
-  },
-  "gita-10-8": {
-   "ref": "10.8",
-   "text": "I am the source of all; from me everything evolves; Understanding this, the wise, endowed with meditation, worship me.",
-   "prompt": "Bhagavad Gita 10.8 — I am the source of all; from me everything evolves; Understanding this, the wise, endowed with meditation, worship me."
-  },
-  "gita-10-9": {
-   "ref": "10.9",
-   "text": "With their minds and lives wholly absorbed in Me, they enlighten each other and ever speak of Me, being satisfied and delighted.",
-   "prompt": "Bhagavad Gita 10.9 — With their minds and lives wholly absorbed in Me, they enlighten each other and ever speak of Me, being satisfied and delighted."
-  },
-  "gita-10-10": {
-   "ref": "10.10",
-   "text": "To those who are ever steadfast, worshipping me with love, I give the yoga of discrimination, by which they come to me.",
-   "prompt": "Bhagavad Gita 10.10 — To those who are ever steadfast, worshipping me with love, I give the yoga of discrimination, by which they come to me."
-  },
-  "gita-10-41": {
-   "ref": "10.41",
-   "text": "Whatever being there is glorious, prosperous, or powerful, know that to be a manifestation of a part of My splendor.",
-   "prompt": "Bhagavad Gita 10.41 — Whatever being there is glorious, prosperous, or powerful, know that to be a manifestation of a part of My splendor."
-  },
-  "gita-11-55": {
-   "ref": "11.55",
-   "text": "He who does all actions for Me, who regards Me as the Supreme, who is devoted to Me, who is free from attachment, who bears no enmity towards any creature, he comes to Me, O Arjuna.",
-   "prompt": "Bhagavad Gita 11.55 — He who does all actions for Me, who regards Me as the Supreme, who is devoted to Me, who is free from attachment, who bears no enmity towards any creature, he comes to Me, O Arjuna."
-  },
-  "gita-12-13": {
-   "ref": "12.13",
-   "text": "He who hates no creature, is friendly and compassionate to all, is free from attachment and egoism, is balanced in pleasure and pain, and is forgiving.",
-   "prompt": "Bhagavad Gita 12.13 — He who hates no creature, is friendly and compassionate to all, is free from attachment and egoism, is balanced in pleasure and pain, and is forgiving."
-  },
-  "gita-12-14": {
-   "ref": "12.14",
-   "text": "Ever content, steady in meditation, self-controlled, possessing firm conviction, with the mind and intellect dedicated to Me, he, My devotee, is dear to Me.",
-   "prompt": "Bhagavad Gita 12.14 — Ever content, steady in meditation, self-controlled, possessing firm conviction, with the mind and intellect dedicated to Me, he, My devotee, is dear to Me."
-  },
-  "gita-12-15": {
-   "ref": "12.15",
-   "text": "He whom the world does not agitate, and who cannot be agitated by the world, and who is freed from joy, anger, fear, and anxiety—he is dear to Me.",
-   "prompt": "Bhagavad Gita 12.15 — He whom the world does not agitate, and who cannot be agitated by the world, and who is freed from joy, anger, fear, and anxiety—he is dear to Me."
-  },
-  "gita-12-16": {
-   "ref": "12.16",
-   "text": "He who is free from wants, pure, expert, unconcerned, and free from pain, renouncing all undertakings and commencements, he who is devoted to Me is dear to Me.",
-   "prompt": "Bhagavad Gita 12.16 — He who is free from wants, pure, expert, unconcerned, and free from pain, renouncing all undertakings and commencements, he who is devoted to Me is dear to Me."
-  },
-  "gita-12-17": {
-   "ref": "12.17",
-   "text": "He who neither rejoices nor hates, nor grieves nor desires, renouncing both good and evil, and who is full of devotion, is dear to Me.",
-   "prompt": "Bhagavad Gita 12.17 — He who neither rejoices nor hates, nor grieves nor desires, renouncing both good and evil, and who is full of devotion, is dear to Me."
-  },
-  "gita-12-18": {
-   "ref": "12.18",
-   "text": "He who is the same to foe and friend, and also in honor and dishonor, who is the same in cold and heat, in pleasure and pain, and who is free from attachment.",
-   "prompt": "Bhagavad Gita 12.18 — He who is the same to foe and friend, and also in honor and dishonor, who is the same in cold and heat, in pleasure and pain, and who is free from attachment."
-  },
-  "gita-12-19": {
-   "ref": "12.19",
-   "text": "He to whom censure and praise are equal, who is silent, content with anything, homeless, of a steady mind, and full of devotion; that man is dear to me.",
-   "prompt": "Bhagavad Gita 12.19 — He to whom censure and praise are equal, who is silent, content with anything, homeless, of a steady mind, and full of devotion; that man is dear to me."
-  },
-  "gita-12-20": {
-   "ref": "12.20",
-   "text": "They who follow this immortal Dharma, endowed with faith and regarding Me as their supreme goal, are exceedingly dear to Me.",
-   "prompt": "Bhagavad Gita 12.20 — They who follow this immortal Dharma, endowed with faith and regarding Me as their supreme goal, are exceedingly dear to Me."
-  },
-  "gita-17-28": {
-   "ref": "17.28",
-   "text": "Whatever is sacrificed, given, or performed, and whatever austerity is practiced without faith, it is called 'Asat', O Arjuna; it is of no value here or hereafter (after death).",
-   "prompt": "Bhagavad Gita 17.28 — Whatever is sacrificed, given, or performed, and whatever austerity is practiced without faith, it is called 'Asat', O Arjuna; it is of no value here or hereafter (after death)."
-  },
-  "gita-2-13": {
-   "ref": "2.13",
-   "text": "Just as the embodied soul passes through childhood, youth, and old age in this body, so too does it pass into another body; the steadfast one does not grieve over this.",
-   "prompt": "Bhagavad Gita 2.13 — Just as the embodied soul passes through childhood, youth, and old age in this body, so too does it pass into another body; the steadfast one does not grieve over this."
-  },
-  "gita-2-20": {
-   "ref": "2.20",
-   "text": "It is not born, nor does it ever die; after having been, it again does not cease to be; unborn, eternal, changeless, and ancient, it is not killed when the body is killed.",
-   "prompt": "Bhagavad Gita 2.20 — It is not born, nor does it ever die; after having been, it again does not cease to be; unborn, eternal, changeless, and ancient, it is not killed when the body is killed."
-  },
-  "gita-2-22": {
-   "ref": "2.22",
-   "text": "Just as a man casts off worn-out clothes and puts on new ones, so too the embodied Self casts off worn-out bodies and enters others that are new.",
-   "prompt": "Bhagavad Gita 2.22 — Just as a man casts off worn-out clothes and puts on new ones, so too the embodied Self casts off worn-out bodies and enters others that are new."
-  },
-  "gita-2-23": {
-   "ref": "2.23",
-   "text": "Weapons cannot cut it, fire cannot burn it, water cannot wet it, wind cannot dry it.",
-   "prompt": "Bhagavad Gita 2.23 — Weapons cannot cut it, fire cannot burn it, water cannot wet it, wind cannot dry it."
-  },
-  "gita-4-7": {
-   "ref": "4.7",
-   "text": "Whenever there is a decline of righteousness and an increase of unrighteousness, O Arjuna, then I manifest Myself.",
-   "prompt": "Bhagavad Gita 4.7 — Whenever there is a decline of righteousness and an increase of unrighteousness, O Arjuna, then I manifest Myself."
-  },
-  "gita-4-24": {
-   "ref": "4.24",
-   "text": "Brahman is the oblation; Brahman is the melted butter (ghee); by Brahman is the oblation poured into the fire of Brahman; Brahman indeed shall be attained by one who always sees Brahman in action.",
-   "prompt": "Bhagavad Gita 4.24 — Brahman is the oblation; Brahman is the melted butter (ghee); by Brahman is the oblation poured into the fire of Brahman; Brahman indeed shall be attained by one who always sees Brahman in action."
-  },
-  "gita-6-22": {
-   "ref": "6.22",
-   "text": "Having obtained it, he thinks there is no other gain superior to it; established in it, he is not moved even by heavy sorrow.",
-   "prompt": "Bhagavad Gita 6.22 — Having obtained it, he thinks there is no other gain superior to it; established in it, he is not moved even by heavy sorrow."
-  },
-  "gita-6-23": {
-   "ref": "6.23",
-   "text": "Let this be known by the name of Yoga, the severance from union with pain. This Yoga should be practiced with determination and with an undespairing mind.",
-   "prompt": "Bhagavad Gita 6.23 — Let this be known by the name of Yoga, the severance from union with pain. This Yoga should be practiced with determination and with an undespairing mind."
-  },
-  "gita-9-22": {
-   "ref": "9.22",
-   "text": "For those men who worship Me alone, thinking of no one else, for those ever-united, I secure what they have not already possessed and preserve what they already possess.",
-   "prompt": "Bhagavad Gita 9.22 — For those men who worship Me alone, thinking of no one else, for those ever-united, I secure what they have not already possessed and preserve what they already possess."
-  },
-  "gita-5-29": {
-   "ref": "5.29",
-   "text": "He who knows Me as the enjoyer of sacrifices and austerities, the great Lord of all the worlds, and the friend of all beings, attains peace.",
-   "prompt": "Bhagavad Gita 5.29 — He who knows Me as the enjoyer of sacrifices and austerities, the great Lord of all the worlds, and the friend of all beings, attains peace."
-  },
-  "gita-6-6": {
-   "ref": "6.6",
-   "text": "The Self is the friend of the self of him by whom the Self has been conquered; but to the unconquered self, this Self stands in the position of an enemy, like an external foe.",
-   "prompt": "Bhagavad Gita 6.6 — The Self is the friend of the self of him by whom the Self has been conquered; but to the unconquered self, this Self stands in the position of an enemy, like an external foe."
+  "verses": {
+    "gita-2-47": {
+      "ref": "2.47",
+      "text": "Your right is only to work, but not to its results; do not let the results of action be your motive, nor let your attachment be to inaction.",
+      "prompt": "Bhagavad Gita 2.47 — Your right is only to work, but not to its results; do not let the results of action be your motive, nor let your attachment be to inaction.",
+      "text_hi": "तेरा हक़ सिर्फ़ कर्म करने में है, उसके फल में नहीं; इसलिए फल की इच्छा से मत कर और न ही कर्म न करने में आसक्त हो।",
+      "text_bn": "তোমার অধিকার শুধু কর্ম করার ওপর, ফলে নয়; ফল চিন্তা করে কাজ করো না, আর কর্ম না করার দিকে আঁকাও না।"
+    },
+    "gita-2-48": {
+      "ref": "2.48",
+      "text": "Perform action, O Arjuna, being steadfast in Yoga, abandoning attachment and balanced in success and failure; evenness of mind is called Yoga.",
+      "prompt": "Bhagavad Gita 2.48 — Perform action, O Arjuna, being steadfast in Yoga, abandoning attachment and balanced in success and failure; evenness of mind is called Yoga.",
+      "text_bn": "তুমি যোগে স্থির হয়ে, আসক্তি ছাড়িয়ে, সাফল্য-ব্যর্থতার সমভাবে কর্ম কর; এই সমতা-বোধনামই যোগ।",
+      "text_hi": "हे अर्जुन, तुम आसक्ति छोड़कर और सफलता-असफलता में समभाव रखकर योग में स्थित होकर कर्म करो, क्योंकि मन की यही समता ही योग कहलाती है।"
+    },
+    "gita-2-55": {
+      "ref": "2.55",
+      "text": "When a man completely casts off, O Arjuna, all the desires of the mind and is satisfied in the Self by the Self, then he is said to be one of steady wisdom.",
+      "prompt": "Bhagavad Gita 2.55 — The Blessed Lord said, \"When a man completely casts off, O Arjuna, all the desires of the mind and is satisfied in the Self by the Self, then he is said to be one of steady wisdom.\"",
+      "text_hi": "हे अर्जुन, जब कोई व्यक्ति मन की सारी इच्छाओं को पूरी तरह छोड़ देता है और अपने आप में ही अपने आप से संतुष्ट रहता है, तब उसे स्थिर बुद्धि वाला कहा जाता है।",
+      "text_bn": "হে অর্জুন, যখন কেউ মনসহ সকল কামনা সম্পূর্ণ ত্যাগ করে এবং আত্মার মাধ্যমে আত্মাতেই তৃপ্ত থাকে, তখন তাকে স্থিরবুদ্ধি বলা হয়।"
+    },
+    "gita-2-56": {
+      "ref": "2.56",
+      "text": "He whose mind is not shaken by adversity, who does not long for pleasures, and is free from attachment, fear, and anger, is called a sage of steady wisdom.",
+      "prompt": "Bhagavad Gita 2.56 — He whose mind is not shaken by adversity, who does not long for pleasures, and is free from attachment, fear, and anger, is called a sage of steady wisdom.",
+      "text_hi": "जिसका मन दुःख में विचलित नहीं होता, जो सुख की लालसा नहीं रखता और राग, भय तथा क्रोध से मुक्त है, उसे ही स्थिर बुद्धि वाला मुनि कहते हैं।",
+      "text_bn": "দুঃখে যেন মন কম্পিত হয় না, সুখের লোভও থাকে না, যিনি রাগ, ভয় আর ক্রোধ থেকে মুক্ত, তাকে তুমি স্থিরবুদ্ধি মুনি বলবে।"
+    },
+    "gita-2-57": {
+      "ref": "2.57",
+      "text": "He who is everywhere without attachment, upon encountering anything good or bad, neither rejoices nor hastens; his wisdom is firm.",
+      "prompt": "Bhagavad Gita 2.57 — He who is everywhere without attachment, upon encountering anything good or bad, neither rejoices nor hastens; his wisdom is firm.",
+      "text_hi": "जो हर जगह रहते हुए भी किसी से बँधा नहीं होता, वह अच्छा या बुरा कुछ भी मिलने पर न तो खुश होता है न ही बेचैन होता है, उसकी बुद्धि स्थिर रहती है।",
+      "text_bn": "যে সব জায়গায় থাকেও কোনো বন্ধনে আঁকড়ে না, সে ভালো বা মন্দ কিছু পেলে না খুশি হয় না বিষণ্ণ; তার জ্ঞান অচল থাকে।"
+    },
+    "gita-2-58": {
+      "ref": "2.58",
+      "text": "When, like the tortoise which withdraws all its limbs on all sides, he withdraws his senses from the sense-objects, then his wisdom becomes steady.",
+      "prompt": "Bhagavad Gita 2.58 — When, like the tortoise which withdraws all its limbs on all sides, he withdraws his senses from the sense-objects, then his wisdom becomes steady.",
+      "text_hi": "जैसे कछुआ अपने सारे अंगों को भीतर खींच लेता है, वैसे ही जब तुम अपनी इंद्रियों को विषयों से हटा लेते हो, तब तुम्हारी बुद्धि स्थिर हो जाती है।",
+      "text_bn": "যখন কচ্ছপের মতো সবদিক থেকে আঙ্গুল সংকুচিত করে তুমি তোমার ইন্দ্রিয়গুলিকে বিষয় থেকে টেনে আনবে, তখন তোমার প্রজ্ঞা স্থির হবে।"
+    },
+    "gita-2-59": {
+      "ref": "2.59",
+      "text": "The objects of the senses turn away from the abstinent man, leaving the longing behind; but his longing also turns away upon seeing the Supreme.",
+      "prompt": "Bhagavad Gita 2.59 — The objects of the senses turn away from the abstinent man, leaving the longing behind; but his longing also turns away upon seeing the Supreme.",
+      "text_hi": "विषय इन्द्रियों से दूर हट जाते हैं जब तुम उनसे मुँह मोड़ लेते हो, पर उनकी तृष्णा मन में बनी रहती है; मगर जब तुम परमात्मा को देख लेते हो तो वह तृष्णा भी छूट जाती है।",
+      "text_bn": "বিষয়গুলো তোমার থেকে দূরে চলে যায় যখন তুমি সেগুলো থেকে বিরত থাকো, কিন্তু সেই তৃষ্ণাটা তখনও মনে থাকে; কিন্তু যখন তুমি পরমতত্ত্বকে দেখতে পাও, তখন সেই তৃষ্ণাও চলে যায়।"
+    },
+    "gita-2-60": {
+      "ref": "2.60",
+      "text": "The turbulent senses, O Arjuna, can violently carry away the mind of a wise person, even though they are striving to control them.",
+      "prompt": "Bhagavad Gita 2.60 — The turbulent senses, O Arjuna, can violently carry away the mind of a wise person, even though they are striving to control them.",
+      "text_hi": "हे अर्जुन, तू कितना भी प्रयास कर ले, ये अशांत इन्द्रियाँ बलपूर्वक एक बुद्धिमान व्यक्ति के मन को भी हरकर ले जा सकती हैं।",
+      "text_bn": "হে অর্জুন, তুমি যত্ন করে মন নিয়ন্ত্রণ করলেও এই উচ্ছৃঙ্খল ইন্দ্রিয়গুলো বলপূর্বক তোমার বুদ্ধিকে হরিয়ে নিতে পারে।"
+    },
+    "gita-2-61": {
+      "ref": "2.61",
+      "text": "Having restrained them all, he should sit steadfast, intent on Me; his wisdom is steady whose senses are under control.",
+      "prompt": "Bhagavad Gita 2.61 — Having restrained them all, he should sit steadfast, intent on Me; his wisdom is steady whose senses are under control.",
+      "text_bn": "সব ইন্দ্রিয় নিয়ন্ত্রণ করে স্থিরভাবে বসে, মন একাগ্র কর আমার দিকে; যার ইন্দ্রিয়গুলো বশে, তার জ্ঞান স্থির থাকে।",
+      "text_hi": "सब इन्द्रियों को वश में करके तुम मुझमें स्थिर होकर बैठो, क्योंकि जिसकी इन्द्रियाँ काबू में हैं उसकी बुद्धि अचल रहती है।"
+    },
+    "gita-2-62": {
+      "ref": "2.62",
+      "text": "When one thinks of objects, attachment to them arises; from attachment, desire is born; from desire, anger arises.",
+      "prompt": "Bhagavad Gita 2.62 — When one thinks of objects, attachment to them arises; from attachment, desire is born; from desire, anger arises.",
+      "text_hi": "जब तुम विषयों का चिंतन करते हो, तो उनमें आसक्ति पैदा होती है; आसक्ति से कामना जन्म लेती है और कामना से क्रोध उत्पन्न होता है।",
+      "text_bn": "যখন তুমি কোনো বস্তুর চিন্তা করবে, তখন সেটার প্রতি আশক্তি জন্মাবে; সেই আশক্তি থেকে কামনা উদ্ভূত হবে এবং কামনা থেকে ক্রোধ জন্মাবে।"
+    },
+    "gita-2-63": {
+      "ref": "2.63",
+      "text": "Anger leads to delusion, which causes loss of memory; this, in turn, leads to the destruction of discrimination, resulting in destruction.",
+      "prompt": "Bhagavad Gita 2.63 — Anger leads to delusion, which causes loss of memory; this, in turn, leads to the destruction of discrimination, resulting in destruction.",
+      "text_hi": "क्रोध से तुम्हारा विवेक भ्रमित हो जाता है, जिससे स्मृति नष्ट होती है, फिर बुद्धि जाती रहती है और अंत में तुम्हारा पतन हो जाता है।",
+      "text_bn": "ক্রোধ হলে তোমার বুদ্ধি বিভ্রান্ত হয়, সেটি স্মৃতিনাশ করে, স্মৃতিনাশে তোমার বিবেকশক্তি নষ্ট হয় এবং তখন তোমার পতন ঘটে।"
+    },
+    "gita-2-64": {
+      "ref": "2.64",
+      "text": "But the self-controlled man, moving among objects with the senses restrained and free from attraction and repulsion, attains peace.",
+      "prompt": "Bhagavad Gita 2.64 — But the self-controlled man, moving among objects with the senses restrained and free from attraction and repulsion, attains peace.",
+      "text_hi": "तू इन्द्रियों को वश में रखकर, राग-द्वेष से मुक्त होकर, विषयों के बीच विचरता है तो तुझे शान्ति मिलती है।",
+      "text_bn": "তুমি যদি বস্তুগুলোর মাঝপথে চলতে থাকো কিন্তু ইন্দ্রিয়গুলো নিয়ন্ত্রণে রাখো, আর কোনো কিছুর প্রতি আকর্ষণ বা বিকর্ষণ না থাকো, তখন তোমার মনে শান্তি আসবে।"
+    },
+    "gita-2-65": {
+      "ref": "2.65",
+      "text": "In that peace, all pains are destroyed; for the intellect of the tranquil-minded soon becomes steady.",
+      "prompt": "Bhagavad Gita 2.65 — In that peace, all pains are destroyed; for the intellect of the tranquil-minded soon becomes steady.",
+      "text_bn": "সেই শান্তিতে তোমার সকল দুঃখ নষ্ট হয়ে যায়, কারণ প্রশান্ত মনোর বুদ্ধি দ্রুতই স্থির হয়ে ওঠে।",
+      "text_hi": "उस शांति में तुम्हारे सारे दुःख मिट जाते हैं, क्योंकि शांत चित्त वाले की बुद्धि जल्दी ही स्थिर हो जाती है।"
+    },
+    "gita-2-66": {
+      "ref": "2.66",
+      "text": "There is no knowledge of the Self for the unsteady, and no meditation is possible for the unsteady, and no peace for the unmeditative, and how can there be happiness for one who has no peace?",
+      "prompt": "Bhagavad Gita 2.66 — There is no knowledge of the Self for the unsteady, and no meditation is possible for the unsteady, and no peace for the unmeditative, and how can there be happiness for one who has no peace?",
+      "text_bn": "অস্থির মনোভাবের মানুষ আত্মজ্ঞান পায় না, এবং অস্থির মনোভাবের মানুষ ধ্যানও করতে পারে না; ধ্যান ছাড়া শান্তি আসে না, আর শান্তি না থাকলে তুমি কীভাবে সুখ পাবে?",
+      "text_hi": "जिसका मन स्थिर नहीं, उसे आत्मा का ज्ञान नहीं होता और बिना स्थिर मन के ध्यान भी नहीं लग सकता; ध्यान न हो तो शांति कहाँ से आएगी, और शांति बिना सुख कैसा?"
+    },
+    "gita-2-70": {
+      "ref": "2.70",
+      "text": "He attains peace into whom all desires enter, just as waters enter the ocean which, filled from all sides, remains unmoved; but not the man who is full of desires.",
+      "prompt": "Bhagavad Gita 2.70 — He attains peace into whom all desires enter, just as waters enter the ocean which, filled from all sides, remains unmoved; but not the man who is full of desires.",
+      "text_hi": "जैसे नदियाँ सब तरफ से भरे हुए समुद्र में आकर मिलती हैं फिर भी वह स्थिर रहता है, वैसे ही जिसके भीतर सारी इच्छाएँ आकर समा जाती हैं और वह विचलित नहीं होता, वही शांति पाता है, न कि वह जो इच्छाओं से भरा हुआ है।",
+      "text_bn": "সামুদ্রের মতো যিনি সব দিক থেকে আসা কামনাগুলো শান্তভাবে আপনাতে শোষণ করেন কিন্তু নিজে অচল থাকেন, শান্তি শুধু তাঁরই হয়, কামনার ভেতর ভরা মানুষের নয়।"
+    },
+    "gita-2-50": {
+      "ref": "2.50",
+      "text": "Endowed with wisdom and evenness of mind, one casts off in this life both good and evil deeds; therefore, devote yourself to Yoga; Yoga is skill in action.",
+      "prompt": "Bhagavad Gita 2.50 — Endowed with wisdom and evenness of mind, one casts off in this life both good and evil deeds; therefore, devote yourself to Yoga; Yoga is skill in action.",
+      "text_hi": "बुद्धि से समभाव रखकर तुम इसी जीवन में पुण्य और पाप दोनों से छूट जाते हो, इसलिए तुम योग में लग जाओ क्योंकि योग ही कर्मों में कुशलता है।",
+      "text_bn": "বুদ্ধি দিয়ে কাজ করলে তুমি এই জীবনেই ভালো-মন্দ দুটো ফল ছাড়িয়ে দাও, তাই যোগে মন লাগাও, কারণ যোগ মানে কাজের কৌশল।"
+    },
+    "gita-2-71": {
+      "ref": "2.71",
+      "text": "That person attains peace who, abandoning all desires, moves about without longing, without the sense of ownership, and without egoism.",
+      "prompt": "Bhagavad Gita 2.71 — That person attains peace who, abandoning all desires, moves about without longing, without the sense of ownership, and without egoism.",
+      "text_hi": "जो सारी इच्छाएँ छोड़कर, बिना किसी लालच के, बिना 'मेरा' के भाव के और बिना अहंकार के विचरता है, वही शांति को प्राप्त होता है।",
+      "text_bn": "সকল কামনা ছেড়ে দিয়ে, কোনো আকাঙ্ক্ষা, মমতা বা অহংকার ছাড়া যেন জীবন যাপন কর, তুমি তখন শান্তি পাবে।"
+    },
+    "gita-3-30": {
+      "ref": "3.30",
+      "text": "Renouncing all actions in Me, with the mind centered on the Self, free from hope and egoism, and from mental fever, fight thou.",
+      "prompt": "Bhagavad Gita 3.30 — Renouncing all actions in Me, with the mind centered on the Self, free from hope and egoism, and from mental fever, fight thou.",
+      "text_hi": "सब कर्म मुझे अर्पण करके, मन को आत्मा में स्थिर रख, आशा और अहंकार से मुक्त होकर, मानसिक बेचैनी त्यागकर युद्ध करो।",
+      "text_bn": "আমার শরণে সকল কর্ম ফেলে, মন আত্মার সাথে লাগিয়ে, আশা-আহঙ্কার ও মানসিক জ্বর থেকে মুক্ত হয়ে, তুমি যুদ্ধ কর।"
+    },
+    "gita-4-18": {
+      "ref": "4.18",
+      "text": "He who sees inaction in action and action in inaction, he is wise among men; he is a yogi and performer of all actions.",
+      "prompt": "Bhagavad Gita 4.18 — He who sees inaction in action and action in inaction, he is wise among men; he is a yogi and performer of all actions.",
+      "text_hi": "जो कर्म में अकर्म और अकर्म में कर्म देखता है, वही मनुष्यों में बुद्धिमान है, वही योगी है और वही सम्पूर्ण कर्मों को करने वाला है।",
+      "text_bn": "কর্মের মাঝপথে অকর্ম খুঁজে পাওয়া আর অকর্মের ভেতরেই কর্ম দেখতে পাওয়া — যেন এই সত্য বুঝতে পারিস, তবেই তুমি মানুষের মাঝে বুদ্ধিমান, তবেই তুমি সত্যিকার যোগী এবং সকল কর্মের আসল কর্তা।"
+    },
+    "gita-5-10": {
+      "ref": "5.10",
+      "text": "He who does actions, offering them to Brahman and abandoning attachment, is not tainted by sin, just as a lotus leaf is not tainted by water.",
+      "prompt": "Bhagavad Gita 5.10 — He who does actions, offering them to Brahman and abandoning attachment, is not tainted by sin, just as a lotus leaf is not tainted by water.",
+      "text_hi": "जो सारे कर्म ब्रह्म को अर्पण करके करता है और आसक्ति छोड़ देता है, वह पाप से वैसे ही अछूता रहता है जैसे कमल का पत्ता पानी से।",
+      "text_bn": "তুমি যদি সকল কাজ ব্রহ্মার্পণ করে করো এবং আসক্তি ত্যাগ করো, তবে পাপ তোমাকে ছুঁয়ে পারবে না, ঠিক পাতালের পাতার মতো যা জলে থাকেও জলে ভিজে না।"
+    },
+    "gita-2-31": {
+      "ref": "2.31",
+      "text": "Further, having regard to your duty, you should not waver, for there is nothing higher for a Kshatriya than a righteous war.",
+      "prompt": "Bhagavad Gita 2.31 — Further, having regard to your duty, you should not waver, for there is nothing higher for a Kshatriya than a righteous war.",
+      "text_bn": "তোমার ধর্ম কী তা চিন্তা করলে দেখবে এই যুদ্ধ থেকে বড় কোনো পথ নেই ক্ষত্রিয় জন্য, তাই কাঁপো না।",
+      "text_hi": "अपने धर्म को ध्यान में रखकर तुम विचलित मत हो, क्योंकि एक क्षत्रिय के लिए धर्मयुद्ध से बढ़कर कुछ भी नहीं है।"
+    },
+    "gita-2-33": {
+      "ref": "2.33",
+      "text": "But if you will not fight this righteous war, then having abandoned your own duty and reputation, you will incur sin.",
+      "prompt": "Bhagavad Gita 2.33 — But if you will not fight this righteous war, then having abandoned your own duty and reputation, you will incur sin.",
+      "text_hi": "अगर तुम यह धर्मयुद्ध नहीं लड़ोगे तो अपने कर्तव्य और मान को छोड़कर पाप के भागी बनोगे।",
+      "text_bn": "যদি তুমি এই ধর্মযুদ্ধে লড়াই না, তবে তোমার নিজস্ব কর্তব্য ও মান-প্রতিষ্ঠা ত্যাগ করে তুমি পাপের ভাগী হবে।"
+    },
+    "gita-2-38": {
+      "ref": "2.38",
+      "text": "Having made pleasure and pain, gain and loss, victory and defeat equal, engage in battle for the sake of battle; thus, you shall not incur sin.",
+      "prompt": "Bhagavad Gita 2.38 — Having made pleasure and pain, gain and loss, victory and defeat equal, engage in battle for the sake of battle; thus, you shall not incur sin.",
+      "text_hi": "सुख-दुःख, लाभ-हानि, जय-पराजय को समान समझकर युद्ध करो, केवल कर्तव्य के लिए, फिर तुम्हें कोई पाप नहीं लगेगा।",
+      "text_bn": "সুখ-দুঃখ, লাভ-নষ্ট, জয়-পরাজয় — এগুলোকে সমভাবে মনে রেখে তুমি যুদ্ধ করো শুধু কর্তব্যের জন্যে, তাহলে তোমার কোনো পাপ লাগবে না।"
+    },
+    "gita-3-8": {
+      "ref": "3.8",
+      "text": "Perform your bounden duty, for action is superior to inaction, and even the maintenance of the body would not be possible for you through inaction.",
+      "prompt": "Bhagavad Gita 3.8 — Perform your bounden duty, for action is superior to inaction, and even the maintenance of the body would not be possible for you through inaction.",
+      "text_hi": "अपना कर्तव्य कर्म करो, क्योंकि कर्म निष्क्रियता से श्रेष्ठ है और कर्म न करने से तो तुम्हारे लिए शरीर का निर्वाह करना भी असंभव हो जाएगा।",
+      "text_bn": "তোমার কর্তব্য কর, কারণ কর্ম করা নিষ্ক্রিয় থাকার চেয়ে শ্রেষ্ঠ, আর কর্ম না করলে শরীর চালিয়ে যাওয়াও তোমার জন্য সম্ভব হবে না।"
+    },
+    "gita-3-9": {
+      "ref": "3.9",
+      "text": "The world is bound by actions other than those performed for the sake of sacrifice; do thou, therefore, O son of Kunti (Arjuna), perform actions for that sake alone, free from attachment.",
+      "prompt": "Bhagavad Gita 3.9 — The world is bound by actions other than those performed for the sake of sacrifice; do thou, therefore, O son of Kunti (Arjuna), perform actions for that sake alone, free from attachment.",
+      "text_hi": "यज्ञ के अलावा दूसरे कामों में लगे रहने से संसार बंध जाता है, इसलिए हे कुंतीपुत्र, तुम आसक्ति छोड़कर केवल यज्ञ के लिए ही कर्म करो।",
+      "text_bn": "যজ্ঞের জন্য ছাড়া যেসব কর্ম তুমি কর, সেগুলো তোমাকে বাঁধে রাখে; তাই হে কুন্তীপুত্র, আপনাকে বাঁধা ছাড়া শুধু যজ্ঞের জন্যই কর্ম কর।"
+    },
+    "gita-3-19": {
+      "ref": "3.19",
+      "text": "Therefore, without attachment, always perform the actions that should be done; for by performing actions without attachment, one reaches the Supreme.",
+      "prompt": "Bhagavad Gita 3.19 — Therefore, without attachment, always perform the actions that should be done; for by performing actions without attachment, one reaches the Supreme.",
+      "text_bn": "তাই তুমি আশক্তি ছাড়া সার্বদা সেই কাজগুলো করো যা করতেই হবে, কারণ আশক্তি ছাড়া কাজ করলে তুমি পরম গতিতে পৌঁছাবে।",
+      "text_hi": "इसलिए तुम आसक्ति छोडकर वे कर्म करो जो करने योग्य हैं, क्योंकि आसक्ति के बिना कर्म करते हुए ही मनुष्य परम लक्ष्य को प्राप्त करता है।"
+    },
+    "gita-3-20": {
+      "ref": "3.20",
+      "text": "Janaka and others attained perfection indeed through action alone; even with the intention of protecting the masses, you should perform action.",
+      "prompt": "Bhagavad Gita 3.20 — Janaka and others attained perfection indeed through action alone; even with the intention of protecting the masses, you should perform action.",
+      "text_hi": "जनक जैसे लोग केवल कर्म करते हुए ही सिद्धि को प्राप्त हुए, इसलिए तुम भी लोकसंग्रह की भावना से कर्म करो।",
+      "text_bn": "জনকাদি মহাজনরা কেবল কর্মের মাধ্যমে সিদ্ধি লাভ করেছিলেন; তাই তুমিও লোকশিক্ষার জন্য কর্ম কর।"
+    },
+    "gita-3-35": {
+      "ref": "3.35",
+      "text": "Better is one's own duty, though devoid of merit, than the duty of another well discharged. Better is death in one's own duty; the duty of another is fraught with fear.",
+      "prompt": "Bhagavad Gita 3.35 — Better is one's own duty, though devoid of merit, than the duty of another well discharged. Better is death in one's own duty; the duty of another is fraught with fear.",
+      "text_hi": "अपना कर्तव्य भले ही कम गुणों वाला हो, पराया कर्तव्य भले ही अच्छे से निभाया जाए, फिर भी अपना ही करना श्रेयस्कर है; अपने कर्तव्य में मर जाना बेहतर है, क्योंकि पराया कर्तव्य भय से भरा होता है।",
+      "text_bn": "তোমার নিজের করম যদি গুণহীনও হোক, তবুও সেটি অন্যের ভালো করম চেয়ে শ্রেষ্ঠ; নিজের করমে মরলেও কল্যাণ, কিন্তু অন্যের করম গ্রহণ করলে ভয় পাওয়া যায়।"
+    },
+    "gita-4-20": {
+      "ref": "4.20",
+      "text": "Having abandoned attachment to the fruits of the action, ever content, depending on nothing, he does not do anything even while being engaged in activity.",
+      "prompt": "Bhagavad Gita 4.20 — Having abandoned attachment to the fruits of the action, ever content, depending on nothing, he does not do anything even while being engaged in activity.",
+      "text_hi": "कर्म के फल की आस छोड़कर, सदा संतुष्ट और किसी पर निर्भर न रहकर, तुम कर्म करते हुए भी वास्तव में कुछ नहीं करते।",
+      "text_bn": "কর্মফলে আসক্তি ছেড়ে দিয়ে, সবসময় সন্তুষ্ট থাকো এবং কাউকে আশ্রয় করো না; তখন কাজ করলেও তুমি আসলে কিছু করছো না।"
+    },
+    "gita-4-23": {
+      "ref": "4.23",
+      "text": "To one who is devoid of attachment, who is liberated, whose mind is established in knowledge, and who works for the sake of sacrifice (for the sake of God), the whole action is dissolved.",
+      "prompt": "Bhagavad Gita 4.23 — To one who is devoid of attachment, who is liberated, whose mind is established in knowledge, and who works for the sake of sacrifice (for the sake of God), the whole action is dissolved.",
+      "text_hi": "जिसका मन ज्ञान में स्थिर है, जो आसक्ति से मुक्त और स्वतंत्र है, और जो केवल यज्ञ के लिए कर्म करता है, उसका सारा कर्म पूरी तरह विलीन हो जाता है।",
+      "text_bn": "তুমি যেহেতু আস্তে কোনো মমতা ছাড়াই, মুক্ত হয়ে, জ্ঞানে স্থির মনে, শুধু যজ্ঞের নিমিত্তে (ঈশ্বরের জন্য) কাজ কর, তাই তোমার সকল কর্ম পুরোপুরি বিলীন হয়ে যায়।"
+    },
+    "gita-2-14": {
+      "ref": "2.14",
+      "text": "The contact of the senses with the objects, O son of Kunti, which causes heat and cold, pleasure and pain, has a beginning and an end; they are impermanent; endure them bravely, O Arjuna.",
+      "prompt": "Bhagavad Gita 2.14 — The contact of the senses with the objects, O son of Kunti, which causes heat and cold, pleasure and pain, has a beginning and an end; they are impermanent; endure them bravely, O Arjuna.",
+      "text_hi": "हे अर्जुन, इंद्रियों का विषयों से संपर्क सुख-दुःख, गर्मी-सर्दी जैसी अनुभूतियाँ देता है, ये सब अनित्य हैं, आते-जाते रहते हैं, इसलिए इन्हें धैर्य से सहन करो।",
+      "text_bn": "হে কুন্তীপুত্র, ইন্দ্রিয় ও বিষয়ের মিলন থেকে যা সুখ-দুঃখ, শীত-উষ্ণ আসে সেগুলো অনিত্য, এসে যায়; তাই ধৈর্যের সাথে সেগুলো সহো কর।"
+    },
+    "gita-2-16": {
+      "ref": "2.16",
+      "text": "The unreal has no being; there is no non-being of the real; the truth about both has been seen by the knowers of the truth (or the seers of the essence).",
+      "prompt": "Bhagavad Gita 2.16 — The unreal has no being; there is no non-being of the real; the truth about both has been seen by the knowers of the truth (or the seers of the essence).",
+      "text_bn": "অসত্ কখনোই আছে না, সত্ কখনোই নেই না — এই সত্য তত্ত্বদর্শীরা জানেন।",
+      "text_hi": "असत्य का कोई अस्तित्व नहीं है और सत्य का कभी अभाव नहीं होता; इस बात को तत्वदर्शी जन भली-भाँति जान चुके हैं।"
+    },
+    "gita-2-27": {
+      "ref": "2.27",
+      "text": "For the born, death is certain, and for the dead, birth is certain; therefore, you should not grieve over the inevitable.",
+      "prompt": "Bhagavad Gita 2.27 — For the born, death is certain, and for the dead, birth is certain; therefore, you should not grieve over the inevitable.",
+      "text_hi": "जो पैदा हुआ है उसकी मृत्यु निश्चित है और जो मर चुका है उसका फिर से जन्म लेना तय है, इसलिए जो होना ही है उसके लिए शोक मत करो।",
+      "text_bn": "যে জন্মেছে তার মৃত্যু নিশ্চিত, আর যে মরেছে তার জন্ম নিশ্চিত — তাই যা এড়ানো যায় না সেটির জন্য তুমি শোক করবে না।"
+    },
+    "gita-6-5": {
+      "ref": "6.5",
+      "text": "One should raise oneself by one's own self alone; let not one lower oneself; for the self alone is one's own friend, and the self alone is one's own enemy.",
+      "prompt": "Bhagavad Gita 6.5 — One should raise oneself by one's own self alone; let not one lower oneself; for the self alone is one's own friend, and the self alone is one's own enemy.",
+      "text_hi": "तुम्हें अपने आप ही अपने को ऊपर उठाना है, अपने को गिराना नहीं; क्योंकि तुम्हारा अपना मन ही तुम्हारा मित्र है और तुम्हारा अपना मन ही तुम्हारा शत्रु।",
+      "text_bn": "তুমি নিজে নিজের সাহায্যে নিজেকে উন্নত করো, নিজেকে নিচে নামাও না; কারণ তোমার একমাত্র বন্ধু তুমি নিজেই, এবং তোমার একমাত্র শত্রুও তুমি নিজেই।"
+    },
+    "gita-6-35": {
+      "ref": "6.35",
+      "text": "Undoubtedly, O mighty-armed Arjuna, the mind is difficult to control and restless; but with practice and dispassion, it can be restrained.",
+      "prompt": "Bhagavad Gita 6.35 — The Blessed Lord said, \"Undoubtedly, O mighty-armed Arjuna, the mind is difficult to control and restless; but with practice and dispassion, it can be restrained.\"",
+      "text_bn": "হে বীরবাহু, মন চঞ্চল এবং নিয়ন্ত্রণ করা কঠিন, সত্যি; কিন্তু অভ্যাস এবং বিতর্কের মাধ্যমে তা বশে আনা সম্ভব।",
+      "text_hi": "अर्जुन, मन बड़ा चंचल और काबू में न आने वाला है, इसमें कोई शक नहीं; मगर अभ्यास और वैराग्य से इसे वश में किया जा सकता है।"
+    },
+    "gita-6-36": {
+      "ref": "6.36",
+      "text": "I think Yoga is hard to be attained by one with an uncontrolled self, but the self-controlled and striving one can attain it by the appropriate means.",
+      "prompt": "Bhagavad Gita 6.36 — I think Yoga is hard to be attained by one with an uncontrolled self, but the self-controlled and striving one can attain it by the appropriate means.",
+      "text_hi": "असंयत मन से योग पाना बहुत मुश्किल है, लेकिन जो अपने को वश में रखकर सही तरीके से प्रयास करता है, वह इसे ज़रूर प्राप्त कर लेता है।",
+      "text_bn": "অনিয়ন্ত্রিত মনোযোগে যোগ সাধনা খুব কঠিন বলে মনে হয়, কিন্তু যারা আত্মসংযম ধরে পরিশ্রম করে, তারা সঠিক উপায়ে এটাকে অর্জন করতে পারে।"
+    },
+    "gita-9-27": {
+      "ref": "9.27",
+      "text": "Whatever you do, whatever you eat, whatever you offer in sacrifice, whatever you give, whatever austerity you practice, O Arjuna, do it as an offering to Me.",
+      "prompt": "Bhagavad Gita 9.27 — Whatever you do, whatever you eat, whatever you offer in sacrifice, whatever you give, whatever austerity you practice, O Arjuna, do it as an offering to Me.",
+      "text_hi": "हे अर्जुन, तुम जो भी करते हो, खाते हो, यज्ञ में अर्पित करते हो, दान देते हो या तप करते हो, वह सब मुझे अर्पण करते हुए करो।",
+      "text_bn": "যে কিছু করো, যে কিছু খাও, যে কিছু হবিতে দাও, যে কিছু দান করো, যে কিছু তপস্যা করো — সবই আমার অর্পণ করো, হে অর্জুন।"
+    },
+    "gita-10-8": {
+      "ref": "10.8",
+      "text": "I am the source of all; from me everything evolves; Understanding this, the wise, endowed with meditation, worship me.",
+      "prompt": "Bhagavad Gita 10.8 — I am the source of all; from me everything evolves; Understanding this, the wise, endowed with meditation, worship me.",
+      "text_hi": "मैं ही सबका मूल हूँ और सब कुछ मुझसे ही प्रकट होता है; यह जानकर ध्यान में स्थित बुद्धिमान जन प्रेमपूर्वक मेरी उपासना करते हैं।",
+      "text_bn": "সবকিছুর উৎস আমি, সবকিছু আমারই থেকে উদ্ভূত হয়; এটা বুঝতে পারলে ধীর লোকজন মন একগ্র করে আমাকে ভজে।"
+    },
+    "gita-10-9": {
+      "ref": "10.9",
+      "text": "With their minds and lives wholly absorbed in Me, they enlighten each other and ever speak of Me, being satisfied and delighted.",
+      "prompt": "Bhagavad Gita 10.9 — With their minds and lives wholly absorbed in Me, they enlighten each other and ever speak of Me, being satisfied and delighted.",
+      "text_hi": "उनका मन और जीवन पूरी तरह मुझमें रमा रहता है, वे आपस में मेरी ही बातें करते हुए एक-दूसरे को समझाते हैं और सदा संतुष्ट व प्रसन्न रहते हैं।",
+      "text_bn": "তোমার চিন্তা ও জীবন যখন পুরোপুরি আমার মধ্যে লীন থাকে, তখন তোমরা পরস্পর আলোকিত করো এবং সন্তুষ্ট হয়ে আনন্দের সাথে সারাক্ষণ আমার কথা বলতে থাকো।"
+    },
+    "gita-10-10": {
+      "ref": "10.10",
+      "text": "To those who are ever steadfast, worshipping me with love, I give the yoga of discrimination, by which they come to me.",
+      "prompt": "Bhagavad Gita 10.10 — To those who are ever steadfast, worshipping me with love, I give the yoga of discrimination, by which they come to me.",
+      "text_hi": "जो निरंतर प्रेम से मेरी भक्ति में लगे रहते हैं, उन्हें मैं वह विवेक-योग देता हूँ जिससे वे मुझ तक पहुँच जाते हैं।",
+      "text_bn": "যারা সতত নিষ্ঠাবান হয়ে প্রেমপূর্বক আমাকে ভজে, তাদের আমি সেই বিবেকের যোগ দিই যার মাধ্যমে তারা আমার কাছে আসে।"
+    },
+    "gita-10-41": {
+      "ref": "10.41",
+      "text": "Whatever being there is glorious, prosperous, or powerful, know that to be a manifestation of a part of My splendor.",
+      "prompt": "Bhagavad Gita 10.41 — Whatever being there is glorious, prosperous, or powerful, know that to be a manifestation of a part of My splendor.",
+      "text_hi": "जो भी जीव या वस्तु तुम्हें शोभायमान, समृद्ध या शक्तिशाली दिखे, समझ लो कि वह मेरी विभूति का एक अंश मात्र है।",
+      "text_bn": "যে কোনো কিছুই যদি দীপ্তিমান, সমৃদ্ধ বা শক্তিশালী মনে হয়, সেটি আমার দীপ্তির একাংশ থেকে উদ্ভূত বলে জান।"
+    },
+    "gita-11-55": {
+      "ref": "11.55",
+      "text": "He who does all actions for Me, who regards Me as the Supreme, who is devoted to Me, who is free from attachment, who bears no enmity towards any creature, he comes to Me, O Arjuna.",
+      "prompt": "Bhagavad Gita 11.55 — He who does all actions for Me, who regards Me as the Supreme, who is devoted to Me, who is free from attachment, who bears no enmity towards any creature, he comes to Me, O Arjuna.",
+      "text_hi": "जो मेरे लिए सब करता है, मुझे ही सर्वोच्च मानता है, मुझमें अनन्य भक्ति रखता है, आसक्ति से मुक्त है और किसी प्राणी से द्वेष नहीं रखता — वही मुझ तक पहुँचता है।",
+      "text_bn": "তুমি আমার জন্য সব কাজ করবে, আমাকে সেরা মনে করবে, আমার প্রতি ভক্তি রাখবে, কোনো আশক্তি থাকবে না এবং কারো প্রতি শত্রুভাব রাখবে না — তখন তুমি আমার কাছে আসবে, হে অর্জুন।"
+    },
+    "gita-12-13": {
+      "ref": "12.13",
+      "text": "He who hates no creature, is friendly and compassionate to all, is free from attachment and egoism, is balanced in pleasure and pain, and is forgiving.",
+      "prompt": "Bhagavad Gita 12.13 — He who hates no creature, is friendly and compassionate to all, is free from attachment and egoism, is balanced in pleasure and pain, and is forgiving.",
+      "text_hi": "जो किसी भी प्राणी से द्वेष नहीं रखता, सबके प्रति मैत्री और करुणा का भाव रखता है, जिसे न मोह बांधता है न अहंकार छूता है, जो सुख-दुःख में समभाव से रहता है और क्षमाशील है।",
+      "text_bn": "যে কাউকে ঘৃণা করে না, সবার প্রতি বান্ধব্য ও করুণা ধারণ করে, যাকে আশক্তি ও অহংকার ছুঁয়েও নাই, যিনি সুখ-দুঃখে সমভাবে থাকেন এবং যিনি ক্ষমাশীল — সেই ব্যক্তিই আমার প্রিয়।"
+    },
+    "gita-12-14": {
+      "ref": "12.14",
+      "text": "Ever content, steady in meditation, self-controlled, possessing firm conviction, with the mind and intellect dedicated to Me, he, My devotee, is dear to Me.",
+      "prompt": "Bhagavad Gita 12.14 — Ever content, steady in meditation, self-controlled, possessing firm conviction, with the mind and intellect dedicated to Me, he, My devotee, is dear to Me.",
+      "text_hi": "जो हमेशा संतुष्ट रहता है, ध्यान में स्थिर रहता है, अपने मन और इंद्रियों को वश में रखता है, जिसकी श्रद्धा अटल है, और जिसने अपना मन और बुद्धि मुझे अर्पित कर दी है, ऐसा मेरा भक्त मुझे बहुत प्रिय है।",
+      "text_bn": "তুমি যদি সবসময় সন্তুষ্ট থাকো, ধ্যানে অচল থাকো, নিজেকে নিয়ন্ত্রণ করতে পারো এবং দৃঢ় বিশ্বাস রাখো, মন ও বুদ্ধি আমার চরণে সমর্পণ করলে, তুমি আমার প্রিয় ভক্ত হব।"
+    },
+    "gita-12-15": {
+      "ref": "12.15",
+      "text": "He whom the world does not agitate, and who cannot be agitated by the world, and who is freed from joy, anger, fear, and anxiety—he is dear to Me.",
+      "prompt": "Bhagavad Gita 12.15 — He whom the world does not agitate, and who cannot be agitated by the world, and who is freed from joy, anger, fear, and anxiety—he is dear to Me.",
+      "text_hi": "जिसे संसार विचलित नहीं कर सकता और जो संसार को विचलित नहीं करता, जो हर्ष, क्रोध, भय और चिंता से मुक्त है — वही मुझे प्रिय है।",
+      "text_bn": "যে লোকের কারণে চঞ্চল হয় না আর লোকও যার কারণে চঞ্চল হয় না, কো সকলে মুক্ত যে — সে আমার প্রিয়।"
+    },
+    "gita-12-16": {
+      "ref": "12.16",
+      "text": "He who is free from wants, pure, expert, unconcerned, and free from pain, renouncing all undertakings and commencements, he who is devoted to Me is dear to Me.",
+      "prompt": "Bhagavad Gita 12.16 — He who is free from wants, pure, expert, unconcerned, and free from pain, renouncing all undertakings and commencements, he who is devoted to Me is dear to Me.",
+      "text_hi": "जो किसी चीज़ की चाह नहीं रखता, बाहर-भीतर से शुद्ध है, कुशल है, बेपरवाह और दुःख से मुक्त है, जिसने सब आरम्भ और उपक्रम छोड़ दिए हैं — ऐसा भक्त मुझे प्रिय है।",
+      "text_bn": "যে কাউকে কিছুই চায় না, মন থেকে পবিত্র, কাজে দক্ষ, ফলাফলের প্রতি উদাসীন এবং দুঃখ থেকে মুক্ত, সে যেহেতু সকল আরম্ভ ও উদ্যোগ ত্যাগ করে আমার প্রতি অনন্য ভক্তি রাখে, সে আমার কাছে অত্যন্ত প্রিয়।"
+    },
+    "gita-12-17": {
+      "ref": "12.17",
+      "text": "He who neither rejoices nor hates, nor grieves nor desires, renouncing both good and evil, and who is full of devotion, is dear to Me.",
+      "prompt": "Bhagavad Gita 12.17 — He who neither rejoices nor hates, nor grieves nor desires, renouncing both good and evil, and who is full of devotion, is dear to Me.",
+      "text_hi": "जो न खुश होता है न नफरत करता है, न दुखी होता है न कुछ चाहता है, जिसने भले-बुरे दोनों को छोड़ दिया है और जो भक्ति से भरा है, वही मुझे प्रिय है।",
+      "text_bn": "যে কাউকে ঘৃণা করে না, কাউতে আনন্দিত হয় না, শোক করে না, কিছুই চায় না, পাপ-পুণ্য উভয়ই ত্যাগ করে এবং ভক্তিভাবে পরিপূর্ণ — সে আমার প্রিয়।"
+    },
+    "gita-12-18": {
+      "ref": "12.18",
+      "text": "He who is the same to foe and friend, and also in honor and dishonor, who is the same in cold and heat, in pleasure and pain, and who is free from attachment.",
+      "prompt": "Bhagavad Gita 12.18 — He who is the same to foe and friend, and also in honor and dishonor, who is the same in cold and heat, in pleasure and pain, and who is free from attachment.",
+      "text_hi": "जो मित्र और शत्रु में, मान और अपमान में, सर्दी-गर्मी और सुख-दुःख में एक जैसा रहता है और जिसे किसी चीज़ से आसक्ति नहीं है।",
+      "text_bn": "তুমি যেন বন্ধু ও শত্রুকে একসাথে দেখো, মান ও অপমান তোমার কাছে একই, শীত ও উষ্ণ, সুখ ও দুঃখ কিছুই তোমাকে ছুঁয়ে না, কারণ তুমি সব আশক্তি থেকে মুক্ত।"
+    },
+    "gita-12-19": {
+      "ref": "12.19",
+      "text": "He to whom censure and praise are equal, who is silent, content with anything, homeless, of a steady mind, and full of devotion; that man is dear to me.",
+      "prompt": "Bhagavad Gita 12.19 — He to whom censure and praise are equal, who is silent, content with anything, homeless, of a steady mind, and full of devotion; that man is dear to me.",
+      "text_hi": "जिसे निंदा और प्रशंसा एक जैसी लगती है, जो कम बोलता है, हर हाल में संतुष्ट रहता है, जिसका कोई ठिकाना नहीं, जिसका मन स्थिर है और जो भक्ति से भरा है — ऐसा व्यक्ति मुझे प्रिय है।",
+      "text_bn": "তোমার কাছে নিন্দা ও প্রশংসা সমান, তুমি মৌন থাক, যেকোনো কিছুতে সন্তুষ্ট, কোনো ঘর-দ্বার ছাড়া, স্থির চিত্তে থাক এবং ভক্তিভরে থাক — এমন তোমাকে আমি প্রিয় মনে করি।"
+    },
+    "gita-12-20": {
+      "ref": "12.20",
+      "text": "They who follow this immortal Dharma, endowed with faith and regarding Me as their supreme goal, are exceedingly dear to Me.",
+      "prompt": "Bhagavad Gita 12.20 — They who follow this immortal Dharma, endowed with faith and regarding Me as their supreme goal, are exceedingly dear to Me.",
+      "text_hi": "जो श्रद्धा से भरे इस अमर धर्म पर चलते हुए मुझे ही अपना परम लक्ष्य मानते हैं, वे मुझे अत्यंत प्रिय हैं।",
+      "text_bn": "যারা এই শাশ্বত ধর্মকে আস্থা সহকারে মেনে চলে এবং আমাকে জীবনের চূড়ান্ত লক্ষ্য মনে করে, তারা আমার কাছে অত্যন্ত প্রিয়।"
+    },
+    "gita-17-28": {
+      "ref": "17.28",
+      "text": "Whatever is sacrificed, given, or performed, and whatever austerity is practiced without faith, it is called 'Asat', O Arjuna; it is of no value here or hereafter (after death).",
+      "prompt": "Bhagavad Gita 17.28 — Whatever is sacrificed, given, or performed, and whatever austerity is practiced without faith, it is called 'Asat', O Arjuna; it is of no value here or hereafter (after death).",
+      "text_hi": "हे अर्जुन, श्रद्धा के बिना किया गया कोई भी यज्ञ, दान, तप या कर्म 'असत्' कहलाता है और उसका न तो यहाँ कोई मूल्य है न ही मरने के बाद।",
+      "text_bn": "শ্রদ্ধা ছাড়া তুমি যেসব যজ্ঞ কর, দান দাও, তপস্যা কর বা অন্য কোনো কর্ম কর, সেগুলোই 'অসৎ', অর্থাৎ নিঃসার, হে অর্জুন; এগুলো তোমার এ জীবনে নয়, মৃত্যুপরেও কোনো ফল দেবে না।"
+    },
+    "gita-2-13": {
+      "ref": "2.13",
+      "text": "Just as the embodied soul passes through childhood, youth, and old age in this body, so too does it pass into another body; the steadfast one does not grieve over this.",
+      "prompt": "Bhagavad Gita 2.13 — Just as the embodied soul passes through childhood, youth, and old age in this body, so too does it pass into another body; the steadfast one does not grieve over this.",
+      "text_bn": "দেহে যেন শৈশব, যৌবন আর বৃদ্ধাবস্থা এসে যায়, ঠিক তেমনি আত্মা অন্য একটি দেহে প্রবেশ করে; এই সত্য বুঝে যেন যেন দুঃখ করবে না।",
+      "text_hi": "जैसे इस शरीर में ही तुम बालपन, जवानी और बुढ़ापे से गुजरते हो, वैसे ही तुम दूसरे शरीर में चले जाते हो; जो धीर है, वह इस बात पर शोक नहीं करता।"
+    },
+    "gita-2-20": {
+      "ref": "2.20",
+      "text": "It is not born, nor does it ever die; after having been, it again does not cease to be; unborn, eternal, changeless, and ancient, it is not killed when the body is killed.",
+      "prompt": "Bhagavad Gita 2.20 — It is not born, nor does it ever die; after having been, it again does not cease to be; unborn, eternal, changeless, and ancient, it is not killed when the body is killed.",
+      "text_hi": "यह कभी पैदा नहीं होता और न ही कभी मरता है; एक बार अस्तित्व में आने के बाद यह फिर कभी समाप्त नहीं होता — यह अजन्मा, नित्य, अविनाशी और सनातन है, इसलिए शरीर के मारे जाने पर भी यह नहीं मारा जाता।",
+      "text_bn": "তুমি কখনো জন্ম নেওনি, কখনো মরোনিও না; একবার হয়ে গেলে আবার তুমি অস্তিত্বহীন হোনো না — তুমি অজ, নিত্য, অবিনাশী এবং পুরাতন, শরীর মরলেও তুমি মরোনো না।"
+    },
+    "gita-2-22": {
+      "ref": "2.22",
+      "text": "Just as a man casts off worn-out clothes and puts on new ones, so too the embodied Self casts off worn-out bodies and enters others that are new.",
+      "prompt": "Bhagavad Gita 2.22 — Just as a man casts off worn-out clothes and puts on new ones, so too the embodied Self casts off worn-out bodies and enters others that are new.",
+      "text_bn": "যেন তুমি পুরোনো জীর্ণ বস্ত্র ফেলে নতুন বস্ত্র পর, ঠিক তেমনি দেহী আত্মা জীর্ণ দেহ ত্যাগ করে নতুন দেহে প্রবেশ করে।",
+      "text_hi": "जैसे तुम पुराने कपड़े उतारकर नए पहन लेते हो, वैसे ही देही पुराने शरीर छोड़कर नए में प्रवेश करता है।"
+    },
+    "gita-2-23": {
+      "ref": "2.23",
+      "text": "Weapons cannot cut it, fire cannot burn it, water cannot wet it, wind cannot dry it.",
+      "prompt": "Bhagavad Gita 2.23 — Weapons cannot cut it, fire cannot burn it, water cannot wet it, wind cannot dry it.",
+      "text_hi": "शस्त्र तुम्हें नहीं काट सकते, आग तुम्हें नहीं जला सकती, पानी तुम्हें नहीं भिगो सकता और हवा तुम्हें नहीं सुखा सकती।",
+      "text_bn": "শস্ত্র তোমাকে কেটে ফেলতে পারে না, আগুন তোমাকে জ্বালাতে পারে না, জল তোমাকে ভিজাতে পারে না, বাতাস তোমাকে শুকাতে পারে না।"
+    },
+    "gita-4-7": {
+      "ref": "4.7",
+      "text": "Whenever there is a decline of righteousness and an increase of unrighteousness, O Arjuna, then I manifest Myself.",
+      "prompt": "Bhagavad Gita 4.7 — Whenever there is a decline of righteousness and an increase of unrighteousness, O Arjuna, then I manifest Myself.",
+      "text_hi": "अर्जुन, जब भी धर्म कमज़ोर पड़ने लगे और अधर्म बढ़ने लगे, तब-तब मैं खुद प्रकट होता हूँ।",
+      "text_bn": "যখন ধর্মের হ্রাস হয় এবং অধর্মের বৃদ্ধি হয়, হে অর্জুন, তখনই আমি নিজেকে প্রকাশ করি।"
+    },
+    "gita-4-24": {
+      "ref": "4.24",
+      "text": "Brahman is the oblation; Brahman is the melted butter (ghee); by Brahman is the oblation poured into the fire of Brahman; Brahman indeed shall be attained by one who always sees Brahman in action.",
+      "prompt": "Bhagavad Gita 4.24 — Brahman is the oblation; Brahman is the melted butter (ghee); by Brahman is the oblation poured into the fire of Brahman; Brahman indeed shall be attained by one who always sees Brahman in action.",
+      "text_hi": "ब्रह्म ही अर्पण है, ब्रह्म ही हवि है, ब्रह्म ही अग्नि है और ब्रह्म के द्वारा ही ब्रह्म में अर्पण किया जाता है; जो कर्म में सदा ब्रह्म को देखता है, वह ब्रह्म को ही प्राप्त होता है।",
+      "text_bn": "ব্রহ্মই হল আহুতি, ব্রহ্মই হল ঘি, ব্রহ্মই হল আগুন — ব্রহ্মার্পণমাত্রে ব্রহ্মই লাভ হয় যেন সেটা সবসময় কর্মে দেখতে পার।"
+    },
+    "gita-6-22": {
+      "ref": "6.22",
+      "text": "Having obtained it, he thinks there is no other gain superior to it; established in it, he is not moved even by heavy sorrow.",
+      "prompt": "Bhagavad Gita 6.22 — Having obtained it, he thinks there is no other gain superior to it; established in it, he is not moved even by heavy sorrow.",
+      "text_hi": "जब तुम उसे पा लेते हो, तो तुम्हें लगता है कि इससे बड़ा कोई लाभ नहीं; उसमें स्थित होकर तुम बड़े से बड़े दुःख से भी विचलित नहीं होते।",
+      "text_bn": "সে পেয়ে তুমি মনে করবে আর কিছু লাভ তার চেয়ে বড় নেই, আর সেখানে স্থির হয়ে থাকলে বড় দুঃখও তোমাকে কাঁপাতে পারবে না।"
+    },
+    "gita-6-23": {
+      "ref": "6.23",
+      "text": "Let this be known by the name of Yoga, the severance from union with pain. This Yoga should be practiced with determination and with an undespairing mind.",
+      "prompt": "Bhagavad Gita 6.23 — Let this be known by the name of Yoga, the severance from union with pain. This Yoga should be practiced with determination and with an undespairing mind.",
+      "text_hi": "दुःख के साथ जो सम्बन्ध है, उससे छूट जाने को ही योग कहते हैं; इसलिए तुम निराश हुए बिना, दृढ़ निश्चय से इस योग का अभ्यास करो।",
+      "text_bn": "এই দুঃখের সাথে যোগ থেকে বিচ্ছেদকেই যোগ বল; তুমি নিশ্চয়বুদ্ধি ও অবিচল মন নিয়ে এই যোগের অনুষ্ঠান কর।"
+    },
+    "gita-9-22": {
+      "ref": "9.22",
+      "text": "For those men who worship Me alone, thinking of no one else, for those ever-united, I secure what they have not already possessed and preserve what they already possess.",
+      "prompt": "Bhagavad Gita 9.22 — For those men who worship Me alone, thinking of no one else, for those ever-united, I secure what they have not already possessed and preserve what they already possess.",
+      "text_hi": "जो लोग सिर्फ़ मुझे ही पूजते हैं और किसी का ख्याल नहीं करते, जो हर पल मुझसे जुड़े रहते हैं, उनकी जो कमी है उसे मैं पूरा कर देता हूँ और जो उनके पास है उसे मैं संभाल कर रखता हूँ।",
+      "text_bn": "যারা অন্যের কথা ভাবেন না, শুধু আমাকে ভজে এবং সবসময় আমার সাথে একমত থাকেন, তাদের জন্য যা আছে সেটি রক্ষা করি এবং যা নেই সেটি দিয়ে দেই।"
+    },
+    "gita-5-29": {
+      "ref": "5.29",
+      "text": "He who knows Me as the enjoyer of sacrifices and austerities, the great Lord of all the worlds, and the friend of all beings, attains peace.",
+      "prompt": "Bhagavad Gita 5.29 — He who knows Me as the enjoyer of sacrifices and austerities, the great Lord of all the worlds, and the friend of all beings, attains peace.",
+      "text_hi": "जो मुझे यज्ञ और तप का भोक्ता, सभी लोकों का परम स्वामी और सब प्राणियों का सच्चा मित्र जानता है, वही असली शांति पाता है।",
+      "text_bn": "যে আমাকে যজ্ঞ ও তপস্যার ভোক্তা, সকল লোকের মহেশ্বর এবং সকল প্রাণীর সুহৃদ হিসেবে জানে, সে শান্তি পায়।"
+    },
+    "gita-6-6": {
+      "ref": "6.6",
+      "text": "The Self is the friend of the self of him by whom the Self has been conquered; but to the unconquered self, this Self stands in the position of an enemy, like an external foe.",
+      "prompt": "Bhagavad Gita 6.6 — The Self is the friend of the self of him by whom the Self has been conquered; but to the unconquered self, this Self stands in the position of an enemy, like an external foe.",
+      "text_bn": "যে আত্মাকে জয় করেছে, তার জন্য আত্মাই বন্ধু; আর যে আত্মাকে জয় করতে পারেনি, তার জন্য আত্মাই শত্রু হয়ে দাঁড়ায়, যেন কোনো বাইরের শত্রু।",
+      "text_hi": "जिसने अपने मन को जीत लिया है, उसके लिए यह आत्मा ही सबसे बड़ा मित्र है, लेकिन जिसने मन को नहीं जीता, उसके लिए यही आत्मा बाहरी शत्रु की तरह शत्रु बनकर खड़ी रहती है।"
+    }
   }
- }
 }

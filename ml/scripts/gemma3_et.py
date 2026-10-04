@@ -277,12 +277,18 @@ def convert(hf_dir: str) -> dict[str, torch.Tensor]:
 def params_from_hf(hf_dir: str) -> dict:
     c = json.loads((Path(hf_dir) / "config.json").read_text())
     c = c.get("text_config", c)
+    # transformers < 5 writes rope_theta / rope_local_base_freq; 5.x writes
+    # rope_parameters: {full_attention: {rope_theta}, sliding_attention: {rope_theta}}.
+    if "rope_parameters" in c:
+        rope = {k: v["rope_theta"] for k, v in c["rope_parameters"].items()}
+    else:
+        rope = {"full_attention": c["rope_theta"], "sliding_attention": c["rope_local_base_freq"]}
     return {
         "dim": c["hidden_size"], "n_layers": c["num_hidden_layers"],
         "n_heads": c["num_attention_heads"], "n_kv_heads": c["num_key_value_heads"],
         "head_dim": c["head_dim"], "hidden_dim": c["intermediate_size"],
         "vocab_size": c["vocab_size"], "norm_eps": c["rms_norm_eps"],
-        "rope_theta": c["rope_theta"], "local_rope_theta": c["rope_local_base_freq"],
+        "rope_theta": rope["full_attention"], "local_rope_theta": rope["sliding_attention"],
         "sliding_window": c["sliding_window"], "layer_types": c["layer_types"],
         "use_hf_rope": True, "use_qk_norm": True, "qk_norm_before_rope": True,
         "post_attention_norm": True, "post_ffn_norm": True,

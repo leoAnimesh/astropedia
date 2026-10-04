@@ -23,9 +23,9 @@ function executorch(): ExecuTorch {
 // The one on-device model: SmolLM2-135M fine-tuned for Astropedia (ml/), shipped
 // inside the app by plugins/with-bundled-model.js. Bump MODEL_VERSION whenever
 // the bundled files change so Android re-copies them out of the APK.
-const MODEL_VERSION = 'astro-135m-v2';
-const MODEL_FILE = 'astro-135m.pte';
-const TOKENIZER_FILE = 'astro-135m-tokenizer.json';
+const MODEL_VERSION = 'astro-gemma-v1';
+const MODEL_FILE = 'astro-gemma.pte';
+const TOKENIZER_FILE = 'astro-gemma-tokenizer.json';
 
 // SmolLM2's end-of-turn markers; the runner can surface them as text.
 // Prompt format and languages of the bundled model. SmolLM2 (current) was
@@ -33,8 +33,8 @@ const TOKENIZER_FILE = 'astro-135m-tokenizer.json';
 // Gemma's turn format and also answers in Hindi and Bengali. Switch both
 // together with the model files.
 type ChatFormat = 'chatml' | 'gemma';
-const CHAT_FORMAT = 'chatml' as ChatFormat;
-export const MODEL_LANGUAGES: readonly ('en' | 'hi' | 'bn')[] = ['en'];
+const CHAT_FORMAT = 'gemma' as ChatFormat;
+export const MODEL_LANGUAGES: readonly ('en' | 'hi' | 'bn')[] = ['en', 'hi', 'bn'];
 
 const STOP_TOKENS: Record<ChatFormat, string[]> = {
   chatml: ['<|im_end|>', '<|endoftext|>'],

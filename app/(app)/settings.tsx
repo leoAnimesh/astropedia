@@ -198,7 +198,6 @@ export default function SettingsScreen() {
               );
             })}
           </View>
-          <Text style={[styles.rowSub, { color: theme.muted, marginTop: 12 }]}>{t('language.note')}</Text>
         </View>
 
         {/* Notifications */}

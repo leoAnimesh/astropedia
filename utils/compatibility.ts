@@ -1,4 +1,5 @@
 /**
+ * @deprecated for new UI — use matchCharts() from ./ashtakoota.
  * Vedic compatibility (lite Ashtakoot) — pick two profiles, compute a 0–10
  * score from three traditional dimensions: Gana (temperament), Nadi (health),
  * and Bhakoot (rashi distance). Returns a friendly narrative summary too.
@@ -11,34 +12,20 @@ import type { Profile } from './database';
 import { getBigThree, getMoonLongitudeExact } from './astrology';
 import { NAKSHATRAS } from '@/constants/astrology';
 import i18n from './i18n';
+import { NAK_GANA as NAK_GANA_BY_INDEX, nadiOf } from './ashtakoota';
+
+// The full traditional match (8 kootas, /36, doshas) lives in ./ashtakoota —
+// see matchCharts(). This lite 3-koota score is kept for backwards compatibility.
+export { matchCharts, type KundliMatch } from './ashtakoota';
 
 // ─── Nakshatra metadata (gana + nadi) ─────────────────────────────────────────
+// Shared with the full 36-point match in ./ashtakoota (single source of truth).
 
 type Gana = 'Deva' | 'Manushya' | 'Rakshasa';
 type Nadi = 'Aadi'  | 'Madhya'   | 'Antya';
 
-const NAK_GANA: Record<string, Gana> = {
-  'Ashwini': 'Deva', 'Mrigashira': 'Deva', 'Punarvasu': 'Deva', 'Pushya': 'Deva',
-  'Hasta':   'Deva', 'Swati':      'Deva', 'Anuradha':  'Deva', 'Shravana': 'Deva', 'Revati': 'Deva',
-  'Bharani':         'Manushya', 'Rohini':            'Manushya', 'Ardra':           'Manushya',
-  'Purva Phalguni':  'Manushya', 'Uttara Phalguni':   'Manushya', 'Purva Ashadha':   'Manushya',
-  'Uttara Ashadha':  'Manushya', 'Purva Bhadrapada':  'Manushya', 'Uttara Bhadrapada': 'Manushya',
-  'Krittika':  'Rakshasa', 'Ashlesha':  'Rakshasa', 'Magha':       'Rakshasa',
-  'Chitra':    'Rakshasa', 'Vishakha':  'Rakshasa', 'Jyeshtha':    'Rakshasa',
-  'Mula':      'Rakshasa', 'Dhanishtha':'Rakshasa', 'Shatabhisha': 'Rakshasa',
-};
-
-const NAK_NADI: Record<string, Nadi> = {
-  'Ashwini':         'Aadi',   'Ardra':            'Aadi',   'Punarvasu':       'Aadi',
-  'Uttara Phalguni': 'Aadi',   'Hasta':            'Aadi',   'Jyeshtha':        'Aadi',
-  'Mula':            'Aadi',   'Shatabhisha':      'Aadi',   'Purva Bhadrapada':'Aadi',
-  'Bharani':         'Madhya', 'Mrigashira':       'Madhya', 'Pushya':          'Madhya',
-  'Purva Phalguni':  'Madhya', 'Chitra':           'Madhya', 'Anuradha':        'Madhya',
-  'Purva Ashadha':   'Madhya', 'Dhanishtha':       'Madhya', 'Uttara Bhadrapada':'Madhya',
-  'Krittika':        'Antya',  'Rohini':           'Antya',  'Ashlesha':        'Antya',
-  'Magha':           'Antya',  'Swati':            'Antya',  'Vishakha':        'Antya',
-  'Uttara Ashadha':  'Antya',  'Shravana':         'Antya',  'Revati':          'Antya',
-};
+const NAK_GANA: Record<string, Gana> = Object.fromEntries(NAKSHATRAS.map((n, i) => [n.name, NAK_GANA_BY_INDEX[i]]));
+const NAK_NADI: Record<string, Nadi> = Object.fromEntries(NAKSHATRAS.map((n, i) => [n.name, nadiOf(i)]));
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 
@@ -95,7 +82,7 @@ export type CompatibilityResult = {
 };
 
 function nakshatraFromMoon(profile: Profile) {
-  const lon  = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
+  const lon  = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const idx  = Math.min(26, Math.floor(lon / (360 / 27)));
   return NAKSHATRAS[idx];
 }
@@ -104,7 +91,7 @@ function moonSignIndex(profile: Profile): number | null {
   const { moon } = getBigThree(profile);
   if (!moon) return null;
   // ZODIAC[idx].name === moon.name; index can be derived from longitude too.
-  const lon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
+  const lon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   return Math.floor(lon / 30);
 }
 

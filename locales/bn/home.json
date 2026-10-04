@@ -73,6 +73,7 @@
     "journal": { "title": "ডায়েরি", "sub": "মুড আর নোট" },
     "panchang": { "title": "পঞ্জিকা" }
   },
+  "matchCard": { "title": "কুষ্ঠি মিলন", "sub": "দুটি কুষ্ঠির ৩৬ গুণ মিলন" },
   "recent": {
     "eyebrow": "সাম্প্রতিক",
     "saved": "সেভ করা",

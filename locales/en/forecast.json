@@ -80,5 +80,19 @@
       "1": "Love and comfort come forward. Make time for both.",
       "2": "A good month for money matters and for beauty in daily life."
     }
+  },
+  "question": {
+    "kind": {
+      "chapter": "{{planet}} life chapter",
+      "sub": "{{planet}} sub-period"
+    },
+    "month": {
+      "you": "My {{what}} begins in {{month}}. What should I expect, and how should I prepare?",
+      "other": "{{name}}'s {{what}} begins in {{month}}. What should {{name}} expect, and how should they prepare?"
+    },
+    "year": {
+      "you": "What does the year ahead ({{range}}) look like for me, given my {{planet}} sub-period?",
+      "other": "What does the year ahead ({{range}}) look like for {{name}}, given their {{planet}} sub-period?"
+    }
   }
 }

@@ -47,7 +47,7 @@ export default function HoroscopeDetailScreen() {
   const profile         = profiles.find(p => p.id === profileId);
   const { sections, loading } = useHoroscope(profile ?? null);
   const { sunSign, nakshatra, dasha } = useAstrology(
-    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null },
+    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null, birthTz: null },
   );
 
   const lunarPhaseEn = getLunarPhase(todayIso());

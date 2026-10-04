@@ -7,7 +7,7 @@ import { ZODIAC, ELEMENT_COLORS } from '@/constants/astrology';
 import type { Profile } from '@/utils/database';
 
 type Props = {
-  profile: Pick<Profile, 'birthDate' | 'birthTime' | 'birthCity' | 'birthLat' | 'birthLng'>;
+  profile: Pick<Profile, 'birthDate' | 'birthTime' | 'birthCity' | 'birthLat' | 'birthLng' | 'birthTz'>;
   size?: number;
 };
 

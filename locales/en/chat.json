@@ -107,5 +107,33 @@
     "forName": "For {{name}} · ",
     "sagaTag": "Vedic chart",
     "krishnaTag": "Bhagavad Gita"
+  },
+  "starterPrompts": {
+    "you": {
+      "love": "What does my chart say about love and relationships right now?",
+      "career": "What is my chart saying about career and purpose this season?",
+      "money": "What does my chart show about financial energy and abundance?",
+      "family": "How does my chart reflect my family patterns and dynamics?",
+      "self": "What is my nature really working through right now?",
+      "today": "What should I know about today's energy from my chart?",
+      "vibes": "Read the current astrological vibes in my chart — what stands out?"
+    },
+    "other": {
+      "love": "What does {{name}}'s chart say about love and relationships right now?",
+      "career": "What is {{name}}'s chart saying about career and purpose this season?",
+      "money": "What does {{name}}'s chart show about financial energy and abundance?",
+      "family": "How does {{name}}'s chart reflect their family patterns and dynamics?",
+      "self": "What is {{name}}'s nature really working through right now?",
+      "today": "What should {{name}} know about today's energy from their chart?",
+      "vibes": "Read the current astrological vibes in {{name}}'s chart — what stands out?"
+    }
+  },
+  "krishnaPrompts": {
+    "lost": "I feel lost. I don't know what the right thing to do is anymore.",
+    "fear": "I have so much fear inside me. How do I stop feeling scared all the time?",
+    "tension": "I worry about everything. My mind never settles. What do I do?",
+    "failure": "I keep failing at the thing I really love. Should I just give up?",
+    "overthink": "My mind never stops. I keep overthinking everything. How do I make it quieter?",
+    "purpose": "I don't know what I'm supposed to do with my life. What's the point of all this?"
   }
 }

@@ -56,7 +56,7 @@ export default function ProfileDetailScreen() {
   const profile = profiles.find((p) => p.id === id);
 
   const { sunSign, moonSign, risingSign, chartPositions, nakshatra, dasha } = useAstrology(
-    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null },
+    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null, birthTz: null },
   );
   useThreads(id ?? null);
   const { text: horoscopeText } = useHoroscope(profile ?? null);

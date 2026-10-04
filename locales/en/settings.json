@@ -17,7 +17,6 @@
   "language": {
     "section": "Language",
     "label": "App language",
-    "note": "Saga and Krishna reply in English for now.",
     "selectedA11y": "{{language}}, selected"
   },
   "notifications": {

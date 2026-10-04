@@ -7,8 +7,7 @@ import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
-import { monthYear } from '@/utils/astrology';
-import { formatMonthYear } from '@/utils/i18n';
+import { askLanguage, formatMonthYear, tAsk, tPlanet } from '@/utils/i18n';
 import { getYearAhead, transitLabel, type ForecastMonth } from '@/utils/forecast';
 import { FONTS, RADIUS } from '@/constants/themes';
 
@@ -23,7 +22,7 @@ export default function ForecastScreen() {
     () => (profile?.birthDate ? getYearAhead(profile) : null),
     // Month labels, tags and lines are translated inside getYearAhead.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [profile?.birthDate, profile?.birthTime, profile?.birthLng, i18n.language],
+    [profile?.birthDate, profile?.birthTime, profile?.birthLng, profile?.birthTz, i18n.language],
   );
 
   if (!profile || !months) {
@@ -33,24 +32,29 @@ export default function ForecastScreen() {
 
   const isYou = profile.isYou;
   const first = profile.name.split(' ')[0];
-  // English range for the model's question; translated one for display.
-  const range        = `${monthYear(months[0].start)} – ${monthYear(months[months.length - 1].start)}`;
   const displayRange = `${formatMonthYear(months[0].start)} – ${formatMonthYear(months[months.length - 1].start)}`;
+  const who = isYou ? 'you' : 'other';
 
-  // Questions stay English on purpose: they go to the on-device model.
+  // Questions go out in the app language when the model speaks it (tAsk), else English.
   const ask = (q: string) => {
     const tempId = 't_' + Math.random().toString(36).slice(2, 11);
     router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
   };
 
   const askMonth = (m: ForecastMonth) => {
+    const lng    = askLanguage();
     const change = m.changes[m.changes.length - 1];
-    const what = change.kind === 'chapter' ? `${change.lord} life chapter` : `${change.lord} sub-period`;
-    ask(`My ${what} begins in ${monthYear(m.start)}. What should ${isYou ? 'I' : first} expect, and how should ${isYou ? 'I' : 'they'} prepare?`);
+    const what   = tAsk(`forecast:question.kind.${change.kind === 'chapter' ? 'chapter' : 'sub'}`, {
+      planet: tPlanet(change.lord, lng),
+    });
+    ask(tAsk(`forecast:question.month.${who}`, { name: first, what, month: formatMonthYear(m.start, lng) }));
   };
 
-  const askYear = () =>
-    ask(`What does the year ahead (${range}) look like for ${isYou ? 'me' : first}, given ${isYou ? 'my' : 'their'} ${months[0].lord} sub-period?`);
+  const askYear = () => {
+    const lng   = askLanguage();
+    const range = `${formatMonthYear(months[0].start, lng)} – ${formatMonthYear(months[months.length - 1].start, lng)}`;
+    ask(tAsk(`forecast:question.year.${who}`, { name: first, range, planet: tPlanet(months[0].lord, lng) }));
+  };
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>

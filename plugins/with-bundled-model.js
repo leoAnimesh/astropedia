@@ -9,7 +9,7 @@ const path = require('path');
 const { withDangerousMod, withXcodeProject, IOSConfig } = require('expo/config-plugins');
 
 const SOURCE_DIR = 'assets/model';
-const FILES = ['astro-135m.pte', 'astro-135m-tokenizer.json'];
+const FILES = ['astro-gemma.pte', 'astro-gemma-tokenizer.json'];
 
 function sourcePath(projectRoot, file) {
   const p = path.join(projectRoot, SOURCE_DIR, file);

@@ -17,7 +17,6 @@
   "language": {
     "section": "भाषा",
     "label": "ऐप की भाषा",
-    "note": "Saga और कृष्ण अभी अंग्रेज़ी में ही जवाब देते हैं।",
     "selectedA11y": "{{language}}, चुनी गई"
   },
   "notifications": {

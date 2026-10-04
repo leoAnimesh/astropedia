@@ -32,7 +32,7 @@ export default function AlertDetailScreen() {
   const alert = useMemo(
     () => (alertId ? findAlert(String(alertId), activeProfile) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [alertId, today, activeProfile?.birthDate, activeProfile?.birthTime, activeProfile?.birthLng],
+    [alertId, today, activeProfile?.birthDate, activeProfile?.birthTime, activeProfile?.birthLng, activeProfile?.birthTz],
   );
 
   const header = (
@@ -77,7 +77,7 @@ export default function AlertDetailScreen() {
   const remindOn = !isPhase && Storage.getTransitAlerts();
   const remindAt = new Date(alert.date.getTime() - 864e5);
 
-  // alertQuestion() is English on purpose: it goes to the on-device model.
+  // alertQuestion() is in the app language when the model speaks it.
   const askSaga = () => {
     if (!activeProfile) return;
     const q = alertQuestion(alert);

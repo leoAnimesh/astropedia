@@ -38,7 +38,7 @@ function buildRow(profile: Profile, todayMoonSign: number): Row {
     const life = getLifeChapters(profile);
     const sub  = life.subs[life.currentSub];
     const natalMoonSign = Math.floor(
-      getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined, profile.birthLng) / 30,
+      getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz) / 30,
     );
     return {
       profile,
@@ -103,6 +103,7 @@ export default function FamilyScreen() {
               row={row}
               todayNak={todayNak}
               matchWith={you && !row.profile.isYou && row.chapter ? youFirst : null}
+              youId={you?.id ?? null}
             />
           ))}
         </View>
@@ -121,7 +122,7 @@ export default function FamilyScreen() {
   );
 }
 
-function PersonCard({ row, todayNak, matchWith }: { row: Row; todayNak: string; matchWith: string | null }) {
+function PersonCard({ row, todayNak, matchWith, youId }: { row: Row; todayNak: string; matchWith: string | null; youId: string | null }) {
   const { t } = useTranslation('family');
   const { theme } = useAccent();
   const { profile } = row;
@@ -192,7 +193,7 @@ function PersonCard({ row, todayNak, matchWith }: { row: Row; todayNak: string; 
 
       {matchWith ? (
         <TouchableOpacity
-          onPress={() => router.push('/compatibility')}
+          onPress={() => router.push(youId ? `/compatibility?a=${youId}&b=${profile.id}` : `/compatibility?b=${profile.id}`)}
           style={styles.matchLink}
           hitSlop={6}
           accessibilityRole="button"

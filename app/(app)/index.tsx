@@ -15,7 +15,7 @@ import { Icon, type IconName } from '@/components/atoms/Icon';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { todayIso } from '@/utils/format';
 import { getLifeChapters } from '@/utils/astrology';
-import { formatMonthYear, intlLocale, tNakshatra, tPlanet, tTithi } from '@/utils/i18n';
+import { formatMonthYear, intlLocale, tAsk, tNakshatra, tPlanet, tTithi } from '@/utils/i18n';
 import { getPanchang } from '@/utils/panchang';
 import { Storage } from '@/utils/storage';
 import type { Thread } from '@/utils/database';
@@ -26,22 +26,14 @@ const STARTER_INTENTS = ['love', 'career', 'self', 'curious'];
 
 // Short questions the on-device model answers well (timing questions get real
 // dates from the chart). Phrased for the profile owner; `them` for others.
-// `prompt` is what gets sent (the model only understands English); `key`
-// names the translated chip label in home:ask.<you|other>.<key>.
+// The chip shows home:ask.<you|other>.<key>; `prompt` is the same question
+// via tAsk() (app language when the model speaks it, else English).
 function askChips(isYou: boolean, first: string): { key: string; prompt: string }[] {
-  return isYou
-    ? [
-        { key: 'job',      prompt: 'When will I get a new job?' },
-        { key: 'love',     prompt: 'How is love this year?' },
-        { key: 'phase',    prompt: 'When does this phase end?' },
-        { key: 'strength', prompt: 'What is my biggest strength?' },
-      ]
-    : [
-        { key: 'job',      prompt: `When will ${first} get a new job?` },
-        { key: 'love',     prompt: `How is love for ${first} this year?` },
-        { key: 'phase',    prompt: `When does ${first}'s phase end?` },
-        { key: 'strength', prompt: `What is ${first}'s biggest strength?` },
-      ];
+  const who = isYou ? 'you' : 'other';
+  return ['job', 'love', 'phase', 'strength'].map((key) => ({
+    key,
+    prompt: tAsk(`home:ask.${who}.${key}`, { name: first }),
+  }));
 }
 
 function greetingKey(): string {
@@ -86,7 +78,7 @@ export default function HomeScreen() {
   const life = useMemo(
     () => (activeProfile?.birthDate ? getLifeChapters(activeProfile) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeProfile?.birthDate, activeProfile?.birthTime, activeProfile?.birthLng],
+    [activeProfile?.birthDate, activeProfile?.birthTime, activeProfile?.birthLng, activeProfile?.birthTz],
   );
   const chapter = life ? life.chapters[life.currentIndex] : null;
   const sub     = life ? life.subs[life.currentSub] : null;
@@ -323,6 +315,23 @@ export default function HomeScreen() {
           ))}
         </View>
 
+        {/* Kundli matching */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push('/compatibility')}
+          style={[styles.matchCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}
+          accessibilityRole="button"
+        >
+          <View style={[styles.tileIcon, { backgroundColor: 'rgba(180,130,0,0.10)', marginBottom: 0 }]}>
+            <Icon name="people" size={19} color={theme.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.tileTitle, { color: theme.ink }]}>{t('matchCard.title')}</Text>
+            <Text style={[styles.tileSub, { color: theme.ink2 }]} numberOfLines={1}>{t('matchCard.sub')}</Text>
+          </View>
+          <Icon name="chevron" size={16} color={theme.faint} />
+        </TouchableOpacity>
+
         {/* Recent */}
         <View style={styles.sectionHeader}>
           <EyebrowLabel size={11}>{t('recent.eyebrow')}</EyebrowLabel>
@@ -530,6 +539,15 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
     marginBottom:   8,
+  },
+  matchCard: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           14,
+    padding:       14,
+    borderRadius:  RADIUS.card,
+    borderWidth:   StyleSheet.hairlineWidth,
+    marginTop:     -16, // sits 10pt under the grid, like the tile gap
   },
   tileTitle: {
     fontFamily: FONTS.serifItalic,

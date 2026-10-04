@@ -7,8 +7,8 @@ import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
-import { getLifeChapters, monthYear } from '@/utils/astrology';
-import { formatMonthYear, tPlanet } from '@/utils/i18n';
+import { getLifeChapters } from '@/utils/astrology';
+import { askLanguage, formatMonthYear, tAsk, tPlanet } from '@/utils/i18n';
 import { phaseMeaning } from '@/utils/transits';
 import { FONTS, RADIUS } from '@/constants/themes';
 
@@ -22,7 +22,7 @@ export default function LifePhaseScreen() {
   const life = useMemo(
     () => (profile?.birthDate ? getLifeChapters(profile) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [profile?.birthDate, profile?.birthTime, profile?.birthLng],
+    [profile?.birthDate, profile?.birthTime, profile?.birthLng, profile?.birthTz],
   );
 
   if (!profile || !life) {
@@ -47,9 +47,12 @@ export default function LifePhaseScreen() {
   }));
   const nowLeft = `${Math.min(100, Math.max(0, (life.ageNow / life.untilAge) * 100))}%` as const;
 
-  // English on purpose: the question goes to the on-device model.
+  // Sent in the app language when the model speaks it (tAsk), else English.
   const askSaga = () => {
-    const q = `What does my ${sub.lord} sub-period, until ${monthYear(sub.end)}, mean for me?`;
+    const lng = askLanguage();
+    const q = tAsk(`phase:question.${isYou ? 'you' : 'other'}`, {
+      name: first, planet: tPlanet(sub.lord, lng), date: formatMonthYear(sub.end, lng),
+    });
     const tempId = 't_' + Math.random().toString(36).slice(2, 11);
     router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
   };

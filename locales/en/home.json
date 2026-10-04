@@ -73,6 +73,7 @@
     "journal": { "title": "Journal", "sub": "Mood & notes" },
     "panchang": { "title": "Panchang" }
   },
+  "matchCard": { "title": "Kundli matching", "sub": "36 guna milan for two charts" },
   "recent": {
     "eyebrow": "Recent",
     "saved": "Saved",
