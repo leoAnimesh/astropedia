@@ -16,14 +16,15 @@
 #   .venv/bin/python scripts/gemma3_et.py check <hf_dir> out/<name>_sq.pth configs/gemma3_270m_params.json
 # Env: HF (HF dir the checkpoint came from, default models/gemma-3-270m-it; its
 #      tokenizer gives the bos/eos ids written to the .pte metadata),
-#      PARAMS (default configs/gemma3_270m_params.json), CTX (default 1024).
+#      PARAMS (default configs/gemma3_270m_params.json), CTX (default 2048, the context
+#      window context-v2 models are trained for; astro-gemma-v1 was exported with CTX=1024).
 # Pruned vocab: HF=models/gemma-3-270m-it-pruned PARAMS=configs/gemma3_270m_pruned_params.json
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$PWD/.venv/bin:$PATH"
 name=$1 ckpt=$2; shift 2
 params=${PARAMS:-configs/gemma3_270m_params.json}
-ctx=${CTX:-1024}
+ctx=${CTX:-2048}
 # Sliding-window pattern from the params' layer_types (512 for sliding, 0 = full).
 hf=${HF:-models/gemma-3-270m-it}
 meta=$(.venv/bin/python -c "import json;t=json.load(open('$hf/tokenizer.json'));v=t['model']['vocab'];print(json.dumps({'get_bos_id':v['<bos>'],'get_eos_ids':[v['<eos>'],v['<end_of_turn>']]}))")

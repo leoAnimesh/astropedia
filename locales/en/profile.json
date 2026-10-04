@@ -10,7 +10,10 @@
     "dobLabel": "Date of birth",
     "tobLabel": "Time of birth · optional",
     "futureTitle": "That date is in the future",
-    "futureBody": "Pick a real past birth date — a chart needs a moment that's already happened."
+    "futureBody": "Pick a real past birth date — a chart needs a moment that's already happened.",
+    "dobPlaceholder": "Choose a date",
+    "tobPlaceholder": "Not set",
+    "clearTime": "Don't know the time"
   },
   "new": {
     "eyebrow": "New chart",
@@ -64,6 +67,12 @@
     "editA11y": "Edit {{name}}"
   },
   "chart": {
-    "asc": "ASC"
+    "asc": "ASC",
+    "moonCaption": "Moon chart — add a birth time for the full kundli",
+    "a11yLagna": "Lagna {{sign}}.",
+    "a11yMoon": "Moon chart, Moon in {{sign}}.",
+    "a11yHouse": "House {{n}}: {{planets}}",
+    "a11yNone": "empty",
+    "a11yEmpty": "Kundli chart unavailable"
   }
 }

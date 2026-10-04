@@ -83,5 +83,17 @@
     "Thursday": "Thursday",
     "Friday": "Friday",
     "Saturday": "Saturday"
-  }
+  },
+  "planetShort": {
+    "Sun": "Su",
+    "Moon": "Mo",
+    "Mars": "Ma",
+    "Mercury": "Me",
+    "Jupiter": "Ju",
+    "Venus": "Ve",
+    "Saturn": "Sa",
+    "Rahu": "Ra",
+    "Ketu": "Ke"
+  },
+  "retroMark": "(R)"
 }

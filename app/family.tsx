@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
@@ -14,6 +16,7 @@ import { todayIso } from '@/utils/format';
 import { formatDayDate, formatMonthYear, tNakshatra, tPlanet } from '@/utils/i18n';
 import { FONTS, RADIUS } from '@/constants/themes';
 import type { Profile } from '@/utils/database';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 /** Key suffix for "Nth from your/her/his/their Moon" (pronoun differs in English only). */
 function moonOwner(p: Profile): 'you' | 'woman' | 'man' | 'other' {
@@ -53,6 +56,7 @@ function buildRow(profile: Profile, todayMoonSign: number): Row {
 }
 
 export default function FamilyScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { t, i18n }  = useTranslation('family');
   const { theme }    = useAccent();
   const { profiles } = useProfiles();
@@ -123,6 +127,7 @@ export default function FamilyScreen() {
 }
 
 function PersonCard({ row, todayNak, matchWith, youId }: { row: Row; todayNak: string; matchWith: string | null; youId: string | null }) {
+  const styles = useIndicStyles(baseStyles);
   const { t } = useTranslation('family');
   const { theme } = useAccent();
   const { profile } = row;
@@ -205,7 +210,7 @@ function PersonCard({ row, todayNak, matchWith, youId }: { row: Row; todayNak: s
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,

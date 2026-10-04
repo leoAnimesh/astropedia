@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
@@ -8,9 +10,11 @@ import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { todayIso } from '@/utils/format';
+import { localizePlace } from '@/utils/place-names';
 import { askLanguage, formatDayDate, intlLocale, tAsk, tTithi } from '@/utils/i18n';
 import { ACTIVITIES, findMuhurats, getTodayTimings, shortDay, type Activity } from '@/utils/muhurat';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 /** "3 Oct" in the app language. */
 function shortDate(dateIso: string): string {
@@ -18,6 +22,7 @@ function shortDate(dateIso: string): string {
 }
 
 export default function MuhuratScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { t, i18n } = useTranslation('muhurat');
   const { theme } = useAccent();
   const { profiles, activeProfile } = useProfiles();
@@ -38,7 +43,7 @@ export default function MuhuratScreen() {
 
   const act   = ACTIVITIES.find((a) => a.id === activity)!;
   const range = `${shortDate(days[0].date)} – ${shortDate(days[days.length - 1].date)}`;
-  const city  = profile?.birthCity?.split(',')[0];
+  const city  = profile?.birthCity ? localizePlace(profile.birthCity, i18n.language).split(',')[0] : undefined;
 
   // Sent in the app language when the model speaks it (tAsk), else English.
   const askSaga = () => {
@@ -185,7 +190,7 @@ export default function MuhuratScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,

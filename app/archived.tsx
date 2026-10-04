@@ -12,6 +12,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS } from '@/constants/themes';
 import type { Thread } from '@/utils/database';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 /** "just now" / "5m ago" / "3h ago" / "2d ago" in the app language. */
 function relativeTime(ts: number, t: TFunction): string {
@@ -23,6 +24,7 @@ function relativeTime(ts: number, t: TFunction): string {
 }
 
 export default function ArchivedScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t: tr } = useTranslation('chat');
   const { archived, unarchiveThread, removeThread } = useAllArchivedThreads();
@@ -103,7 +105,7 @@ export default function ArchivedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:  'row',
     alignItems:     'center',

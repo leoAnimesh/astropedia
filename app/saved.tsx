@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -12,6 +14,7 @@ import { FONTS, RADIUS } from '@/constants/themes';
 import { getAllThreads, getSavedAnswers, unsaveAnswer, type SavedAnswer } from '@/utils/database';
 import { stripMarkdown } from '@/utils/ai';
 import { intlLocale } from '@/utils/i18n';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type Filter = 'all' | 'saga' | 'krishna';
 
@@ -41,6 +44,7 @@ function savedWhen(s: string, t: TFunction): string {
 }
 
 export default function SavedAnswersScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme }    = useAccent();
   const { t, i18n }  = useTranslation('saved');
   const indic        = i18n.language !== 'en';
@@ -220,7 +224,7 @@ export default function SavedAnswersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop:        8,

@@ -8,6 +8,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS, RADIUS } from '@/constants/themes';
 import OnboardingStore from './_store';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type GenderKey = 'woman' | 'man' | 'non_binary' | 'unspecified';
 
@@ -15,6 +16,7 @@ type GenderKey = 'woman' | 'man' | 'non_binary' | 'unspecified';
 const OPTIONS: GenderKey[] = ['woman', 'man', 'non_binary', 'unspecified'];
 
 export default function GenderScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('onboarding');
   const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
@@ -88,7 +90,7 @@ export default function GenderScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',

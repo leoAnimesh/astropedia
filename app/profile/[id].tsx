@@ -1,5 +1,7 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useRef, useEffect } from 'react';
-import { Alert, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
@@ -8,17 +10,20 @@ import { useThreads } from '@/hooks/use-threads';
 import { useHoroscope } from '@/hooks/use-horoscope';
 import { useAstrology } from '@/hooks/use-astrology';
 import { useChartReading } from '@/hooks/use-chart-reading';
-import { BirthChart } from '@/components/organisms/BirthChart';
+import { KundliChart } from '@/components/organisms/KundliChart';
 import { Avatar } from '@/components/atoms/Avatar';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { DetailRow } from '@/components/molecules/DetailRow';
 import { Icon } from '@/components/atoms/Icon';
+import { showDialog } from '@/components/overlays';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { formatBirthDate, formatBirthTime, formatFullDate } from '@/utils/format';
 import { ZODIAC } from '@/constants/astrology';
 import { tNakshatra, tPlanet, tSign } from '@/utils/i18n';
+import { localizePlace } from '@/utils/place-names';
 import type { ZodiacSign } from '@/constants/astrology';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 const DIGNITY_COLOR: Record<string, string> = {
   exalted:    '#6B9B7A',
@@ -48,6 +53,7 @@ function SkeletonLine({ color, width, style }: { color: string; width: number | 
 }
 
 export default function ProfileDetailScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('profile');
   const tracking = i18n.language === 'en' ? null : { letterSpacing: 0 };   // spacing breaks Devanagari/Bengali conjuncts
@@ -68,13 +74,13 @@ export default function ProfileDetailScreen() {
   }
 
   const handleDelete = () => {
-    Alert.alert(
-      t('detail.removeTitle'),
-      t('detail.removeBody'),
-      [
-        { text: t('common:cancel'), style: 'cancel' },
+    showDialog({
+      title:   t('detail.removeTitle'),
+      message: t('detail.removeBody'),
+      actions: [
+        { label: t('common:cancel'), style: 'cancel' },
         {
-          text: t('common:remove'),
+          label: t('common:remove'),
           style: 'destructive',
           onPress: async () => {
             await removeProfile(profile.id);
@@ -82,7 +88,7 @@ export default function ProfileDetailScreen() {
           },
         },
       ],
-    );
+    });
   };
 
   const bigThree: Array<{ label: string; sign: ZodiacSign | null; dim: boolean; aiKey: 'sun' | 'moon' | 'rising' }> = [
@@ -126,7 +132,7 @@ export default function ProfileDetailScreen() {
         </View>
 
         {/* Birth chart */}
-        <BirthChart profile={profile} size={290} />
+        <KundliChart profile={profile} />
 
         {/* Big Three — desc is always available (sign description fallback); spinner omitted */}
         <View style={styles.bigThree}>
@@ -267,7 +273,7 @@ export default function ProfileDetailScreen() {
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <DetailRow label={t('detail.born')}  value={formatBirthDate(profile.birthDate)} />
           <DetailRow label={t('detail.time')}  value={profile.birthTime ? formatBirthTime(profile.birthTime) : t('common:unknown')} />
-          <DetailRow label={t('detail.place')} value={profile.birthCity ?? t('common:unknown')} last />
+          <DetailRow label={t('detail.place')} value={profile.birthCity ? localizePlace(profile.birthCity, i18n.language) : t('common:unknown')} last />
         </View>
 
         {/* Daily horoscope preview */}
@@ -289,7 +295,7 @@ export default function ProfileDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header:         { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
   back:           { padding: 4 },
   removeBtn:      { fontFamily: FONTS.monoRegular, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },

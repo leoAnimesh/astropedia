@@ -1,0 +1,14 @@
+[
+  {"id": "e01_adult_f", "note": "control: adult woman, time + place", "name": "Priya Sharma", "gender": "woman", "birthDate": "1994-02-14", "birthTime": "06:20", "birthCity": "Kolkata, India", "birthLat": 22.57, "birthLng": 88.36},
+  {"id": "e02_notime_m", "note": "no birth time (Moon-based houses)", "name": "Rahul Gupta", "gender": "man", "birthDate": "1990-07-03", "birthTime": null, "birthCity": "Delhi, India", "birthLat": 28.61, "birthLng": 77.21},
+  {"id": "e03_minor_f", "note": "minor, 15", "name": "Aarohi", "gender": "woman", "birthDate": "2011-03-10", "birthTime": "14:05", "birthCity": "Mumbai, India", "birthLat": 19.08, "birthLng": 72.88},
+  {"id": "e04_elder_m", "note": "elderly, 80", "name": "Suresh Banerjee", "gender": "man", "birthDate": "1946-05-20", "birthTime": "05:30", "birthCity": "Varanasi, India", "birthLat": 25.32, "birthLng": 82.97},
+  {"id": "e05_mother", "note": "third person: user's mother", "name": "Kalpana Das", "gender": "woman", "birthDate": "1965-11-02", "birthTime": "21:15", "birthCity": "Siliguri, India", "birthLat": 26.73, "birthLng": 88.40, "isYou": false, "relationship": "mother"},
+  {"id": "e06_son_child", "note": "third person: user's son, 8", "name": "Kabir", "gender": "man", "birthDate": "2018-01-22", "birthTime": "10:40", "birthCity": "Bengaluru, India", "birthLat": 12.97, "birthLng": 77.59, "isYou": false, "relationship": "son"},
+  {"id": "e07_sydney_nb", "note": "southern hemisphere, non-binary", "name": "Sam Rao", "gender": "non_binary", "birthDate": "1992-09-30", "birthTime": "23:50", "birthCity": "Sydney, Australia", "birthLat": -33.87, "birthLng": 151.21},
+  {"id": "e08_partner_ba", "note": "third person: partner, southern hemisphere, gender unspecified", "name": "Mateo Garcia", "gender": "unspecified", "birthDate": "1996-04-12", "birthTime": "03:10", "birthCity": "Buenos Aires, Argentina", "birthLat": -34.60, "birthLng": -58.38, "isYou": false, "relationship": "partner"},
+  {"id": "e09_noplace", "note": "no birth place (time read as UT)", "name": "Ananya", "gender": "woman", "birthDate": "1998-12-05", "birthTime": "08:00", "birthCity": null, "birthLat": null, "birthLng": null},
+  {"id": "e10_notime_nogender", "note": "no time, no gender, Dhaka", "name": "Riya Chatterjee", "gender": null, "birthDate": "1999-06-18", "birthTime": null, "birthCity": "Dhaka, Bangladesh", "birthLat": 23.81, "birthLng": 90.41},
+  {"id": "e11_sadesati", "note": "Moon in Pisces: sade sati peak", "name": "Arup Mondal", "gender": "man", "birthDate": "1987-03-01", "birthTime": "11:45", "birthCity": "Durgapur, West Bengal, India", "birthLat": 23.52, "birthLng": 87.31},
+  {"id": "e12_london", "note": "abroad (London), adult man", "name": "Imran Khan", "gender": "man", "birthDate": "1985-10-09", "birthTime": "16:30", "birthCity": "London, UK", "birthLat": 51.51, "birthLng": -0.13}
+]

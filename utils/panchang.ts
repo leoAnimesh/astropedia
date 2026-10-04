@@ -16,7 +16,7 @@
 
 import { NAKSHATRAS } from '@/constants/astrology';
 import { getMoonLongitudeExact, getSunLongitudeExact } from './astrology';
-import i18n, { intlLocale } from './i18n';
+import i18n, { intlLocale, localizeTime } from './i18n';
 
 const RAD = Math.PI / 180;
 const DEG = 180 / Math.PI;
@@ -279,7 +279,7 @@ export function formatHourLocal(h: number): string {
   const d = new Date();
   d.setHours(Math.floor(total / 60) % 24, total % 60, 0, 0);
   try {
-    return d.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit' });
+    return localizeTime(d.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit' }));
   } catch {
     return formatHour(h);
   }

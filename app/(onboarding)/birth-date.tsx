@@ -1,11 +1,16 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// GH's ScrollView lets the wheel's vertical pan win over page scrolling.
+import { ScrollView } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { Button } from '@/components/atoms/Button';
+import { DatePicker } from '@/components/molecules/DatePicker';
+import { showDialog } from '@/components/overlays';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
@@ -13,28 +18,30 @@ import { getMoonSign } from '@/utils/astrology';
 import { localDateIso } from '@/utils/format';
 import { tSign } from '@/utils/i18n';
 import OnboardingStore from './_store';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
+
+const DEFAULT_DATE = new Date(2000, 0, 1);
 
 export default function BirthDateScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('onboarding');
   const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
 
   const initialDate = OnboardingStore.birthDate
-    ? new Date(OnboardingStore.birthDate)
+    ? new Date(OnboardingStore.birthDate + 'T00:00:00')   // local, not UTC
     : null;
 
   const [date, setDate] = useState<Date | null>(initialDate);
+  const [today] = useState(() => new Date());
 
   const handleContinue = () => {
     if (!date) return;
-    // Reject future dates — the DateTimePicker has maximumDate set, but a
+    // Reject future dates — the DatePicker has maximumDate set, but a
     // wrong device clock can still let one through. Charts for unborn people
     // are nonsensical.
     if (date.getTime() > Date.now() + 60_000) {
-      Alert.alert(
-        t('birthDate.futureTitle'),
-        t('birthDate.futureBody'),
-      );
+      showDialog({ title: t('birthDate.futureTitle'), message: t('birthDate.futureBody') });
       return;
     }
     OnboardingStore.birthDate = localDateIso(date);
@@ -64,14 +71,10 @@ export default function BirthDateScreen() {
         <EyebrowLabel style={styles.fieldLabel}>{t('birthDate.fieldLabel')}</EyebrowLabel>
 
         <View style={[styles.pickerCard, { backgroundColor: theme.surface2 }]}>
-          <DateTimePicker
-            value={date ?? new Date(2000, 0, 1)}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            maximumDate={new Date()}
-            onChange={(_, d) => d && setDate(d)}
-            style={styles.picker}
-            themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
+          <DatePicker
+            value={date ?? DEFAULT_DATE}
+            maximumDate={today}
+            onChange={setDate}
           />
         </View>
 
@@ -106,7 +109,7 @@ export default function BirthDateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -141,10 +144,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.card,
     overflow:     'hidden',
     marginBottom: 24,
-    alignItems:   'flex-start',
-    padding:      8,
+    paddingVertical: 8,
   },
-  picker: { alignSelf: 'flex-start' },
   signCard: {
     flexDirection: 'row',
     alignItems:    'center',

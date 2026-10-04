@@ -1,4 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
+import { useMemo, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { Trans, useTranslation } from 'react-i18next';
@@ -17,12 +19,9 @@ import { todayIso } from '@/utils/format';
 import { getLifeChapters } from '@/utils/astrology';
 import { formatMonthYear, intlLocale, tAsk, tNakshatra, tPlanet, tTithi } from '@/utils/i18n';
 import { getPanchang } from '@/utils/panchang';
-import { Storage } from '@/utils/storage';
 import type { Thread } from '@/utils/database';
 import { KRISHNA_PROFILE_ID } from '@/utils/krishna';
-
-// Starter-card copy lives in home:starter.<intent>.
-const STARTER_INTENTS = ['love', 'career', 'self', 'curious'];
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 // Short questions the on-device model answers well (timing questions get real
 // dates from the chart). Phrased for the profile owner; `them` for others.
@@ -52,6 +51,7 @@ function teaserOf(text: string | null): string | null {
 }
 
 export default function HomeScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('home');
   // Devanagari / Bengali glyphs are taller than Latin; loosen the tightest
@@ -62,10 +62,8 @@ export default function HomeScreen() {
   const { profiles, activeProfile, setActiveProfile } = useProfiles();
   const { activeThreads, archiveThread } = useThreads(activeProfile?.id ?? null);
   const { text: horoscopeText, loading: horoscopeLoading } = useHoroscope(activeProfile);
-  const [starterIntent, setStarterIntent] = useState<string | null>(Storage.getStarterIntent());
   const { activeThreads: krishnaThreads } = useThreads(KRISHNA_PROFILE_ID);
 
-  const starterKey  = starterIntent && STARTER_INTENTS.includes(starterIntent) ? starterIntent : null;
   const firstName   = activeProfile?.name ? activeProfile.name.split(' ')[0] : t('friend');
   const todayLabel  = new Date().toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric' });
   const teaser      = teaserOf(horoscopeText);
@@ -85,15 +83,8 @@ export default function HomeScreen() {
   const nextSub = life?.upcoming.find((u) => u.kind === 'sub')?.period ?? null;
   const pct     = life ? Math.round(life.progress * 100) : 0;
 
-  const clearStarter = () => {
-    if (!starterIntent) return;
-    Storage.clearStarterIntent();
-    setStarterIntent(null);
-  };
-
   const openNewChat = (ask?: string) => {
     if (!activeProfile) return;
-    clearStarter();
     const tempId = 't_' + Math.random().toString(36).slice(2, 11);
     const askParam = ask ? `&ask=${encodeURIComponent(ask)}` : '';
     router.push(`/chat/${tempId}?profileId=${activeProfile.id}&isNew=true${askParam}`);
@@ -157,7 +148,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.greeting, indic && styles.greetingIndic, { color: theme.ink }]}>
-          {t('greeting.line', { greeting: t(`greeting.${greetingKey()}`) })}{'\n'}
+          {t('greeting.line', { greeting: t(`greeting.${greetingKey()}`) })}{' '}
           <Text style={styles.italic}>{t('greeting.name', { name: firstName })}</Text>
         </Text>
 
@@ -177,26 +168,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Onboarding starter — shown until first chat is opened or dismissed */}
-        {starterKey && activeProfile && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => openNewChat()}
-            style={[styles.starterCard, { backgroundColor: theme.accent }]}
-          >
-            <View style={{ flex: 1 }}>
-              <EyebrowLabel size={9} style={{ color: theme.accentFg, opacity: 0.7, marginBottom: 6 }}>
-                {t('starter.eyebrow')}
-              </EyebrowLabel>
-              <Text style={[styles.starterTitle, { color: theme.accentFg }]}>{t(`starter.${starterKey}.title`)}</Text>
-              <Text style={[styles.starterSub, { color: theme.accentFg, opacity: 0.78 }]}>{t(`starter.${starterKey}.sub`)}</Text>
-            </View>
-            <TouchableOpacity onPress={clearStarter} hitSlop={12} style={{ marginLeft: 8 }}>
-              <Icon name="close" size={16} color={theme.accentFg} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-
         {/* Today: daily line, sky, life phase */}
         {activeProfile?.birthDate && (
           <View style={[styles.todayCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
@@ -204,28 +175,24 @@ export default function HomeScreen() {
               activeOpacity={0.85}
               onPress={() => router.push(`/horoscope/${activeProfile.id}`)}
               style={styles.todayTop}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('today.readLink')} ${t('today.moonIn')} ${tNakshatra(panchang.nakshatra.name)}, ${t('today.tithi')} ${tTithi(panchang.tithi.name)}`}
             >
               <EyebrowLabel size={11}>{t('today.eyebrow', { date: todayLabel, name: firstName })}</EyebrowLabel>
               {horoscopeLoading || teaser === null ? (
                 <DotsLoader />
               ) : (
                 <>
-                  <Text style={[styles.todayQuote, indic && styles.todayQuoteIndic, { color: theme.ink }]}>“{teaser}”</Text>
-                  <Text style={[styles.link, { color: theme.accent }]}>{t('today.readLink')}</Text>
+                  <Text style={[styles.todayQuote, indic && styles.todayQuoteIndic, { color: theme.ink }]} numberOfLines={3}>“{teaser}”</Text>
+                  <View style={styles.todayMeta}>
+                    <Text style={[styles.todaySky, { color: theme.muted }]} numberOfLines={1}>
+                      ☾ {tNakshatra(panchang.nakshatra.name)}{'  ·  '}{tTithi(panchang.tithi.name)}
+                    </Text>
+                    <Icon name="chevron" size={16} color={theme.accent} />
+                  </View>
                 </>
               )}
             </TouchableOpacity>
-
-            <View style={[styles.skyRow, { borderTopColor: theme.hairline }]}>
-              <View style={[styles.skyCell, { borderRightColor: theme.hairline }]}>
-                <Text style={[styles.skyLabel, { color: theme.muted }]}>{t('today.moonIn')}</Text>
-                <Text style={[styles.skyValue, { color: theme.ink }]}>{tNakshatra(panchang.nakshatra.name)}</Text>
-              </View>
-              <View style={[styles.skyCell, styles.skyCellLast]}>
-                <Text style={[styles.skyLabel, { color: theme.muted }]}>{t('today.tithi')}</Text>
-                <Text style={[styles.skyValue, { color: theme.ink }]}>{tTithi(panchang.tithi.name)}</Text>
-              </View>
-            </View>
 
             {life && chapter && sub && (
               <TouchableOpacity
@@ -235,10 +202,7 @@ export default function HomeScreen() {
                 accessibilityLabel={t('a11y.phase', { lord: tPlanet(chapter.lord), pct })}
               >
                 <View style={styles.phaseHead}>
-                  <EyebrowLabel size={11}>{t('phase.eyebrow')}</EyebrowLabel>
-                  <Text style={[styles.phaseMeta, { color: theme.ink2 }]}>{t('phase.through', { pct })}</Text>
-                </View>
-                <Text style={[styles.phaseTitle, indic && styles.phaseTitleIndic, { color: theme.ink }]}>
+                <Text style={[styles.phaseTitle, indic && styles.phaseTitleIndic, { color: theme.ink }]} numberOfLines={1}>
                   <Trans
                     t={t}
                     i18nKey="phase.title"
@@ -249,6 +213,8 @@ export default function HomeScreen() {
                     }}
                   />
                 </Text>
+                  <Text style={[styles.phaseMeta, { color: theme.ink2 }]}>{t('phase.through', { pct })}</Text>
+                </View>
                 <View style={[styles.track, { backgroundColor: theme.hairline }]}>
                   <View style={[styles.fill, { width: `${pct}%`, backgroundColor: theme.accent }]} />
                 </View>
@@ -280,7 +246,13 @@ export default function HomeScreen() {
                 <Icon name="send" size={18} color={theme.accentFg} />
               </View>
             </TouchableOpacity>
-            <View style={styles.chips}>
+            {/* One swipeable row, edge to edge: chips stay one line in any language. */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipsScroll}
+              contentContainerStyle={styles.chips}
+            >
               {askChips(activeProfile.isYou, firstName).map((q) => (
                 <TouchableOpacity
                   key={q.key}
@@ -293,7 +265,7 @@ export default function HomeScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
 
@@ -371,7 +343,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -391,16 +363,16 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 22,
     paddingTop:        8,
-    gap:               26,
+    gap:               20,
   },
   greeting: {
     fontFamily:    FONTS.serifRegular,
-    fontSize:      42,
-    lineHeight:    44,
-    letterSpacing: -0.5,
-    marginTop:     8,
+    fontSize:      30,
+    lineHeight:    36,
+    letterSpacing: -0.3,
+    marginTop:     4,
   },
-  greetingIndic: { lineHeight: 58 },
+  greetingIndic: { fontSize: 26, lineHeight: 40 },
   italic: { fontFamily: FONTS.serifItalic },
 
   todayCard: {
@@ -409,75 +381,67 @@ const styles = StyleSheet.create({
     overflow:     'hidden',
   },
   todayTop: {
-    padding: 20,
-    gap:     10,
+    paddingHorizontal: 18,
+    paddingTop:        16,
+    paddingBottom:     14,
+    gap:               8,
   },
   todayQuote: {
     fontFamily: FONTS.serifRegular,
-    fontSize:   25,
-    lineHeight: 30,
+    fontSize:   20,
+    lineHeight: 25,
   },
-  todayQuoteIndic: { lineHeight: 36 },
-  link: {
-    fontFamily: FONTS.sansMedium,
-    fontSize:   14,
-  },
-  skyRow: {
+  todayQuoteIndic: { fontSize: 18, lineHeight: 28 },
+  todayMeta: {
     flexDirection:  'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    gap:            10,
+    marginTop:      2,
   },
-  skyCell: {
-    flex:             1,
-    paddingVertical:  14,
-    paddingHorizontal: 20,
-    borderRightWidth: StyleSheet.hairlineWidth,
-  },
-  skyCellLast: { borderRightWidth: 0 },
-  skyLabel: {
+  todaySky: {
+    flex:       1,
     fontFamily: FONTS.sansRegular,
-    fontSize:   11,
-  },
-  skyValue: {
-    fontFamily: FONTS.sansMedium,
-    fontSize:   14.5,
-    marginTop:  2,
+    fontSize:   12.5,
   },
   phase: {
-    paddingHorizontal: 20,
-    paddingTop:        16,
-    paddingBottom:     20,
-    gap:               10,
+    paddingHorizontal: 18,
+    paddingTop:        14,
+    paddingBottom:     14,
+    gap:               8,
     borderTopWidth:    StyleSheet.hairlineWidth,
   },
   phaseHead: {
     flexDirection:  'row',
     justifyContent: 'space-between',
     alignItems:     'baseline',
+    gap:            10,
   },
   phaseMeta: {
     fontFamily: FONTS.sansRegular,
     fontSize:   12,
   },
   phaseTitle: {
+    flexShrink: 1,
     fontFamily: FONTS.serifRegular,
-    fontSize:   22,
-    lineHeight: 26,
+    fontSize:   18,
+    lineHeight: 22,
   },
-  phaseTitleIndic: { lineHeight: 32 },
+  phaseTitleIndic: { fontSize: 17, lineHeight: 27 },
   phaseUntil: {
     fontFamily: FONTS.sansRegular,
     fontSize:   13,
   },
   track: {
-    height:       6,
-    borderRadius: 3,
+    height:       4,
+    borderRadius: 2,
     overflow:     'hidden',
   },
-  fill: { height: 6, borderRadius: 3 },
+  fill: { height: 4, borderRadius: 2 },
   phaseSub: {
     fontFamily: FONTS.sansRegular,
-    fontSize:   13,
-    lineHeight: 18,
+    fontSize:   12.5,
+    lineHeight: 17,
   },
 
   block: { gap: 12 },
@@ -502,10 +466,13 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
   },
+  chipsScroll: {
+    marginHorizontal: -22,   // bleed past the content padding to the screen edges
+  },
   chips: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           8,
+    flexDirection:     'row',
+    gap:               8,
+    paddingHorizontal: 22,
   },
   chip: {
     minHeight:         38,
@@ -575,12 +542,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  starterCard: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    padding:       18,
-    borderRadius:  RADIUS.card,
-  },
   emptyCard: {
     padding:      20,
     borderRadius: RADIUS.card,
@@ -596,16 +557,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.sansRegular,
     fontSize:   13.5,
     lineHeight: 19,
-  },
-  starterTitle: {
-    fontFamily:   FONTS.serifRegular,
-    fontSize:     20,
-    lineHeight:   24,
-    marginBottom: 4,
-  },
-  starterSub: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   13,
-    lineHeight: 18,
   },
 });

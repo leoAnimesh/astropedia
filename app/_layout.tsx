@@ -3,8 +3,8 @@ import { Stack, router, type Href } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { KeyboardProvider } from '@/components/keyboard';
 import { AppState, LogBox, StyleSheet } from 'react-native';
 import {
   useFonts,
@@ -25,6 +25,7 @@ import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
+import { OverlayProvider } from '@/components/overlays';
 import { unloadLocalLLM } from '@/utils/local-llm';
 import {
   setupNotifications,
@@ -45,7 +46,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
   // Reactive onboarding-done flag — drives the <Stack.Protected> guards.
-  // When this flips to true (after the intent screen saves), the router
+  // When this flips to true (after the birth-place step creates the profile), the router
   // automatically redirects out of the onboarding stack into the app stack.
   const onboardingDone = useOnboardingStore((s) => s.done);
 
@@ -163,8 +164,10 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.fill}>
-      <BottomSheetModalProvider>
+      {/* App keyboard sits outside the bottom-sheet host so it draws above sheets. */}
       <KeyboardProvider>
+      <BottomSheetModalProvider>
+      <OverlayProvider>
       <Stack screenOptions={STACK_SCREEN_OPTIONS}>
         {/* Onboarding stack — only mounted when onboarding isn't complete. */}
         <Stack.Protected guard={!onboardingDone}>
@@ -198,8 +201,9 @@ export default function RootLayout() {
           and stays mounted across every app screen so a model swap from
           Settings (or a re-download after a version bump) shows progress
           everywhere, not just on home. */}
-      </KeyboardProvider>
+      </OverlayProvider>
       </BottomSheetModalProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

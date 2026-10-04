@@ -8,14 +8,17 @@
 const i18nModule = (): typeof import('./i18n') => require('./i18n');
 const tr         = (key: string, opts?: Record<string, unknown>) => i18nModule().default.t(key, opts) as string;
 const intlLocale = () => i18nModule().intlLocale();
+const localizeDigits = (s: string) => i18nModule().localizeDigits(s);
+const localizeTime   = (s: string) => i18nModule().localizeTime(s);
 
 /** "3 Oct 2026" style, in the app language. */
 export function formatBirthDate(iso: string): string {
   if (!iso) return '';
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(intlLocale(), {
+  const formatted = new Date(y, m - 1, d).toLocaleDateString(intlLocale(), {
     day: 'numeric', month: 'short', year: 'numeric',
   });
+  return localizeDigits(formatted);
 }
 
 /** "2:30 pm" style, in the app language. */
@@ -24,7 +27,8 @@ export function formatBirthTime(t: string): string {
   const [h, m] = t.split(':').map(Number);
   const d = new Date();
   d.setHours(h, m, 0, 0);
-  return d.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit' });
+  const formatted = d.toLocaleTimeString(intlLocale(), { hour: 'numeric', minute: '2-digit' });
+  return localizeTime(formatted);
 }
 
 export function formatBirthInfo(profile: {
@@ -55,12 +59,14 @@ export function formatMessageDate(ts: number): string {
     return formatBirthTime(`${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`);
   }
   if (diff < 604800000) return d.toLocaleDateString(intlLocale(), { weekday: 'long' });
-  return d.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
+  const formatted = d.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
+  return localizeDigits(formatted);
 }
 
 /** "3 October 2026" style, in the app language. */
 export function formatFullDate(date: Date): string {
-  return date.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  const formatted = date.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  return localizeDigits(formatted);
 }
 
 export function greeting(): string {
@@ -73,7 +79,8 @@ export function greeting(): string {
 
 /** "3 Oct" style, in the app language. */
 export function todayShort(): string {
-  return new Date().toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
+  const formatted = new Date().toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
+  return localizeDigits(formatted);
 }
 
 /**

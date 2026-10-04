@@ -17,25 +17,6 @@
     "title": "Add a <em>chart</em> to begin",
     "sub": "Your daily reading, conversations with Saga, and compatibility readings all start here."
   },
-  "starter": {
-    "eyebrow": "Saga's been waiting",
-    "love": {
-      "title": "Start with love & connection",
-      "sub": "A first read on your relationships, in plain English."
-    },
-    "career": {
-      "title": "Start with career & purpose",
-      "sub": "What your chart hints at for the work ahead."
-    },
-    "self": {
-      "title": "Start with knowing yourself",
-      "sub": "The one thing about you Saga would say first."
-    },
-    "curious": {
-      "title": "Take a quick look around",
-      "sub": "Ask anything — Saga can meet you where you are."
-    }
-  },
   "today": {
     "eyebrow": "{{date}} · Today for {{name}}",
     "readLink": "Read today’s reading →",

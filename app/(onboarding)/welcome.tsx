@@ -1,12 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Button } from '@/components/atoms/Button';
+import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS } from '@/constants/themes';
+import { resetOnboardingDraft } from './_store';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 export default function WelcomeScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('onboarding');
   // Devanagari/Bengali marks need more line height than the Latin serif.
@@ -14,6 +18,18 @@ export default function WelcomeScreen() {
   return (
     <ScreenLayout>
       <View style={[styles.horizon, { backgroundColor: theme.accentMuted }]} />
+      {/* Back to the language picker (the first onboarding step). */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)'))}
+          style={styles.backBtn}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('common:back')}
+        >
+          <Icon name="back" size={22} color={theme.ink} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.content}>
         <View style={styles.top}>
           <Text style={[styles.eyebrow, { color: theme.muted }]}>Astropedia</Text>
@@ -30,7 +46,12 @@ export default function WelcomeScreen() {
             label={t('welcome.begin')}
             variant="accent"
             fullWidth
-            onPress={() => router.push('/(onboarding)/name')}
+            onPress={() => {
+              // Start fresh: drop any half-finished answers from an earlier run.
+              // (The language choice is stored separately and is kept.)
+              resetOnboardingDraft();
+              router.push('/(onboarding)/name');
+            }}
           />
         </View>
       </View>
@@ -38,7 +59,13 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 24,
+    paddingTop:        20,
+    paddingBottom:     8,
+  },
+  backBtn: { padding: 4, alignSelf: 'flex-start' },
   horizon: {
     position: 'absolute',
     bottom:   0,
@@ -50,7 +77,7 @@ const styles = StyleSheet.create({
   content: {
     flex:    1,
     padding: 32,
-    paddingTop: 90,
+    paddingTop: 36,
     justifyContent: 'space-between',
   },
   top: {

@@ -71,7 +71,8 @@ ap.add_argument("--lr", type=float, default=5e-5)
 ap.add_argument("--warmup", type=float, default=0.03, help="warmup fraction")
 ap.add_argument("--batch", type=int, default=16, help="per-device batch")
 ap.add_argument("--grad-accum", type=int, default=2)
-ap.add_argument("--max-length", type=int, default=1024, help="longer examples are dropped (counted), not truncated")
+ap.add_argument("--max-length", type=int, default=2048,
+                help="longer examples are dropped (counted), not truncated; 2048 = the v2 export window (CTX)")
 ap.add_argument("--precision", choices=["auto", "fp32", "bf16", "fp16"], default="auto")
 ap.add_argument("--qat", choices=["none", "8da4w"], default="8da4w")
 ap.add_argument("--qat-start", type=float, default=0.25,

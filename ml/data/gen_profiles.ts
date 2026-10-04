@@ -3,14 +3,32 @@
  * code, so training prompts carry exactly the chart text the app will send
  * at runtime.
  *
- * Usage (from repo root): npx tsx ml/data/gen_profiles.ts <count> <out.jsonl> [seed]
+ * Usage (from repo root):
+ *   npx tsx --tsconfig ml/data/tsconfig.json ml/data/gen_profiles.ts <count> <out.jsonl> [seed] [today YYYY-MM-DD] [--context-version 1|2]
+ * `today` (default: the local date) dates the transits and timing and is stored
+ * in each row; generate.py reads it from there for the "Today:" line. `--context-version` (default 2, the newest) picks
+ * the chart-context format (utils/astrology.ts ContextVersion); the app sends
+ * the version in utils/local-llm.ts CONTEXT_VERSION, so train on the one it
+ * will ship with.
  */
 
 import { writeFileSync } from 'node:fs';
-import { getAstrologyContext, getFullKundli, getTimingContext } from '@/utils/astrology';
+import { getAstrologyContext, getFullKundli, getTimingContext, LATEST_CONTEXT_VERSION, type ContextVersion } from '@/utils/astrology';
 import { guessTimeZone } from '@/utils/timezone';
 
-const [, , countArg = '2000', outPath = 'ml/data/profiles.jsonl', seedArg = '42'] = process.argv;
+const argv = process.argv.slice(2);
+const cvAt = argv.indexOf('--context-version');
+const contextVersion = (cvAt >= 0 ? Number(argv.splice(cvAt, 2)[1]) : LATEST_CONTEXT_VERSION) as ContextVersion;
+if (contextVersion !== 1 && contextVersion !== 2) throw new Error('--context-version must be 1 or 2');
+const [countArg = '2000', outPath = 'ml/data/profiles.jsonl', seedArg = '42', todayArg] = argv;
+// Local noon of the given day, so transits and timing match the app on that date.
+// The day is written into every row ("today"); generate.py uses it for the
+// "Today:" line, so the teacher, the transits and the timing share one date.
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const localToday = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const today = todayArg ?? localToday(new Date());
+if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new Error(`today must be YYYY-MM-DD, got ${today}`);
+const now = new Date(`${today}T12:00:00`);
 
 // Mulberry32: small seeded PRNG so runs are reproducible.
 let seed = Number(seedArg) >>> 0;
@@ -44,22 +62,39 @@ const CITIES: readonly [string, number, number][] = [
   ['Singapore', 1.35, 103.82], ['London, UK', 51.51, -0.13], ['New York, USA', 40.71, -74.01],
   ['San Francisco, USA', 37.77, -122.42], ['Toronto, Canada', 43.65, -79.38], ['Sydney, Australia', -33.87, 151.21],
   ['Berlin, Germany', 52.52, 13.40], ['Nairobi, Kenya', -1.29, 36.82], ['Tokyo, Japan', 35.68, 139.69],
+  ['Los Angeles, California, USA', 34.05, -118.24], ['Buenos Aires, Argentina', -34.60, -58.38],
+  ['Oslo, Norway', 59.91, 10.75], ['Auckland, New Zealand', -36.85, 174.76],
 ];
 
+// Relationship labels as users type them for profiles that aren't themselves.
+const RELATIONS = ['mother', 'father', 'wife', 'husband', 'partner', 'son', 'daughter', 'brother', 'sister', 'friend', 'Maa', 'best friend'];
+
 function randomProfile(i: number) {
-  const gender = rand() < 0.48 ? 'female' : rand() < 0.96 ? 'male' : 'other';
-  const first = gender === 'female' ? pick(FEMALE) : gender === 'male' ? pick(MALE) : pick([...FEMALE, ...MALE]);
+  // Same machine values the app stores (utils/database.ts Profile.gender).
+  const g = rand();
+  const gender = g < 0.42 ? 'woman' : g < 0.84 ? 'man' : g < 0.88 ? 'non_binary' : g < 0.94 ? 'unspecified' : null;
+  const first = gender === 'woman' ? pick(FEMALE) : gender === 'man' ? pick(MALE) : pick([...FEMALE, ...MALE]);
   const name = rand() < 0.7 ? `${first} ${pick(SURNAMES)}` : first;
-  // Mostly the app's real audience (born 1985–2008), some older users.
-  const year = rand() < 0.85 ? 1985 + Math.floor(rand() * 24) : 1960 + Math.floor(rand() * 25);
+  // Mostly the app's real audience (born 1985–2008), some older users and
+  // some children whose parents ask about them.
+  const yr = rand();
+  const year = yr < 0.8 ? 1985 + Math.floor(rand() * 24) : yr < 0.93 ? 1950 + Math.floor(rand() * 35) : 2009 + Math.floor(rand() * 17);
   const month = 1 + Math.floor(rand() * 12);
   const day = 1 + Math.floor(rand() * 28);
   const birthDate = `${year}-${pad(month)}-${pad(day)}`;
   const birthTime = rand() < 0.8 ? `${pad(Math.floor(rand() * 24))}:${pad(Math.floor(rand() * 60))}` : null;
-  const [birthCity, lat, lng] = pick(CITIES);
+  let [birthCity, lat, lng]: [string | null, number | null, number | null] = pick(CITIES);
+  // The app allows no place (no rising, time read as UT) and typed cities
+  // without a country (no zone: local mean time from the coordinates).
+  const place = rand();
+  if (place < 0.04) [birthCity, lat, lng] = [null, null, null];
+  else if (place < 0.07) birthCity = birthCity!.split(',')[0];
   // Same time zone the app derives for a profile, so charts match the app's.
-  const birthTz = guessTimeZone({ place: birthCity, lat, lng });
-  return { id: `p${String(i).padStart(5, '0')}`, name, gender, birthDate, birthTime, birthCity, birthLat: lat, birthLng: lng, birthTz };
+  const birthTz = birthCity ? guessTimeZone({ place: birthCity, lat, lng }) : null;
+  // Most chats are about the user; some about family or friends.
+  const isYou = rand() >= 0.15;
+  const relationship = isYou ? null : rand() < 0.9 ? pick(RELATIONS) : null;
+  return { id: `p${String(i).padStart(5, '0')}`, name, gender, birthDate, birthTime, birthCity, birthLat: lat, birthLng: lng, birthTz, isYou, relationship };
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '');
@@ -72,9 +107,11 @@ for (let i = 0; i < Number(countArg); i++) {
   lines.push(JSON.stringify({
     ...p,
     // Same text utils/ai.ts puts in the Saga system prompt.
-    context: getAstrologyContext(p),
+    context: getAstrologyContext(p, { version: contextVersion, date: now }),
+    contextVersion,
+    today,
     // Same timing block utils/ai.ts adds (relative to the generation date).
-    timing: getTimingContext(p),
+    timing: getTimingContext(p, now, contextVersion),
     reading: {
       firstName: p.name.split(' ')[0],
       sun: sun?.name ?? null,
@@ -95,4 +132,4 @@ for (let i = 0; i < Number(countArg); i++) {
   }));
 }
 writeFileSync(outPath, lines.join('\n') + '\n');
-console.log(`wrote ${lines.length} profiles to ${outPath}`);
+console.log(`wrote ${lines.length} profiles (context v${contextVersion}, today ${today}) to ${outPath}`);

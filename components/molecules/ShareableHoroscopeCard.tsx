@@ -1,9 +1,12 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAccent } from '@/hooks/use-accent';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { useTranslation } from 'react-i18next';
 import { intlLocale } from '@/utils/i18n';
+import { useIndicStyles, useIsIndic } from '@/hooks/use-indic-styles';
 
 type Props = {
   name:     string;
@@ -19,6 +22,8 @@ type Props = {
  */
 export const ShareableHoroscopeCard = forwardRef<View, Props>(
   function ShareableHoroscopeCard({ name, dateIso, message, mantra }, ref) {
+    const styles = useIndicStyles(baseStyles);
+    const indic  = useIsIndic();
     const { theme } = useAccent();
     const { t }     = useTranslation('horoscope');
     const firstName = name.split(' ')[0];
@@ -27,7 +32,7 @@ export const ShareableHoroscopeCard = forwardRef<View, Props>(
       <View
         ref={ref}
         collapsable={false}
-        style={[styles.card, { backgroundColor: theme.accent }]}
+        style={[styles.card, indic && styles.cardIndic, { backgroundColor: theme.accent }]}
       >
         <View style={styles.top}>
           <Text style={[styles.brand, { color: theme.accentFg, opacity: 0.7 }]}>{t('card.brand')}</Text>
@@ -58,7 +63,7 @@ export const ShareableHoroscopeCard = forwardRef<View, Props>(
   },
 );
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   card: {
     width:    1080,
     height:   1350,
@@ -66,6 +71,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.card,
     justifyContent: 'space-between',
   },
+  // Taller Indic lines may not fit 1350; grow rather than cut the text.
+  cardIndic: { height: 'auto', minHeight: 1350 },
   top: {},
   brand: {
     fontFamily:    FONTS.monoRegular,

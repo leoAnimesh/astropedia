@@ -113,6 +113,14 @@ async function generateThreadTitle(
   }
 }
 
+/** True for the error bubbles sendMessage adds (any app language). */
+export function isChatErrorMessage(m: Pick<Message, 'role' | 'content'>): boolean {
+  if (m.role !== 'assistant') return false;
+  return ['chat:errors.generic', 'chat:errors.modelLoad'].some((key) =>
+    (['en', 'hi', 'bn'] as const).some((lng) => i18n.t(key, { lng, postProcess: [] }) === m.content || i18n.t(key, { lng }) === m.content),
+  ) || m.content === "I couldn't load the on-device model right now. Try again in a moment.";
+}
+
 export function useChat(
   thread:    Thread | null,
   profile:   Profile | null,
@@ -367,21 +375,29 @@ export function useChat(
       storeClearStreaming(threadId);
       storeSetStatus(threadId, 'idle');
       storeSetTyping(threadId, false);
+      activeTyper = null;
 
-      await insertMessage(finalMsg);
+      // The reply is already on screen. A failure while saving it must not
+      // add a "Something went wrong" bubble under a good answer — log it.
+      try {
+        await insertMessage(finalMsg);
 
-      const preview = finalText.slice(0, 80).trim() + (finalText.length > 80 ? '…' : '');
-      await updateThread(threadId, { lastMessagePreview: preview });
-      useThreadStore.getState().updateThread(threadId, thread.profileId, { lastMessagePreview: preview });
+        const preview = finalText.slice(0, 80).trim() + (finalText.length > 80 ? '…' : '');
+        await updateThread(threadId, { lastMessagePreview: preview });
+        useThreadStore.getState().updateThread(threadId, thread.profileId, { lastMessagePreview: preview });
 
-      if (isFirstMessage) {
-        generateThreadTitle(threadId, thread.profileId, profile, text.trim(), finalText);
+        if (isFirstMessage) {
+          generateThreadTitle(threadId, thread.profileId, profile, text.trim(), finalText);
+        }
+      } catch (err) {
+        console.error('[useChat] saving reply failed:', err);
       }
     } catch (err) {
       activeTyper?.stop();
       console.error('[useChat] AI error:', err);
-      // Shown only (not saved), so it can be in the app language.
-      const errorMsg = { ...aiMsgBase, content: i18n.t('chat:errors.generic') };
+      // Shown only (not saved), so it can be in the app language. Own id, so
+      // it can never collide with a reply bubble.
+      const errorMsg = { ...buildAiMsgBase(threadId), content: i18n.t('chat:errors.generic') };
       storeAppend(threadId, errorMsg);
       storeClearStreaming(threadId);
       storeSetStatus(threadId, 'idle');

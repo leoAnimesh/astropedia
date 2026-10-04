@@ -9,7 +9,6 @@
   "edit": "Edit",
   "close": "Close",
   "skip": "Skip",
-  "skipForNow": "Skip for now",
   "share": "Share",
   "retry": "Try again",
   "ok": "OK",
@@ -87,5 +86,20 @@
     "pickCityTitle": "Select City",
     "useQuery": "Use \"{{query}}\"",
     "geocodedNote": "Will be geocoded automatically"
+  },
+  "overlay": {
+    "dismiss": "Dismiss",
+    "menu": "Options",
+    "swipeHint": "Swipe down or tap outside to close"
+  },
+  "picker": {
+    "day": "Day",
+    "month": "Month",
+    "year": "Year",
+    "hour": "Hour",
+    "minute": "Minute",
+    "period": "AM or PM",
+    "selectDate": "Select date",
+    "selectTime": "Select time"
   }
 }

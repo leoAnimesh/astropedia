@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useRef } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,6 +17,7 @@ import { intlLocale, tNakshatra, tPlanet, tSign } from '@/utils/i18n';
 import { getLunarPhase } from '@/utils/astrology';
 import { captureAndShare } from '@/utils/share';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type Section = { key: keyof import('@/hooks/use-horoscope').HoroscopeSections; icon: string };
 
@@ -40,6 +43,7 @@ const PHASE_KEY: Record<string, string> = {
 };
 
 export default function HoroscopeDetailScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme }       = useAccent();
   const { t }           = useTranslation('horoscope');
   const { profileId }   = useLocalSearchParams<{ profileId: string }>();
@@ -188,7 +192,7 @@ export default function HoroscopeDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',

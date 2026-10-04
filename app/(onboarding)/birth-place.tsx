@@ -1,8 +1,11 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Country, State, City } from 'country-state-city';
+import { localCityName, localCountryName, localizePlace, localStateName } from '@/utils/place-names';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
@@ -13,14 +16,17 @@ import { LocationPickerModal, type PickerItem } from '@/components/molecules/Loc
 import { Storage } from '@/utils/storage';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getSunSign } from '@/utils/astrology';
-import { tSign } from '@/utils/i18n';
+import { tSign, useAppLanguage } from '@/utils/i18n';
 import OnboardingStore from './_store';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type Picker = 'country' | 'state' | 'city' | null;
 
 export default function BirthPlaceScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('onboarding');
+  const lng = useAppLanguage();
   const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const { createProfile } = useProfiles();
 
@@ -127,8 +133,9 @@ export default function BirthPlaceScreen() {
         birthLng:  cityLng,
         isYou:     true,
       });
-      // Intent screen sets onboarding done after capturing the user's starter.
-      router.push('/(onboarding)/intent');
+      // The profile exists now, so the notifications step replaces this screen
+      // (no way back to create a duplicate). It finishes onboarding.
+      router.replace('/(onboarding)/notifications');
     } finally {
       setLoading(false);
     }
@@ -167,7 +174,7 @@ export default function BirthPlaceScreen() {
             ]}
             numberOfLines={1}
           >
-            {countryName || t('common:location.selectCountry')}
+            {countryName ? localCountryName(countryCode, countryName, lng) : t('common:location.selectCountry')}
           </Text>
           <Icon name="chevron-down" size={16} color={theme.muted} />
         </TouchableOpacity>
@@ -191,7 +198,7 @@ export default function BirthPlaceScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {stateName || t('common:location.selectState')}
+                  {stateName ? localStateName(countryCode, stateName, lng) : t('common:location.selectState')}
                 </Text>
                 <Icon name="chevron-down" size={16} color={theme.muted} />
               </TouchableOpacity>
@@ -219,7 +226,7 @@ export default function BirthPlaceScreen() {
                 ]}
                 numberOfLines={1}
               >
-                {cityName || t('common:location.selectCity')}
+                {cityName ? localCityName(countryCode, cityName, lng) : t('common:location.selectCity')}
               </Text>
               <Icon name="chevron-down" size={16} color={theme.muted} />
             </TouchableOpacity>
@@ -237,7 +244,7 @@ export default function BirthPlaceScreen() {
                   <Text style={styles.italic}>{OnboardingStore.name || t('common:you')}</Text>
                 </Text>
                 <Text style={[styles.summaryMeta, { color: theme.muted }]}>
-                  {tSign(sun.name)} · {fullLocation}
+                  {tSign(sun.name)} · {localizePlace(fullLocation, lng)}
                 </Text>
                 {cityLat !== null && (
                   <Text style={[styles.summaryCoords, { color: theme.muted }]}>
@@ -270,6 +277,7 @@ export default function BirthPlaceScreen() {
         visible={activePicker === 'country'}
         title={t('common:location.pickCountryTitle')}
         items={countryItems}
+        kind="country"
         selectedValue={countryCode}
         onSelect={handleSelectCountry}
         onClose={() => setActivePicker(null)}
@@ -278,6 +286,8 @@ export default function BirthPlaceScreen() {
         visible={activePicker === 'state'}
         title={t('common:location.pickStateTitle')}
         items={stateItems}
+        kind="state"
+        countryCode={countryCode}
         selectedValue={stateCode}
         onSelect={handleSelectState}
         onClose={() => setActivePicker(null)}
@@ -286,6 +296,8 @@ export default function BirthPlaceScreen() {
         visible={activePicker === 'city'}
         title={t('common:location.pickCityTitle')}
         items={cityItems}
+        kind="city"
+        countryCode={countryCode}
         selectedValue={cityName}
         onSelect={handleSelectCity}
         onClose={() => setActivePicker(null)}
@@ -295,7 +307,7 @@ export default function BirthPlaceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -372,6 +384,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.sansRegular,
     fontSize:   13,
     lineHeight: 19,
+    marginTop:  20,
   },
   footer: { padding: 32, paddingTop: 12 },
 });

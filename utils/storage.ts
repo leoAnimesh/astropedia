@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import type { AccentKey } from '@/constants/themes';
+import type { AccentKey, ThemeMode } from '@/constants/themes';
 
 // MMKV wrapper with web localStorage fallback
 // All reads are synchronous — designed to be called before first render
@@ -52,10 +52,30 @@ export const Storage = {
   // Accent + dark mode
   getAccentKey: (): AccentKey => (getStorage().getString('accent_key') as AccentKey) ?? 'amber',
   setAccentKey: (v: AccentKey): void => getStorage().set('accent_key', v),
-  getDarkModeOverride: (): 'system' | 'light' | 'dark' =>
-    (getStorage().getString('dark_mode') as 'system' | 'light' | 'dark') ?? 'system',
-  setDarkModeOverride: (v: 'system' | 'light' | 'dark'): void =>
-    getStorage().set('dark_mode', v),
+  // Theme mode: 'system' (default) | 'light' | 'dark'. Stored under `theme_mode`.
+  // One-time migration from the legacy `dark_mode` key (written by the old
+  // Dark-mode toggle as 'dark' | 'light'; possibly a boolean in older builds):
+  // dark -> 'dark'; anything else -> 'system' (the toggle never meant "chose light").
+  getDarkModeOverride: (): ThemeMode => {
+    const s = getStorage();
+    try {
+      const cur = s.getString('theme_mode');
+      if (cur === 'system' || cur === 'light' || cur === 'dark') return cur;
+      let legacyDark = false;
+      try { legacyDark = s.getString('dark_mode') === 'dark'; } catch { /* ignore */ }
+      if (!legacyDark) {
+        try { legacyDark = s.getBoolean('dark_mode') === true; } catch { /* ignore */ }
+      }
+      const next: ThemeMode = legacyDark ? 'dark' : 'system';
+      s.set('theme_mode', next);
+      s.delete('dark_mode');
+    s.delete('theme_mode');
+      return next;
+    } catch {
+      return 'system';
+    }
+  },
+  setDarkModeOverride: (v: ThemeMode): void => getStorage().set('theme_mode', v),
 
   // Daily horoscope cache (keyed by profileId + date — stores JSON of HoroscopeSections).
   // v3 = deterministic template generator (v2/v1 stored LLM-shaped output and is incompatible).
@@ -74,15 +94,9 @@ export const Storage = {
   setActiveProfileId: (id: string): void =>
     getStorage().set('active_profile_id', id),
 
-  // What the user told us they're here for during onboarding. Used to seed a
-  // starter prompt on the home screen until the user starts their first chat.
   // App language chosen on the first onboarding screen ('en' | 'hi' | 'bn').
   getLanguage: (): string | null => getStorage().getString('language') ?? null,
   setLanguage: (v: string): void => getStorage().set('language', v),
-
-  getStarterIntent: (): string | null => getStorage().getString('starter_intent') ?? null,
-  setStarterIntent: (v: string): void => getStorage().set('starter_intent', v),
-  clearStarterIntent: (): void => getStorage().delete('starter_intent'),
 
   // Local notification preferences. Permissions are still requested at
   // toggle-on time — these just track the user's intent.
@@ -123,12 +137,20 @@ export const Storage = {
     for (const lang of ['en', 'hi', 'bn']) getStorage().delete(chartReadingKey(profileId, lang));
   },
 
+  // In-app keyboard: 'custom' (the app's own keyboard) or 'system' (the
+  // phone's keyboard, chosen with the 🌐 key). Remembered until changed.
+  getKeyboardMode: (): 'custom' | 'system' =>
+    getStorage().getString('keyboard_mode') === 'system' ? 'system' : 'custom',
+  setKeyboardMode: (v: 'custom' | 'system'): void => getStorage().set('keyboard_mode', v),
+
   // Clear everything (used by reset)
   clear: (): void => {
     const s = getStorage();
     s.delete('onboarding_done');
+    s.delete('language');
     s.delete('accent_key');
     s.delete('dark_mode');
+    s.delete('theme_mode');
     s.delete('active_profile_id');
   },
 };

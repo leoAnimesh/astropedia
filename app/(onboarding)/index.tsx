@@ -7,6 +7,7 @@ import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { LANGUAGES, deviceLanguage, setAppLanguage, storedLanguage, type AppLanguage } from '@/utils/i18n';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 // First onboarding step. Nothing has been chosen yet, so the heading is shown
 // in all three languages and each option is written in its own script.
@@ -17,6 +18,7 @@ const CONTINUE: Record<AppLanguage, string> = {
 };
 
 export default function LanguageScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const [picked, setPicked] = useState<AppLanguage>(storedLanguage() ?? deviceLanguage());
 
@@ -81,7 +83,7 @@ export default function LanguageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   content: {
     flex:           1,
     padding:        32,

@@ -4,8 +4,11 @@
   "appearance": {
     "section": "Appearance",
     "accentColor": "Accent color",
-    "darkMode": "Dark mode",
-    "darkModeSub": "Easier on the eyes after dusk."
+    "theme": "Theme",
+    "themeSub": "Light, dark, or match your phone.",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   },
   "accent": {
     "amber": "Amber",
@@ -13,11 +16,6 @@
     "lilac": "Lilac",
     "blush": "Blush",
     "ink": "Ink"
-  },
-  "language": {
-    "section": "Language",
-    "label": "App language",
-    "selectedA11y": "{{language}}, selected"
   },
   "notifications": {
     "section": "Notifications",

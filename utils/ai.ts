@@ -1,7 +1,9 @@
 import { Platform } from 'react-native';
 import type { Profile } from './database';
 import { getAstrologyContext, getFullKundli, getTimingContext } from './astrology';
-import { runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, type ChatMessage } from './local-llm';
+import {
+  runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW, type ChatMessage,
+} from './local-llm';
 import { getAppLanguage } from './i18n';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
 import { pickGitaVerse, formatGitaQuote } from './gita';
@@ -29,6 +31,42 @@ const OFFLINE_REPLY =
 
 // Saga chats carry the last couple of turns; the model was trained on up to two.
 const SAGA_HISTORY_MESSAGES = 4;
+// Tokens kept free besides the reply: chat-template markers and estimate error.
+const PROMPT_MARGIN_TOKENS = 96;
+
+/**
+ * Rough Gemma-tokenizer count, erring high: 3.5 characters per token for
+ * Latin text, 3 for Devanagari/Bengali, plus 4 for the turn markers. Checked
+ * against the shipped tokenizer: chart contexts ~1.0x, en/hi/bn chat turns
+ * 1.1-1.4x the real count (rare short Bengali turns ~0.9x; the margin covers it).
+ */
+export function estimateTokens(text: string): number {
+  const indic = (text.match(/[\u0900-\u09FF]/g) ?? []).length;
+  return Math.ceil(indic / 3 + (text.length - indic) / 3.5) + 4;
+}
+
+/**
+ * The prior turns to send with a Saga question. v1 keeps the last
+ * SAGA_HISTORY_MESSAGES as before. v2 keeps at most as many, newest first,
+ * while system prompt + history + question + REPLY_MAX_TOKENS fit in
+ * CONTEXT_WINDOW (less a margin), and always starts on a user turn (Gemma's
+ * turns must alternate from the user).
+ */
+export function sagaHistory(system: string, history: AIMessage[], userMessage: string): AIMessage[] {
+  const recent = history.slice(-SAGA_HISTORY_MESSAGES);
+  if (CONTEXT_VERSION === 1) return recent;
+  let budget = CONTEXT_WINDOW - PROMPT_MARGIN_TOKENS - REPLY_MAX_TOKENS
+    - estimateTokens(system) - estimateTokens(userMessage);
+  let start = recent.length;
+  while (start > 0) {
+    const cost = estimateTokens(recent[start - 1].content);
+    if (cost > budget) break;
+    budget -= cost;
+    start--;
+  }
+  while (start < recent.length && recent[start].role !== 'user') start++;
+  return recent.slice(start);
+}
 
 export type AIRequest = {
   profile:     Profile;
@@ -73,9 +111,11 @@ function sagaSystem(profile: Profile, lang: ReplyLang): string {
     birthLat:  profile.birthLat,
     birthLng:  profile.birthLng,
     birthTz:   profile.birthTz,
-  });
+    relationship: profile.relationship,
+    isYou:     profile.isYou,
+  }, { version: CONTEXT_VERSION });
   const timeNote = profile.birthTime ? '' : '\nBirth time unknown.';
-  const timing = getTimingContext(profile);
+  const timing = getTimingContext(profile, new Date(), CONTEXT_VERSION);
   return `[saga]${langLine(lang)}\nToday: ${todayIso()}\n${context}${timeNote}\n${timing}`;
 }
 
@@ -310,15 +350,16 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
       { role: 'system', content: krishnaSystem(req.userName, verse.prompt, lang) },
       { role: 'user',   content: req.userMessage },
     ];
-    return { stream: streamLocal(messages, 160, `\n\n${formatGitaQuote(verse, lang)}`), tier: 'executorch' };
+    return { stream: streamLocal(messages, REPLY_MAX_TOKENS, `\n\n${formatGitaQuote(verse, lang)}`), tier: 'executorch' };
   }
 
+  const system = sagaSystem(req.profile, lang);
   const messages: ChatMessage[] = [
-    { role: 'system', content: sagaSystem(req.profile, lang) },
-    ...req.history.slice(-SAGA_HISTORY_MESSAGES),
+    { role: 'system', content: system },
+    ...sagaHistory(system, req.history, req.userMessage),
     { role: 'user', content: req.userMessage },
   ];
-  return { stream: streamLocal(messages, 160), tier: 'executorch' };
+  return { stream: streamLocal(messages, REPLY_MAX_TOKENS), tier: 'executorch' };
 }
 
 export async function askAI(req: AIRequest): Promise<{ text: string; tier: ModelTier }> {

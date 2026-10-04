@@ -4,8 +4,11 @@
   "appearance": {
     "section": "চেহারা",
     "accentColor": "মূল রং",
-    "darkMode": "ডার্ক মোড",
-    "darkModeSub": "সন্ধের পর চোখের আরাম।"
+    "theme": "থিম",
+    "themeSub": "লাইট, ডার্ক, অথবা ফোনের সাথে মিলিয়ে।",
+    "light": "লাইট",
+    "dark": "ডার্ক",
+    "system": "সিস্টেম"
   },
   "accent": {
     "amber": "অ্যাম্বার",
@@ -13,11 +16,6 @@
     "lilac": "লাইল্যাক",
     "blush": "গোলাপি",
     "ink": "কালি"
-  },
-  "language": {
-    "section": "ভাষা",
-    "label": "অ্যাপের ভাষা",
-    "selectedA11y": "{{language}}, বেছে নেওয়া হয়েছে"
   },
   "notifications": {
     "section": "নোটিফিকেশন",

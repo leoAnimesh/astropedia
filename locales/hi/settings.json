@@ -4,8 +4,11 @@
   "appearance": {
     "section": "दिखावट",
     "accentColor": "मुख्य रंग",
-    "darkMode": "डार्क मोड",
-    "darkModeSub": "शाम के बाद आँखों को आराम।"
+    "theme": "थीम",
+    "themeSub": "लाइट, डार्क, या फ़ोन के अनुसार।",
+    "light": "लाइट",
+    "dark": "डार्क",
+    "system": "सिस्टम"
   },
   "accent": {
     "amber": "अंबर",
@@ -13,11 +16,6 @@
     "lilac": "लाइलैक",
     "blush": "गुलाबी",
     "ink": "स्याही"
-  },
-  "language": {
-    "section": "भाषा",
-    "label": "ऐप की भाषा",
-    "selectedA11y": "{{language}}, चुनी गई"
   },
   "notifications": {
     "section": "नोटिफ़िकेशन",

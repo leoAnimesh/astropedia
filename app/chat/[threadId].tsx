@@ -1,32 +1,33 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActionSheetIOS,
-  Alert,
   FlatList,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useThreads } from '@/hooks/use-threads';
-import { useChat } from '@/hooks/use-chat';
+import { isChatErrorMessage, useChat } from '@/hooks/use-chat';
 import { Avatar } from '@/components/atoms/Avatar';
 import { Icon } from '@/components/atoms/Icon';
+import { showActionSheet, showDialog } from '@/components/overlays';
 import { ChatBubble } from '@/components/molecules/ChatBubble';
 import { ChatComposer } from '@/components/organisms/ChatComposer';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
+import { KeyboardSpacer } from '@/components/keyboard';
 import { FONTS } from '@/constants/themes';
 import { buildPersonalizedStarters } from '@/constants/starters';
 import { getSavedMessageIds, saveAnswer, unsaveAnswer, type Message } from '@/utils/database';
 import { KRISHNA_PROFILE, getKrishnaStarters, isKrishnaProfile } from '@/utils/krishna';
 import { stripMarkdown, type AIMode } from '@/utils/ai';
 import { tAsk } from '@/utils/i18n';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 /**
  * Quick follow-ups offered under Saga's latest reply. The chip shows
@@ -35,6 +36,7 @@ import { tAsk } from '@/utils/i18n';
 const FOLLOW_UPS = ['when', 'do', 'know'];
 
 export default function ChatScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('chat');
   const indic = i18n.language !== 'en';
@@ -61,11 +63,11 @@ export default function ChatScreen() {
     if (isKrishna) return;
     if (profiles.length === 0) return; // still hydrating
     if (!profile) {
-      Alert.alert(
-        t('unavailable.title'),
-        t('unavailable.message'),
-        [{ text: t('unavailable.ok'), onPress: () => router.replace('/') }],
-      );
+      showDialog({
+        title:   t('unavailable.title'),
+        message: t('unavailable.message'),
+        actions: [{ label: t('unavailable.ok'), onPress: () => router.replace('/') }],
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKrishna, profiles.length, profile]);
@@ -193,21 +195,21 @@ export default function ChatScreen() {
     [questionFor, mode, isKrishna, activeProfile?.name, profile?.name],
   );
 
-  // Long-press menu — native action sheet on iOS; Android uses the inline row.
+  // Long-press menu — same JS action sheet on iOS and Android.
   const openAnswerMenu = useCallback(
     (msg: Message) => {
-      if (Platform.OS !== 'ios') return;
       const saved = savedIds.has(msg.id);
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options:           [saved ? t('menu.remove') : t('menu.save'), t('menu.share'), t('menu.cancel')],
-          cancelButtonIndex: 2,
-        },
-        (i) => {
-          if (i === 0) toggleSave(msg);
-          else if (i === 1) shareAnswer(msg);
-        },
-      );
+      showActionSheet({
+        options: [
+          {
+            label:   saved ? t('menu.remove') : t('menu.save'),
+            icon:    saved ? 'bookmark-filled' : 'bookmark',
+            onPress: () => toggleSave(msg),
+          },
+          { label: t('menu.share'), icon: 'share', onPress: () => shareAnswer(msg) },
+        ],
+        cancelLabel: t('menu.cancel'),
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [savedIds, toggleSave, shareAnswer, i18n.language],
@@ -223,7 +225,10 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item }: { item: Message }) =>
-    item.role === 'assistant' ? (
+    item.role === 'assistant' && isChatErrorMessage(item) ? (
+      // Error bubbles: nothing to save or share.
+      <ChatBubble role="assistant" content={item.content} />
+    ) : item.role === 'assistant' ? (
       <ChatBubble
         role="assistant"
         content={item.content}
@@ -232,7 +237,7 @@ export default function ChatScreen() {
           onToggleSave: () => toggleSave(item),
           onShare:      () => shareAnswer(item),
         }}
-        onLongPress={Platform.OS === 'ios' ? () => openAnswerMenu(item) : undefined}
+        onLongPress={() => openAnswerMenu(item)}
       />
     ) : (
       <ChatBubble role={item.role} content={item.content} />
@@ -240,17 +245,13 @@ export default function ChatScreen() {
 
   // Follow-up chips sit under Saga's latest reply once it has finished.
   const lastMessage   = messages[messages.length - 1];
-  const showFollowUps = !isKrishna && !isTyping && lastMessage?.role === 'assistant';
+  const showFollowUps = !isKrishna && !isTyping && lastMessage?.role === 'assistant' && !isChatErrorMessage(lastMessage);
 
   const isNewEmpty = isNew === 'true' && messages.length === 0;
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
+      <View style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityLabel={t('header.back')}>
@@ -285,7 +286,7 @@ export default function ChatScreen() {
               />
             </TouchableOpacity>
           )}
-          {!isNewEmpty && (
+          {!isNewEmpty && !isKrishna && (
             <TouchableOpacity style={styles.archiveBtn} onPress={handleArchive}>
               <Icon name="archive" size={16} color={theme.muted} />
               <Text style={[styles.archiveBtnLabel, { color: theme.muted }]}>{t('header.archive')}</Text>
@@ -381,12 +382,14 @@ export default function ChatScreen() {
           disabled={isTyping}
           starters={messages.length === 0 ? starters : undefined}
         />
-      </KeyboardAvoidingView>
+        {/* Room for the keyboard (app or phone) below the composer. */}
+        <KeyboardSpacer />
+      </View>
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',

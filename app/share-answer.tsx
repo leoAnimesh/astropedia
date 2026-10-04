@@ -1,21 +1,26 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useRef, useState } from 'react';
-import { ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
+import { Toggle } from '@/components/atoms/Toggle';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { ShareableAnswerCard, type AnswerCardLook } from '@/components/molecules/ShareableAnswerCard';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { captureAndShare } from '@/utils/share';
 import { todayIso } from '@/utils/format';
 import { intlLocale } from '@/utils/i18n';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 // Labels come from chat:share.<id>.
 const LOOK_OPTIONS: AnswerCardLook[] = ['light', 'dark'];
 
 export default function ShareAnswerScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('chat');
   const indic = i18n.language !== 'en';
@@ -107,12 +112,10 @@ export default function ShareAnswerScreen() {
               <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
               <View style={styles.optionRow}>
                 <Text style={[styles.optionLabel, { color: theme.ink2 }]}>{t('share.hideQuestion')}</Text>
-                <Switch
+                <Toggle
                   value={hideQuestion}
                   onValueChange={setHideQuestion}
-                  trackColor={{ false: theme.surface3, true: theme.accent }}
-                  thumbColor="#ffffff"
-                  ios_backgroundColor={theme.surface3}
+                  accessibilityLabel={t('share.hideQuestion')}
                 />
               </View>
             </>
@@ -142,7 +145,7 @@ export default function ShareAnswerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'flex-start',

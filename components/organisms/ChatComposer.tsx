@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { Chip } from '@/components/atoms/Chip';
+import { AppTextInput, KeyboardTouchZone } from '@/components/keyboard';
 import { FONTS, RADIUS } from '@/constants/themes';
 import type { StarterChip } from '@/constants/starters';
 
@@ -17,11 +18,12 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
   const { theme } = useAccent();
   const { t }     = useTranslation('chat');
   const [text, setText] = useState('');
-  const inputRef = useRef<TextInput>(null);
 
+  // The field stays editable while a reply streams (so the next question can
+  // be typed and the keyboard stays up); only sending waits.
   const handleSend = () => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || disabled) return;
     onSend(trimmed);
     setText('');
   };
@@ -43,9 +45,9 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
         </ScrollView>
       )}
 
-      <View style={[styles.row, { backgroundColor: theme.surface2 }]}>
-        <TextInput
-          ref={inputRef}
+      {/* Touches here (e.g. the send button) keep the keyboard up. */}
+      <KeyboardTouchZone style={[styles.row, { backgroundColor: theme.surface2 }]}>
+        <AppTextInput
           style={[styles.input, { color: theme.ink }]}
           placeholder={t('composer.placeholder')}
           placeholderTextColor={theme.faint}
@@ -53,11 +55,12 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           onChangeText={setText}
           onSubmitEditing={handleSend}
           returnKeyType="send"
+          submitBehavior="submit"
           multiline={false}
-          editable={!disabled}
+          accessibilityLabel={t('composer.placeholder')}
         />
 
-        {text.trim() && (
+        {!!text.trim() && (
           <TouchableOpacity
             style={[styles.iconBtn, { backgroundColor: theme.accent }]}
             onPress={handleSend}
@@ -67,7 +70,7 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
             <Icon name="send" size={18} color={theme.accentFg} />
           </TouchableOpacity>
         )}
-      </View>
+      </KeyboardTouchZone>
     </View>
   );
 }

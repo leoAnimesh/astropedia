@@ -1,5 +1,7 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
@@ -9,8 +11,8 @@ import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Toggle } from '@/components/atoms/Toggle';
 import { Icon } from '@/components/atoms/Icon';
+import { showDialog } from '@/components/overlays';
 import { FONTS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
-import { LANGUAGES, getAppLanguage, setAppLanguage, type AppLanguage } from '@/utils/i18n';
 import { clearAllData } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
@@ -27,28 +29,19 @@ import {
 const ACCENT_KEYS: AccentKey[] = ['amber', 'sage', 'lilac', 'blush', 'ink'];
 
 export default function SettingsScreen() {
-  const { theme, accentKey, setAccentKey, isDark } = useAccent();
+  const { theme, accentKey, setAccentKey } = useAccent();
   const { t } = useTranslation('settings');
-  const currentLang = getAppLanguage();
   const { profiles } = useProfiles();
   const setDark = useSettingsStore((s) => s.setDarkModeOverride);
   const darkOverride = useSettingsStore((s) => s.darkModeOverride);
   const [dailyHoroscope,  setDailyHoroscope]  = useState<boolean>(Storage.getDailyHoroscopePush());
   const [transitAlerts,   setTransitAlerts]   = useState<boolean>(Storage.getTransitAlerts());
 
-  const handleSelectLanguage = async (code: AppLanguage) => {
-    if (code === currentLang) return;
-    await setAppLanguage(code);
-    // Scheduled notifications carry fixed text — rebuild them in the new language.
-    if (Storage.getDailyHoroscopePush()) scheduleDailyHoroscope().catch(() => {});
-    if (Storage.getTransitAlerts())      scheduleTransitAlerts(null).catch(() => {});
-  };
-
   const handleToggleDailyHoroscope = async (next: boolean) => {
     if (next) {
       const ok = await ensureNotificationPermission();
       if (!ok) {
-        Alert.alert(t('notifications.offTitle'), t('notifications.offDaily'));
+        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offDaily') });
         return;
       }
       Storage.setDailyHoroscopePush(true);
@@ -65,7 +58,7 @@ export default function SettingsScreen() {
     if (next) {
       const ok = await ensureNotificationPermission();
       if (!ok) {
-        Alert.alert(t('notifications.offTitle'), t('notifications.offTransit'));
+        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offTransit') });
         return;
       }
       Storage.setTransitAlerts(true);
@@ -87,19 +80,19 @@ export default function SettingsScreen() {
     // Also wipe semantic Q&A cache so chat replies regenerate with the
     // current system prompt instead of returning stale entries.
     Cache.clear();
-    Alert.alert(t('dev.clearedTitle'), t('dev.clearedMessage'));
+    showDialog({ title: t('dev.clearedTitle'), message: t('dev.clearedMessage') });
   };
 
   const setOnboardingDone = useOnboardingStore((s) => s.setDone);
 
   const handleReset = () => {
-    Alert.alert(
-      t('reset.title'),
-      t('reset.message'),
-      [
-        { text: t('reset.cancel'), style: 'cancel' },
+    showDialog({
+      title:   t('reset.title'),
+      message: t('reset.message'),
+      actions: [
+        { label: t('reset.cancel'), style: 'cancel' },
         {
-          text: t('reset.confirm'),
+          label: t('reset.confirm'),
           style: 'destructive',
           onPress: async () => {
             await clearAllData();
@@ -110,7 +103,7 @@ export default function SettingsScreen() {
           },
         },
       ],
-    );
+    });
   };
 
   return (
@@ -156,33 +149,19 @@ export default function SettingsScreen() {
 
           <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
 
-          <Toggle
-            value={isDark}
-            onValueChange={(v) => setDark(v ? 'dark' : 'light')}
-            label={t('appearance.darkMode')}
-            sublabel={t('appearance.darkModeSub')}
-          />
-        </View>
-
-        {/* Language */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('language.section')}</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <View style={styles.cardRow}>
-            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
-              <Icon name="chat" size={16} color={theme.ink2} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('appearance.theme')}</Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>{t('appearance.themeSub')}</Text>
             </View>
-            <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('language.label')}</Text>
-            <Text style={[styles.rowValue, { color: theme.ink2 }]}>
-              {LANGUAGES.find((l) => l.code === currentLang)?.native}
-            </Text>
           </View>
           <View style={styles.langOptions} accessibilityRole="radiogroup">
-            {LANGUAGES.map((l) => {
-              const on = l.code === currentLang;
+            {(['light', 'dark', 'system'] as const).map((m) => {
+              const on = m === darkOverride;
               return (
                 <TouchableOpacity
-                  key={l.code}
-                  onPress={() => handleSelectLanguage(l.code)}
+                  key={m}
+                  onPress={() => setDark(m)}
                   style={[
                     styles.langPill,
                     on
@@ -191,9 +170,9 @@ export default function SettingsScreen() {
                   ]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: on }}
-                  accessibilityLabel={on ? t('language.selectedA11y', { language: l.native }) : l.native}
+                  accessibilityLabel={t(`appearance.${m}`)}
                 >
-                  <Text style={[styles.langPillText, { color: on ? theme.bg : theme.ink }]}>{l.native}</Text>
+                  <Text style={[styles.langPillText, { color: on ? theme.bg : theme.ink }]}>{t(`appearance.${m}`)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -347,10 +326,6 @@ const styles = StyleSheet.create({
     fontFamily:    FONTS.sansRegular,
     fontSize:      14.5,
     letterSpacing: -0.1,
-  },
-  rowValue: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   14,
   },
   langOptions: {
     flexDirection: 'row',

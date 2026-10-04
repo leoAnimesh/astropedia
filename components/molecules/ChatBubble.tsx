@@ -7,6 +7,7 @@ import { FONTS } from '@/constants/themes';
 import { Icon } from '@/components/atoms/Icon';
 import { DotsLoader } from './DotsLoader';
 import type { ChatStatus } from '@/stores/chat-store';
+import { indicLineHeight, useIndicStyles, useIsIndic } from '@/hooks/use-indic-styles';
 
 type Props = {
   role: 'user' | 'assistant';
@@ -30,6 +31,8 @@ type Props = {
 export function ChatBubble({
   role, content, isStreaming, streamText, status, persona = 'Saga', actions, onLongPress,
 }: Props) {
+  const styles = useIndicStyles(baseStyles);
+  const indic  = useIsIndic();
   const { theme } = useAccent();
   const { t }     = useTranslation('chat');
   const isUser = role === 'user';
@@ -53,7 +56,7 @@ export function ChatBubble({
   // streaming token updates (the markdown lib re-mounts subtrees on style change).
   const textColor = isUser ? theme.bg : theme.ink;
   const linkColor = isUser ? theme.bg : theme.accent;
-  const mdStyles  = useMemo(() => buildMarkdownStyles(textColor, linkColor), [textColor, linkColor]);
+  const mdStyles  = useMemo(() => buildMarkdownStyles(textColor, linkColor, indic), [textColor, linkColor, indic]);
 
   return (
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperAI]}>
@@ -125,11 +128,13 @@ export function ChatBubble({
 // Markdown style overrides — kept inline since they're tied to bubble theming.
 // Line heights and paragraph margins tuned for readability inside a chat
 // bubble (~1.55 line-height ratio, ~14px between paragraphs).
-function buildMarkdownStyles(textColor: string, linkColor: string) {
+// In hi/bn, headings get room for Indic vowel marks (see use-indic-styles).
+function buildMarkdownStyles(textColor: string, linkColor: string, indic = false) {
+  const lh = (fontSize: number, lineHeight: number) => (indic ? indicLineHeight(fontSize, lineHeight) : lineHeight);
   const base = {
     fontFamily:  FONTS.sansRegular,
     fontSize:    15.5,
-    lineHeight:  24,
+    lineHeight:  lh(15.5, 24),
     color:       textColor,
   };
   return {
@@ -144,14 +149,14 @@ function buildMarkdownStyles(textColor: string, linkColor: string) {
     bullet_list_icon: { ...base, marginRight: 8 },
     code_inline: { ...base, fontFamily: FONTS.monoRegular, fontSize: 14 },
     link:        { ...base, color: linkColor, textDecorationLine: 'underline' as const },
-    heading1:   { ...base, fontFamily: FONTS.serifRegular, fontSize: 21, lineHeight: 28, marginTop: 10, marginBottom: 6 },
-    heading2:   { ...base, fontFamily: FONTS.serifRegular, fontSize: 19, lineHeight: 26, marginTop: 10, marginBottom: 6 },
-    heading3:   { ...base, fontFamily: FONTS.serifRegular, fontSize: 17, lineHeight: 24, marginTop: 8, marginBottom: 4 },
+    heading1:   { ...base, fontFamily: FONTS.serifRegular, fontSize: 21, lineHeight: lh(21, 28), marginTop: 10, marginBottom: 6 },
+    heading2:   { ...base, fontFamily: FONTS.serifRegular, fontSize: 19, lineHeight: lh(19, 26), marginTop: 10, marginBottom: 6 },
+    heading3:   { ...base, fontFamily: FONTS.serifRegular, fontSize: 17, lineHeight: lh(17, 24), marginTop: 8, marginBottom: 4 },
     hr:         { marginVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: textColor, opacity: 0.2 },
   };
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   wrapper: {
     marginVertical: 4,
   },

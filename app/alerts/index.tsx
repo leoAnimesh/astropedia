@@ -1,5 +1,7 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
@@ -7,6 +9,7 @@ import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Toggle } from '@/components/atoms/Toggle';
+import { showDialog } from '@/components/overlays';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { Storage } from '@/utils/storage';
@@ -18,10 +21,12 @@ import {
   ensureNotificationPermission,
   scheduleTransitAlerts,
 } from '@/utils/notifications';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 const fmt = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString(intlLocale(), opts);
 
 export default function AlertsScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { t, i18n }       = useTranslation('alerts');
   const { theme }         = useAccent();
   const { activeProfile } = useProfiles();
@@ -42,7 +47,7 @@ export default function AlertsScreen() {
     if (next) {
       const ok = await ensureNotificationPermission();
       if (!ok) {
-        Alert.alert(t('permission.title'), t('permission.body'));
+        showDialog({ title: t('permission.title'), message: t('permission.body') });
         return;
       }
       Storage.setTransitAlerts(true);
@@ -125,7 +130,7 @@ export default function AlertsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,

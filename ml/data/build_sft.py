@@ -24,6 +24,16 @@ Student prompt (what the app must send)
   English has no Lang line. Facts, the verse, "Read my chart." and the title's
   "User: ...\nAssistant: ..." wrapper stay in English for every language.
 
+v4 faithfulness filter (validate_answer.py)
+  Saga/offtopic/title records with prompt_version >= 4 (or --validate on) are
+  first repaired (extra bold, English "sub-period") and then must pass
+  validate_answer.validate() against the profile's context + timing: chart
+  claims (birth chart vs today's transits), dates only from Timing / transit
+  notes, jargon and house numbers, script purity, 3-6 sentences / 110 words /
+  --max-tokens app tokens, invented situations, safety rules. The old filters
+  still run (with the v4 sentence cap of 6). Drops are printed per reason
+  ("val:<code>"); every failing code is counted, not just the first.
+
 Gemma chat format (no system role; the template merges it into the 1st user turn)
   <bos><start_of_turn>user\n{system}\n\n{user1}<end_of_turn>\n
   <start_of_turn>model\n{assistant1}<end_of_turn>\n
@@ -41,6 +51,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+import validate_answer as VA
+
 DATA = Path(__file__).resolve().parent
 ROOT = DATA.parents[1]
 OUT = DATA / "sft"
@@ -49,6 +61,17 @@ OUT_GEMMA = DATA / "sft_gemma"
 GITA = {e["id"]: e["text"].split("\nKey terms:")[0].strip()
         for e in json.loads((ROOT / "assets/gita-corpus/verses.json").read_text())}
 PROFILES = {json.loads(l)["id"]: json.loads(l) for l in (DATA / "profiles.jsonl").open()}
+_PROFILE_FILES: dict[str, dict] = {"profiles.jsonl": PROFILES}
+
+
+def profile_of(rec: dict) -> dict:
+    """The profile a record was generated from: data/profiles.jsonl, or the file
+    generate.py --profiles named in the record ("profiles_file", e.g. a context-v2
+    profiles_v2.jsonl whose ids repeat the old file's)."""
+    name = rec.get("profiles_file", "profiles.jsonl")
+    if name not in _PROFILE_FILES:
+        _PROFILE_FILES[name] = {json.loads(l)["id"]: json.loads(l) for l in (DATA / name).open()}
+    return _PROFILE_FILES[name][rec["profile"]]
 
 LANGS = ("en", "hi", "bn")
 
@@ -170,7 +193,7 @@ def check_common(t: str) -> str | None:
 HOUSE_NUMBERS = re.compile(r"\b\d{1,2}(st|nd|rd|th) house\b|\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth) house\b", re.I)
 
 
-def check_saga(t: str, offtopic: bool = False) -> str | None:
+def check_saga(t: str, offtopic: bool = False, max_sent: int = 5) -> str | None:
     if r := check_common(t):
         return r
     if SANSKRIT.search(t):
@@ -187,7 +210,7 @@ def check_saga(t: str, offtopic: bool = False) -> str | None:
         return "hedge"
     if MARKDOWN_BLOCK.search(t) or t.count("**") > 2:
         return "markdown"
-    if sentences(t) > (3 if offtopic else 5):
+    if sentences(t) > (3 if offtopic else max_sent):
         return "too_long"
     return None
 
@@ -406,20 +429,21 @@ def check_common_indic(t: str, lang: str, allowed: set[str]) -> str | None:
     return None
 
 
-def check_saga_indic(t: str, lang: str, allowed: set[str], offtopic: bool = False) -> str | None:
+def check_saga_indic(t: str, lang: str, allowed: set[str], offtopic: bool = False, max_sent: int = 5,
+                     token_cap: bool = True) -> str | None:
     if r := check_common_indic(t, lang, allowed):
         return r
     if SANSKRIT.search(t) or indic_jargon(t, lang):
         return "jargon"
     if HOUSE_NUMBERS.search(t):
         return "house_number"
-    if gemma_len(t) > MAX_SAGA_TOKENS:
+    if token_cap and gemma_len(t) > MAX_SAGA_TOKENS:
         return "too_long"
     if ISO_DATE.search(t):
         return "iso_date"
     if MARKDOWN_BLOCK.search(t) or t.count("**") > 2:
         return "markdown"
-    if sentences_indic(t) > (3 if offtopic else 5):
+    if sentences_indic(t) > (3 if offtopic else max_sent):
         return "too_long"
     return None
 
@@ -466,11 +490,53 @@ def clean_title_indic(t: str, lang: str, allowed: set[str]) -> tuple[str | None,
     return (None if 1 <= len(t.split()) <= 5 and gemma_len(t) <= 16 else "length"), t
 
 
+# ─── v4 faithfulness filter ──────────────────────────────────────────────────
+
+VALIDATE = "auto"          # "auto": prompt_version >= 4; "on": all records; "off": never (set by main)
+MAX_TOKENS = VA.MAX_TOKENS  # app-tokenizer cap for one Saga reply (set by --max-tokens)
+VAL_STATS: collections.Counter = collections.Counter()  # (lang, code) -> records failing that code
+VAL_META: collections.Counter = collections.Counter()   # (lang, key) -> kept answers / question-backs / repairs
+
+
+def use_v4(rec: dict) -> bool:
+    return VALIDATE == "on" or (VALIDATE == "auto" and rec.get("prompt_version", 1) >= 4)
+
+
+def v4_check(rec: dict, lang: str) -> str | None:
+    """Repair, then validate every Saga turn of a record against its profile's
+    chart text. Mutates the turns' assistant text with the repairs. Returns the
+    first failing code as "val:<code>" (all codes are counted in VAL_STATS)."""
+    p = profile_of(rec)
+    ctx = p["context"] + "\n" + (p.get("timing") or "")
+    chart = VA.parse_context(ctx, rec.get("today"))
+    turns = rec["turns"]
+    first = None
+    codes: set[str] = set()
+    qbs = []
+    for i, tr in enumerate(turns):
+        fixed, done = VA.repair(tr["assistant"], lang)
+        for d in done:
+            VAL_META[(lang, f"repaired_{d}")] += 1
+        tr["assistant"] = fixed
+        v = VA.validate(chart, tr["user"], lang, turns[:i], fixed, today=rec.get("today"),
+                        kind="short" if rec["task"] == "offtopic" else None, max_tokens=MAX_TOKENS)
+        qbs.append(v.meta.get("question_back", False))
+        if not v.ok:
+            codes |= set(v.reasons)
+            first = first or f"val:{v.reasons[0]}"
+    for c in codes:
+        VAL_STATS[(lang, c)] += 1
+    if first is None:
+        VAL_META[(lang, "answers")] += len(qbs)
+        VAL_META[(lang, "question_back")] += sum(qbs)
+    return first
+
+
 # ─── build ───────────────────────────────────────────────────────────────────
 
 
 def build(rec: dict) -> tuple[str | None, dict | None]:
-    task, p = rec["task"], PROFILES[rec["profile"]]
+    task, p = rec["task"], profile_of(rec)
     # v1 Saga answers were written without the Timing block and leaned on stock
     # timing phrases; v2 keeps only Saga answers from the rewritten teacher prompt.
     if task in ("saga", "saga_multi", "title", "offtopic") and rec.get("prompt_version", 1) < 2:
@@ -478,16 +544,20 @@ def build(rec: dict) -> tuple[str | None, dict | None]:
     turns = rec["turns"]
     for tr in turns:
         tr["assistant"] = digits(strip_gita(tr["assistant"]) if task == "krishna" else tr["assistant"])
+    v4 = use_v4(rec) and task in ("saga", "saga_multi", "offtopic", "title")
+    if v4 and (r := v4_check(rec, "en")):
+        return r, None
+    max_sent = 6 if v4 else 5
     if task in ("saga", "saga_multi", "offtopic"):
         for tr in turns:
-            if r := check_saga(tr["assistant"], offtopic=task == "offtopic"):
+            if r := check_saga(tr["assistant"], offtopic=task == "offtopic", max_sent=max_sent):
                 return r, None
         msgs = [{"role": "system", "content": student_saga_system(p, rec["today"])}]
         for tr in turns:
             msgs += [{"role": "user", "content": tr["user"]}, {"role": "assistant", "content": tr["assistant"]}]
         return None, {"task": task, "messages": msgs}
     if task == "title":
-        if r := check_saga(turns[0]["assistant"]):
+        if r := check_saga(turns[0]["assistant"], max_sent=max_sent):
             return r, None
         r, title = clean_title(rec.get("title", ""))
         if r:
@@ -521,7 +591,7 @@ def strip_gita_indic(t: str) -> str:
 def build_indic(rec: dict, lang: str, stats: collections.Counter) -> tuple[str | None, dict | None]:
     """hi/bn counterpart of build(): same tasks and message layout, Lang line in
     the system text, per-language script/jargon/length rules."""
-    task, p = rec["task"], PROFILES[rec["profile"]]
+    task, p = rec["task"], profile_of(rec)
     turns = rec["turns"]
     # Latin words that may legitimately appear: names from the facts and anything the user typed.
     allowed = {w.lower() for w in re.findall(r"[A-Za-z][A-Za-z']*", " ".join(
@@ -531,16 +601,21 @@ def build_indic(rec: dict, lang: str, stats: collections.Counter) -> tuple[str |
         a, n = repair(native_digits(a, lang), lang)
         stats[f"{lang}:repaired_antar"] += n
         tr["assistant"] = a
+    v4 = use_v4(rec) and task in ("saga", "saga_multi", "offtopic", "title")
+    if v4 and (r := v4_check(rec, lang)):
+        return r, None
+    # v4 answers run 3-6 sentences; their token cap is the validator's (app tokenizer).
+    kw = {"max_sent": 6, "token_cap": False} if v4 else {}
     if task in ("saga", "saga_multi", "offtopic"):
         for tr in turns:
-            if r := check_saga_indic(tr["assistant"], lang, allowed, offtopic=task == "offtopic"):
+            if r := check_saga_indic(tr["assistant"], lang, allowed, offtopic=task == "offtopic", **kw):
                 return r, None
         msgs = [{"role": "system", "content": student_saga_system(p, rec["today"], lang)}]
         for tr in turns:
             msgs += [{"role": "user", "content": tr["user"]}, {"role": "assistant", "content": tr["assistant"]}]
         return None, {"task": task, "messages": msgs}
     if task == "title":
-        if r := check_saga_indic(turns[0]["assistant"], lang, allowed):
+        if r := check_saga_indic(turns[0]["assistant"], lang, allowed, **kw):
             return r, None
         r, title = clean_title_indic(native_digits(rec.get("title", ""), lang), lang, allowed)
         if r:
@@ -666,10 +741,21 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=None, help="default data/sft_gemma (data/sft with --legacy)")
     ap.add_argument("--legacy", action="store_true",
                     help="v2 behaviour: English only, ChatML messages, unstratified 5%% val, to data/sft")
+    ap.add_argument("--reuse", type=Path, nargs="*", default=[],
+                    help="older raw files to take only --reuse-tasks records from (e.g. the v3 Krishna answers, "
+                         "whose student prompt doesn't depend on the chart context)")
+    ap.add_argument("--reuse-tasks", default="krishna", help="tasks taken from --reuse files (comma-separated)")
     ap.add_argument("--langs", default="en,hi,bn")
     ap.add_argument("--val-frac", type=float, default=0.05)
     ap.add_argument("--repeat", default="", help="oversample train rows, e.g. 'bn=2,hi=1' (val untouched)")
+    ap.add_argument("--validate", choices=["auto", "on", "off"], default="auto",
+                    help="v4 faithfulness filter (validate_answer.py): auto = records with prompt_version >= 4")
+    ap.add_argument("--max-tokens", type=int, default=VA.MAX_TOKENS,
+                    help="v4: max app-tokenizer tokens per Saga reply (default: validate_answer.MAX_TOKENS, "
+                         "the app's v2 reply cap REPLY_MAX_TOKENS)")
     a = ap.parse_args()
+    global VALIDATE, MAX_TOKENS
+    VALIDATE, MAX_TOKENS = a.validate, a.max_tokens
     if a.legacy:
         return main_legacy(a.raw[0] if a.raw else DATA / "raw/answers.jsonl", a.out or OUT)
 
@@ -683,11 +769,22 @@ def main() -> None:
     raw_c: collections.Counter = collections.Counter()
     seen: set = set()
     kept: dict[str, list[dict]] = {l: [] for l in langs}
-    for path in raws:
+    reuse_tasks = set(filter(None, a.reuse_tasks.split(",")))
+    for path, only in [(r, None) for r in raws] + [(r, reuse_tasks) for r in a.reuse]:
         for rec in read_jsonl(path):
             lang = rec.get("lang", "en")
+            if only is not None and rec.get("task") not in only:
+                continue
+            if rec.get("dropped"):  # generate.py gave up on it (e.g. script retries used up)
+                rejected[f"{lang}:{rec.get('task')}:dropped_{rec['dropped']}"] += 1
+                continue
             if lang not in langs:
                 rejected[f"{lang}:{rec['task']}:lang_excluded"] += 1
+                continue
+            if rec.get("val_failed") or any(tr.get("val_ok") is False for tr in rec.get("turns") or []):
+                # generate.py's validator retries ran out on a turn (multi-turn records are already
+                # cut at their last passing turn, so this is a failed first turn)
+                rejected[f"{lang}:{rec.get('task')}:gen_val_failed"] += 1
                 continue
             key = (lang, rec.get("id"))  # same record in two raw files (English keeps v2's exact set)
             if key in seen:
@@ -738,6 +835,18 @@ def main() -> None:
             reasons[k.split(":", 1)[1]] += v
         print(f"  {lang} ({sum(c.values())}): by reason {dict(reasons.most_common())}")
         print(f"      by task:reason {dict(c.most_common())}")
+    if VAL_STATS or VAL_META:
+        print("\nv4 validator (validate_answer.py): records failing each check (a record can fail several)")
+        for lang in langs:
+            row = {c: n for (l, c), n in VAL_STATS.most_common() if l == lang}
+            if row:
+                print(f"  {lang}: {row}")
+            rep_ = {k: n for (l, k), n in VAL_META.items() if l == lang and k.startswith("repaired_")}
+            if rep_:
+                print(f"      repairs applied: {rep_}")
+            if n := VAL_META.get((lang, "answers")):
+                qb = VAL_META[(lang, "question_back")] / n
+                print(f"      kept answers ending in a question: {qb:.0%}" + ("  (above the 25% target)" if qb > .25 else ""))
 
 
 def main_legacy(raw: Path, out: Path) -> None:

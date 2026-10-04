@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Country, State, City } from 'country-state-city';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { localCityName, localCountryName, localizePlace, localStateName } from '@/utils/place-names';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { Button } from '@/components/atoms/Button';
@@ -12,34 +12,46 @@ import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { LocationPickerModal, type PickerItem } from '@/components/molecules/LocationPickerModal';
+import { DatePicker } from '@/components/molecules/DatePicker';
+import { TimePicker } from '@/components/molecules/TimePicker';
+import { PickerSheet } from '@/components/molecules/PickerSheet';
+import { showDialog } from '@/components/overlays';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { localDateIso } from '@/utils/format';
+import { formatBirthDate, formatBirthTime, localDateIso } from '@/utils/format';
+import { useAppLanguage } from '@/utils/i18n';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type Picker = 'country' | 'state' | 'city' | null;
 
+const DEFAULT_DATE = new Date(2000, 0, 1);
+
 export default function EditProfileScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme }                = useAccent();
   const { t, i18n }              = useTranslation('profile');
+  const lng = useAppLanguage();
   const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const { id }                   = useLocalSearchParams<{ id: string }>();
   const { profiles, editProfile } = useProfiles();
   const profile                  = profiles.find((p) => p.id === id);
 
-  const initialDate = profile?.birthDate ? new Date(profile.birthDate + 'T12:00:00') : null;
-  const initialTime = (() => {
-    if (!profile?.birthTime) return null;
-    const [h, m] = profile.birthTime.split(':').map(Number);
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    return d;
-  })();
+  const initialDate = profile?.birthDate ? new Date(profile.birthDate + 'T00:00:00') : null;
+  const initialTime = profile?.birthTime || null;   // "HH:mm"
 
   const [name,   setName]   = useState(profile?.name ?? '');
   const [rel,    setRel]    = useState(profile?.relationship ?? '');
   const [gender, setGender] = useState<string>(profile?.gender ?? '');
   const [date,   setDate]   = useState<Date | null>(initialDate);
-  const [time,   setTime]   = useState<Date | null>(initialTime);
+  const [time,   setTime]   = useState<string | null>(initialTime);
   const [loading, setLoading] = useState(false);
+
+  // Date/time wheels open in a sheet; the draft is applied on Done.
+  const [sheet,     setSheet]     = useState<'date' | 'time' | null>(null);
+  const [draftDate, setDraftDate] = useState<Date>(DEFAULT_DATE);
+  const [draftTime, setDraftTime] = useState('12:00');
+  const [today] = useState(() => new Date());
+  const openDate = () => { setDraftDate(date ?? DEFAULT_DATE); setSheet('date'); };
+  const openTime = () => { setDraftTime(time ?? '12:00'); setSheet('time'); };
 
   // Location editing flow: we don't try to parse the saved string back into
   // country/state/city codes. Instead, the saved location is shown as-is and
@@ -59,9 +71,7 @@ export default function EditProfileScreen() {
   const locationToSave = editingLocation && newLocation ? newLocation : (profile?.birthCity ?? null);
 
   const birthDateIso = date ? localDateIso(date) : '';
-  const birthTimeStr = time
-    ? `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`
-    : '';
+  const birthTimeStr = time ?? '';
 
   const valid = name.trim().length > 0 && birthDateIso.length > 0;
 
@@ -122,10 +132,7 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     if (!valid || !profile) return;
     if (date && date.getTime() > Date.now() + 60_000) {
-      Alert.alert(
-        t('form.futureTitle'),
-        t('form.futureBody'),
-      );
+      showDialog({ title: t('form.futureTitle'), message: t('form.futureBody') });
       return;
     }
     setLoading(true);
@@ -187,13 +194,16 @@ export default function EditProfileScreen() {
           autoCapitalize="words"
           containerStyle={styles.field}
         />
-        <Input
-          label={t('form.relLabel')}
-          placeholder={t('form.relPlaceholder')}
-          value={rel}
-          onChangeText={setRel}
-          containerStyle={styles.field}
-        />
+        {/* Relationship describes someone else; the onboarded (main) profile is "you". */}
+        {!profile?.isYou && (
+          <Input
+            label={t('form.relLabel')}
+            placeholder={t('form.relPlaceholder')}
+            value={rel}
+            onChangeText={setRel}
+            containerStyle={styles.field}
+          />
+        )}
 
         <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.genderLabel')}</EyebrowLabel>
         <View style={styles.genderRow}>
@@ -226,26 +236,32 @@ export default function EditProfileScreen() {
         </View>
 
         <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.dobLabel')}</EyebrowLabel>
-        <DateTimePicker
-          value={date ?? new Date(2000, 0, 1)}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          maximumDate={new Date()}
-          onChange={(_, d) => d && setDate(d)}
-          style={styles.picker}
-          themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
-        />
+        <TouchableOpacity
+          style={[styles.locationField, { backgroundColor: theme.surface2 }]}
+          onPress={openDate}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('form.dobLabel')}
+        >
+          <Text style={[styles.locationValue, { color: date ? theme.ink : theme.muted }]} numberOfLines={1}>
+            {date ? formatBirthDate(birthDateIso) : t('form.dobPlaceholder')}
+          </Text>
+          <Icon name="chevron-down" size={16} color={theme.muted} />
+        </TouchableOpacity>
 
         <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('form.tobLabel')}</EyebrowLabel>
-        <DateTimePicker
-          value={time ?? new Date(0, 0, 0, 12, 0)}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          minuteInterval={1}
-          onChange={(_, t) => t && setTime(t)}
-          style={styles.picker}
-          themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
-        />
+        <TouchableOpacity
+          style={[styles.locationField, { backgroundColor: theme.surface2 }]}
+          onPress={openTime}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('form.tobLabel')}
+        >
+          <Text style={[styles.locationValue, { color: time ? theme.ink : theme.muted }]} numberOfLines={1}>
+            {time ? formatBirthTime(time) : t('form.tobPlaceholder')}
+          </Text>
+          <Icon name="chevron-down" size={16} color={theme.muted} />
+        </TouchableOpacity>
 
         {/* Location — show current + a "change" toggle */}
         <EyebrowLabel style={[styles.field, { marginBottom: 8 }]}>{t('edit.locationLabel')}</EyebrowLabel>
@@ -253,7 +269,7 @@ export default function EditProfileScreen() {
           <View>
             <View style={[styles.locationField, { backgroundColor: theme.surface2 }]}>
               <Text style={[styles.locationValue, { color: profile.birthCity ? theme.ink : theme.muted }]} numberOfLines={1}>
-                {profile.birthCity ?? t('common:unknown')}
+                {profile.birthCity ? localizePlace(profile.birthCity, lng) : t('common:unknown')}
               </Text>
             </View>
             <TouchableOpacity onPress={() => setEditingLocation(true)} style={styles.linkBtn}>
@@ -269,7 +285,7 @@ export default function EditProfileScreen() {
               activeOpacity={0.7}
             >
               <Text style={[styles.locationValue, { color: countryName ? theme.ink : theme.muted }]} numberOfLines={1}>
-                {countryName || t('common:location.selectCountry')}
+                {countryName ? localCountryName(countryCode, countryName, lng) : t('common:location.selectCountry')}
               </Text>
               <Icon name="chevron-down" size={16} color={theme.muted} />
             </TouchableOpacity>
@@ -283,7 +299,7 @@ export default function EditProfileScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.locationValue, { color: stateName ? theme.ink : theme.muted }]} numberOfLines={1}>
-                    {stateName || t('common:location.selectState')}
+                    {stateName ? localStateName(countryCode, stateName, lng) : t('common:location.selectState')}
                   </Text>
                   <Icon name="chevron-down" size={16} color={theme.muted} />
                 </TouchableOpacity>
@@ -299,7 +315,7 @@ export default function EditProfileScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.locationValue, { color: cityName ? theme.ink : theme.muted }]} numberOfLines={1}>
-                    {cityName || t('common:location.selectCity')}
+                    {cityName ? localCityName(countryCode, cityName, lng) : t('common:location.selectCity')}
                   </Text>
                   <Icon name="chevron-down" size={16} color={theme.muted} />
                 </TouchableOpacity>
@@ -328,6 +344,7 @@ export default function EditProfileScreen() {
         visible={activePicker === 'country'}
         title={t('common:location.pickCountryTitle')}
         items={countryItems}
+        kind="country"
         selectedValue={countryCode}
         onSelect={handleSelectCountry}
         onClose={() => setActivePicker(null)}
@@ -336,6 +353,8 @@ export default function EditProfileScreen() {
         visible={activePicker === 'state'}
         title={t('common:location.pickStateTitle')}
         items={stateItems}
+        kind="state"
+        countryCode={countryCode}
         selectedValue={stateCode}
         onSelect={handleSelectState}
         onClose={() => setActivePicker(null)}
@@ -344,16 +363,36 @@ export default function EditProfileScreen() {
         visible={activePicker === 'city'}
         title={t('common:location.pickCityTitle')}
         items={cityItems}
+        kind="city"
+        countryCode={countryCode}
         selectedValue={cityName}
         onSelect={handleSelectCity}
         onClose={() => setActivePicker(null)}
         allowManual
       />
+      <PickerSheet
+        visible={sheet === 'date'}
+        title={t('form.dobLabel')}
+        onClose={() => setSheet(null)}
+        onDone={() => setDate(draftDate)}
+      >
+        <DatePicker value={draftDate} maximumDate={today} onChange={setDraftDate} />
+      </PickerSheet>
+      <PickerSheet
+        visible={sheet === 'time'}
+        title={t('form.tobLabel')}
+        onClose={() => setSheet(null)}
+        onDone={() => setTime(draftTime)}
+        secondaryLabel={t('form.clearTime')}
+        onSecondary={() => setTime(null)}
+      >
+        <TimePicker value={draftTime} onChange={setDraftTime} />
+      </PickerSheet>
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header:  { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
   back:    { padding: 4 },
   scroll:  { flex: 1 },
@@ -369,7 +408,6 @@ const styles = StyleSheet.create({
     borderRadius: 999, borderWidth: StyleSheet.hairlineWidth,
   },
   genderChipText: { fontFamily: FONTS.sansRegular, fontSize: 13 },
-  picker: { alignSelf: 'stretch' },
   locationField: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14,

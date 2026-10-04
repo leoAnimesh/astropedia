@@ -38,6 +38,7 @@ function parseReading(text: string): ChartReading {
 }
 
 export function useChartReading(profile: Profile | null): State {
+  'use no memo'; // replyLanguage() has no reactive inputs; the compiler would cache it across language switches
   const llmStatus = useSyncExternalStore(subscribeToLLMState, getLLMState, getLLMState).status;
   const [state, setState] = useState<State>({ reading: null, loading: false });
   // Readings are written in the reply language, so a language switch needs

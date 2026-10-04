@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -8,10 +10,13 @@ import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { todayIso } from '@/utils/format';
 import { getPanchang, formatHourLocal, formatWindowLocal, tYoga, tKarana, tVara } from '@/utils/panchang';
+import { localizePlace } from '@/utils/place-names';
 import { intlLocale, tNakshatra, tPlanet, tTithi, tWeekday } from '@/utils/i18n';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 export default function PanchangScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme }     = useAccent();
   const { t, i18n }   = useTranslation('panchang');
   // Devanagari/Bengali need more line height for vowel marks above/below.
@@ -53,7 +58,7 @@ export default function PanchangScreen() {
   ];
 
   const locationNote = profile?.birthCity
-    ? t('timesFor', { city: profile.birthCity })
+    ? t('timesFor', { city: localizePlace(profile.birthCity, i18n.language) })
     : t('timesApprox');
 
   const todayDate  = new Date(today + 'T12:00:00');
@@ -142,7 +147,7 @@ export default function PanchangScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',

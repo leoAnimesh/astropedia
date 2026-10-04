@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Button } from '@/components/atoms/Button';
@@ -8,14 +9,18 @@ import { Icon } from '@/components/atoms/Icon';
 import { Input } from '@/components/atoms/Input';
 import { Avatar } from '@/components/atoms/Avatar';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
+import { KeyboardSpacer } from '@/components/keyboard';
 import { FONTS } from '@/constants/themes';
 import OnboardingStore from './_store';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 export default function NameScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('onboarding');
   const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
   const [name, setName] = useState(OnboardingStore.name ?? '');
+  const insets = useSafeAreaInsets();
 
   const handleContinue = () => {
     OnboardingStore.name = name.trim();
@@ -65,11 +70,13 @@ export default function NameScreen() {
           onPress={handleContinue}
         />
       </View>
+      {/* Keeps Continue above the keyboard (ScreenLayout already pads the bottom inset). */}
+      <KeyboardSpacer offset={insets.bottom} />
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:  'row',
     alignItems:     'center',

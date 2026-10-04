@@ -1,7 +1,7 @@
 import { ZODIAC, PLANETS, NAKSHATRAS, DASHA_YEARS, ELEMENT_COLORS, type ZodiacSign, type Nakshatra } from '@/constants/astrology';
 import { localDateIso } from './format';
 import { civilToUtcMs } from './timezone';
-import { dailyMotion, tropicalLongitude, type Body } from './ephemeris';
+import { dailyMotion, nutationInLongitude, tropicalLongitude, type Body } from './ephemeris';
 
 export type { ZodiacSign, Nakshatra };
 
@@ -72,18 +72,23 @@ function norm(deg: number): number {
  * sign (rashi), nakshatra, planetary placements all need this correction
  * applied to the raw tropical ecliptic longitude.
  *
- * Approximation: Lahiri value at JD 2451545.0 (Jan 1 2000) is 23.85°, with
- * precession adding ~50.27"/year ≈ 0.01396°/year. Accurate to a few
- * arc-minutes for the next century — well inside Vedic chart tolerance.
+ * Mean Lahiri (Chitrapaksha) as Swiss Ephemeris SIDM_LAHIRI defines it,
+ * fitted for 1880–2100 to < 0.001″: 23.857092° at J2000 + 1.396888°/century
+ * + 0.000307°/century². (The earlier linear 23.85° + 50.27″/yr was 0.42′ low.)
  */
 function lahiriAyanamsa(jd: number): number {
-  const yearsFromJ2000 = (jd - 2451545.0) / 365.25;
-  return 23.85 + yearsFromJ2000 * (50.27 / 3600);
+  const T = (jd - 2451545.0) / 36525;
+  return 23.857092 + 1.396888 * T + 0.000307 * T * T;
 }
 
-/** Convert a tropical ecliptic longitude to sidereal at the given JD. */
-function toSidereal(tropicalLon: number, jd: number): number {
-  return norm(tropicalLon - lahiriAyanamsa(jd));
+/**
+ * Convert a tropical ecliptic longitude to sidereal at the given JD.
+ * `apparent` longitudes (Sun–Saturn from the ephemeris) carry nutation, which
+ * comes out with the ayanamsa (true Lahiri = mean + Δψ); the mean node and
+ * the mean-equinox ascendant do not.
+ */
+function toSidereal(tropicalLon: number, jd: number, apparent = false): number {
+  return norm(tropicalLon - lahiriAyanamsa(jd) - (apparent ? nutationInLongitude(jd) : 0));
 }
 
 /**
@@ -134,7 +139,7 @@ function julianCenturies(jd: number): number {
 
 /** SIDEREAL (Lahiri) geocentric longitude of a body at a Julian Day (UT). */
 export function siderealLongitudeAt(body: Body, jd: number): number {
-  return toSidereal(tropicalLongitude(body, jd), jd);
+  return toSidereal(tropicalLongitude(body, jd), jd, body !== 'Rahu');
 }
 
 /** SIDEREAL (Lahiri) true Sun longitude at a local date/time — see toJulianDay for the time conventions. */
@@ -233,7 +238,11 @@ export function getAscendantDegree(
   // birthTime is civil clock time at the birth place: convert to UT (zone
   // offset, or local mean time from the longitude), then take sidereal time
   // from the full UT JD.
-  const jd = toJulianDay(birthDate, birthTime, birthLng, birthTz);
+  return ascendantAt(toJulianDay(birthDate, birthTime, birthLng, birthTz), birthLat, birthLng);
+}
+
+/** SIDEREAL (Lahiri) ascendant at a Julian Day (UT) and place. */
+function ascendantAt(jd: number, birthLat: number, birthLng: number): number | null {
   const T  = julianCenturies(jd);
 
   const obliq = 23.4393 - 0.0130042 * T;
@@ -245,12 +254,18 @@ export function getAscendantDegree(
   const P = birthLat * RAD;
 
   // Meeus (Astronomical Algorithms, ch. 14): tan λ = −cos θ / (sin ε tan φ + cos ε sin θ).
-  // atan2 of the raw pair lands on the descendant; +180° gives the rising point.
+  // The two solutions λ, λ+180° are where the ecliptic meets the horizon; the
+  // ascendant is the one on the EASTERN side (hour angle 180°–360°). At
+  // ordinary latitudes atan2 + 180° already lands there; inside the polar
+  // circles it can land on the western point, so check explicitly.
   const y = -Math.cos(R);
   const x = Math.sin(E) * Math.tan(P) + Math.cos(E) * Math.sin(R);
 
   if (!isFinite(x) || !isFinite(y)) return null;
-  const tropical = norm(Math.atan2(y, x) * DEG + 180);
+  let tropical = norm(Math.atan2(y, x) * DEG + 180);
+  const L = tropical * RAD;
+  const ra = Math.atan2(Math.sin(L) * Math.cos(E), Math.cos(L));
+  if (Math.sin(R - ra) > 0) tropical = norm(tropical + 180);
   return toSidereal(tropical, jd);
 }
 
@@ -277,7 +292,7 @@ export function getNakshatra(moonLon: number): Nakshatra {
 
 const DASHA_ORDER = ['Ketu', 'Venus', 'Sun', 'Moon', 'Mars', 'Rahu', 'Jupiter', 'Saturn', 'Mercury'];
 
-export function getCurrentMahadasha(moonLon: number, birthDate: string): DashaInfo {
+export function getCurrentMahadasha(moonLon: number, birthDate: string, now: Date = new Date()): DashaInfo {
   const nakIdx = Math.min(Math.floor(moonLon / NAK_SIZE), 26);
   const nakshatra = NAKSHATRAS[nakIdx];
   const lord = nakshatra.lord;
@@ -290,7 +305,7 @@ export function getCurrentMahadasha(moonLon: number, birthDate: string): DashaIn
   const sequence = [...DASHA_ORDER.slice(seqStart), ...DASHA_ORDER.slice(0, seqStart)];
 
   const birth = new Date(birthDate + 'T00:00:00');
-  const today = new Date();
+  const today = now;
   const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
 
   let cursor = new Date(birth);
@@ -400,16 +415,19 @@ export function getDashaTimeline(moonLon: number, birthDate: string, now: Date =
   return { maha, antar: subs[0], nextAntar: subs[1], nextMaha: maha };
 }
 
+const VALID_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const VALID_TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function monthYear(d: Date): string {
   return `${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/** "in 5 months", "in 2 years", "in 1 year 4 months", "now". */
-function relativeFrom(now: Date, d: Date): string {
+/** "in 5 months", "in 2 years", "in 1 year 4 months", "now" (v2: "in under a month"). */
+function relativeFrom(now: Date, d: Date, version: ContextVersion = 1): string {
   const months = Math.round((d.getTime() - now.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
-  if (months <= 0) return 'now';
+  if (months <= 0) return version === 1 ? 'now' : 'in under a month';
   if (months < 12) return `in ${months} month${months === 1 ? '' : 's'}`;
   const y = Math.floor(months / 12);
   const m = months % 12;
@@ -420,20 +438,29 @@ function relativeFrom(now: Date, d: Date): string {
 /**
  * Ready-made timing for the on-device model, so it never has to do date
  * arithmetic: when the current sub-period and life phase change, as month +
- * year and relative to today.
+ * year and relative to today. `version` follows getAstrologyContext.
  */
 export function getTimingContext(
   profile: BirthData,
   now: Date = new Date(),
+  version: ContextVersion = LATEST_CONTEXT_VERSION,
 ): string {
+  // Malformed input (never from the app's own pickers) must not crash the chat.
+  if (!VALID_DATE.test(profile.birthDate)) return 'Timing: unavailable (birth date unclear).';
+  if (profile.birthTime && !VALID_TIME.test(profile.birthTime)) profile = { ...profile, birthTime: null };
   const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const t = getDashaTimeline(moonLon, profile.birthDate, now);
+  // v2 uses the plain words the answers should use ("stretch" = antardasha,
+  // "chapter" = mahadasha), so the model never echoes "sub-period" / "life phase".
+  const [sub, nextSub, phase, nextPhase] = version === 1
+    ? ['Current sub-period', 'Next sub-period', 'Current life phase', 'Next life phase']
+    : ['Current stretch', 'Next stretch', 'Current chapter', 'Next chapter'];
   return [
-    `Timing (use these; never invent other dates):`,
-    `- Current sub-period: ${t.antar.lord}, ends ${monthYear(t.antar.end)} (${relativeFrom(now, t.antar.end)})`,
-    `- Next sub-period: ${t.nextAntar.lord}, ${monthYear(t.nextAntar.start)} to ${monthYear(t.nextAntar.end)}`,
-    `- Current life phase: ${t.maha.lord}, ends ${monthYear(t.maha.end)} (${relativeFrom(now, t.maha.end)})`,
-    `- Next life phase: ${t.nextMaha.lord}, from ${monthYear(t.nextMaha.start)}`,
+    version === 1 ? `Timing (use these; never invent other dates):` : `Timing (never invent other dates):`,
+    `- ${sub}: ${t.antar.lord}, ends ${monthYear(t.antar.end)} (${relativeFrom(now, t.antar.end, version)})`,
+    `- ${nextSub}: ${t.nextAntar.lord}, ${monthYear(t.nextAntar.start)} to ${monthYear(t.nextAntar.end)}`,
+    `- ${phase}: ${t.maha.lord}, ends ${monthYear(t.maha.end)} (${relativeFrom(now, t.maha.end, version)})`,
+    `- ${nextPhase}: ${t.nextMaha.lord}, from ${monthYear(t.nextMaha.start)}`,
   ].join('\n');
 }
 
@@ -452,9 +479,11 @@ const BODY_OF: Record<string, Body> = {
  */
 export function getChartPositions(profile: BirthData): PlanetPosition[] {
   if (!profile.birthDate) return [];
+  return positionsAt(birthJulianDay(profile));
+}
 
-  const jd = birthJulianDay(profile);
-
+/** Sidereal positions of the nine grahas at a Julian Day (UT). */
+function positionsAt(jd: number): PlanetPosition[] {
   return PLANETS.map((p) => {
     const body = BODY_OF[p.name] ?? 'Sun';
     let degree = siderealLongitudeAt(body, jd);
@@ -514,6 +543,33 @@ export function getFullKundli(profile: BirthData): FullKundli {
 
 // ─── AI context string ────────────────────────────────────────────────────────
 
+/**
+ * Chart-context formats for the on-device model. A model only understands
+ * the format it was trained on, so the app sends the version its bundled
+ * model expects (CONTEXT_VERSION in utils/local-llm.ts) and
+ * ml/data/gen_profiles.ts generates training data in the newest one.
+ * - 1: astro-gemma-v1 — signs, nakshatra, mahadasha end, planet degrees.
+ * - 2: adds whole-sign houses, life areas, today's transits, uncertainty notes.
+ */
+export type ContextVersion = 1 | 2;
+export const LATEST_CONTEXT_VERSION: ContextVersion = 2;
+
+export type ContextProfile = BirthData & {
+  name: string;
+  gender?: string | null;
+  birthCity?: string | null;
+  /** Free-text relationship to the user ("mother") for profiles that aren't the user (v2). */
+  relationship?: string | null;
+  /** False for someone the user added; undefined/true reads as the user themselves. */
+  isYou?: boolean;
+};
+
+export type ContextOptions = {
+  version?: ContextVersion;
+  /** "Today" for transits and the v1 mahadasha line (default: now). */
+  date?: Date;
+};
+
 function genderLine(gender: string | null | undefined): string | null {
   switch (gender) {
     case 'woman':       return 'Gender: woman (she/her). Traditional Vedic spouse karaka: Jupiter (signifies husband). Use she/her pronouns.';
@@ -524,12 +580,225 @@ function genderLine(gender: string | null | undefined): string | null {
   }
 }
 
-export function getAstrologyContext(profile: BirthData & {
-  name: string;
-  gender?: string | null;
-  birthCity?: string | null;
-}): string {
+// ─── Plain-English chart facts for the model (v2) ─────────────────────────────
+//
+// The on-device model can't do chart math, so the context hands it houses,
+// house rulers and transits already turned into everyday words. Houses are
+// whole-sign from the sidereal ascendant (same as KundliChart): house n is the
+// sign (ascSign + n − 1) mod 12. Without a birth time or place they're counted
+// from the Moon sign (Chandra lagna). Meanings are deliberately classical and short.
+
+/**
+ * Everyday names for the twelve houses; the model says "your career house".
+ * Short on purpose (each costs prompt tokens); the Life-area labels carry the
+ * other meanings. Classical significations: 1 self/body, 2 money/family/speech, 3 effort/siblings/communication,
+ * 4 home/mother/peace, 5 romance/children/creativity/study, 6 work/health/rivals,
+ * 7 partner/marriage, 8 sudden change/hidden matters, 9 luck/father/beliefs,
+ * 10 career/status, 11 gains/friends, 12 loss/rest/abroad/spirituality.
+ */
+const HOUSE_NAMES = [
+  'self house', 'money house', 'effort house', 'home house', 'romance house', 'work and health house',
+  'partnership house', 'change house', 'luck house', 'career house', 'gains house', 'abroad house',
+];
+
+/** Sign rulers (Vedic), indexed by sign 0–11. Rahu and Ketu rule no sign. */
+const SIGN_RULER = ['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter'];
+
+/** What a planet brings to the area it touches, in two or three plain words. */
+const PLANET_FLAVOR: Record<string, string> = {
+  Sun: 'pride, authority', Moon: 'feelings, care', Mars: 'drive, heat', Mercury: 'talk, skills',
+  Jupiter: 'growth, blessings', Venus: 'love, comfort', Saturn: 'duty, slow but lasting',
+  Rahu: 'big hunger, unusual paths', Ketu: 'detachment',
+};
+
+/** The Moon sign's emotional style. */
+const MOON_STYLE = [
+  'quick, fiery feelings', 'calm, steady feelings', 'restless, curious mind', 'deep, caring feelings',
+  'proud, warm heart', 'careful, worrying mind', 'needs harmony', 'intense, private feelings',
+  'hopeful, free spirit', 'serious, controlled feelings', 'independent, detached mind', 'soft, dreamy, sensitive',
+];
+
+const ordinal = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
+
+function dignityWord(p: PlanetPosition): string {
+  return p.dignity === 'own' || p.dignity === 'exalted' ? 'strong' : p.dignity === 'debilitated' ? 'weak' : '';
+}
+
+/** Facts for each life area, built from whole-sign houses counted from `firstSign`. */
+function lifeAreaLines(planets: PlanetPosition[], firstSign: number): string[] {
+  const houseOf = (signIndex: number) => ((signIndex - firstSign + 12) % 12) + 1;
+  const name = (h: number) => HOUSE_NAMES[h - 1];
+  const byName = Object.fromEntries(planets.map(p => [p.name, p]));
+  const seen = new Set<string>();
+  // A planet's flavor is spelled out the first time it appears, then just named.
+  const pl = (n: string) => {
+    const strength = dignityWord(byName[n]);
+    const notes = [seen.has(n) ? '' : PLANET_FLAVOR[n], strength].filter(Boolean).join('; ');
+    seen.add(n);
+    return notes ? `${n} (${notes})` : n;
+  };
+  const list = (xs: string[]) => xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+
+  // Planets whose house the current line already states, so a line never says it twice.
+  let placed = new Set<string>();
+
+  /**
+   * "partnership house has Moon (feelings, care), its ruler Saturn (...) in career house".
+   * `ruler: 'ifEmpty'` names the ruler only when nothing sits there; an
+   * empty house with `ruler: false` contributes nothing.
+   */
+  const house = (h: number, ruler: boolean | 'ifEmpty' = true): string => {
+    const lord = SIGN_RULER[(firstSign + h - 1) % 12];
+    const all = planets.filter(p => houseOf(p.signIndex) === h).map(p => p.name);
+    const occupants = all.filter(n => !placed.has(n));
+    const parts: string[] = [];
+    // The ruler sitting in its own house is said once: "has its ruler Mars (...)".
+    if (occupants.length) parts.push(`${name(h)} has ${list(occupants.map(n => (n === lord ? 'its ruler ' : '') + pl(n)))}`);
+    if (!all.includes(lord) && !placed.has(lord) && (ruler === true || (ruler === 'ifEmpty' && !all.length))) {
+      parts.push(`${occupants.length ? 'its ruler' : name(h) + ' ruler'} ${pl(lord)} in ${name(houseOf(byName[lord].signIndex))}`);
+      placed.add(lord);
+    }
+    occupants.forEach(n => placed.add(n));
+    return parts.join(', ');
+  };
+  /** "Venus (love, comfort) in gains house", unless this line already placed it. */
+  const planetIn = (n: string) => {
+    if (placed.has(n)) return '';
+    placed.add(n);
+    return `${pl(n)} in ${name(houseOf(byName[n].signIndex))}`;
+  };
+  const line = (label: string, build: () => string[]) => {
+    placed = new Set();
+    return `- ${label}: ${build().filter(Boolean).join('; ')}`;
+  };
+  const moon = byName.Moon;
+
+  return [
+    line('Self/health', () => [house(1), house(6, false)]),
+    line('Love/marriage', () => [house(7), planetIn('Venus')]),
+    line('Career', () => [house(10), planetIn('Saturn'), planetIn('Sun')]),
+    line('Money', () => [house(2), house(11, 'ifEmpty')]),
+    line('Home/family', () => [house(4)]),
+    line('Romance/children/study', () => [house(5)]),
+    line('Abroad/spending/spiritual', () => [house(12)]),
+    line('Mind', () => [`Moon in ${ZODIAC[moon.signIndex].name} (${MOON_STYLE[moon.signIndex]}${dignityWord(moon) ? ', ' + dignityWord(moon) : ''}) in ${name(houseOf(moon.signIndex))}`]),
+    line('Growth/luck', () => [house(9), planetIn('Jupiter')]),
+  ];
+}
+
+type SignChange = { from: number; to: number; date: Date };
+
+/**
+ * Sidereal sign changes of a slow body from `from` over `days`, each dated to
+ * within an hour (2-day scan, then bisection). Includes retrograde re-entries.
+ */
+function signChanges(body: Body, from: Date, days: number): SignChange[] {
+  const jd0 = from.getTime() / 86400000 + 2440587.5;
+  const signAt = (jd: number) => Math.floor(siderealLongitudeAt(body, jd) / 30) % 12;
+  const out: SignChange[] = [];
+  let prev = signAt(jd0);
+  for (let d = 2; d <= days; d += 2) {
+    const sign = signAt(jd0 + d);
+    if (sign === prev) continue;
+    let lo = jd0 + d - 2, hi = jd0 + d;
+    while (hi - lo > 1 / 24) {
+      const mid = (lo + hi) / 2;
+      if (signAt(mid) === prev) lo = mid; else hi = mid;
+    }
+    out.push({ from: prev, to: sign, date: new Date(Math.round((hi - 2440587.5) * 86400000)) });
+    prev = sign;
+  }
+  return out;
+}
+
+/**
+ * Where Saturn, Jupiter and Rahu are on `now`: house names as in Life areas,
+ * good/hard notes from the natal Moon (classical gochara, sade sati).
+ */
+function transitLines(moonSign: number, firstSign: number, now: Date, your = 'your'): string[] {
+  // The sky at the same instant the sign-change search starts from, so "now in"
+  // and "moves into" agree on an ingress day.
+  const sky = positionsAt(now.getTime() / 86400000 + 2440587.5);
+  const at = (n: string) => sky.find(p => p.name === n)!;
+  const fromMoon = (s: number) => ((s - moonSign + 12) % 12) + 1;
+  // House names follow the Life areas (from the ascendant, else the Moon); the
+  // Moon-relative count only drives the notes, so the model never sees two
+  // different house numberings.
+  const houseName = (sign: number) => HOUSE_NAMES[(sign - firstSign + 12) % 12];
+  const where = (p: PlanetPosition) =>
+    `in ${ZODIAC[p.signIndex].name}, ${your} ${houseName(p.signIndex)}${p.retrograde && p.name !== 'Rahu' ? ' (retro)' : ''}`;
+
+  // Sade sati: Saturn in the 12th, 1st or 2nd sign from the natal Moon.
+  // Also classical: 8th (ashtama shani) and 4th (kantaka/ardhashtama) are hard,
+  // 3rd/6th/11th good.
+  const sadeSati = (h: number) => h === 12 || h === 1 || h === 2;
+  const sat = at('Saturn');
+  const sh = fromMoon(sat.signIndex);
+  const satNote =
+    sh === 12 ? 'Sade sati: yes, first part; pressure builds, effort pays later' :
+    sh === 1  ? 'Sade sati: yes, peak; heavy, slow, character-building' :
+    sh === 2  ? 'Sade sati: yes, last part; weight lifting, watch spending' :
+    sh === 8  ? 'Sade sati: no, but a heavy patch for health and sudden changes' :
+    sh === 4  ? 'Sade sati: no, but home and peace of mind feel strained' :
+    sh === 3 || sh === 6 || sh === 11 ? 'Sade sati: no; Saturn helps, effort brings results' :
+    'Sade sati: no';
+  /** What Saturn moving from sign `a` into sign `b` means for this Moon. */
+  const satChange = (a: number, b: number) => {
+    const ha = fromMoon(a), hb = fromMoon(b);
+    return sadeSati(hb) ? (sadeSati(ha) ? 'sade sati continues' : 'sade sati begins')
+      : sadeSati(ha) ? 'sade sati ends'
+      : hb === 8 ? 'a heavy patch begins'
+      : hb === 4 ? 'home feels strained'
+      : [3, 6, 11].includes(hb) ? 'Saturn helps'
+      : [4, 8].includes(ha) ? 'the heavy patch lifts' : 'steadier';
+  };
+  const jup = at('Jupiter');
+  // Jupiter is supportive in the 2nd, 5th, 7th, 9th and 11th sign from the Moon.
+  const jupGood = (s: number) => [2, 5, 7, 9, 11].includes(fromMoon(s));
+  const jupNote = (_a: number, b: number) => jupGood(b) ? 'supportive, help and openings' : 'less supportive, growth takes effort';
+
+  /**
+   * The next sign change within `days`, with any retrograde back-and-forth:
+   * " From around Jun 2027 it moves into Aries, your luck house (back in
+   * Pisces Oct 2027 to Feb 2028); sade sati ends." (ml/data/teacher_prompts.py
+   * quotes this "From around ... it moves into" wording.) Rahu always moves
+   * backward through the signs, so its normal step is to the previous sign.
+   */
+  const next = (body: Body, days: number, note?: (a: number, b: number) => string) => {
+    const changes = signChanges(body, now, days + 400);
+    const c1 = changes[0];
+    if (!c1 || c1.date.getTime() - now.getTime() > days * 86400000) return '';
+    const step = body === 'Rahu' ? 11 : 1;
+    const forward = c1.to === (c1.from + step) % 12;
+    const c2 = changes[1], c3 = changes[2];
+    const within = (c: SignChange | undefined, ref: SignChange) =>
+      !!c && c.date.getTime() - ref.date.getTime() < 400 * 86400000;
+    const sign = (s: number) => `${ZODIAC[s].name}, ${your} ${houseName(s)}`;
+    const tail = (a: number, b: number) => (note ? '; ' + note(a, b) : '') + '.';
+    if (forward) {
+      // Into the next sign, possibly dipping back once before settling.
+      const dip = within(c2, c1) && c2!.to === c1.from;
+      const settle = dip && within(c3, c2!) && c3!.to === c1.to ? c3 : undefined;
+      const dipText = !dip ? ''
+        : settle ? ` (back in ${ZODIAC[c1.from].name} ${monthYear(c2!.date)} to ${monthYear(settle.date)})`
+        : ` (back in ${ZODIAC[c1.from].name} from ${monthYear(c2!.date)})`;
+      return ` From around ${monthYear(c1.date)} it moves into ${sign(c1.to)}${dipText}${tail(c1.from, c1.to)}`;
+    }
+    // Retrograde slip back into the previous sign, usually returning months later.
+    const back = within(c2, c1) && c2!.to === c1.from ? c2 : undefined;
+    return ` From around ${monthYear(c1.date)} it slips back into ${sign(c1.to)}${back ? ` until ${monthYear(back.date)}` : ''}${tail(c1.from, c1.to)}`;
+  };
+  return [
+    `- Saturn ${where(sat)}. ${satNote}.${next('Saturn', 1100, satChange)}`,
+    `- Jupiter ${where(jup)}; ${jupNote(jup.signIndex, jup.signIndex)}.${next('Jupiter', 400, jupNote)}`,
+    `- Rahu ${where(at('Rahu'))}; restless push there.${next('Rahu', 600)}`,
+  ];
+}
+
+/** HEAD-of-astro-gemma-v1 format. Kept byte-identical for the shipped model. */
+function contextV1(profile: ContextProfile, now: Date): string {
   const kundli = getFullKundli(profile);
+  const dasha = getCurrentMahadasha(kundli.moonLon, profile.birthDate, now);
   const lines: string[] = [
     `Reading for: ${profile.name}`,
     `Born: ${profile.birthDate}${profile.birthTime ? ' at ' + profile.birthTime : ''}${profile.birthCity ? ' in ' + profile.birthCity : ''}`,
@@ -541,12 +810,125 @@ export function getAstrologyContext(profile: BirthData & {
   if (kundli.bigThree.moon)   lines.push(`Moon sign: ${kundli.bigThree.moon.name}`);
   if (kundli.bigThree.rising) lines.push(`Rising sign: ${kundli.bigThree.rising.name}`);
   lines.push(`Moon nakshatra: ${kundli.nakshatra.name} (lord: ${kundli.nakshatra.lord})`);
-  lines.push(`Current Mahadasha: ${kundli.dasha.lord} (until ${kundli.dasha.endDate})`);
+  lines.push(`Current Mahadasha: ${dasha.lord} (until ${dasha.endDate})`);
   const planetSummary = kundli.planets
     .map(p => `${p.name} in ${ZODIAC[p.signIndex].name} ${p.degInSign}°${p.dignity !== 'neutral' ? ' [' + p.dignity + ']' : ''}`)
     .join(', ');
   if (planetSummary) lines.push(`Planets (Vedic): ${planetSummary}`);
   return lines.join('\n');
+}
+
+/** v2: pronouns only; the spouse-karaka note cost ~20 tokens for little use. */
+function genderLineV2(gender: string | null | undefined): string | null {
+  switch (gender) {
+    case 'woman':      return 'Gender: woman (she/her).';
+    case 'man':        return 'Gender: man (he/him).';
+    case 'non_binary': return 'Gender: non-binary (they/them).';
+    default:           return null;  // unspecified / unknown: no gendered assumptions
+  }
+}
+
+/**
+ * v2: "Age: 34", in whole years on `now` (local calendar). A 270M model can't
+ * subtract dates, and minors need different answers (no marriage timing).
+ */
+function ageLine(birthDate: string, now: Date): string | null {
+  const [y, m, d] = birthDate.split('-').map(Number);
+  const age = now.getFullYear() - y - ((now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) ? 1 : 0);
+  if (!(age >= 0)) return null;  // born after "today"
+  return age < 18
+    ? `Age: ${age} (minor: talk about studies, family, growth; no marriage/romance timing)`
+    : `Age: ${age}`;
+}
+
+function contextV2(raw: ContextProfile, now: Date): string {
+  // A malformed time reads as "unknown" rather than poisoning every position with NaN.
+  const profile: ContextProfile = { ...raw, birthTime: raw.birthTime && VALID_TIME.test(raw.birthTime) ? raw.birthTime : null };
+  const hasPlace = profile.birthLat != null && profile.birthLng != null
+    && Number.isFinite(profile.birthLat) && Number.isFinite(profile.birthLng);
+  const rel = profile.relationship?.trim();
+  const who = profile.isYou === false ? ` (the user's ${rel || 'family member or friend'}, not the user)` : '';
+  const lines: string[] = [
+    `Reading for: ${profile.name}${who}`,
+    `Born: ${profile.birthDate}${profile.birthTime ? ' at ' + profile.birthTime : ''}${profile.birthCity ? ' in ' + profile.birthCity : ''}`,
+  ];
+  if (!VALID_DATE.test(profile.birthDate) || !Number.isFinite(birthJulianDay(profile))) {
+    const gLine = genderLineV2(profile.gender);
+    if (gLine) lines.push(gLine);
+    return lines.join('\n');
+  }
+  const aLine = ageLine(profile.birthDate, now);
+  if (aLine) lines.push(aLine);
+  const gLine = genderLineV2(profile.gender);
+  if (gLine) lines.push(gLine);
+
+  const kundli = getFullKundli(profile);
+  const { sun, moon, rising } = kundli.bigThree;
+  const moonSign = Math.floor(kundli.moonLon / 30) % 12;
+
+  // Without a birth time the chart is cast for local noon; without a place the
+  // time is read as UT. Say which Moon sign / nakshatra the real moment could
+  // give instead (the Moon moves ~13° a day, about one nakshatra).
+  let window: [number, number] | null = null;
+  if (!profile.birthTime) {
+    window = [birthJulianDay({ ...profile, birthTime: '00:00' }), birthJulianDay({ ...profile, birthTime: '23:59' })];
+  } else if (!profile.birthTz && !hasPlace) {
+    const jd = birthJulianDay(profile);
+    window = [jd - 14 / 24, jd + 12 / 24];  // any civil offset UTC−12…+14
+  }
+  const moonAt = (jd: number) => siderealLongitudeAt('Moon', jd);
+  const alt = <T,>(f: (lon: number) => T, cur: T): T[] => {
+    if (!window) return [];
+    const xs = [window[0], (window[0] + window[1]) / 2, window[1]].map(jd => f(moonAt(jd)));
+    return [...new Set(xs)].filter(x => x !== cur);
+  };
+  const altSigns = alt(lon => Math.floor(lon / 30) % 12, moonSign);
+  const altNaks = alt(lon => getNakshatra(lon).name, kundli.nakshatra.name);
+  const unsure = profile.birthTime ? 'birth place unknown' : 'birth time unknown';
+
+  // Sun sign is the Western (tropical) one users know; everything below is Vedic (sidereal).
+  if (sun) lines.push(`Sun sign (Western): ${sun.name} (${sun.element})`);
+  if (moon) lines.push(`Moon sign: ${moon.name}${altSigns.length ? ` (${unsure}: could be ${altSigns.map(s => ZODIAC[s].name).join(' or ')})` : ''}`);
+  let ascSign: number | null = null;
+  if (rising && kundli.ascDeg != null) {
+    ascSign = Math.floor(kundli.ascDeg / 30) % 12;
+    // Lagna moves ~1° every 4 minutes: flag charts where ±5 minutes changes it.
+    const jd = birthJulianDay(profile);
+    const near = [-5, 5]
+      .map(m => ascendantAt(jd + m / 1440, profile.birthLat!, profile.birthLng!))
+      .map(d => (d == null ? ascSign! : Math.floor(d / 30) % 12))
+      .filter(s => s !== ascSign);
+    lines.push(`Rising sign: ${rising.name}${near.length ? ` (near the ${ZODIAC[near[0]].name} border: a few minutes' error in birth time would change it and the houses)` : ''}`);
+  }
+  lines.push(`Moon nakshatra: ${kundli.nakshatra.name} (lord: ${kundli.nakshatra.lord})${altNaks.length ? ` (${unsure}: could be ${altNaks.join(' or ')}, so timing is approximate)` : ''}`);
+
+  // Whole-sign houses from the ascendant, or from the Moon without one.
+  const firstSign = ascSign ?? moonSign;
+  const planetSummary = kundli.planets
+    .map(p => {
+      const notes = [ordinal(((p.signIndex - firstSign + 12) % 12) + 1), p.dignity !== 'neutral' ? p.dignity : '',
+        p.retrograde && p.name !== 'Rahu' && p.name !== 'Ketu' ? 'retro' : ''].filter(Boolean).join(' ');
+      return `${p.name} ${ZODIAC[p.signIndex].name} ${notes}`;
+    })
+    .join(', ');
+  lines.push(`Planets (sign, house${ascSign != null ? '' : ' from Moon'}): ${planetSummary}`);
+  const noAsc = !profile.birthTime ? 'birth time unknown' : !hasPlace ? 'birth place unknown' : 'no rising sign';
+  lines.push(ascSign != null ? 'Life areas:' : `Life areas (${noAsc}, so houses are counted from the Moon):`);
+  lines.push(...lifeAreaLines(kundli.planets, firstSign));
+  lines.push(`Now (sky today):`);
+  // Another person's chart: "their career house", so the model doesn't read it as the user's.
+  lines.push(...transitLines(moonSign, firstSign, now, profile.isYou === false ? 'their' : 'your'));
+  return lines.join('\n');
+}
+
+/**
+ * Chart text for the on-device model's system prompt (utils/ai.ts) and its
+ * training data (ml/data/gen_profiles.ts). Pass the `version` the model was
+ * trained on; `date` is "today" for transits and timing.
+ */
+export function getAstrologyContext(profile: ContextProfile, opts: ContextOptions = {}): string {
+  const { version = LATEST_CONTEXT_VERSION, date = new Date() } = opts;
+  return version === 1 ? contextV1(profile, date) : contextV2(profile, date);
 }
 
 // ─── Lunar phase (approximate, Synodic period) ────────────────────────────────

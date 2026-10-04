@@ -243,6 +243,15 @@ export function tropicalLongitude(body: Body, jdUT: number): number {
   return norm360(planetGeocentric(body, d) + dpsi);
 }
 
+/**
+ * Nutation in longitude (Δψ, degrees) at a Julian Day (UT). Apparent
+ * longitudes include it; sidereal (Lahiri) longitudes take it back out
+ * together with the mean ayanamsa, as Swiss Ephemeris does.
+ */
+export function nutationInLongitude(jdUT: number): number {
+  return nutationLongitude(toTT(jdUT));
+}
+
 /** Daily motion in degrees/day (negative = retrograde), central difference over ±12 h. */
 export function dailyMotion(body: Body, jdUT: number): number {
   return angleDiff(tropicalLongitude(body, jdUT + 0.5), tropicalLongitude(body, jdUT - 0.5));

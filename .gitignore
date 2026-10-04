@@ -64,3 +64,7 @@ ml/data/sft_gemma/
 ml/train/colab_upload_gemma/
 **/__pycache__/
 ml/outputs/
+
+# generated
+ml/data/profiles_v2.jsonl
+.test-build/

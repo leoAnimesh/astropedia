@@ -49,6 +49,15 @@ export function setupNotifications(): void {
 
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
+  // Android 13+ only shows the POST_NOTIFICATIONS prompt once a channel exists.
+  if (Platform.OS === 'android') {
+    try {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Astropedia',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    } catch { /* non-fatal */ }
+  }
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   if (current.canAskAgain) {

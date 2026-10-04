@@ -6,14 +6,14 @@
     "begin": "Begin"
   },
   "name": {
-    "step": "01 / 05 — You",
+    "step": "01 / 06 — You",
     "titleA": "What should I",
     "titleB": "call you?",
     "label": "First name",
     "placeholder": "Your name"
   },
   "gender": {
-    "step": "02 / 05 — You",
+    "step": "02 / 06 — You",
     "titleA": "How should I",
     "titleB": "refer to you?",
     "hint": "Helps Saga pick the right pronouns and (when relevant) the traditional Vedic conventions around partner readings.",
@@ -23,7 +23,7 @@
     "unspecified": { "label": "Prefer not to say", "sub": "I'll skip this for now" }
   },
   "birthDate": {
-    "step": "03 / 05 — Birthday",
+    "step": "03 / 06 — Birthday",
     "titleA": "When were",
     "titleB": "you born?",
     "fieldLabel": "Date of birth",
@@ -33,17 +33,18 @@
     "futureBody": "Pick the date you were actually born — we can't read a chart for a moment that hasn't happened yet."
   },
   "birthTime": {
-    "step": "04 / 05 — Time",
+    "step": "04 / 06 — Time",
     "titleA": "What time did",
     "titleB": "you arrive?",
     "hint": "Birth time gives us your Rising sign and precise house placements — the most personal part of your chart.",
     "fieldLabel": "Time of birth",
     "selected": "Selected time",
     "moonLabel": "Moon sign · Rashi",
-    "exactNote": "now exact — this is your Rashi"
+    "exactNote": "now exact — this is your Rashi",
+    "unknown": "I don't know my birth time"
   },
   "birthPlace": {
-    "step": "05 / 05 — Place",
+    "step": "05 / 06 — Place",
     "titleA": "Where did you",
     "titleB": "first breathe?",
     "hint": "Your birth location anchors your chart to the sky at exactly that moment and place on Earth.",
@@ -51,14 +52,23 @@
     "privacy": "Your chart stays on your device. Saga reads it gently — like a thoughtful friend who happens to know astrology.",
     "cta": "Open my chart"
   },
-  "intent": {
-    "step": "One more · what brought you here",
-    "titleA": "What's on",
-    "titleB": "your mind?",
-    "hint": "Pick one to give Saga a starting point. You can ask about anything else, anytime.",
-    "love": { "title": "Love & connection", "sub": "Relationships, intimacy, the heart." },
-    "career": { "title": "Career & purpose", "sub": "Work, direction, what to build." },
-    "self": { "title": "Understand myself", "sub": "Your patterns, your inner weather." },
-    "curious": { "title": "Just curious", "sub": "No agenda — show me around." }
+  "notifications": {
+    "step": "06 / 06 — Notifications",
+    "titleA": "Let the sky",
+    "titleB": "tap you gently.",
+    "hint": "A short reading every morning at 8 AM, and a heads-up a day before the big planetary shifts — when the Sun, Mars, Jupiter or Saturn changes sign. Change this anytime in Settings.",
+    "daily": "Daily reading",
+    "dailySub": "A short reading at 8 AM",
+    "transit": "Transit alerts",
+    "transitSub": "A day before Sun, Mars, Jupiter or Saturn changes sign",
+    "cta": "Turn on notifications",
+    "skip": "Not now",
+    "preview": "Preview",
+    "previewNow": "now",
+    "previewTitle": "For you today",
+    "previewBody": "Moon in Rohini · Shukla Panchami. Open to see how today looks.",
+    "deniedTitle": "Notifications are off",
+    "deniedBody": "No problem. To get daily readings and transit alerts later, allow notifications for Astropedia in your phone settings, then switch them on in Astropedia's Settings.",
+    "privacy": "Reminders are scheduled on your device — no server, no tracking."
   }
 }

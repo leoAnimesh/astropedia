@@ -83,5 +83,17 @@
     "Thursday": "বৃহস্পতিবার",
     "Friday": "শুক্রবার",
     "Saturday": "শনিবার"
-  }
+  },
+  "planetShort": {
+    "Sun": "সূ",
+    "Moon": "চ",
+    "Mars": "মং",
+    "Mercury": "বু",
+    "Jupiter": "বৃ",
+    "Venus": "শু",
+    "Saturn": "শ",
+    "Rahu": "রা",
+    "Ketu": "কে"
+  },
+  "retroMark": "(ব)"
 }

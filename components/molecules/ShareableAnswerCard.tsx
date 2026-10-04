@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { FONTS } from '@/constants/themes';
+import { indicLineHeight, useIndicStyles, useIsIndic } from '@/hooks/use-indic-styles';
 
 export type AnswerCardLook = 'light' | 'dark';
 
@@ -38,10 +39,13 @@ function answerSize(text: string): { fontSize: number; lineHeight: number } {
  */
 export const ShareableAnswerCard = forwardRef<View, Props>(
   function ShareableAnswerCard({ answer, question, persona, profileName, look, dateLabel }, ref) {
+    const styles = useIndicStyles(baseStyles);
     const { t }    = useTranslation('chat');
     const c        = LOOKS[look];
     const who      = persona === 'krishna' ? t('persona.krishna') : t('persona.saga');
-    const size     = answerSize(answer);
+    const indic    = useIsIndic();
+    const base     = answerSize(answer);
+    const size     = indic ? { ...base, lineHeight: indicLineHeight(base.fontSize, base.lineHeight) } : base;
 
     return (
       <View
@@ -75,7 +79,7 @@ export const ShareableAnswerCard = forwardRef<View, Props>(
   },
 );
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   card: {
     width:          '100%',
     minHeight:      340,

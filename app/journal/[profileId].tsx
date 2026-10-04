@@ -1,14 +1,16 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { SwipeRow } from '@/components/molecules/SwipeRow';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
+import { AppTextInput, KeyboardSpacer } from '@/components/keyboard';
 import {
   deleteJournalEntry,
   getJournalEntries,
@@ -20,6 +22,7 @@ import { getPanchang } from '@/utils/panchang';
 import { todayIso } from '@/utils/format';
 import { formatDayDate, intlLocale, tNakshatra, tPlanet } from '@/utils/i18n';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 /** Mood ids are stored in the database as-is; labels come from `journal:mood.<id>`. */
 const MOODS = [
@@ -41,6 +44,7 @@ function moodDot(mood: string, fallback: string): string {
 }
 
 export default function JournalScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { t, i18n }   = useTranslation('journal');
   const { theme }     = useAccent();
   const { profileId } = useLocalSearchParams<{ profileId: string }>();
@@ -146,11 +150,7 @@ export default function JournalScreen() {
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
+      <View style={{ flex: 1 }}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -203,11 +203,12 @@ export default function JournalScreen() {
               })}
             </View>
 
-            <TextInput
+            <AppTextInput
               value={text}
               onChangeText={setText}
               placeholder={t('placeholder')}
               placeholderTextColor={theme.muted}
+              accessibilityLabel={t('placeholder')}
               multiline
               textAlignVertical="top"
               style={[
@@ -287,12 +288,14 @@ export default function JournalScreen() {
             </View>
           ) : null}
         </ScrollView>
-      </KeyboardAvoidingView>
+        {/* Room for the keyboard (app or phone) so the entry and Save stay reachable. */}
+        <KeyboardSpacer />
+      </View>
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,

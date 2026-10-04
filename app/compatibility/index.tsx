@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,6 +18,7 @@ import { NAKSHATRAS } from '@/constants/astrology';
 import { askLanguage, tAsk, tNakshatra, tPlanet, tSign, type AppLanguage } from '@/utils/i18n';
 import { FONTS, RADIUS } from '@/constants/themes';
 import type { Profile } from '@/utils/database';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type Role = 'bride' | 'groom';
 
@@ -30,6 +33,7 @@ function orient(x: Profile | null, y: Profile | null): [Profile | null, Profile 
 const firstName = (p: Profile) => p.name.split(' ')[0];
 
 export default function KundliMatchScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('compatibility');
   const tallScript = i18n.language !== 'en';
@@ -425,6 +429,7 @@ function exemptionText(m: ManglikInfo, tr: Tr, lng?: AppLanguage, num: (n: numbe
 function PersonSlot({ role, profile, chart, active, onPress }: {
   role: Role; profile: Profile | null; chart: PersonChart | null; active: boolean; onPress: () => void;
 }) {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('compatibility');
   return (
@@ -461,6 +466,7 @@ function PersonSlot({ role, profile, chart, active, onPress }: {
 }
 
 function DoshaBlock({ title, text, flagged }: { title: string; text: string; flagged: boolean }) {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   return (
     <View style={styles.doshaBlock}>
@@ -473,7 +479,7 @@ function DoshaBlock({ title, text, flagged }: { title: string; text: string; fla
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,

@@ -24,6 +24,20 @@ function executorch(): ExecuTorch {
 // inside the app by plugins/with-bundled-model.js. Bump MODEL_VERSION whenever
 // the bundled files change so Android re-copies them out of the APK.
 const MODEL_VERSION = 'astro-gemma-v1';
+/**
+ * Chart-context format the bundled model was trained on (utils/astrology.ts
+ * ContextVersion). astro-gemma-v1 knows format 1; switch to 2 together with a
+ * model trained on ml/data/gen_profiles.ts output in format 2.
+ */
+export const CONTEXT_VERSION = 1 as 1 | 2;
+/**
+ * Generation budget that goes with CONTEXT_VERSION. astro-gemma-v1 was
+ * exported with a 1024-token window and trained on short replies (160 new
+ * tokens). v2 models are exported with CTX=2048 (ml/scripts/export_gemma.sh)
+ * and trained on replies of up to 260 tokens (ml/data/validate_answer.py MAX_TOKENS).
+ */
+export const REPLY_MAX_TOKENS = CONTEXT_VERSION === 1 ? 160 : 260;
+export const CONTEXT_WINDOW = CONTEXT_VERSION === 1 ? 1024 : 2048;
 const MODEL_FILE = 'astro-gemma.pte';
 const TOKENIZER_FILE = 'astro-gemma-tokenizer.json';
 

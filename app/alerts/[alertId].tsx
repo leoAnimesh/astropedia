@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,6 +14,7 @@ import { Storage } from '@/utils/storage';
 import { localDateIso } from '@/utils/format';
 import { formatDayDate, tPlanet } from '@/utils/i18n';
 import { alertQuestion, explainTransit, findAlert } from '@/utils/transits';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 const fmtDay = formatDayDate;
 
@@ -23,6 +26,7 @@ function splitTitle(title: string, planet: string): [string, string, string] {
 }
 
 export default function AlertDetailScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { t }             = useTranslation('alerts');
   const { theme }         = useAccent();
   const { alertId }       = useLocalSearchParams<{ alertId: string }>();
@@ -154,7 +158,7 @@ export default function AlertDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,

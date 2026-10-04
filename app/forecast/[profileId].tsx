@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,8 +12,10 @@ import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { askLanguage, formatMonthYear, tAsk, tPlanet } from '@/utils/i18n';
 import { getYearAhead, transitLabel, type ForecastMonth } from '@/utils/forecast';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 export default function ForecastScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { t, i18n }   = useTranslation('forecast');
   const { theme }     = useAccent();
   const { profileId } = useLocalSearchParams<{ profileId: string }>();
@@ -145,7 +149,7 @@ export default function ForecastScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop:        12,
