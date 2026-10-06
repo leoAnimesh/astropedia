@@ -68,3 +68,5 @@ ml/outputs/
 # generated
 ml/data/profiles_v2.jsonl
 .test-build/
+ml/data/profiles_v2_dates.jsonl
+ml/data/sft_v2/

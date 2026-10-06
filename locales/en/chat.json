@@ -74,6 +74,10 @@
     "modelLoad": "I couldn't load the on-device model right now. Try again in a moment.",
     "generic": "Something went wrong — please try again."
   },
+  "greeting": {
+    "self": "Hello! I'm Saga. Ask me anything about your chart — love, work, money, family, or what the coming months hold.",
+    "other": "Hello! I'm Saga. Ask me anything about {{name}}'s chart — love, work, money, family, or what the coming months hold."
+  },
   "archived": {
     "back": "Back",
     "eyebrow": "Archive",

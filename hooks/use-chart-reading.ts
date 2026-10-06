@@ -68,13 +68,28 @@ export function useChartReading(profile: Profile | null): State {
 
     setState({ reading: null, loading: true });
 
-    askChartReading(profile).then((text) => {
+    // A hi/bn reading that comes out in the wrong script twice falls back to
+    // the English reading (the cached one if there is one), so the card is
+    // never empty; it is cached under this language too, so it isn't retried
+    // on every visit.
+    const cachedEnglish = lang === 'en' ? null : Storage.getChartReading(profile.id, 'en');
+    askChartReading(profile, lang, { skipEnglishFallback: !!cachedEnglish }).then((result) => {
       if (cancelled) return;
-      if (!text) {
+      if (!result) {
         setState({ reading: null, loading: false });
         return;
       }
-      const reading = parseReading(text);
+      let reading: ChartReading | null = null;
+      if (result.text) {
+        reading = parseReading(result.text);
+        if (result.lang !== lang) Storage.setChartReading(profile.id, JSON.stringify(reading), result.lang);
+      } else if (cachedEnglish) {
+        try { reading = JSON.parse(cachedEnglish); } catch { /* fall through */ }
+      }
+      if (!reading) {
+        setState({ reading: null, loading: false });
+        return;
+      }
       Storage.setChartReading(profile.id, JSON.stringify(reading), lang);
       setState({ reading, loading: false });
     }).catch(() => {

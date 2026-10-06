@@ -270,6 +270,8 @@ export default function HomeScreen() {
         )}
 
         {/* Explore */}
+        {/* Explore tiles + Kundli matching share one 10pt gap */}
+        <View style={styles.explore}>
         <View style={styles.tiles}>
           {tiles.map((t) => (
             <TouchableOpacity
@@ -303,6 +305,7 @@ export default function HomeScreen() {
           </View>
           <Icon name="chevron" size={16} color={theme.faint} />
         </TouchableOpacity>
+        </View>
 
         {/* Recent */}
         <View style={styles.sectionHeader}>
@@ -486,6 +489,7 @@ const baseStyles = StyleSheet.create({
     fontSize:   13.5,
   },
 
+  explore: { gap: 10 },
   tiles: {
     flexDirection: 'row',
     flexWrap:      'wrap',
@@ -514,7 +518,6 @@ const baseStyles = StyleSheet.create({
     padding:       14,
     borderRadius:  RADIUS.card,
     borderWidth:   StyleSheet.hairlineWidth,
-    marginTop:     -16, // sits 10pt under the grid, like the tile gap
   },
   tileTitle: {
     fontFamily: FONTS.serifItalic,

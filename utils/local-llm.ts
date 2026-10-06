@@ -20,21 +20,29 @@ function executorch(): ExecuTorch {
   return _et;
 }
 
-// The one on-device model: SmolLM2-135M fine-tuned for Astropedia (ml/), shipped
+// The one on-device model: Gemma 3 270M fine-tuned for Astropedia (ml/), shipped
 // inside the app by plugins/with-bundled-model.js. Bump MODEL_VERSION whenever
 // the bundled files change so Android re-copies them out of the APK.
-const MODEL_VERSION = 'astro-gemma-v1';
+const MODEL_VERSION = 'astro-gemma-v2';
 /**
  * Chart-context format the bundled model was trained on (utils/astrology.ts
- * ContextVersion). astro-gemma-v1 knows format 1; switch to 2 together with a
- * model trained on ml/data/gen_profiles.ts output in format 2.
+ * ContextVersion). astro-gemma-v1 knew format 1; astro-gemma-v2 (bundled) is
+ * trained on ml/data/gen_profiles.ts output in format 2. Switch together with
+ * the model file.
  */
-export const CONTEXT_VERSION = 1 as 1 | 2;
+export const CONTEXT_VERSION = 2 as 1 | 2;
 /**
  * Generation budget that goes with CONTEXT_VERSION. astro-gemma-v1 was
  * exported with a 1024-token window and trained on short replies (160 new
  * tokens). v2 models are exported with CTX=2048 (ml/scripts/export_gemma.sh)
  * and trained on replies of up to 260 tokens (ml/data/validate_answer.py MAX_TOKENS).
+ *
+ * The window itself lives in the .pte (get_max_context_len = 2048); the app
+ * passes no window to the runner, CONTEXT_WINDOW only budgets the prompt. The
+ * v2 graph takes at most 511 tokens per forward call (get_max_seq_len = 511);
+ * react-native-executorch's TextLLMRunner prefills longer prompts in 511-token
+ * chunks (cpp/extensions/llm/llm_runner.cpp clamps the chunk to the graph's
+ * input bound), so a ~1,400-token prompt is 3 prefill calls.
  */
 export const REPLY_MAX_TOKENS = CONTEXT_VERSION === 1 ? 160 : 260;
 export const CONTEXT_WINDOW = CONTEXT_VERSION === 1 ? 1024 : 2048;
@@ -243,6 +251,15 @@ type GenerateOptions = {
   onToken: (token: string) => void;
 };
 
+export type RunOptions = LLMGenerationConfig & {
+  /**
+   * Text that opens the model's turn (e.g. "SUN: স্বভাবে " to steer a Bengali
+   * reading). It is part of the prompt, not streamed; the caller prepends it
+   * to the reply if it wants it there.
+   */
+  replyPrefix?: string;
+};
+
 // Runs on ExecuTorch's background worklet runtime so generation never blocks
 // the JS thread; tokens hop back to the RN thread through scheduleOnRN.
 function generateWorklet(runner: LLMRunner, prompt: string, options: GenerateOptions): string {
@@ -267,10 +284,14 @@ function generateAsync(runner: LLMRunner, prompt: string, options: GenerateOptio
 // The native runner handles one generation at a time.
 let _activeGeneration: Promise<string> | null = null;
 
+/**
+ * Generate a reply. `tokenCallback` may return true to stop generation early
+ * (the reply so far is returned).
+ */
 export async function runLocalLLM(
   messages: ChatMessage[],
-  tokenCallback: (token: string) => void,
-  genConfig: LLMGenerationConfig = {},
+  tokenCallback: (token: string) => boolean | void,
+  { replyPrefix = '', ...genConfig }: RunOptions = {},
 ): Promise<string> {
   cancelIdleUnload();
   if (!_runner) await initLocalLLM().catch(() => {});
@@ -283,14 +304,17 @@ export async function runLocalLLM(
   // Interrupt runaway "thesaurus walk" loops instead of letting them fill
   // the whole token budget.
   const detector = createDegenerateDetector();
+  let stopped = false;
   const onToken = (token: string) => {
-    tokenCallback(token);
-    if (detector.feed(token)) {
+    if (stopped) return;
+    const stop = tokenCallback(token) === true;
+    if (stop || detector.feed(token)) {
+      stopped = true;
       try { runner.stop(); } catch {}
     }
   };
 
-  _activeGeneration = generateAsync(runner, formatPrompt(messages), {
+  _activeGeneration = generateAsync(runner, formatPrompt(messages) + replyPrefix, {
     genConfig: { temperature: 0.3, maxNewTokens: 200, ...genConfig },
     stopTokens: STOP_TOKENS[CHAT_FORMAT],
     onToken,
@@ -321,7 +345,7 @@ function createDegenerateDetector() {
       if (triggered) return true;
       tail.push(token);
       if (tail.length > TAIL_WINDOW) tail.shift();
-      if (/[.!?\n]/.test(token)) tokensSincePunct = 0;
+      if (/[.!?।\n]/.test(token)) tokensSincePunct = 0;
       else tokensSincePunct++;
       if (tail.length < TAIL_WINDOW) return false;
 

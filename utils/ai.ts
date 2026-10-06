@@ -2,9 +2,14 @@ import { Platform } from 'react-native';
 import type { Profile } from './database';
 import { getAstrologyContext, getFullKundli, getTimingContext } from './astrology';
 import {
-  runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW, type ChatMessage,
+  runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW,
+  type ChatMessage, type RunOptions,
 } from './local-llm';
-import { getAppLanguage } from './i18n';
+import i18n, { getAppLanguage } from './i18n';
+import {
+  isPureGreeting, readingScriptRatio, readingSeed, runGuarded,
+  NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, type ReplyGuard,
+} from './reply-guards';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
 import { pickGitaVerse, formatGitaQuote } from './gita';
 import { todayIso } from './format';
@@ -149,17 +154,24 @@ async function* streamLocal(
   messages: ChatMessage[],
   maxNewTokens: number,
   suffix?: string,
+  guard?: ReplyGuard | null,
 ): AsyncGenerator<string> {
   const queue: string[] = [];
   let wakeup:   (() => void) | null = null;
   let finished = false;
   let failure: unknown = null;
 
-  const done = runLocalLLM(messages, (token) => {
+  const emit = (token: string) => {
+    if (!token) return;
     queue.push(token);
     wakeup?.();
     wakeup = null;
-  }, { maxNewTokens }).catch((err) => { failure = err; }).finally(() => {
+  };
+  const run = guard
+    ? runGuarded((onToken, temperature) => runLocalLLM(messages, onToken,
+        temperature == null ? { maxNewTokens } : { maxNewTokens, temperature }), guard, emit)
+    : runLocalLLM(messages, emit, { maxNewTokens });
+  const done = run.catch((err) => { failure = err; }).finally(() => {
     finished = true;
     wakeup?.();
   });
@@ -175,6 +187,14 @@ async function* streamLocal(
   await done;
   if (failure) throw failure;
   if (suffix) yield suffix;
+}
+
+/** The checks for a chat reply (CONTEXT_VERSION 2 only; see utils/reply-guards.ts runGuarded). */
+function replyGuard(lang: ReplyLang, names: (string | undefined)[], history: AIMessage[] = []): ReplyGuard | null {
+  if (CONTEXT_VERSION !== 2) return null;
+  const previous = [...history].reverse().find(m => m.role === 'assistant')?.content;
+  if (lang === 'en' && !previous) return null;
+  return { lang, previous, ignore: names.flatMap(n => (n ? [n.split(' ')[0]] : [])) };
 }
 
 /**
@@ -325,6 +345,15 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
   const mode = req.mode ?? 'saga';
   const lang = replyLanguage(req.userMessage);
 
+  // A bare "hi" / "नमस्ते" / "নমস্কার" gets a short hello that invites a
+  // question; v2 answers it with a chart dump (or introduces itself as the user).
+  if (CONTEXT_VERSION === 2 && mode === 'saga' && isPureGreeting(req.userMessage)) {
+    const greeting = req.profile.isYou
+      ? i18n.t('chat:greeting.self', { lng: lang })
+      : i18n.t('chat:greeting.other', { lng: lang, name: req.profile.name.split(' ')[0] });
+    return { stream: yieldOnce(greeting), tier: 'deterministic' };
+  }
+
   // L0 — deterministic answers (rashi, nakshatra, dasha, lunar phase, etc.).
   // Krishna mode is always conversational, so it skips the classifier. The
   // templates are English, so other languages go to the model.
@@ -350,7 +379,8 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
       { role: 'system', content: krishnaSystem(req.userName, verse.prompt, lang) },
       { role: 'user',   content: req.userMessage },
     ];
-    return { stream: streamLocal(messages, REPLY_MAX_TOKENS, `\n\n${formatGitaQuote(verse, lang)}`), tier: 'executorch' };
+    const guard = replyGuard(lang, [req.userName]);
+    return { stream: streamLocal(messages, REPLY_MAX_TOKENS, `\n\n${formatGitaQuote(verse, lang)}`, guard), tier: 'executorch' };
   }
 
   const system = sagaSystem(req.profile, lang);
@@ -359,7 +389,8 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     ...sagaHistory(system, req.history, req.userMessage),
     { role: 'user', content: req.userMessage },
   ];
-  return { stream: streamLocal(messages, REPLY_MAX_TOKENS), tier: 'executorch' };
+  const guard = replyGuard(lang, [req.profile.name, req.userName], req.history);
+  return { stream: streamLocal(messages, REPLY_MAX_TOKENS, undefined, guard), tier: 'executorch' };
 }
 
 export async function askAI(req: AIRequest): Promise<{ text: string; tier: ModelTier }> {
@@ -371,23 +402,56 @@ export async function askAI(req: AIRequest): Promise<{ text: string; tier: Model
   return { text: text.trim(), tier };
 }
 
-async function collect(messages: ChatMessage[], maxNewTokens: number): Promise<string> {
+async function collect(messages: ChatMessage[], maxNewTokens: number, options: RunOptions = {}): Promise<string> {
   let text = '';
-  for await (const token of streamLocal(messages, maxNewTokens)) text += token;
+  await runLocalLLM(messages, (token) => { text += token; }, { maxNewTokens, ...options });
   return text.trim();
 }
+
+export type ChartReadingResult = {
+  /** null: hi/bn failed and `skipEnglishFallback` was set (use a cached English reading). */
+  text: string | null;
+  /** Language the text is in: the requested one, or 'en' if hi/bn failed twice. */
+  lang: ReplyLang;
+};
 
 /**
  * Personality reading for the chart card, in the "SUN: …\nMOON: …" line
  * format that use-chart-reading parses. Returns null if the model isn't
  * available.
+ *
+ * With CONTEXT_VERSION 2, hi/bn readings are checked for script: Bengali is
+ * seeded with "SUN: স্বভাবে " (v2 otherwise writes it in English), a reading
+ * still mostly in Latin script is retried once with another seed, and if that
+ * fails too the reading is generated in English (lang 'en' in the result).
+ * `skipEnglishFallback` returns text null instead of generating that English
+ * reading (the caller has one cached).
  */
-export async function askChartReading(profile: Profile): Promise<string | null> {
+export async function askChartReading(
+  profile: Profile,
+  lang: ReplyLang = replyLanguage(),
+  { skipEnglishFallback = false } = {},
+): Promise<ChartReadingResult | null> {
   if (!(await ensureLocalLLM(LOCAL_LLM_WAIT_MS))) return null;
-  return collect([
-    { role: 'system', content: readingSystem(profile, replyLanguage()) },
-    { role: 'user',   content: 'Read my chart.' },
-  ], 300);
+  const read = async (l: ReplyLang, replyPrefix = '', temperature?: number) => {
+    const messages: ChatMessage[] = [
+      { role: 'system', content: readingSystem(profile, l) },
+      { role: 'user',   content: 'Read my chart.' },
+    ];
+    const opts: RunOptions = temperature == null ? { replyPrefix } : { replyPrefix, temperature };
+    return replyPrefix + (await collect(messages, 300, opts));
+  };
+  if (CONTEXT_VERSION !== 2 || lang === 'en') return { text: (await read(lang)).trim(), lang };
+
+  const firstName = profile.name.split(' ')[0];
+  // In the right script, and more than a seed the model stopped right after.
+  const ok = (t: string) => t.replace(/\s/g, '').length >= 60 && readingScriptRatio(t, lang, firstName) >= NATIVE_SCRIPT_MIN;
+  for (const attempt of [0, 1] as const) {
+    const text = (await read(lang, readingSeed(lang, attempt), attempt ? RETRY_TEMPERATURE : undefined)).trim();
+    if (ok(text)) return { text, lang };
+  }
+  if (skipEnglishFallback) return { text: null, lang: 'en' };
+  return { text: (await read('en')).trim(), lang: 'en' };
 }
 
 /** A 2–4 word title for a chat thread, from its first exchange. */

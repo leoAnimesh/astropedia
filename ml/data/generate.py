@@ -226,6 +226,27 @@ TITLE_SYSTEM = ("You output ONLY a 2–4 word title for the conversation. "
 
 ATTEMPTS = 8  # per teacher call
 
+# Per-model request options (--model). Nemotron 3 (ultra/super/lightning) reasons by
+# default and turns it off with chat_template_kwargs; gpt-oss always reasons, so it gets
+# low effort plus room for the reasoning tokens (they count against max_tokens, and the
+# reasoning arrives in a separate field, not in content).
+# "saga_note" is appended to Saga system prompts (saga_system(), recognised by its "Today:" line)
+# for that model only: Nemotron 3 Super ended 30/40 English eval answers with a question back
+# (Ultra: 4/40; SAGA_SYSTEM asks for at most one in four), so it is told to end on the step.
+MODEL_OPTIONS = {
+    "openai/gpt-oss": {"extra_body": {"reasoning_effort": "low"}, "extra_tokens": 900},
+    "nvidia/nemotron-3-super": {
+        "extra_body": {"chat_template_kwargs": {"enable_thinking": False}}, "extra_tokens": 0,
+        "saga_note": "\n\nIMPORTANT for this reply: end on the practical step (or, for a greeting, rude or off-topic "
+                     "message, on your warm invitation). Do not end with a question back.",
+    },
+}
+DEFAULT_MODEL_OPTIONS = {"extra_body": {"chat_template_kwargs": {"enable_thinking": False}}, "extra_tokens": 0}
+
+
+def model_options(model: str) -> dict:
+    return next((o for pre, o in MODEL_OPTIONS.items() if model.startswith(pre)), DEFAULT_MODEL_OPTIONS)
+
 
 class BudgetExceeded(RuntimeError):
     pass
@@ -243,6 +264,7 @@ class Teacher:
         self.sem = asyncio.Semaphore(concurrency)
         self.concurrency = concurrency
         self.calls = self.errors = 0
+        self.err_kinds: collections.Counter = collections.Counter()  # per failed attempt
         # Optional hard budget (eval runs): chat() raises BudgetExceeded once
         # this many calls have been started.
         self.max_calls = max_calls
@@ -272,16 +294,23 @@ class Teacher:
             for attempt in range(ATTEMPTS):
                 await self.wait_slot()
                 try:
+                    opts = model_options(self.model)
+                    msgs = messages
+                    if opts.get("saga_note") and messages and messages[0]["role"] == "system" \
+                            and "\n\nToday: " in messages[0]["content"]:
+                        msgs = [{"role": "system", "content": messages[0]["content"] + opts["saga_note"]}] + messages[1:]
                     r = await self.client.chat.completions.create(
-                        model=self.model, messages=messages, temperature=temperature,
-                        top_p=0.95, max_tokens=max_tokens,
-                        # Nemotron 3 reasons by default; answers only.
-                        extra_body={"chat_template_kwargs": {"enable_thinking": False}})
+                        model=self.model, messages=msgs, temperature=temperature,
+                        top_p=0.95, max_tokens=max_tokens + opts["extra_tokens"],
+                        # answers only (no reasoning), see MODEL_OPTIONS
+                        extra_body=opts["extra_body"])
                     self.calls += 1
                     text = (r.choices[0].message.content or "").strip()
                     return re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()
                 except Exception as e:  # rate limits (429), timeouts and transient 5xx
                     self.errors += 1
+                    code = getattr(e, "status_code", None)
+                    self.err_kinds[str(code) if code else type(e).__name__] += 1
                     if attempt == ATTEMPTS - 1:
                         raise
                     # 5, 10, 20, 40, 80, 120, 120 s (+ jitter): about 6.5 minutes before a
@@ -582,7 +611,10 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
     if any("today" not in p for p in profiles):
         print(f"warning: {profiles_path.name} has rows without 'today' (old gen_profiles.ts); using {TODAY} for them, "
               "which only matches their transits/timing if they were generated today")
-    print(f"profiles: {len(profiles)}, today: {dict(todays)}")
+    if len(todays) <= 5:
+        print(f"profiles: {len(profiles)}, today: {dict(todays)}")
+    else:  # per-row dates (gen_profiles.ts --today-range)
+        print(f"profiles: {len(profiles)}, today: {len(todays)} distinct dates, {min(todays)} .. {max(todays)}")
     if oversample and LANG_OVERSAMPLE.get(lang, 1) != 1:
         n2 = round(n * LANG_OVERSAMPLE[lang])
         print(f"{lang}: oversampling {n} -> {n2} records (LANG_OVERSAMPLE) to cover script drops")
@@ -685,7 +717,7 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
             mins = (asyncio.get_running_loop().time() - started) / 60
             st = script_stats
             turns_ = st[f"{lang}:turns"] or 1
-            print(f"[{lang}] {finished}/{n}  {finished / mins:.1f}/min  calls={t.calls} errors={t.errors}  "
+            print(f"[{lang}] {finished}/{n}  {finished / mins:.1f}/min  calls={t.calls} errors={t.errors} {dict(t.err_kinds)}  "
                   f"turns={st[f'{lang}:turns']} first-pass={st[f'{lang}:first_pass'] / turns_:.0%} "
                   f"final-pass={st[f'{lang}:final_pass'] / turns_:.0%} val-retries={st[f'{lang}:val_retry']}  "
                   f"script: { {k: v for k, v in st.items() if 'script' in k} }", flush=True)
@@ -868,7 +900,8 @@ async def list_models(t: Teacher) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["models", "verses", "questions", "answers", "bulk", "progress", "prune"])
-    ap.add_argument("--model", default=os.environ.get("TEACHER_MODEL", DEFAULT_MODEL))
+    ap.add_argument("--model", default=os.environ.get("TEACHER_MODEL", DEFAULT_MODEL),
+                    help="teacher model id (default nemotron-3-ultra); saved as each record's 'teacher'")
     ap.add_argument("--concurrency", type=int, default=6)
     ap.add_argument("--rpm", type=float, default=35, help="max requests per minute for your key")
     ap.add_argument("--per-category", type=int, default=60)

@@ -40,13 +40,23 @@ if [[ " $* " == *"quantization.qmode=8da4w"* && " $* " != *"quantization.use_hqq
 fi
 # The output head never goes to 4-bit: gemma3_et.py quantizes it 8da8w per-channel
 # (env GEMMA_HEAD_QMODE=same to quantize it like the layers).
+# Prefill chunk (export.max_seq_length). The sliding layers' ring-buffer KV cache holds
+# 2 x sliding_window (1024) slots; one forward call may write at most sliding_window (512)
+# tokens or a chunk evicts keys its own first tokens still need (torch.export also refuses
+# > 1024). The runner prefills longer prompts in chunks of this size. CTX=1024 builds (v1)
+# keep 1024: their whole prompt is one call from position 0, which never wraps.
+prefill=${PREFILL:-$(.venv/bin/python -c "import json;p=json.load(open('$params'));c=$ctx;print(c if c<=2*p['sliding_window'] and c<=1024 else p['sliding_window'])")}
+# The exported graph takes at most prefill-1 tokens per call (export_llm's dynamic dim is
+# max_seq_length-1) but export_llm writes get_max_seq_len=max_seq_length, so ExecuTorch's
+# TextLLMRunner would chunk 1 token too wide; write the real bound.
+meta=$(.venv/bin/python -c "import json;m=json.loads('$meta');m['get_max_seq_len']=$prefill-1;print(json.dumps(m))")
 lga=$(.venv/bin/python -c "import json,sys;p=json.load(open('$params'));print('['+','.join(str(p['sliding_window']) if t=='sliding_attention' else '0' for t in p['layer_types'])+']')")
 .venv/bin/python scripts/gemma3_et.py export \
   base.model_class=smollm2 base.checkpoint="$ckpt" base.params="$params" \
   "base.metadata='$meta'" \
   model.use_kv_cache=True model.use_sdpa_with_kv_cache=True model.dtype_override=fp32 \
   "model.local_global_attention=$lga" \
-  export.max_seq_length="$ctx" export.max_context_length="$ctx" \
+  export.max_seq_length="$prefill" export.max_context_length="$ctx" \
   export.output_dir=out export.output_name="$name.pte" \
   backend.xnnpack.enabled=True backend.xnnpack.extended_ops=True ${extra[@]+"${extra[@]}"} "$@" > "out/$name.log" 2>&1
 mv "$name.pte" "out/$name.pte"  # export_llm ignores output_dir for the .pte

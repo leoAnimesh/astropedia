@@ -36,6 +36,8 @@ USE_DRIVE = False
 QAT = "8da4w"          # "none" for a plain fine-tune
 SMOOTH = "{smooth}"   # "none" or "0.5,0.65": SmoothQuant folded in before QAT (export then smooths the head only)
 EPOCHS = 2
+PRECISION = "fp32"     # T4: torch reports bf16 "supported" (emulated); Gemma needs fp32 here
+BATCH, GRAD_ACCUM = 8, 4   # effective 32; v2 rows are up to ~1.2k tokens, 8 per step fits a T4
 
 import hashlib, os, subprocess, sys, zipfile
 os.chdir("/content")
@@ -63,9 +65,9 @@ CKPT = "ckpt"
 if USE_DRIVE:
     from google.colab import drive
     drive.mount("/content/drive")
-    CKPT = "/content/drive/MyDrive/astro-gemma-ckpt"
+    CKPT = "/content/drive/MyDrive/astro-gemma-v2-ckpt"
 !rm -rf astro-gemma astro-gemma.zip
-!python train_gemma.py --model {model_dir} --out astro-gemma --ckpt-dir $CKPT --qat $QAT --smooth $SMOOTH --epochs $EPOCHS 2>&1 | tee train.log
+!python train_gemma.py --model {model_dir} --out astro-gemma --ckpt-dir $CKPT --qat $QAT --smooth $SMOOTH --epochs $EPOCHS --precision $PRECISION --batch $BATCH --grad-accum $GRAD_ACCUM --max-length 2048 2>&1 | tee train.log
 
 assert os.path.exists("astro-gemma/model.safetensors"), "training failed: see train.log"
 !cp train.log astro-gemma/ && cd astro-gemma && zip -q -r ../astro-gemma.zip . && cd .. && ls -la astro-gemma.zip

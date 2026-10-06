@@ -634,6 +634,22 @@ def smooth(hf_dir: str, ckpt: str, params_path: str, out: str, alpha: float = 0.
 def export(overrides: list[str]) -> None:
     patch()
     from executorch.extension.llm.export import export_llm
+    from executorch.extension.llm.export.builder import LLMEdgeManager
+
+    # LLMEdgeManager overwrites metadata get_max_seq_len with export.max_seq_length, but the
+    # graph accepts max_seq_length-1 tokens per call; keep a value passed in base.metadata
+    # (export_gemma.sh writes the real bound so TextLLMRunner chunks prefill correctly).
+    if not getattr(LLMEdgeManager, "_gemma_meta_patched", False):
+        _init = LLMEdgeManager.__init__
+
+        def init(self, *a, **kw):
+            want = (kw.get("metadata") or {}).get("get_max_seq_len")
+            _init(self, *a, **kw)
+            if want is not None:
+                self.metadata["get_max_seq_len"] = want
+
+        LLMEdgeManager.__init__ = init
+        LLMEdgeManager._gemma_meta_patched = True
 
     sys.argv = ["export_llm", *overrides]
     export_llm.main()

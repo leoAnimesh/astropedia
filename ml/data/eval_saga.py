@@ -83,11 +83,17 @@ async def run(a) -> None:
             said += " " + user
             before = t.started
             base_left -= 1
-            ans, script_ok = await G.chat_script_checked(
-                t, msgs, q["lang"], said, G.LANG_TEMPERATURE.get(q["lang"], 0.8) if a.lang_temp else 0.8,
-                stats=retries, can_retry=can_retry)
+            temp = G.LANG_TEMPERATURE.get(q["lang"], 0.8) if a.lang_temp else 0.8
+            if a.bulk_validate:
+                turn = await bulk_turn(t, msgs, q["lang"], p, turns, temp, retries, can_retry)
+                ans = turn["assistant"]
+                turn["calls"] = t.started - before
+                turns.append(turn)
+            else:
+                ans, script_ok = await G.chat_script_checked(
+                    t, msgs, q["lang"], said, temp, stats=retries, can_retry=can_retry)
+                turns.append({"user": user, "assistant": ans, "calls": t.started - before, "script_ok": script_ok})
             msgs.append({"role": "assistant", "content": ans})
-            turns.append({"user": user, "assistant": ans, "calls": t.started - before, "script_ok": script_ok})
         rec = {"id": q["id"], "lang": q["lang"], "cat": q["cat"], "profile": pid, "today": G.profile_today(p),
                "turns": turns}
         vs = check(rec, profiles)
@@ -102,8 +108,45 @@ async def run(a) -> None:
                 print("error:", type(r).__name__)
                 continue
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"calls={t.calls} errors={t.errors} script: {dict(retries)}")
+    print(f"calls={t.calls} errors={t.errors} {dict(t.err_kinds)} retries: {dict(retries)}")
+    if a.bulk_validate:
+        for lang in ("en", "hi", "bn"):
+            n = retries[f"{lang}:turns"]
+            if n:
+                print(f"[{lang}] bulk validator, per turn: first try {retries[f'{lang}:first_pass']}/{n} = "
+                      f"{retries[f'{lang}:first_pass'] / n:.0%}, after retries {retries[f'{lang}:final_pass']}/{n} = "
+                      f"{retries[f'{lang}:final_pass'] / n:.0%}")
     report(a.out, a.profiles, revalidate=False)
+
+
+async def bulk_turn(t, msgs: list, lang: str, p: dict, prev: list, temp: float, stats, can_retry) -> dict:
+    """generate.ask_validated (repair + validate + up to VAL_RETRIES re-asks with a fix
+    note, exactly as `generate.py bulk` does), except that retries stop when the eval's
+    call budget says so. Unlike bulk, a failing turn doesn't end the conversation."""
+    import generate as G
+    chart = G.VA.parse_context(ctx_of(p), G.profile_today(p))
+    question = msgs[-1]["content"]
+    best = None
+    for attempt in range(G.VAL_RETRIES + 1):
+        m = msgs
+        if best is not None:
+            if not can_retry():
+                break
+            m = [{"role": "system", "content": msgs[0]["content"] + G.fix_note(best[1].fails)}] + msgs[1:]
+            stats[f"{lang}:val_retry"] += 1
+        ans = await t.chat(m, temp, 400)
+        fixed, v = G.turn_verdict(chart, question, lang, prev, ans, G.profile_today(p), None)
+        if attempt == 0:
+            stats[f"{lang}:turns"] += 1
+            stats[f"{lang}:first_pass"] += v.ok
+            first = fixed
+        if best is None or len(v.fails) < len(best[1].fails):
+            best = (fixed, v)
+        if v.ok:
+            break
+    fixed, v = best
+    stats[f"{lang}:final_pass"] += v.ok
+    return {"user": question, "assistant": fixed, "first_draft": first, "attempts": attempt + 1, "val_ok": v.ok}
 
 
 def report(path: Path, profiles_path: Path, revalidate: bool = True) -> dict:
@@ -156,6 +199,8 @@ def main() -> None:
     ap.add_argument("--concurrency", type=int, default=6)
     ap.add_argument("--rpm", type=float, default=35)
     ap.add_argument("--revalidate", action="store_true")
+    ap.add_argument("--bulk-validate", action="store_true",
+                    help="per turn: repair + validate + up to 2 re-asks with a fix note, like generate.py bulk")
     ap.add_argument("--lang-temp", action="store_true", help="use generate.LANG_TEMPERATURE (bn 0.6) instead of 0.8")
     a = ap.parse_args()
     if a.cmd == "run":

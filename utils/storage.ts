@@ -41,8 +41,10 @@ function getStorage(): StorageBackend {
   return _storage;
 }
 
+// v3: readings from astro-gemma-v2 (v1's cached hi/bn readings were often in
+// the wrong script, so they are regenerated once).
 const chartReadingKey = (profileId: string, lang: string) =>
-  lang === 'en' ? `chart_reading_v2_${profileId}` : `chart_reading_v2_${profileId}_${lang}`;
+  lang === 'en' ? `chart_reading_v3_${profileId}` : `chart_reading_v3_${profileId}_${lang}`;
 
 export const Storage = {
   // Onboarding
@@ -127,8 +129,7 @@ export const Storage = {
   setDailyMessageCount: (date: string, count: number): void =>
     getStorage().set(`daily_msgs_${date}`, String(count)),
 
-  // AI-generated chart readings (cached per profile and reply language;
-  // English keeps the original key).
+  // AI-generated chart readings (cached per profile and reply language).
   getChartReading: (profileId: string, lang = 'en'): string | null =>
     getStorage().getString(chartReadingKey(profileId, lang)) ?? null,
   setChartReading: (profileId: string, json: string, lang = 'en'): void =>

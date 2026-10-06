@@ -657,6 +657,25 @@ def ngrams_indic(text: str, n: int = INDIC_NGRAM) -> set[str]:
     return {" ".join(w[i:i + n]) for i in range(len(w) - n + 1)}
 
 
+# v4 (house-based) answers name houses and planets in nearly every reply; that
+# phrasing is the insight, not a stock phrase. For v4 records, 4-grams built on
+# house/planet words are exempt, phrases with digits (dates) keep the strict
+# cap (all v4 profiles share one 'today', so transit dates must not dominate),
+# and other phrases get a looser cap.
+STRUCT_WORDS = {
+    "house", "houses", "घर", "ঘর", "ঘরে", "ঘরের",
+    "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "rahu", "ketu",
+    "सूर्य", "चंद्रमा", "चंद्र", "बुध", "शुक्र", "मंगल", "गुरु", "बृहस्पति", "शनि", "राहु", "केतु",
+    "সূর্য", "চন্দ্র", "চাঁদ", "বুধ", "শুক্র", "মঙ্গল", "বৃহস্পতি", "শনি", "রাহু", "কেতু",
+}
+V4_SHARE_PLAIN = 0.06
+
+
+def _struct_gram(g: str) -> bool:
+    return any(w.strip(".,!?।") in STRUCT_WORDS or any(w.startswith(x) for x in ("ঘর", "बृहस्पति", "বৃহস্পতি"))
+               for w in g.split())
+
+
 def cap_repetition(examples: list[dict], rejected: collections.Counter, max_share: float = 0.025,
                    lang: str = "en") -> list[dict]:
     """Drop examples whose final answer reuses a 4-word phrase that is already
@@ -684,12 +703,72 @@ def cap_repetition(examples: list[dict], rejected: collections.Counter, max_shar
         grams = grams_of(answer) - grams_of(question)
         if lang != "en":
             grams = {g for g in grams if not all(t.isdigit() for t in g.split())}
-        if any(counts[task][g] >= limit for g in grams):
+        if ex.get("pv", 0) >= 4:
+            plain_limit = max(3, int(totals[task] * V4_SHARE_PLAIN))
+            has_digit = lambda g: any(ch.isdigit() for ch in g)  # noqa: E731
+            over = any(
+                counts[task][g] >= (limit if has_digit(g) else plain_limit)
+                for g in grams if has_digit(g) or not _struct_gram(g))
+        else:
+            over = any(counts[task][g] >= limit for g in grams)
+        if over:
             rejected[f"{prefix}{task}:repetition_cap"] += 1
             continue
         counts[task].update(grams)
         kept.append(ex)
     return kept
+
+
+# Saga answers copy transit / timing dates from the context. When many profiles
+# share one 'today' (profiles_v2.jsonl: all 2026-10-04) one month-year (Jupiter's
+# "Oct 2026") turns up in a quarter of the answers, and the student can learn the
+# date instead of copying it. cap_date_share keeps every month-year at most
+# --date-share-cap of a language's kept saga + saga_multi examples, dropping
+# v4 examples (seeded) until it holds; reported as date_share_cap.
+DATE_SHARE_CAP = 0.06
+DATE_CAP_TASKS = ("saga", "saga_multi")
+
+
+def month_years(text: str) -> set[tuple[int, int]]:
+    """Every month + year in the text, with en/hi/bn month names and ASCII or
+    native digits (validate_answer.find_dates)."""
+    return {(d["year"], d["month"]) for lg in LANGS for d in VA.find_dates(text, lg)
+            if d.get("month") and d.get("year")}
+
+
+def example_month_years(ex: dict) -> set[tuple[int, int]]:
+    return set().union(*(month_years(m["content"]) for m in ex["messages"] if m["role"] == "assistant"))
+
+
+def date_shares(examples: list[dict]) -> tuple[int, collections.Counter]:
+    pool = [ex for ex in examples if ex["task"] in DATE_CAP_TASKS]
+    return len(pool), collections.Counter(my for ex in pool for my in ex.setdefault("_mys", example_month_years(ex)))
+
+
+def cap_date_share(examples: list[dict], rejected: collections.Counter, share: float = DATE_SHARE_CAP,
+                   seed: int = 3) -> list[dict]:
+    """Drop v4 saga / saga_multi examples (random order, seeded) while any
+    month-year is in more than `share` of the kept saga + saga_multi examples
+    of this list (one language). Non-v4 examples count but are never dropped."""
+    if share <= 0:
+        return examples
+    n, counts = date_shares(examples)
+    cand = [ex for ex in examples if ex["task"] in DATE_CAP_TASKS and ex.get("pv", 0) >= 4 and ex["_mys"]]
+    random.Random(seed).shuffle(cand)
+    dropped: set[int] = set()
+    changed = True
+    while changed:
+        changed = False
+        for ex in cand:
+            if id(ex) in dropped:
+                continue
+            if any(counts[my] > share * n for my in ex["_mys"]):
+                dropped.add(id(ex))
+                n -= 1
+                counts.subtract(ex["_mys"])
+                rejected[f"{ex['task']}:date_share_cap"] += 1
+                changed = True
+    return [ex for ex in examples if id(ex) not in dropped]
 
 
 # ─── IO ──────────────────────────────────────────────────────────────────────
@@ -753,9 +832,20 @@ def main() -> None:
     ap.add_argument("--max-tokens", type=int, default=VA.MAX_TOKENS,
                     help="v4: max app-tokenizer tokens per Saga reply (default: validate_answer.MAX_TOKENS, "
                          "the app's v2 reply cap REPLY_MAX_TOKENS)")
+    ap.add_argument("--date-share-cap", default=str(DATE_SHARE_CAP),
+                    help="max share of a language's kept saga + saga_multi examples that may mention one "
+                         "month-year; excess v4 examples are dropped (date_share_cap). 0 = off. Per language: "
+                         "'0.06,hi=0.15,bn=0.15' (the bare number is the default for the others)")
     a = ap.parse_args()
     global VALIDATE, MAX_TOKENS
     VALIDATE, MAX_TOKENS = a.validate, a.max_tokens
+    date_caps: dict[str, float] = collections.defaultdict(lambda: DATE_SHARE_CAP)
+    for part in filter(None, a.date_share_cap.split(",")):
+        if "=" in part:
+            k, v = part.split("=")
+            date_caps[k.strip()] = float(v)
+        else:
+            date_caps.default_factory = (lambda x: lambda: x)(float(part))
     if a.legacy:
         return main_legacy(a.raw[0] if a.raw else DATA / "raw/answers.jsonl", a.out or OUT)
 
@@ -767,6 +857,7 @@ def main() -> None:
     rejected: collections.Counter = collections.Counter()
     stats: collections.Counter = collections.Counter()
     raw_c: collections.Counter = collections.Counter()
+    teacher_raw: collections.Counter = collections.Counter()  # (lang, teacher model) -> raw records read
     seen: set = set()
     kept: dict[str, list[dict]] = {l: [] for l in langs}
     reuse_tasks = set(filter(None, a.reuse_tasks.split(",")))
@@ -797,13 +888,23 @@ def main() -> None:
                 rejected[f"{lang}:{rec['task']}:{reason}"] += 1
             else:
                 ex["lang"] = lang
+                ex["teacher"] = rec.get("teacher", "unknown")
+                ex["pv"] = rec.get("prompt_version", 0)
                 kept[lang].append(ex)
+            teacher_raw[(lang, rec.get("teacher", "unknown"))] += 1
     rows: list[dict] = []
+    date_report: dict[str, tuple] = {}
     for lang in langs:
-        rows += cap_repetition(kept[lang], rej := collections.Counter(), lang=lang)
+        capped = cap_repetition(kept[lang], rej := collections.Counter(), lang=lang)
         for k, v in rej.items():
             task = k.split(":")[-2]
             rejected[f"{lang}:{task}:repetition_cap"] += v
+        before = date_shares(capped)
+        capped = cap_date_share(capped, rej_d := collections.Counter(), date_caps[lang])
+        for k, v in rej_d.items():
+            rejected[f"{lang}:{k}"] += v
+        date_report[lang] = (before, date_shares(capped))
+        rows += capped
     for ex in rows:
         ex["prompt"], ex["completion"] = gemma_prompt(ex["messages"])
     train, val = split_stratified(rows, a.val_frac)
@@ -820,6 +921,16 @@ def main() -> None:
     table(collections.Counter((ex["lang"], ex["task"]) for ex in rows), "kept (before --repeat)")
     table(collections.Counter((ex["lang"], ex["task"]) for ex in train), "train")
     table(collections.Counter((ex["lang"], ex["task"]) for ex in val), "val")
+    teacher_kept = collections.Counter((ex["lang"], ex.get("teacher", "unknown")) for ex in rows)
+    print("\nrecords per teacher (lang, model: raw read -> kept before --repeat)")
+    for (lang, model), n in sorted(teacher_raw.items()):
+        print(f"  {lang} {model}: {n} -> {teacher_kept[(lang, model)]}")
+    print(f"\ntop month-years in kept saga + saga_multi (share of that language's examples, before -> after "
+          f"date_share_cap)")
+    for lang, ((n0, c0), (n1, c1)) in date_report.items():
+        top = ", ".join(f"{VA.MON[m - 1]} {y} {c0[(y, m)] / max(n0, 1):.1%}->{c1[(y, m)] / max(n1, 1):.1%}"
+                        for (y, m), _ in c0.most_common(6))
+        print(f"  {lang} cap {date_caps[lang]:.0%} ({n0} -> {n1}): {top}")
     print(f"\nwrote {out}/train.jsonl ({len(train)}) and val.jsonl ({len(val)})")
     for lang in langs:
         if n := stats.get(f"{lang}:repaired_antar"):
