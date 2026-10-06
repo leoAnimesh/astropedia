@@ -1,0 +1,98 @@
+{
+  "back": "Back",
+  "title": {
+    "you": {
+      "before": "Your year "
+    },
+    "other": {
+      "before": "{{name}}'s year "
+    },
+    "em": "ahead",
+    "after": "."
+  },
+  "lead": {
+    "you": "Built from your sub-periods and the slow planets moving into new signs.",
+    "other": "Built from their sub-periods and the slow planets moving into new signs."
+  },
+  "now": "Now · {{tag}}",
+  "askMonth": "Ask Saga about {{month}} →",
+  "note": "Sub-period dates come from the Moon at birth and can shift by a few weeks if the birth time is off.",
+  "askYear": {
+    "you": "Ask Saga about my year →",
+    "other": "Ask Saga about {{name}}'s year →"
+  },
+  "tag": {
+    "newChapter": "New chapter: {{planet}} begins",
+    "change": "Change: {{planet}} begins",
+    "sub": "{{planet}} sub-period"
+  },
+  "transitLabel": "{{planet}} into {{sign}} · {{date}}",
+  "transitLine": {
+    "Jupiter": "{{planet}} moves into {{sign}}: a wider, more generous season begins.",
+    "Saturn": "{{planet}} moves into {{sign}}: a slow, steady reshaping starts.",
+    "Rahu": "{{planet}} moves into {{sign}}: restless energy finds new ground.",
+    "other": "{{planet}} moves into {{sign}}."
+  },
+  "lastStretch": "Last stretch of {{planet}}. Wrap things up before {{next}} begins in {{date}}.",
+  "steady": {
+    "Sun": {
+      "0": "Keep stepping forward. Be clear with people in charge.",
+      "1": "A good month to be seen and to take the lead.",
+      "2": "Credit comes, along with some friction at the top. Stay steady."
+    },
+    "Moon": {
+      "0": "Home and family set the pace. Make room for them.",
+      "1": "Feelings run closer to the surface. Look after the people near you.",
+      "2": "A good month for home matters and quiet time."
+    },
+    "Mars": {
+      "0": "Keep acting on plans, and keep your temper in check.",
+      "1": "Energy is high. Put it into one clear goal.",
+      "2": "Move fast on what matters, slow on arguments."
+    },
+    "Rahu": {
+      "0": "Try new directions, but test them before committing.",
+      "1": "Restless energy. Chase the new, keep your feet on the ground.",
+      "2": "Changes tempt you. Not all of them will last."
+    },
+    "Jupiter": {
+      "0": "Say yes to good advice and the doors it opens.",
+      "1": "A good month to learn something or find a mentor.",
+      "2": "Support is around you. Ask for it."
+    },
+    "Saturn": {
+      "0": "Steady effort. Slow progress still counts.",
+      "1": "Keep building. What you put in now holds later.",
+      "2": "Patience pays this month. Do the dull work well."
+    },
+    "Mercury": {
+      "0": "Learn, write, deal and connect. Small moves add up.",
+      "1": "A good month for study, paperwork and pitches.",
+      "2": "New connections come easily. Follow up on them."
+    },
+    "Ketu": {
+      "0": "Finish what is open. Let go of what no longer fits.",
+      "1": "A quieter month. Finish more than you start.",
+      "2": "Less chasing, more understanding."
+    },
+    "Venus": {
+      "0": "Enjoy what you have. Relationships and money do well.",
+      "1": "Love and comfort come forward. Make time for both.",
+      "2": "A good month for money matters and for beauty in daily life."
+    }
+  },
+  "question": {
+    "kind": {
+      "chapter": "{{planet}} life chapter",
+      "sub": "{{planet}} sub-period"
+    },
+    "month": {
+      "you": "My {{what}} begins in {{month}}. What should I expect, and how should I prepare?",
+      "other": "{{name}}'s {{what}} begins in {{month}}. What should {{name}} expect, and how should they prepare?"
+    },
+    "year": {
+      "you": "What does the year ahead ({{range}}) look like for me, given my {{planet}} sub-period?",
+      "other": "What does the year ahead ({{range}}) look like for {{name}}, given their {{planet}} sub-period?"
+    }
+  }
+}

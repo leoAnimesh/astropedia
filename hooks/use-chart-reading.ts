@@ -1,7 +1,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
-import { getFullKundli } from '@/utils/astrology';
-import { askAI } from '@/utils/ai';
-import { isLLMReady, subscribeToLLMState, getLLMState } from '@/utils/local-llm';
+import { useTranslation } from 'react-i18next';
+import { askChartReading, replyLanguage } from '@/utils/ai';
+import { isLLMReady, initLocalLLM, subscribeToLLMState, getLLMState } from '@/utils/local-llm';
 import { Storage } from '@/utils/storage';
 import type { Profile } from '@/utils/database';
 
@@ -38,14 +38,19 @@ function parseReading(text: string): ChartReading {
 }
 
 export function useChartReading(profile: Profile | null): State {
+  'use no memo'; // replyLanguage() has no reactive inputs; the compiler would cache it across language switches
   const llmStatus = useSyncExternalStore(subscribeToLLMState, getLLMState, getLLMState).status;
   const [state, setState] = useState<State>({ reading: null, loading: false });
+  // Readings are written in the reply language, so a language switch needs
+  // its own reading (once the model speaks it).
+  const { i18n } = useTranslation();
+  const lang = replyLanguage();
 
   useEffect(() => {
     if (!profile?.birthDate) return;
     let cancelled = false;
 
-    const cached = Storage.getChartReading(profile.id);
+    const cached = Storage.getChartReading(profile.id, lang);
     if (cached) {
       try {
         setState({ reading: JSON.parse(cached), loading: false });
@@ -55,50 +60,45 @@ export function useChartReading(profile: Profile | null): State {
       return;
     }
 
-    if (!isLLMReady()) return;
+    // The bundled model loads in about a second; kick it off and re-run when ready.
+    if (!isLLMReady()) {
+      initLocalLLM().catch(() => {});
+      return;
+    }
 
     setState({ reading: null, loading: true });
 
-    const kundli = getFullKundli({
-      birthDate: profile.birthDate,
-      birthTime: profile.birthTime ?? undefined,
-      birthLat:  profile.birthLat,
-      birthLng:  profile.birthLng,
-    });
-
-    const { bigThree: { sun, moon, rising }, nakshatra, dasha } = kundli;
-    const firstName = profile.name.split(' ')[0];
-
-    const chartDesc = [
-      sun    && `Sun in ${sun.name}`,
-      moon   && `Moon in ${moon.name}`,
-      rising && `Rising in ${rising.name}`,
-    ].filter(Boolean).join(', ');
-
-    const prompt = `Write a warm, simple personality description for ${firstName}. They know nothing about astrology — speak in plain everyday language, like a wise friend who knows them well. No jargon whatsoever.
-
-Their chart: ${chartDesc}
-Their moon personality style: ${nakshatra.name} nakshatra (intuitive, ${nakshatra.lord}-influenced)
-Their current life phase: ${dasha.lord} period until ${dasha.endDate}
-
-Reply in EXACTLY this format — one line per key, plain English only, no astrology terms, NO markdown (no ##, no **):
-SUN: one sentence about who ${firstName} is at their core — their main personality strength and drive
-MOON: one sentence about how ${firstName} feels and handles emotions — their inner world${rising ? `\nRISING: one sentence about how ${firstName} comes across to others at first meeting` : ''}
-NAKSHATRA: one sentence about ${firstName}'s instinctive nature and what makes them unique
-DASHA: one sentence about what kind of chapter of life ${firstName} is going through right now
-OVERVIEW: two sentences describing ${firstName} as a whole person — what makes them special and what to embrace`;
-
-    askAI({ profile, history: [], userMessage: prompt }).then(({ text }) => {
+    // A hi/bn reading that comes out in the wrong script twice falls back to
+    // the English reading (the cached one if there is one), so the card is
+    // never empty; it is cached under this language too, so it isn't retried
+    // on every visit.
+    const cachedEnglish = lang === 'en' ? null : Storage.getChartReading(profile.id, 'en');
+    askChartReading(profile, lang, { skipEnglishFallback: !!cachedEnglish }).then((result) => {
       if (cancelled) return;
-      const reading = parseReading(text);
-      Storage.setChartReading(profile.id, JSON.stringify(reading));
+      if (!result) {
+        setState({ reading: null, loading: false });
+        return;
+      }
+      let reading: ChartReading | null = null;
+      if (result.text) {
+        reading = parseReading(result.text);
+        if (result.lang !== lang) Storage.setChartReading(profile.id, JSON.stringify(reading), result.lang);
+      } else if (cachedEnglish) {
+        try { reading = JSON.parse(cachedEnglish); } catch { /* fall through */ }
+      }
+      if (!reading) {
+        setState({ reading: null, loading: false });
+        return;
+      }
+      Storage.setChartReading(profile.id, JSON.stringify(reading), lang);
       setState({ reading, loading: false });
     }).catch(() => {
       if (!cancelled) setState({ reading: null, loading: false });
     });
 
     return () => { cancelled = true; };
-  }, [profile?.id, llmStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, llmStatus, lang, i18n.language]);
 
   return state;
 }

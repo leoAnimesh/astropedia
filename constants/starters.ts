@@ -1,55 +1,23 @@
-import { getSunSign } from '@/utils/astrology';
 import type { Profile } from '@/utils/database';
+import i18n, { tAsk } from '@/utils/i18n';
 
 export type StarterChip = {
   id: string;
+  /** Shown on the chip, in the app language. */
   label: string;
+  /** Sent to the chat as the user's question (tAsk: app language when the model speaks it). */
   prompt: string;
 };
 
-export function buildPersonalizedStarters(profile: Profile): StarterChip[] {
-  const sun      = getSunSign(profile.birthDate);
-  const isYou    = profile.isYou;
-  const first    = profile.name.split(' ')[0];
-  const my       = isYou ? 'my' : `${first}'s`;
-  const me       = isYou ? 'me' : first;
-  const sunLabel = sun ? ` ${sun.name}` : '';
+const STARTER_IDS = ['love', 'career', 'money', 'family', 'self', 'today', 'vibes'];
 
-  return [
-    {
-      id: 'love',
-      label: 'Love',
-      prompt: `What does ${my}${sunLabel} chart say about love and relationships right now?`,
-    },
-    {
-      id: 'career',
-      label: 'Career',
-      prompt: `What is ${my} chart saying about career and purpose this season?`,
-    },
-    {
-      id: 'money',
-      label: 'Money',
-      prompt: `What does ${my} chart show about financial energy and abundance?`,
-    },
-    {
-      id: 'family',
-      label: 'Family',
-      prompt: `How does ${my} chart reflect ${my} family patterns and dynamics?`,
-    },
-    {
-      id: 'self',
-      label: 'Self',
-      prompt: `What is ${my}${sunLabel} nature really working through right now?`,
-    },
-    {
-      id: 'today',
-      label: 'Today',
-      prompt: `What should ${me} know about today's energy from ${my} chart?`,
-    },
-    {
-      id: 'vibes',
-      label: 'Vibes',
-      prompt: `Read the current astrological vibes in ${my} chart — what stands out?`,
-    },
-  ];
+export function buildPersonalizedStarters(profile: Profile): StarterChip[] {
+  const who  = profile.isYou ? 'you' : 'other';
+  const name = profile.name.split(' ')[0];
+
+  return STARTER_IDS.map((id) => ({
+    id,
+    label:  i18n.t(`chat:starters.${id}`),
+    prompt: tAsk(`chat:starterPrompts.${who}.${id}`, { name }),
+  }));
 }

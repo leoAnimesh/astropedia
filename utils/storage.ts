@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import type { AccentKey } from '@/constants/themes';
+import type { AccentKey, ThemeMode } from '@/constants/themes';
 
 // MMKV wrapper with web localStorage fallback
 // All reads are synchronous — designed to be called before first render
@@ -41,6 +41,11 @@ function getStorage(): StorageBackend {
   return _storage;
 }
 
+// v3: readings from astro-gemma-v2 (v1's cached hi/bn readings were often in
+// the wrong script, so they are regenerated once).
+const chartReadingKey = (profileId: string, lang: string) =>
+  lang === 'en' ? `chart_reading_v3_${profileId}` : `chart_reading_v3_${profileId}_${lang}`;
+
 export const Storage = {
   // Onboarding
   getOnboardingDone: (): boolean => getStorage().getBoolean('onboarding_done') ?? false,
@@ -49,10 +54,30 @@ export const Storage = {
   // Accent + dark mode
   getAccentKey: (): AccentKey => (getStorage().getString('accent_key') as AccentKey) ?? 'amber',
   setAccentKey: (v: AccentKey): void => getStorage().set('accent_key', v),
-  getDarkModeOverride: (): 'system' | 'light' | 'dark' =>
-    (getStorage().getString('dark_mode') as 'system' | 'light' | 'dark') ?? 'system',
-  setDarkModeOverride: (v: 'system' | 'light' | 'dark'): void =>
-    getStorage().set('dark_mode', v),
+  // Theme mode: 'system' (default) | 'light' | 'dark'. Stored under `theme_mode`.
+  // One-time migration from the legacy `dark_mode` key (written by the old
+  // Dark-mode toggle as 'dark' | 'light'; possibly a boolean in older builds):
+  // dark -> 'dark'; anything else -> 'system' (the toggle never meant "chose light").
+  getDarkModeOverride: (): ThemeMode => {
+    const s = getStorage();
+    try {
+      const cur = s.getString('theme_mode');
+      if (cur === 'system' || cur === 'light' || cur === 'dark') return cur;
+      let legacyDark = false;
+      try { legacyDark = s.getString('dark_mode') === 'dark'; } catch { /* ignore */ }
+      if (!legacyDark) {
+        try { legacyDark = s.getBoolean('dark_mode') === true; } catch { /* ignore */ }
+      }
+      const next: ThemeMode = legacyDark ? 'dark' : 'system';
+      s.set('theme_mode', next);
+      s.delete('dark_mode');
+    s.delete('theme_mode');
+      return next;
+    } catch {
+      return 'system';
+    }
+  },
+  setDarkModeOverride: (v: ThemeMode): void => getStorage().set('theme_mode', v),
 
   // Daily horoscope cache (keyed by profileId + date — stores JSON of HoroscopeSections).
   // v3 = deterministic template generator (v2/v1 stored LLM-shaped output and is incompatible).
@@ -71,32 +96,9 @@ export const Storage = {
   setActiveProfileId: (id: string): void =>
     getStorage().set('active_profile_id', id),
 
-  // Local LLM download state
-  getModelDownloaded: (): boolean => getStorage().getBoolean('model_downloaded') ?? false,
-  setModelDownloaded: (v: boolean): void => getStorage().set('model_downloaded', v),
-
-  // Tracks which model variant is on disk. If this doesn't match the build's
-  // expected version, treat the cache as cold so the user sees a real download
-  // with progress UI instead of a silent stall.
-  getModelVersion: (): string | null => getStorage().getString('model_version') ?? null,
-  setModelVersion: (v: string): void => getStorage().set('model_version', v),
-
-  // User's manual model choice. 'auto' (default) means follow the detected
-  // device tier; a specific tier overrides auto-detection. Values must match
-  // the tiers defined in utils/device-tier.ts.
-  getPreferredModelTier: (): string => getStorage().getString('preferred_model_tier') ?? 'auto',
-  setPreferredModelTier: (v: string): void => getStorage().set('preferred_model_tier', v),
-
-  // Cached result of detectDeviceTier(), so we don't re-probe RAM every launch.
-  getDeviceTier:   (): string | null => getStorage().getString('cached_device_tier') ?? null,
-  setDeviceTier:   (v: string): void => getStorage().set('cached_device_tier', v),
-  clearDeviceTier: (): void => getStorage().delete('cached_device_tier'),
-
-  // What the user told us they're here for during onboarding. Used to seed a
-  // starter prompt on the home screen until the user starts their first chat.
-  getStarterIntent: (): string | null => getStorage().getString('starter_intent') ?? null,
-  setStarterIntent: (v: string): void => getStorage().set('starter_intent', v),
-  clearStarterIntent: (): void => getStorage().delete('starter_intent'),
+  // App language chosen on the first onboarding screen ('en' | 'hi' | 'bn').
+  getLanguage: (): string | null => getStorage().getString('language') ?? null,
+  setLanguage: (v: string): void => getStorage().set('language', v),
 
   // Local notification preferences. Permissions are still requested at
   // toggle-on time — these just track the user's intent.
@@ -127,21 +129,29 @@ export const Storage = {
   setDailyMessageCount: (date: string, count: number): void =>
     getStorage().set(`daily_msgs_${date}`, String(count)),
 
-  // AI-generated chart readings (cached per profile)
-  getChartReading: (profileId: string): string | null =>
-    getStorage().getString(`chart_reading_v2_${profileId}`) ?? null,
-  setChartReading: (profileId: string, json: string): void =>
-    getStorage().set(`chart_reading_v2_${profileId}`, json),
-  deleteChartReading: (profileId: string): void =>
-    getStorage().delete(`chart_reading_v2_${profileId}`),
+  // AI-generated chart readings (cached per profile and reply language).
+  getChartReading: (profileId: string, lang = 'en'): string | null =>
+    getStorage().getString(chartReadingKey(profileId, lang)) ?? null,
+  setChartReading: (profileId: string, json: string, lang = 'en'): void =>
+    getStorage().set(chartReadingKey(profileId, lang), json),
+  deleteChartReading: (profileId: string): void => {
+    for (const lang of ['en', 'hi', 'bn']) getStorage().delete(chartReadingKey(profileId, lang));
+  },
+
+  // In-app keyboard: 'custom' (the app's own keyboard) or 'system' (the
+  // phone's keyboard, chosen with the 🌐 key). Remembered until changed.
+  getKeyboardMode: (): 'custom' | 'system' =>
+    getStorage().getString('keyboard_mode') === 'system' ? 'system' : 'custom',
+  setKeyboardMode: (v: 'custom' | 'system'): void => getStorage().set('keyboard_mode', v),
 
   // Clear everything (used by reset)
   clear: (): void => {
     const s = getStorage();
     s.delete('onboarding_done');
+    s.delete('language');
     s.delete('accent_key');
     s.delete('dark_mode');
+    s.delete('theme_mode');
     s.delete('active_profile_id');
-    // intentionally keep model_downloaded — no need to re-download on reset
   },
 };

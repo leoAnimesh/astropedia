@@ -7,6 +7,8 @@ import {
   updateProfile,
   deleteProfile as dbDeleteProfile,
   isSystemProfile,
+  birthTzFor,
+  takeBackfilledProfileIds,
   type Profile,
 } from '@/utils/database';
 import { Storage } from '@/utils/storage';
@@ -42,6 +44,12 @@ export function useProfiles() {
   useEffect(() => {
     getAllProfiles().then((all) => {
       const loaded = all.filter((p) => !isSystemProfile(p.id));
+      // Profiles that just got their birth time zone: the chart moved, so
+      // drop readings cached against the old (local-mean-time) chart.
+      for (const id of takeBackfilledProfileIds()) {
+        Storage.deleteChartReading(id);
+        Storage.deleteHoroscopeCache(id, todayIso());
+      }
       storeSetProfiles(loaded);
       // Restore active profile from MMKV
       const saved = Storage.getActiveProfileId();
@@ -77,6 +85,9 @@ export function useProfiles() {
       birthCity:    input.birthCity ?? null,
       birthLat:     lat,
       birthLng:     lng,
+      // IANA zone of the birth place, so the birth time is read as that
+      // place's civil time (historical offsets, DST) rather than mean solar time.
+      birthTz:      birthTzFor({ birthCity: input.birthCity ?? null, birthLat: lat, birthLng: lng }),
       isYou:        input.isYou ?? false,
     });
     storeUpsert(profile);
@@ -90,6 +101,19 @@ export function useProfiles() {
     if (patch.birthCity !== undefined && patch.birthLat === undefined && patch.birthLng === undefined) {
       const geo = patch.birthCity ? await geocodeCity(patch.birthCity) : null;
       patch = { ...patch, birthLat: geo?.lat ?? null, birthLng: geo?.lng ?? null };
+    }
+    // The birth place changed: re-derive its time zone from the merged values.
+    if (patch.birthTz === undefined
+        && (patch.birthCity !== undefined || patch.birthLat !== undefined || patch.birthLng !== undefined)) {
+      const cur = useProfileStore.getState().profiles.find((p) => p.id === id);
+      patch = {
+        ...patch,
+        birthTz: birthTzFor({
+          birthCity: patch.birthCity !== undefined ? patch.birthCity : cur?.birthCity ?? null,
+          birthLat:  patch.birthLat  !== undefined ? patch.birthLat  : cur?.birthLat ?? null,
+          birthLng:  patch.birthLng  !== undefined ? patch.birthLng  : cur?.birthLng ?? null,
+        }),
+      };
     }
     await updateProfile(id, patch);
 

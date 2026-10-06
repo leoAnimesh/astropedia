@@ -1,0 +1,45 @@
+{
+  "back": "Back",
+  "eyebrow": "{{date}} · Moon in {{nakshatra}}",
+  "title": {
+    "before": "Your ",
+    "em": "people."
+  },
+  "lead": "Where everyone is in life right now, and how today’s Moon sits with each of them.",
+  "addSomeone": "Add someone",
+  "you": "You",
+  "a11y": {
+    "openPhase": "{{name}}, open life phase",
+    "addDetails": "{{name}}, add birth details"
+  },
+  "lifePhase": "Life phase",
+  "chapter": "chapter",
+  "subUntil": "{{planet}} sub-period · until {{date}}",
+  "todaysMoon": "Today’s Moon",
+  "fromMoon": {
+    "you": "{{nakshatra}}, {{ord}} from your Moon",
+    "woman": "{{nakshatra}}, {{ord}} from her Moon",
+    "man": "{{nakshatra}}, {{ord}} from his Moon",
+    "other": "{{nakshatra}}, {{ord}} from their Moon"
+  },
+  "ordinal": {
+    "1": "1st",
+    "2": "2nd",
+    "3": "3rd",
+    "4": "4th",
+    "5": "5th",
+    "6": "6th",
+    "7": "7th",
+    "8": "8th",
+    "9": "9th",
+    "10": "10th",
+    "11": "11th",
+    "12": "12th"
+  },
+  "noChart": {
+    "you": "Add a birth date to see where you are in life.",
+    "other": "Add a birth date to see where they are in life."
+  },
+  "addDetails": "Add birth details →",
+  "matchWith": "Match with {{name}} →"
+}

@@ -1,36 +1,47 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// GH's ScrollView lets the wheel's vertical pan win over page scrolling.
+import { ScrollView } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { Button } from '@/components/atoms/Button';
+import { DatePicker } from '@/components/molecules/DatePicker';
+import { showDialog } from '@/components/overlays';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getMoonSign } from '@/utils/astrology';
 import { localDateIso } from '@/utils/format';
+import { tSign } from '@/utils/i18n';
 import OnboardingStore from './_store';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
+
+const DEFAULT_DATE = new Date(2000, 0, 1);
 
 export default function BirthDateScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
 
   const initialDate = OnboardingStore.birthDate
-    ? new Date(OnboardingStore.birthDate)
+    ? new Date(OnboardingStore.birthDate + 'T00:00:00')   // local, not UTC
     : null;
 
   const [date, setDate] = useState<Date | null>(initialDate);
+  const [today] = useState(() => new Date());
 
   const handleContinue = () => {
     if (!date) return;
-    // Reject future dates — the DateTimePicker has maximumDate set, but a
+    // Reject future dates — the DatePicker has maximumDate set, but a
     // wrong device clock can still let one through. Charts for unborn people
     // are nonsensical.
     if (date.getTime() > Date.now() + 60_000) {
-      Alert.alert(
-        'That date is in the future',
-        "Pick the date you were actually born — we can't read a chart for a moment that hasn't happened yet.",
-      );
+      showDialog({ title: t('birthDate.futureTitle'), message: t('birthDate.futureBody') });
       return;
     }
     OnboardingStore.birthDate = localDateIso(date);
@@ -48,26 +59,22 @@ export default function BirthDateScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>03 / 05 — Birthday</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthDate.step')}</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          When were{'\n'}
-          <Text style={styles.italic}>you born?</Text>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('birthDate.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('birthDate.titleB')}</Text>
         </Text>
 
-        <EyebrowLabel style={styles.fieldLabel}>Date of birth</EyebrowLabel>
+        <EyebrowLabel style={styles.fieldLabel}>{t('birthDate.fieldLabel')}</EyebrowLabel>
 
         <View style={[styles.pickerCard, { backgroundColor: theme.surface2 }]}>
-          <DateTimePicker
-            value={date ?? new Date(2000, 0, 1)}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            maximumDate={new Date()}
-            onChange={(_, d) => d && setDate(d)}
-            style={styles.picker}
-            themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
+          <DatePicker
+            value={date ?? DEFAULT_DATE}
+            maximumDate={today}
+            onChange={setDate}
           />
         </View>
 
@@ -75,14 +82,14 @@ export default function BirthDateScreen() {
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.signGlyph, { color: theme.accent }]}>{moon.glyph}</Text>
             <View style={styles.signInfo}>
-              <EyebrowLabel size={10}>Moon sign · Rashi</EyebrowLabel>
+              <EyebrowLabel size={10}>{t('birthDate.moonLabel')}</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{moon.name}</Text>
+                <Text style={styles.italic}>{tSign(moon.name)}</Text>
                 {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{moon.element}</Text>
+                <Text style={[styles.signElement, { color: theme.muted }]}>{t(`common:element.${moon.element}`)}</Text>
               </Text>
               <Text style={[styles.signNote, { color: theme.muted }]}>
-                approximate — your birth time refines this next
+                {t('birthDate.approxNote')}
               </Text>
             </View>
           </View>
@@ -91,7 +98,7 @@ export default function BirthDateScreen() {
 
       <View style={styles.footer}>
         <Button
-          label="Continue"
+          label={t('common:continue')}
           variant="accent"
           fullWidth
           disabled={!date}
@@ -102,7 +109,7 @@ export default function BirthDateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -130,16 +137,15 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 32,
   },
+  displayIndic: { lineHeight: 56 },
   italic:     { fontFamily: FONTS.serifItalic },
   fieldLabel: { marginBottom: 12 },
   pickerCard: {
     borderRadius: RADIUS.card,
     overflow:     'hidden',
     marginBottom: 24,
-    alignItems:   'flex-start',
-    padding:      8,
+    paddingVertical: 8,
   },
-  picker: { alignSelf: 'flex-start' },
   signCard: {
     flexDirection: 'row',
     alignItems:    'center',

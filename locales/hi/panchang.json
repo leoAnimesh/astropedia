@@ -1,0 +1,84 @@
+{
+  "title": "पंचांग",
+  "eyebrow": "{{date}} · पंचांग",
+  "back": "वापस जाएँ",
+  "timesFor": "{{city}} का समय",
+  "timesApprox": "समय आपके टाइमज़ोन के हिसाब से अनुमानित है",
+  "section": {
+    "limbs": "पाँच अंग",
+    "sun": "सूर्य",
+    "muhurat": "मुहूर्त"
+  },
+  "row": {
+    "tithi": "तिथि",
+    "vara": "वार",
+    "nakshatra": "नक्षत्र",
+    "yoga": "योग",
+    "karana": "करण"
+  },
+  "tithiSub": "{{paksha}} पक्ष · दिन {{index}}",
+  "varaSub": "स्वामी ग्रह: {{lord}}",
+  "nakshatraSub": "स्वामी: {{lord}}",
+  "yogaSub": "27 में से {{index}}वाँ योग",
+  "sunrise": "सूर्योदय",
+  "sunset": "सूर्यास्त",
+  "abhijit": {
+    "label": "अभिजित मुहूर्त (शुभ)",
+    "desc": "दोपहर के आसपास का छोटा-सा समय, जब ऊर्जा साफ़ और अनुकूल रहती है।"
+  },
+  "rahuKaal": {
+    "label": "राहु काल (टालें)",
+    "desc": "इस समय कोई नया काम शुरू न करें — कागज़ों पर दस्तख़त, यात्रा या बड़े फ़ैसले।"
+  },
+  "vara": {
+    "Ravivara": "रविवार",
+    "Somavara": "सोमवार",
+    "Mangalavara": "मंगलवार",
+    "Budhavara": "बुधवार",
+    "Guruvara": "गुरुवार",
+    "Shukravara": "शुक्रवार",
+    "Shanivara": "शनिवार"
+  },
+  "yoga": {
+    "Vishkambha": "विष्कम्भ",
+    "Priti": "प्रीति",
+    "Ayushman": "आयुष्मान",
+    "Saubhagya": "सौभाग्य",
+    "Shobhana": "शोभन",
+    "Atiganda": "अतिगण्ड",
+    "Sukarma": "सुकर्मा",
+    "Dhriti": "धृति",
+    "Shula": "शूल",
+    "Ganda": "गण्ड",
+    "Vriddhi": "वृद्धि",
+    "Dhruva": "ध्रुव",
+    "Vyaghata": "व्याघात",
+    "Harshana": "हर्षण",
+    "Vajra": "वज्र",
+    "Siddhi": "सिद्धि",
+    "Vyatipata": "व्यतीपात",
+    "Variyan": "वरीयान",
+    "Parigha": "परिघ",
+    "Shiva": "शिव",
+    "Siddha": "सिद्ध",
+    "Sadhya": "साध्य",
+    "Shubha": "शुभ",
+    "Shukla": "शुक्ल",
+    "Brahma": "ब्रह्म",
+    "Indra": "इन्द्र",
+    "Vaidhriti": "वैधृति"
+  },
+  "karana": {
+    "Bava": "बव",
+    "Balava": "बालव",
+    "Kaulava": "कौलव",
+    "Taitila": "तैतिल",
+    "Garaja": "गर",
+    "Vanija": "वणिज",
+    "Vishti": "विष्टि (भद्रा)",
+    "Shakuni": "शकुनि",
+    "Chatushpada": "चतुष्पद",
+    "Naga": "नाग",
+    "Kimstughna": "किंस्तुघ्न"
+  }
+}

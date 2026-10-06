@@ -1,10 +1,14 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useAstrology } from '@/hooks/use-astrology';
 import { SwipeRow } from '@/components/molecules/SwipeRow';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS } from '@/constants/themes';
 import { formatRelativeTime } from '@/utils/format';
+import { tSign } from '@/utils/i18n';
 import type { Profile, Thread } from '@/utils/database';
 
 type Props = {
@@ -23,11 +27,12 @@ export function ProfileBlock({
   onArchiveThread,
 }: Props) {
   const { theme } = useAccent();
+  const { t: tr } = useTranslation('profile');
   const { sunSign } = useAstrology(profile);
   const active = threads.filter((t) => !t.archived);
 
   const lastMsg = (t: Thread) =>
-    t.lastMessagePreview ?? 'Tap to start the conversation';
+    t.lastMessagePreview ?? tr('block.tapToStart');
 
   return (
     <View style={styles.container}>
@@ -43,12 +48,14 @@ export function ProfileBlock({
           </Text>
         </View>
         <View style={styles.kundliText}>
-          <Text style={[styles.kundliTitle, { color: theme.ink }]}>Kundli · Birth chart</Text>
+          <Text style={[styles.kundliTitle, { color: theme.ink }]}>{tr('block.kundliTitle')}</Text>
           <Text style={[styles.kundliSub, { color: theme.muted }]}>
-            {sunSign ? `${sunSign.name} · ${sunSign.element}` : 'No birth date'}
+            {sunSign
+              ? `${tSign(sunSign.name)} · ${tr(`common:element.${sunSign.element}`)}`
+              : tr('detail.noBirthDate')}
           </Text>
         </View>
-        <EyebrowLabel>Pinned</EyebrowLabel>
+        <EyebrowLabel>{tr('block.pinned')}</EyebrowLabel>
       </TouchableOpacity>
 
       {/* Conversation rows */}
@@ -57,7 +64,7 @@ export function ProfileBlock({
           key={t.id}
           actions={[
             {
-              label:    'Archive',
+              label:    tr('common:archive'),
               color:    '#7B9B6B',
               onAction: () => onArchiveThread(t),
             },
@@ -74,7 +81,7 @@ export function ProfileBlock({
                 style={[styles.threadTitle, { color: theme.ink }]}
                 numberOfLines={1}
               >
-                {t.title ?? 'Conversation'}
+                {t.title ?? tr('block.conversation')}
               </Text>
               <Text
                 style={[styles.threadSub, { color: theme.muted }]}

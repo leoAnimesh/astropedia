@@ -1,0 +1,14 @@
+{
+  "return": {
+    "done": "done",
+    "go": "go",
+    "next": "next",
+    "search": "search",
+    "send": "send"
+  },
+  "a11y": {
+    "textField": "Text field",
+    "appKeyboard": "Use the app keyboard",
+    "clear": "Clear"
+  }
+}

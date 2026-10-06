@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { guessTimeZone } from './timezone';
 
 export type Profile = {
   id: string;
@@ -9,6 +10,12 @@ export type Profile = {
   birthCity: string | null;
   birthLat: number | null;
   birthLng: number | null;
+  /**
+   * IANA time zone of the birth place (e.g. "Asia/Kolkata"), used to turn
+   * the civil birth time into UT with historical offsets and DST. Null when
+   * the place's country is unknown (charts then use local mean time).
+   */
+  birthTz: string | null;
   /**
    * Optional gender for interpretation conventions. Stored as a stable
    * machine identifier so display strings can evolve without migrations:
@@ -114,6 +121,44 @@ const MIGRATIONS = [
       `ALTER TABLE profiles ADD COLUMN gender TEXT`,
     ],
   },
+  {
+    version: 5,
+    sql: [
+      // Answers the user bookmarked from a chat. Question and answer are
+      // copied so a saved answer survives its thread being deleted.
+      `CREATE TABLE IF NOT EXISTS saved_answers (
+        id          TEXT PRIMARY KEY,
+        message_id  TEXT NOT NULL UNIQUE,
+        thread_id   TEXT,
+        profile_id  TEXT NOT NULL,
+        persona     TEXT NOT NULL,
+        question    TEXT NOT NULL DEFAULT '',
+        answer      TEXT NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_saved_created ON saved_answers(created_at)`,
+      // One journal entry per profile per local day.
+      `CREATE TABLE IF NOT EXISTS journal_entries (
+        id          TEXT PRIMARY KEY,
+        profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        date        TEXT NOT NULL,
+        mood        TEXT NOT NULL,
+        text        TEXT NOT NULL DEFAULT '',
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (profile_id, date)
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_journal_profile ON journal_entries(profile_id, date)`,
+    ],
+  },
+  {
+    version: 6,
+    sql: [
+      // IANA zone of the birth place. Existing rows are backfilled lazily
+      // from city/lat/lng the first time profiles load (backfillBirthTz).
+      `ALTER TABLE profiles ADD COLUMN birth_tz TEXT`,
+    ],
+  },
 ];
 
 async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
@@ -176,6 +221,7 @@ function rowToProfile(row: Record<string, unknown>): Profile {
     birthCity:    row.birth_city as string | null,
     birthLat:     row.birth_lat as number | null,
     birthLng:     row.birth_lng as number | null,
+    birthTz:      (row.birth_tz as string | null) ?? null,
     gender:       (row.gender as string | null) ?? null,
     isYou:        Boolean(row.is_you),
     createdAt:    row.created_at as string,
@@ -188,17 +234,57 @@ export async function getAllProfiles(): Promise<Profile[]> {
   const rows = await db.getAllAsync<Record<string, unknown>>(
     `SELECT * FROM profiles ORDER BY created_at ASC`,
   );
-  return rows.map(rowToProfile);
+  return backfillBirthTz(rows.map(rowToProfile));
+}
+
+/** Birth-place time zone from the stored "City, State, Country" + coordinates. */
+export function birthTzFor(p: Pick<Profile, 'birthCity' | 'birthLat' | 'birthLng'>): string | null {
+  return guessTimeZone({ place: p.birthCity, lat: p.birthLat, lng: p.birthLng });
+}
+
+/**
+ * Profiles saved before the birth_tz column existed: derive the zone from
+ * the stored place and persist it, once. Rows whose country can't be
+ * identified stay null (local-mean-time fallback) and are retried on each
+ * load, which is cheap.
+ */
+const backfilledIds = new Set<string>();
+
+/**
+ * Ids of profiles whose zone was just backfilled (their chart moved, so
+ * cached chart readings / horoscopes are stale). Clears the set.
+ */
+export function takeBackfilledProfileIds(): string[] {
+  const ids = [...backfilledIds];
+  backfilledIds.clear();
+  return ids;
+}
+
+async function backfillBirthTz(profiles: Profile[]): Promise<Profile[]> {
+  for (const p of profiles) {
+    if (p.birthTz || !p.birthCity || isSystemProfile(p.id)) continue;
+    const tz = birthTzFor(p);
+    if (!tz) continue;
+    p.birthTz = tz;
+    backfilledIds.add(p.id);
+    try {
+      await db.runAsync(`UPDATE profiles SET birth_tz = ? WHERE id = ?`, [tz, p.id]);
+    } catch {
+      // Non-fatal: the zone is still applied in memory for this session.
+    }
+  }
+  return profiles;
 }
 
 export async function insertProfile(
-  p: Omit<Profile, 'createdAt' | 'updatedAt' | 'syncedAt'>,
+  p: Omit<Profile, 'createdAt' | 'updatedAt' | 'syncedAt' | 'birthTz'> & { birthTz?: string | null },
 ): Promise<Profile> {
   await db.runAsync(
-    `INSERT INTO profiles (id, name, relationship, birth_date, birth_time, birth_city, birth_lat, birth_lng, gender, is_you)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO profiles (id, name, relationship, birth_date, birth_time, birth_city, birth_lat, birth_lng, birth_tz, gender, is_you)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [p.id, p.name, p.relationship ?? null, p.birthDate, p.birthTime ?? null,
-     p.birthCity ?? null, p.birthLat ?? null, p.birthLng ?? null, p.gender ?? null, p.isYou ? 1 : 0],
+     p.birthCity ?? null, p.birthLat ?? null, p.birthLng ?? null,
+     p.birthTz ?? birthTzFor(p), p.gender ?? null, p.isYou ? 1 : 0],
   );
   const row = await db.getFirstAsync<Record<string, unknown>>(
     `SELECT * FROM profiles WHERE id = ?`, [p.id],
@@ -217,6 +303,7 @@ export async function updateProfile(id: string, patch: Partial<Profile>): Promis
   if (patch.birthCity    !== undefined) { sets.push('birth_city = ?');   vals.push(patch.birthCity ?? null); }
   if (patch.birthLat     !== undefined) { sets.push('birth_lat = ?');    vals.push(patch.birthLat ?? null); }
   if (patch.birthLng     !== undefined) { sets.push('birth_lng = ?');    vals.push(patch.birthLng ?? null); }
+  if (patch.birthTz      !== undefined) { sets.push('birth_tz = ?');     vals.push(patch.birthTz ?? null); }
   if (patch.gender       !== undefined) { sets.push('gender = ?');       vals.push(patch.gender ?? null); }
   sets.push("updated_at = datetime('now')");
   vals.push(id);
@@ -340,5 +427,104 @@ export async function updateMessageContent(id: string, content: string, modelTie
 }
 
 export async function clearAllData(): Promise<void> {
-  await db.execAsync(`DELETE FROM messages; DELETE FROM threads; DELETE FROM profiles;`);
+  await db.execAsync(
+    `DELETE FROM saved_answers; DELETE FROM journal_entries; DELETE FROM messages; DELETE FROM threads; DELETE FROM profiles;`,
+  );
+}
+
+// ─── Saved answers ───────────────────────────────────────────────────────────
+
+export type SavedAnswer = {
+  id:        string;
+  messageId: string;
+  threadId:  string | null;
+  profileId: string;
+  persona:   'saga' | 'krishna';
+  question:  string;
+  answer:    string;
+  createdAt: string;
+};
+
+function rowToSaved(row: Record<string, unknown>): SavedAnswer {
+  return {
+    id:        row.id as string,
+    messageId: row.message_id as string,
+    threadId:  row.thread_id as string | null,
+    profileId: row.profile_id as string,
+    persona:   row.persona as SavedAnswer['persona'],
+    question:  row.question as string,
+    answer:    row.answer as string,
+    createdAt: row.created_at as string,
+  };
+}
+
+export async function getSavedAnswers(): Promise<SavedAnswer[]> {
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM saved_answers ORDER BY created_at DESC`,
+  );
+  return rows.map(rowToSaved);
+}
+
+export async function getSavedMessageIds(): Promise<Set<string>> {
+  const rows = await db.getAllAsync<{ message_id: string }>(`SELECT message_id FROM saved_answers`);
+  return new Set(rows.map((r) => r.message_id));
+}
+
+export async function saveAnswer(a: Omit<SavedAnswer, 'id' | 'createdAt'>): Promise<void> {
+  const id = 's_' + Math.random().toString(36).slice(2, 11);
+  await db.runAsync(
+    `INSERT OR IGNORE INTO saved_answers (id, message_id, thread_id, profile_id, persona, question, answer)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, a.messageId, a.threadId, a.profileId, a.persona, a.question, a.answer],
+  );
+}
+
+export async function unsaveAnswer(messageId: string): Promise<void> {
+  await db.runAsync(`DELETE FROM saved_answers WHERE message_id = ?`, [messageId]);
+}
+
+// ─── Journal ─────────────────────────────────────────────────────────────────
+
+export type JournalEntry = {
+  id:        string;
+  profileId: string;
+  date:      string;   // YYYY-MM-DD, local
+  mood:      string;
+  text:      string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function rowToJournal(row: Record<string, unknown>): JournalEntry {
+  return {
+    id:        row.id as string,
+    profileId: row.profile_id as string,
+    date:      row.date as string,
+    mood:      row.mood as string,
+    text:      row.text as string,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  };
+}
+
+export async function getJournalEntries(profileId: string): Promise<JournalEntry[]> {
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM journal_entries WHERE profile_id = ? ORDER BY date DESC`,
+    [profileId],
+  );
+  return rows.map(rowToJournal);
+}
+
+/** Insert or replace the entry for that profile and day. */
+export async function upsertJournalEntry(profileId: string, date: string, mood: string, text: string): Promise<void> {
+  const id = 'j_' + Math.random().toString(36).slice(2, 11);
+  await db.runAsync(
+    `INSERT INTO journal_entries (id, profile_id, date, mood, text) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(profile_id, date) DO UPDATE SET mood = excluded.mood, text = excluded.text, updated_at = datetime('now')`,
+    [id, profileId, date, mood, text],
+  );
+}
+
+export async function deleteJournalEntry(id: string): Promise<void> {
+  await db.runAsync(`DELETE FROM journal_entries WHERE id = ?`, [id]);
 }

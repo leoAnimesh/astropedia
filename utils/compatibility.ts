@@ -1,42 +1,31 @@
 /**
+ * @deprecated for new UI — use matchCharts() from ./ashtakoota.
  * Vedic compatibility (lite Ashtakoot) — pick two profiles, compute a 0–10
  * score from three traditional dimensions: Gana (temperament), Nadi (health),
  * and Bhakoot (rashi distance). Returns a friendly narrative summary too.
  *
  * Deterministic. No LLM. Uses each profile's moon longitude + moon sign.
+ * Verdict/summary/dimension text comes from the `compatibility` namespace.
  */
 
 import type { Profile } from './database';
 import { getBigThree, getMoonLongitudeExact } from './astrology';
 import { NAKSHATRAS } from '@/constants/astrology';
+import i18n from './i18n';
+import { NAK_GANA as NAK_GANA_BY_INDEX, nadiOf } from './ashtakoota';
+
+// The full traditional match (8 kootas, /36, doshas) lives in ./ashtakoota —
+// see matchCharts(). This lite 3-koota score is kept for backwards compatibility.
+export { matchCharts, type KundliMatch } from './ashtakoota';
 
 // ─── Nakshatra metadata (gana + nadi) ─────────────────────────────────────────
+// Shared with the full 36-point match in ./ashtakoota (single source of truth).
 
 type Gana = 'Deva' | 'Manushya' | 'Rakshasa';
 type Nadi = 'Aadi'  | 'Madhya'   | 'Antya';
 
-const NAK_GANA: Record<string, Gana> = {
-  'Ashwini': 'Deva', 'Mrigashira': 'Deva', 'Punarvasu': 'Deva', 'Pushya': 'Deva',
-  'Hasta':   'Deva', 'Swati':      'Deva', 'Anuradha':  'Deva', 'Shravana': 'Deva', 'Revati': 'Deva',
-  'Bharani':         'Manushya', 'Rohini':            'Manushya', 'Ardra':           'Manushya',
-  'Purva Phalguni':  'Manushya', 'Uttara Phalguni':   'Manushya', 'Purva Ashadha':   'Manushya',
-  'Uttara Ashadha':  'Manushya', 'Purva Bhadrapada':  'Manushya', 'Uttara Bhadrapada': 'Manushya',
-  'Krittika':  'Rakshasa', 'Ashlesha':  'Rakshasa', 'Magha':       'Rakshasa',
-  'Chitra':    'Rakshasa', 'Vishakha':  'Rakshasa', 'Jyeshtha':    'Rakshasa',
-  'Mula':      'Rakshasa', 'Dhanishtha':'Rakshasa', 'Shatabhisha': 'Rakshasa',
-};
-
-const NAK_NADI: Record<string, Nadi> = {
-  'Ashwini':         'Aadi',   'Ardra':            'Aadi',   'Punarvasu':       'Aadi',
-  'Uttara Phalguni': 'Aadi',   'Hasta':            'Aadi',   'Jyeshtha':        'Aadi',
-  'Mula':            'Aadi',   'Shatabhisha':      'Aadi',   'Purva Bhadrapada':'Aadi',
-  'Bharani':         'Madhya', 'Mrigashira':       'Madhya', 'Pushya':          'Madhya',
-  'Purva Phalguni':  'Madhya', 'Chitra':           'Madhya', 'Anuradha':        'Madhya',
-  'Purva Ashadha':   'Madhya', 'Dhanishtha':       'Madhya', 'Uttara Bhadrapada':'Madhya',
-  'Krittika':        'Antya',  'Rohini':           'Antya',  'Ashlesha':        'Antya',
-  'Magha':           'Antya',  'Swati':            'Antya',  'Vishakha':        'Antya',
-  'Uttara Ashadha':  'Antya',  'Shravana':         'Antya',  'Revati':          'Antya',
-};
+const NAK_GANA: Record<string, Gana> = Object.fromEntries(NAKSHATRAS.map((n, i) => [n.name, NAK_GANA_BY_INDEX[i]]));
+const NAK_NADI: Record<string, Nadi> = Object.fromEntries(NAKSHATRAS.map((n, i) => [n.name, nadiOf(i)]));
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 
@@ -93,7 +82,7 @@ export type CompatibilityResult = {
 };
 
 function nakshatraFromMoon(profile: Profile) {
-  const lon  = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
+  const lon  = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const idx  = Math.min(26, Math.floor(lon / (360 / 27)));
   return NAKSHATRAS[idx];
 }
@@ -102,7 +91,7 @@ function moonSignIndex(profile: Profile): number | null {
   const { moon } = getBigThree(profile);
   if (!moon) return null;
   // ZODIAC[idx].name === moon.name; index can be derived from longitude too.
-  const lon = getMoonLongitudeExact(profile.birthDate, profile.birthTime ?? undefined);
+  const lon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   return Math.floor(lon / 30);
 }
 
@@ -128,50 +117,37 @@ export function computeCompatibility(a: Profile, b: Profile): CompatibilityResul
   const max      = 21;
   const outOfTen = Math.round((total / max) * 20) / 2;
 
+  // Display text in the app language (this result is only shown on screen,
+  // never sent to the model). Call again after a language change.
+  const t = (key: string, opts?: Record<string, unknown>) => i18n.t(`compatibility:${key}`, opts);
+
   const dimensions: CompatibilityDimension[] = [
     {
-      name:   'Temperament (Gana)',
+      name:   t('dim.gana.name'),
       score:  gana,
       max:    6,
-      flavor: gana >= 5
-        ? 'Your inner natures move in the same key.'
-        : gana >= 3
-        ? 'Different temperaments, but workable with care.'
-        : 'Two very different inner rhythms — you\'ll need to translate often.',
+      flavor: t(gana >= 5 ? 'dim.gana.high' : gana >= 3 ? 'dim.gana.mid' : 'dim.gana.low'),
     },
     {
-      name:   'Health & vitality (Nadi)',
+      name:   t('dim.nadi.name'),
       score:  nadi,
       max:    8,
-      flavor: nadi === 8
-        ? 'Your constitutions complement each other well.'
-        : 'Similar constitutions — traditionally a caution flag for shared depletion.',
+      flavor: t(nadi === 8 ? 'dim.nadi.good' : 'dim.nadi.same'),
     },
     {
-      name:   'Lifestyle harmony (Bhakoot)',
+      name:   t('dim.bhakoot.name'),
       score:  bhakoot,
       max:    7,
-      flavor: bhakoot === 7
-        ? 'Your day-to-day rhythms can sync easily.'
-        : 'Your moon signs sit in a classically restless angle to each other.',
+      flavor: t(bhakoot === 7 ? 'dim.bhakoot.good' : 'dim.bhakoot.dosha'),
     },
   ];
 
   const firstA = a.name.split(' ')[0];
   const firstB = b.name.split(' ')[0];
 
-  let verdict: string;
-  let summary: string;
-  if (outOfTen >= 8) {
-    verdict = 'Strong match';
-    summary = `${firstA} and ${firstB} share a naturally compatible chart pairing — temperament, vitality, and daily rhythm all line up well. A friendship or partnership here has good wind behind it.`;
-  } else if (outOfTen >= 5.5) {
-    verdict = 'Workable, with effort';
-    summary = `${firstA} and ${firstB} have real points of harmony, plus a few traditional friction points. Communication and patience matter more than they would in an effortless pairing — but that's true of most lasting bonds.`;
-  } else {
-    verdict = 'Challenging pairing';
-    summary = `Traditional matching marks this as a careful pairing for ${firstA} and ${firstB}. That doesn't mean it can't work — many real-life partnerships do — but the chart asks for awareness, not autopilot.`;
-  }
+  const level = outOfTen >= 8 ? 'strong' : outOfTen >= 5.5 ? 'workable' : 'challenging';
+  const verdict = t(`verdict.${level}`);
+  const summary = t(`summary.${level}`, { a: firstA, b: firstB });
 
   return { total, max, outOfTen, verdict, summary, dimensions };
 }

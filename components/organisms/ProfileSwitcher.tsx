@@ -1,3 +1,5 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { forwardRef, useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
@@ -7,12 +9,14 @@ import {
   BottomSheetFlatList,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Avatar } from '@/components/atoms/Avatar';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Icon } from '@/components/atoms/Icon';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getSunSign } from '@/utils/astrology';
+import { tSign } from '@/utils/i18n';
 import type { Profile } from '@/utils/database';
 
 type SheetProps = {
@@ -28,6 +32,7 @@ export type ProfileSwitcherSheetRef = BottomSheetModal;
 export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetProps>(
   function ProfileSwitcherSheet({ profiles, activeProfileId, onSelect, onCreateNew, onEdit }, ref) {
     const { theme } = useAccent();
+    const { t } = useTranslation('profile');
 
     const dismiss = useCallback(() => {
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
@@ -55,7 +60,7 @@ export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetPro
         backgroundStyle={{ backgroundColor: theme.surface }}
       >
         <BottomSheetView style={styles.content}>
-          <EyebrowLabel style={styles.sheetTitle}>Switch chart</EyebrowLabel>
+          <EyebrowLabel style={styles.sheetTitle}>{t('switcher.title')}</EyebrowLabel>
 
           {profiles.map((p, i) => {
             const sun = getSunSign(p.birthDate);
@@ -76,11 +81,11 @@ export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetPro
                       <Text style={[styles.profileName, { color: theme.ink }]}>
                         {p.name}
                         {p.isYou && (
-                          <Text style={[styles.youBadge, { color: theme.accent }]}> · You</Text>
+                          <Text style={[styles.youBadge, { color: theme.accent }]}> · {t('common:you')}</Text>
                         )}
                       </Text>
                       <Text style={[styles.profileSub, { color: theme.muted }]}>
-                        {sun ? sun.name : 'No birth date'}
+                        {sun ? tSign(sun.name) : t('detail.noBirthDate')}
                       </Text>
                     </View>
                     {isActive && (
@@ -93,6 +98,8 @@ export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetPro
                       style={styles.editBtn}
                       onPress={() => { onEdit(p); dismiss(); }}
                       activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('switcher.editA11y', { name: p.name })}
                     >
                       <Icon name="edit" size={16} color={theme.muted} />
                     </TouchableOpacity>
@@ -107,7 +114,7 @@ export const ProfileSwitcherSheet = forwardRef<ProfileSwitcherSheetRef, SheetPro
             onPress={() => { onCreateNew(); dismiss(); }}
           >
             <Icon name="plus" size={16} color={theme.ink2} />
-            <Text style={[styles.addLabel, { color: theme.ink2 }]}>Add a chart</Text>
+            <Text style={[styles.addLabel, { color: theme.ink2 }]}>{t('switcher.addChart')}</Text>
           </TouchableOpacity>
         </BottomSheetView>
       </BottomSheetModal>

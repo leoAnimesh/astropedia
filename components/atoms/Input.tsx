@@ -1,34 +1,28 @@
-import { useRef, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  Animated,
-  type TextInputProps,
-  type ViewStyle,
-} from 'react-native';
+import { useRef } from 'react';
+import { StyleSheet, Text, View, Animated, type ViewStyle } from 'react-native';
 import { useAccent } from '@/hooks/use-accent';
 import { FONTS } from '@/constants/themes';
+import { AppTextInput, type AppTextInputProps } from '@/components/keyboard';
 
-type Props = Omit<TextInputProps, 'style'> & {
+type Props = Omit<AppTextInputProps, 'style'> & {
   label?: string;
   containerStyle?: ViewStyle;
 };
 
+/**
+ * Labelled, underlined text field. Types with the app keyboard (or the
+ * phone keyboard after 🌐) via AppTextInput; accepts TextInput props.
+ */
 export function Input({ label, containerStyle, onFocus, onBlur, ...rest }: Props) {
   const { theme } = useAccent();
-  const [focused, setFocused] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
 
-  const handleFocus = (e: Parameters<NonNullable<TextInputProps['onFocus']>>[0]) => {
-    setFocused(true);
+  const handleFocus = (e?: unknown) => {
     Animated.timing(anim, { toValue: 1, duration: 180, useNativeDriver: false }).start();
     onFocus?.(e);
   };
 
-  const handleBlur = (e: Parameters<NonNullable<TextInputProps['onBlur']>>[0]) => {
-    setFocused(false);
+  const handleBlur = (e?: unknown) => {
     Animated.timing(anim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
     onBlur?.(e);
   };
@@ -43,7 +37,8 @@ export function Input({ label, containerStyle, onFocus, onBlur, ...rest }: Props
       {label && (
         <Text style={[styles.label, { color: theme.muted }]}>{label}</Text>
       )}
-      <TextInput
+      <AppTextInput
+        accessibilityLabel={label}
         {...rest}
         onFocus={handleFocus}
         onBlur={handleBlur}

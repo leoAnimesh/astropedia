@@ -1,0 +1,1446 @@
+{
+ "about": "Date-generalisation eval (scripts/eval_dates.py): Saga timing questions on profiles dated 2027-06-15 and 2028-03-15 (data/eval_dates_profiles.jsonl, gen_eval_profiles.ts --id-suffix). Every month-year in an answer must come from that profile's context/timing; a stale one (e.g. the v2 profiles' shared 'Oct 2026') means the student memorised dates.",
+ "profiles_file": "eval_dates_profiles.jsonl",
+ "items": [
+  {
+   "id": "en_01_marriage_2706",
+   "lang": "en",
+   "cat": "marriage",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "When will I get married?"
+  },
+  {
+   "id": "en_01_marriage_2803",
+   "lang": "en",
+   "cat": "marriage",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "When will I get married?"
+  },
+  {
+   "id": "hi_01_marriage_2706",
+   "lang": "hi",
+   "cat": "marriage",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "मेरी शादी कब होगी?"
+  },
+  {
+   "id": "hi_01_marriage_2803",
+   "lang": "hi",
+   "cat": "marriage",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "मेरी शादी कब होगी?"
+  },
+  {
+   "id": "bn_01_marriage_2706",
+   "lang": "bn",
+   "cat": "marriage",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "আমার বিয়ে কবে হবে?"
+  },
+  {
+   "id": "bn_01_marriage_2803",
+   "lang": "bn",
+   "cat": "marriage",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "আমার বিয়ে কবে হবে?"
+  },
+  {
+   "id": "en_02_job_2706",
+   "lang": "en",
+   "cat": "job",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "When will I get a new job?"
+  },
+  {
+   "id": "en_02_job_2803",
+   "lang": "en",
+   "cat": "job",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "When will I get a new job?"
+  },
+  {
+   "id": "hi_02_job_2706",
+   "lang": "hi",
+   "cat": "job",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "मुझे नई नौकरी कब मिलेगी?"
+  },
+  {
+   "id": "hi_02_job_2803",
+   "lang": "hi",
+   "cat": "job",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "मुझे नई नौकरी कब मिलेगी?"
+  },
+  {
+   "id": "bn_02_job_2706",
+   "lang": "bn",
+   "cat": "job",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "আমি নতুন চাকরি কবে পাব?"
+  },
+  {
+   "id": "bn_02_job_2803",
+   "lang": "bn",
+   "cat": "job",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "আমি নতুন চাকরি কবে পাব?"
+  },
+  {
+   "id": "en_03_money_2706",
+   "lang": "en",
+   "cat": "money",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "When will my money situation improve?"
+  },
+  {
+   "id": "en_03_money_2803",
+   "lang": "en",
+   "cat": "money",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "When will my money situation improve?"
+  },
+  {
+   "id": "hi_03_money_2706",
+   "lang": "hi",
+   "cat": "money",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "मेरी आर्थिक स्थिति कब सुधरेगी?"
+  },
+  {
+   "id": "hi_03_money_2803",
+   "lang": "hi",
+   "cat": "money",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "मेरी आर्थिक स्थिति कब सुधरेगी?"
+  },
+  {
+   "id": "bn_03_money_2706",
+   "lang": "bn",
+   "cat": "money",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "আমার টাকাপয়সার অবস্থা কবে ভালো হবে?"
+  },
+  {
+   "id": "bn_03_money_2803",
+   "lang": "bn",
+   "cat": "money",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "আমার টাকাপয়সার অবস্থা কবে ভালো হবে?"
+  },
+  {
+   "id": "en_04_hard_phase_2706",
+   "lang": "en",
+   "cat": "hard_phase",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "When does this hard phase end?"
+  },
+  {
+   "id": "en_04_hard_phase_2803",
+   "lang": "en",
+   "cat": "hard_phase",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "When does this hard phase end?"
+  },
+  {
+   "id": "hi_04_hard_phase_2706",
+   "lang": "hi",
+   "cat": "hard_phase",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "यह मुश्किल दौर कब खत्म होगा?"
+  },
+  {
+   "id": "hi_04_hard_phase_2803",
+   "lang": "hi",
+   "cat": "hard_phase",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "यह मुश्किल दौर कब खत्म होगा?"
+  },
+  {
+   "id": "bn_04_hard_phase_2706",
+   "lang": "bn",
+   "cat": "hard_phase",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "এই কঠিন সময়টা কবে শেষ হবে?"
+  },
+  {
+   "id": "bn_04_hard_phase_2803",
+   "lang": "bn",
+   "cat": "hard_phase",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "এই কঠিন সময়টা কবে শেষ হবে?"
+  },
+  {
+   "id": "en_05_jupiter_2706",
+   "lang": "en",
+   "cat": "jupiter",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "When will Jupiter change sign for me?"
+  },
+  {
+   "id": "en_05_jupiter_2803",
+   "lang": "en",
+   "cat": "jupiter",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "When will Jupiter change sign for me?"
+  },
+  {
+   "id": "hi_05_jupiter_2706",
+   "lang": "hi",
+   "cat": "jupiter",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "मेरे लिए गुरु कब राशि बदलेगा?"
+  },
+  {
+   "id": "hi_05_jupiter_2803",
+   "lang": "hi",
+   "cat": "jupiter",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "मेरे लिए गुरु कब राशि बदलेगा?"
+  },
+  {
+   "id": "bn_05_jupiter_2706",
+   "lang": "bn",
+   "cat": "jupiter",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "আমার জন্য বৃহস্পতি কবে রাশি বদলাবে?"
+  },
+  {
+   "id": "bn_05_jupiter_2803",
+   "lang": "bn",
+   "cat": "jupiter",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "আমার জন্য বৃহস্পতি কবে রাশি বদলাবে?"
+  },
+  {
+   "id": "en_06_saturn_2706",
+   "lang": "en",
+   "cat": "saturn",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "When does Saturn move next?"
+  },
+  {
+   "id": "en_06_saturn_2803",
+   "lang": "en",
+   "cat": "saturn",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "When does Saturn move next?"
+  },
+  {
+   "id": "hi_06_saturn_2706",
+   "lang": "hi",
+   "cat": "saturn",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "शनि अगली बार कब राशि बदलेगा?"
+  },
+  {
+   "id": "hi_06_saturn_2803",
+   "lang": "hi",
+   "cat": "saturn",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "शनि अगली बार कब राशि बदलेगा?"
+  },
+  {
+   "id": "bn_06_saturn_2706",
+   "lang": "bn",
+   "cat": "saturn",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "শনি পরের বার কবে রাশি বদলাবে?"
+  },
+  {
+   "id": "bn_06_saturn_2803",
+   "lang": "bn",
+   "cat": "saturn",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "শনি পরের বার কবে রাশি বদলাবে?"
+  },
+  {
+   "id": "en_07_next_year_2706",
+   "lang": "en",
+   "cat": "next_year",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "Is next year good for me?"
+  },
+  {
+   "id": "en_07_next_year_2803",
+   "lang": "en",
+   "cat": "next_year",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "Is next year good for me?"
+  },
+  {
+   "id": "hi_07_next_year_2706",
+   "lang": "hi",
+   "cat": "next_year",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "क्या अगला साल मेरे लिए अच्छा है?"
+  },
+  {
+   "id": "hi_07_next_year_2803",
+   "lang": "hi",
+   "cat": "next_year",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "क्या अगला साल मेरे लिए अच्छा है?"
+  },
+  {
+   "id": "bn_07_next_year_2706",
+   "lang": "bn",
+   "cat": "next_year",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "আগামী বছর কি আমার জন্য ভালো?"
+  },
+  {
+   "id": "bn_07_next_year_2803",
+   "lang": "bn",
+   "cat": "next_year",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "আগামী বছর কি আমার জন্য ভালো?"
+  },
+  {
+   "id": "en_08_house_2706",
+   "lang": "en",
+   "cat": "house",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "When is a good time to buy a house?"
+  },
+  {
+   "id": "en_08_house_2803",
+   "lang": "en",
+   "cat": "house",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "When is a good time to buy a house?"
+  },
+  {
+   "id": "hi_08_house_2706",
+   "lang": "hi",
+   "cat": "house",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "घर खरीदने का अच्छा समय कब है?"
+  },
+  {
+   "id": "hi_08_house_2803",
+   "lang": "hi",
+   "cat": "house",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "घर खरीदने का अच्छा समय कब है?"
+  },
+  {
+   "id": "bn_08_house_2706",
+   "lang": "bn",
+   "cat": "house",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "বাড়ি কেনার ভালো সময় কবে?"
+  },
+  {
+   "id": "bn_08_house_2803",
+   "lang": "bn",
+   "cat": "house",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "বাড়ি কেনার ভালো সময় কবে?"
+  },
+  {
+   "id": "en_09_promotion_2706",
+   "lang": "en",
+   "cat": "promotion",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "When will I get a promotion?"
+  },
+  {
+   "id": "en_09_promotion_2803",
+   "lang": "en",
+   "cat": "promotion",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "When will I get a promotion?"
+  },
+  {
+   "id": "hi_09_promotion_2706",
+   "lang": "hi",
+   "cat": "promotion",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "मेरा प्रमोशन कब होगा?"
+  },
+  {
+   "id": "hi_09_promotion_2803",
+   "lang": "hi",
+   "cat": "promotion",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "मेरा प्रमोशन कब होगा?"
+  },
+  {
+   "id": "bn_09_promotion_2706",
+   "lang": "bn",
+   "cat": "promotion",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "আমার প্রমোশন কবে হবে?"
+  },
+  {
+   "id": "bn_09_promotion_2803",
+   "lang": "bn",
+   "cat": "promotion",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "আমার প্রমোশন কবে হবে?"
+  },
+  {
+   "id": "en_10_abroad_2706",
+   "lang": "en",
+   "cat": "abroad",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "When will I go abroad?"
+  },
+  {
+   "id": "en_10_abroad_2803",
+   "lang": "en",
+   "cat": "abroad",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "When will I go abroad?"
+  },
+  {
+   "id": "hi_10_abroad_2706",
+   "lang": "hi",
+   "cat": "abroad",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "मेरा विदेश जाना कब होगा?"
+  },
+  {
+   "id": "hi_10_abroad_2803",
+   "lang": "hi",
+   "cat": "abroad",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "मेरा विदेश जाना कब होगा?"
+  },
+  {
+   "id": "bn_10_abroad_2706",
+   "lang": "bn",
+   "cat": "abroad",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "আমি কবে বিদেশে যাব?"
+  },
+  {
+   "id": "bn_10_abroad_2803",
+   "lang": "bn",
+   "cat": "abroad",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "আমি কবে বিদেশে যাব?"
+  },
+  {
+   "id": "en_11_love_2706",
+   "lang": "en",
+   "cat": "love",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "When will I find love?"
+  },
+  {
+   "id": "en_11_love_2803",
+   "lang": "en",
+   "cat": "love",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "When will I find love?"
+  },
+  {
+   "id": "hi_11_love_2706",
+   "lang": "hi",
+   "cat": "love",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "मुझे प्यार कब मिलेगा?"
+  },
+  {
+   "id": "hi_11_love_2803",
+   "lang": "hi",
+   "cat": "love",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "मुझे प्यार कब मिलेगा?"
+  },
+  {
+   "id": "bn_11_love_2706",
+   "lang": "bn",
+   "cat": "love",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "আমি কবে ভালোবাসা পাব?"
+  },
+  {
+   "id": "bn_11_love_2803",
+   "lang": "bn",
+   "cat": "love",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "আমি কবে ভালোবাসা পাব?"
+  },
+  {
+   "id": "en_12_health_2706",
+   "lang": "en",
+   "cat": "health",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "When will my health get better?"
+  },
+  {
+   "id": "en_12_health_2803",
+   "lang": "en",
+   "cat": "health",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "When will my health get better?"
+  },
+  {
+   "id": "hi_12_health_2706",
+   "lang": "hi",
+   "cat": "health",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "मेरी सेहत कब बेहतर होगी?"
+  },
+  {
+   "id": "hi_12_health_2803",
+   "lang": "hi",
+   "cat": "health",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "मेरी सेहत कब बेहतर होगी?"
+  },
+  {
+   "id": "bn_12_health_2706",
+   "lang": "bn",
+   "cat": "health",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "আমার শরীর কবে ভালো হবে?"
+  },
+  {
+   "id": "bn_12_health_2803",
+   "lang": "bn",
+   "cat": "health",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "আমার শরীর কবে ভালো হবে?"
+  },
+  {
+   "id": "en_13_business_2706",
+   "lang": "en",
+   "cat": "business",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "When should I start my own business?"
+  },
+  {
+   "id": "en_13_business_2803",
+   "lang": "en",
+   "cat": "business",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "When should I start my own business?"
+  },
+  {
+   "id": "hi_13_business_2706",
+   "lang": "hi",
+   "cat": "business",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "अपना बिज़नेस कब शुरू करूँ?"
+  },
+  {
+   "id": "hi_13_business_2803",
+   "lang": "hi",
+   "cat": "business",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "अपना बिज़नेस कब शुरू करूँ?"
+  },
+  {
+   "id": "bn_13_business_2706",
+   "lang": "bn",
+   "cat": "business",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "নিজের ব্যবসা কবে শুরু করব?"
+  },
+  {
+   "id": "bn_13_business_2803",
+   "lang": "bn",
+   "cat": "business",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "নিজের ব্যবসা কবে শুরু করব?"
+  },
+  {
+   "id": "en_14_next_months_2706",
+   "lang": "en",
+   "cat": "next_months",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "What changes are coming in the next few months?"
+  },
+  {
+   "id": "en_14_next_months_2803",
+   "lang": "en",
+   "cat": "next_months",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "What changes are coming in the next few months?"
+  },
+  {
+   "id": "hi_14_next_months_2706",
+   "lang": "hi",
+   "cat": "next_months",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "अगले कुछ महीनों में क्या बदलाव आने वाले हैं?"
+  },
+  {
+   "id": "hi_14_next_months_2803",
+   "lang": "hi",
+   "cat": "next_months",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "अगले कुछ महीनों में क्या बदलाव आने वाले हैं?"
+  },
+  {
+   "id": "bn_14_next_months_2706",
+   "lang": "bn",
+   "cat": "next_months",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "আগামী কয়েক মাসে কী কী বদল আসছে?"
+  },
+  {
+   "id": "bn_14_next_months_2803",
+   "lang": "bn",
+   "cat": "next_months",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "আগামী কয়েক মাসে কী কী বদল আসছে?"
+  },
+  {
+   "id": "en_15_stretch_end_2706",
+   "lang": "en",
+   "cat": "stretch_end",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "When does my current period end?"
+  },
+  {
+   "id": "en_15_stretch_end_2803",
+   "lang": "en",
+   "cat": "stretch_end",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "When does my current period end?"
+  },
+  {
+   "id": "hi_15_stretch_end_2706",
+   "lang": "hi",
+   "cat": "stretch_end",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "मेरा मौजूदा दौर कब खत्म होगा?"
+  },
+  {
+   "id": "hi_15_stretch_end_2803",
+   "lang": "hi",
+   "cat": "stretch_end",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "मेरा मौजूदा दौर कब खत्म होगा?"
+  },
+  {
+   "id": "bn_15_stretch_end_2706",
+   "lang": "bn",
+   "cat": "stretch_end",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "আমার বর্তমান পর্ব কবে শেষ হবে?"
+  },
+  {
+   "id": "bn_15_stretch_end_2803",
+   "lang": "bn",
+   "cat": "stretch_end",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "আমার বর্তমান পর্ব কবে শেষ হবে?"
+  },
+  {
+   "id": "en_16_next_chapter_2706",
+   "lang": "en",
+   "cat": "next_chapter",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "What will my next chapter bring, and when does it start?"
+  },
+  {
+   "id": "en_16_next_chapter_2803",
+   "lang": "en",
+   "cat": "next_chapter",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "What will my next chapter bring, and when does it start?"
+  },
+  {
+   "id": "hi_16_next_chapter_2706",
+   "lang": "hi",
+   "cat": "next_chapter",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "मेरा अगला अध्याय क्या लाएगा और कब शुरू होगा?"
+  },
+  {
+   "id": "hi_16_next_chapter_2803",
+   "lang": "hi",
+   "cat": "next_chapter",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "मेरा अगला अध्याय क्या लाएगा और कब शुरू होगा?"
+  },
+  {
+   "id": "bn_16_next_chapter_2706",
+   "lang": "bn",
+   "cat": "next_chapter",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "আমার পরের অধ্যায় কী আনবে, আর কবে শুরু হবে?"
+  },
+  {
+   "id": "bn_16_next_chapter_2803",
+   "lang": "bn",
+   "cat": "next_chapter",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "আমার পরের অধ্যায় কী আনবে, আর কবে শুরু হবে?"
+  },
+  {
+   "id": "en_17_exact_month_2706",
+   "lang": "en",
+   "cat": "exact_month",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "Tell me the exact month things will turn around for me."
+  },
+  {
+   "id": "en_17_exact_month_2803",
+   "lang": "en",
+   "cat": "exact_month",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "Tell me the exact month things will turn around for me."
+  },
+  {
+   "id": "hi_17_exact_month_2706",
+   "lang": "hi",
+   "cat": "exact_month",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "बताइए, किस महीने से मेरे हालात बदलेंगे?"
+  },
+  {
+   "id": "hi_17_exact_month_2803",
+   "lang": "hi",
+   "cat": "exact_month",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "बताइए, किस महीने से मेरे हालात बदलेंगे?"
+  },
+  {
+   "id": "bn_17_exact_month_2706",
+   "lang": "bn",
+   "cat": "exact_month",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "কোন মাস থেকে আমার অবস্থা বদলাবে, বলুন।"
+  },
+  {
+   "id": "bn_17_exact_month_2803",
+   "lang": "bn",
+   "cat": "exact_month",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "কোন মাস থেকে আমার অবস্থা বদলাবে, বলুন।"
+  },
+  {
+   "id": "en_18_child_2706",
+   "lang": "en",
+   "cat": "child",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "When will we have a child?"
+  },
+  {
+   "id": "en_18_child_2803",
+   "lang": "en",
+   "cat": "child",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "When will we have a child?"
+  },
+  {
+   "id": "hi_18_child_2706",
+   "lang": "hi",
+   "cat": "child",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "हमें संतान कब होगी?"
+  },
+  {
+   "id": "hi_18_child_2803",
+   "lang": "hi",
+   "cat": "child",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "हमें संतान कब होगी?"
+  },
+  {
+   "id": "bn_18_child_2706",
+   "lang": "bn",
+   "cat": "child",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "আমাদের সন্তান কবে হবে?"
+  },
+  {
+   "id": "bn_18_child_2803",
+   "lang": "bn",
+   "cat": "child",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "আমাদের সন্তান কবে হবে?"
+  },
+  {
+   "id": "en_19_exam_2706",
+   "lang": "en",
+   "cat": "exam",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "When will I succeed in my exams?"
+  },
+  {
+   "id": "en_19_exam_2803",
+   "lang": "en",
+   "cat": "exam",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "When will I succeed in my exams?"
+  },
+  {
+   "id": "hi_19_exam_2706",
+   "lang": "hi",
+   "cat": "exam",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "परीक्षा में सफलता कब मिलेगी?"
+  },
+  {
+   "id": "hi_19_exam_2803",
+   "lang": "hi",
+   "cat": "exam",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "परीक्षा में सफलता कब मिलेगी?"
+  },
+  {
+   "id": "bn_19_exam_2706",
+   "lang": "bn",
+   "cat": "exam",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "পরীক্ষায় সাফল্য কবে আসবে?"
+  },
+  {
+   "id": "bn_19_exam_2803",
+   "lang": "bn",
+   "cat": "exam",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "পরীক্ষায় সাফল্য কবে আসবে?"
+  },
+  {
+   "id": "en_20_luck_2706",
+   "lang": "en",
+   "cat": "luck",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "When will my luck turn?"
+  },
+  {
+   "id": "en_20_luck_2803",
+   "lang": "en",
+   "cat": "luck",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "When will my luck turn?"
+  },
+  {
+   "id": "hi_20_luck_2706",
+   "lang": "hi",
+   "cat": "luck",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "मेरी किस्मत कब चमकेगी?"
+  },
+  {
+   "id": "hi_20_luck_2803",
+   "lang": "hi",
+   "cat": "luck",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "मेरी किस्मत कब चमकेगी?"
+  },
+  {
+   "id": "bn_20_luck_2706",
+   "lang": "bn",
+   "cat": "luck",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "আমার ভাগ্য কবে খুলবে?"
+  },
+  {
+   "id": "bn_20_luck_2803",
+   "lang": "bn",
+   "cat": "luck",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "আমার ভাগ্য কবে খুলবে?"
+  },
+  {
+   "id": "en_21_change_job_2706",
+   "lang": "en",
+   "cat": "change_job",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "Should I change jobs this year or wait?"
+  },
+  {
+   "id": "en_21_change_job_2803",
+   "lang": "en",
+   "cat": "change_job",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "Should I change jobs this year or wait?"
+  },
+  {
+   "id": "hi_21_change_job_2706",
+   "lang": "hi",
+   "cat": "change_job",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "इस साल नौकरी बदलूँ या रुकूँ?"
+  },
+  {
+   "id": "hi_21_change_job_2803",
+   "lang": "hi",
+   "cat": "change_job",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "इस साल नौकरी बदलूँ या रुकूँ?"
+  },
+  {
+   "id": "bn_21_change_job_2706",
+   "lang": "bn",
+   "cat": "change_job",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "এ বছর চাকরি বদলাব, না অপেক্ষা করব?"
+  },
+  {
+   "id": "bn_21_change_job_2803",
+   "lang": "bn",
+   "cat": "change_job",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "এ বছর চাকরি বদলাব, না অপেক্ষা করব?"
+  },
+  {
+   "id": "en_22_debt_2706",
+   "lang": "en",
+   "cat": "debt",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "When will my debts be cleared?"
+  },
+  {
+   "id": "en_22_debt_2803",
+   "lang": "en",
+   "cat": "debt",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "When will my debts be cleared?"
+  },
+  {
+   "id": "hi_22_debt_2706",
+   "lang": "hi",
+   "cat": "debt",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "मेरा कर्ज़ कब उतरेगा?"
+  },
+  {
+   "id": "hi_22_debt_2803",
+   "lang": "hi",
+   "cat": "debt",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "मेरा कर्ज़ कब उतरेगा?"
+  },
+  {
+   "id": "bn_22_debt_2706",
+   "lang": "bn",
+   "cat": "debt",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "আমার ঋণ কবে শোধ হবে?"
+  },
+  {
+   "id": "bn_22_debt_2803",
+   "lang": "bn",
+   "cat": "debt",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "আমার ঋণ কবে শোধ হবে?"
+  },
+  {
+   "id": "en_23_home_peace_2706",
+   "lang": "en",
+   "cat": "home_peace",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "When will things settle down at home?"
+  },
+  {
+   "id": "en_23_home_peace_2803",
+   "lang": "en",
+   "cat": "home_peace",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "When will things settle down at home?"
+  },
+  {
+   "id": "hi_23_home_peace_2706",
+   "lang": "hi",
+   "cat": "home_peace",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "घर में कब शांति आएगी?"
+  },
+  {
+   "id": "hi_23_home_peace_2803",
+   "lang": "hi",
+   "cat": "home_peace",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "घर में कब शांति आएगी?"
+  },
+  {
+   "id": "bn_23_home_peace_2706",
+   "lang": "bn",
+   "cat": "home_peace",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "বাড়িতে কবে শান্তি আসবে?"
+  },
+  {
+   "id": "bn_23_home_peace_2803",
+   "lang": "bn",
+   "cat": "home_peace",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "বাড়িতে কবে শান্তি আসবে?"
+  },
+  {
+   "id": "en_24_engagement_2706",
+   "lang": "en",
+   "cat": "engagement",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "When is the best time to get engaged?"
+  },
+  {
+   "id": "en_24_engagement_2803",
+   "lang": "en",
+   "cat": "engagement",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "When is the best time to get engaged?"
+  },
+  {
+   "id": "hi_24_engagement_2706",
+   "lang": "hi",
+   "cat": "engagement",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "सगाई के लिए सबसे अच्छा समय कब है?"
+  },
+  {
+   "id": "hi_24_engagement_2803",
+   "lang": "hi",
+   "cat": "engagement",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "सगाई के लिए सबसे अच्छा समय कब है?"
+  },
+  {
+   "id": "bn_24_engagement_2706",
+   "lang": "bn",
+   "cat": "engagement",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "বাগদানের জন্য সবচেয়ে ভালো সময় কবে?"
+  },
+  {
+   "id": "bn_24_engagement_2803",
+   "lang": "bn",
+   "cat": "engagement",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "বাগদানের জন্য সবচেয়ে ভালো সময় কবে?"
+  },
+  {
+   "id": "en_25_sade_sati_2706",
+   "lang": "en",
+   "cat": "sade_sati",
+   "profile": "e02_notime_m_2706",
+   "today": "2027-06-15",
+   "q": "Am I in sade sati? Until when?"
+  },
+  {
+   "id": "en_25_sade_sati_2803",
+   "lang": "en",
+   "cat": "sade_sati",
+   "profile": "e09_noplace_2803",
+   "today": "2028-03-15",
+   "q": "Am I in sade sati? Until when?"
+  },
+  {
+   "id": "hi_25_sade_sati_2706",
+   "lang": "hi",
+   "cat": "sade_sati",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "क्या मुझ पर साढ़े साती चल रही है? कब तक?"
+  },
+  {
+   "id": "hi_25_sade_sati_2803",
+   "lang": "hi",
+   "cat": "sade_sati",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "क्या मुझ पर साढ़े साती चल रही है? कब तक?"
+  },
+  {
+   "id": "bn_25_sade_sati_2706",
+   "lang": "bn",
+   "cat": "sade_sati",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "আমার কি সাড়েসাতি চলছে? কতদিন চলবে?"
+  },
+  {
+   "id": "bn_25_sade_sati_2803",
+   "lang": "bn",
+   "cat": "sade_sati",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "আমার কি সাড়েসাতি চলছে? কতদিন চলবে?"
+  },
+  {
+   "id": "en_26_right_person_2706",
+   "lang": "en",
+   "cat": "right_person",
+   "profile": "e04_elder_m_2706",
+   "today": "2027-06-15",
+   "q": "When will I meet the right person?"
+  },
+  {
+   "id": "en_26_right_person_2803",
+   "lang": "en",
+   "cat": "right_person",
+   "profile": "e10_notime_nogender_2803",
+   "today": "2028-03-15",
+   "q": "When will I meet the right person?"
+  },
+  {
+   "id": "hi_26_right_person_2706",
+   "lang": "hi",
+   "cat": "right_person",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "सही इंसान से मुलाकात कब होगी?"
+  },
+  {
+   "id": "hi_26_right_person_2803",
+   "lang": "hi",
+   "cat": "right_person",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "सही इंसान से मुलाकात कब होगी?"
+  },
+  {
+   "id": "bn_26_right_person_2706",
+   "lang": "bn",
+   "cat": "right_person",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "সঠিক মানুষের সঙ্গে কবে দেখা হবে?"
+  },
+  {
+   "id": "bn_26_right_person_2803",
+   "lang": "bn",
+   "cat": "right_person",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "সঠিক মানুষের সঙ্গে কবে দেখা হবে?"
+  },
+  {
+   "id": "en_27_career_2706",
+   "lang": "en",
+   "cat": "career",
+   "profile": "e07_sydney_nb_2706",
+   "today": "2027-06-15",
+   "q": "When will my career take off?"
+  },
+  {
+   "id": "en_27_career_2803",
+   "lang": "en",
+   "cat": "career",
+   "profile": "e11_sadesati_2803",
+   "today": "2028-03-15",
+   "q": "When will my career take off?"
+  },
+  {
+   "id": "hi_27_career_2706",
+   "lang": "hi",
+   "cat": "career",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "मेरा करियर कब आगे बढ़ेगा?"
+  },
+  {
+   "id": "hi_27_career_2803",
+   "lang": "hi",
+   "cat": "career",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "मेरा करियर कब आगे बढ़ेगा?"
+  },
+  {
+   "id": "bn_27_career_2706",
+   "lang": "bn",
+   "cat": "career",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "আমার কেরিয়ার কবে এগোবে?"
+  },
+  {
+   "id": "bn_27_career_2803",
+   "lang": "bn",
+   "cat": "career",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "আমার কেরিয়ার কবে এগোবে?"
+  },
+  {
+   "id": "en_28_this_year_2706",
+   "lang": "en",
+   "cat": "this_year",
+   "profile": "e09_noplace_2706",
+   "today": "2027-06-15",
+   "q": "What should I expect this year?"
+  },
+  {
+   "id": "en_28_this_year_2803",
+   "lang": "en",
+   "cat": "this_year",
+   "profile": "e12_london_2803",
+   "today": "2028-03-15",
+   "q": "What should I expect this year?"
+  },
+  {
+   "id": "hi_28_this_year_2706",
+   "lang": "hi",
+   "cat": "this_year",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "इस साल मुझे क्या उम्मीद रखनी चाहिए?"
+  },
+  {
+   "id": "hi_28_this_year_2803",
+   "lang": "hi",
+   "cat": "this_year",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "इस साल मुझे क्या उम्मीद रखनी चाहिए?"
+  },
+  {
+   "id": "bn_28_this_year_2706",
+   "lang": "bn",
+   "cat": "this_year",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "এ বছর আমি কী আশা করতে পারি?"
+  },
+  {
+   "id": "bn_28_this_year_2803",
+   "lang": "bn",
+   "cat": "this_year",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "এ বছর আমি কী আশা করতে পারি?"
+  },
+  {
+   "id": "en_29_car_2706",
+   "lang": "en",
+   "cat": "car",
+   "profile": "e10_notime_nogender_2706",
+   "today": "2027-06-15",
+   "q": "When can I buy a car?"
+  },
+  {
+   "id": "en_29_car_2803",
+   "lang": "en",
+   "cat": "car",
+   "profile": "e01_adult_f_2803",
+   "today": "2028-03-15",
+   "q": "When can I buy a car?"
+  },
+  {
+   "id": "hi_29_car_2706",
+   "lang": "hi",
+   "cat": "car",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "गाड़ी खरीदने का सही समय कब है?"
+  },
+  {
+   "id": "hi_29_car_2803",
+   "lang": "hi",
+   "cat": "car",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "गाड़ी खरीदने का सही समय कब है?"
+  },
+  {
+   "id": "bn_29_car_2706",
+   "lang": "bn",
+   "cat": "car",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "আমি কবে গাড়ি কিনতে পারব?"
+  },
+  {
+   "id": "bn_29_car_2803",
+   "lang": "bn",
+   "cat": "car",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "আমি কবে গাড়ি কিনতে পারব?"
+  },
+  {
+   "id": "en_30_relationship_2706",
+   "lang": "en",
+   "cat": "relationship",
+   "profile": "e11_sadesati_2706",
+   "today": "2027-06-15",
+   "q": "When will my relationship improve?"
+  },
+  {
+   "id": "en_30_relationship_2803",
+   "lang": "en",
+   "cat": "relationship",
+   "profile": "e02_notime_m_2803",
+   "today": "2028-03-15",
+   "q": "When will my relationship improve?"
+  },
+  {
+   "id": "hi_30_relationship_2706",
+   "lang": "hi",
+   "cat": "relationship",
+   "profile": "e12_london_2706",
+   "today": "2027-06-15",
+   "q": "मेरे रिश्ते में सुधार कब आएगा?"
+  },
+  {
+   "id": "hi_30_relationship_2803",
+   "lang": "hi",
+   "cat": "relationship",
+   "profile": "e04_elder_m_2803",
+   "today": "2028-03-15",
+   "q": "मेरे रिश्ते में सुधार कब आएगा?"
+  },
+  {
+   "id": "bn_30_relationship_2706",
+   "lang": "bn",
+   "cat": "relationship",
+   "profile": "e01_adult_f_2706",
+   "today": "2027-06-15",
+   "q": "আমার সম্পর্ক কবে ভালো হবে?"
+  },
+  {
+   "id": "bn_30_relationship_2803",
+   "lang": "bn",
+   "cat": "relationship",
+   "profile": "e07_sydney_nb_2803",
+   "today": "2028-03-15",
+   "q": "আমার সম্পর্ক কবে ভালো হবে?"
+  }
+ ]
+}

@@ -1,0 +1,143 @@
+{
+  "persona": {
+    "saga": "Saga",
+    "krishna": "Krishna"
+  },
+  "unavailable": {
+    "title": "Conversation unavailable",
+    "message": "The profile this chat belonged to has been removed.",
+    "ok": "OK"
+  },
+  "header": {
+    "back": "Back",
+    "krishnaSub": "Bhagavad Gita",
+    "sagaSub": "with Saga",
+    "fallback": "Chat",
+    "archive": "Archive",
+    "pin": "Pin chat",
+    "unpin": "Unpin chat"
+  },
+  "followUps": {
+    "when": "When exactly?",
+    "do": "What should I do now?",
+    "know": "How will I know?"
+  },
+  "contextNote": "Saga only remembers the last few messages in this thread.",
+  "empty": {
+    "krishnaNamed": "What's on your mind, <em>{{name}}?</em>",
+    "krishna": "What's on <em>your mind?</em>",
+    "krishnaSub": "Krishna is listening — quietly, like an old friend.",
+    "sagaSelf": "Ask anything about <em>yourself.</em>",
+    "sagaOther": "Ask anything about <em>{{name}}.</em>",
+    "sagaUnknown": "Ask anything about <em>them.</em>",
+    "sagaSubSelf": "Saga reads your chart and chats like a thoughtful friend.",
+    "sagaSubOther": "Saga reads their chart and chats like a thoughtful friend."
+  },
+  "menu": {
+    "save": "Save answer",
+    "remove": "Remove from saved",
+    "share": "Share as card",
+    "cancel": "Cancel"
+  },
+  "bubble": {
+    "waking": "{{persona}} is waking up…",
+    "thinking": "{{persona}} is thinking…",
+    "save": "Save",
+    "saved": "Saved",
+    "share": "Share",
+    "a11ySave": "Save answer",
+    "a11yRemove": "Remove from saved answers",
+    "a11yShare": "Share answer"
+  },
+  "composer": {
+    "placeholder": "Ask Saga anything…",
+    "send": "Send"
+  },
+  "starters": {
+    "love": "Love",
+    "career": "Career",
+    "money": "Money",
+    "family": "Family",
+    "self": "Self",
+    "today": "Today",
+    "vibes": "Vibes"
+  },
+  "krishnaStarters": {
+    "lost": "Feeling lost",
+    "fear": "Too much fear",
+    "tension": "Too much worry",
+    "failure": "I keep failing",
+    "overthink": "Can't stop thinking",
+    "purpose": "What's my purpose?"
+  },
+  "errors": {
+    "modelLoad": "I couldn't load the on-device model right now. Try again in a moment.",
+    "generic": "Something went wrong — please try again."
+  },
+  "greeting": {
+    "self": "Hello! I'm Saga. Ask me anything about your chart — love, work, money, family, or what the coming months hold.",
+    "other": "Hello! I'm Saga. Ask me anything about {{name}}'s chart — love, work, money, family, or what the coming months hold."
+  },
+  "archived": {
+    "back": "Back",
+    "eyebrow": "Archive",
+    "title": "Archived",
+    "empty": "No archived chats.\nSwipe a conversation on Home to archive it.",
+    "hint": "Swipe a row left to unarchive or delete.",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "fallbackTitle": "Conversation"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutes": "{{n}}m ago",
+    "hours": "{{n}}h ago",
+    "days": "{{n}}d ago"
+  },
+  "share": {
+    "eyebrow": "Share card",
+    "title": "Share this <em>answer.</em>",
+    "close": "Close",
+    "empty": "Nothing to share.",
+    "style": "Style",
+    "light": "Light",
+    "dark": "Dark",
+    "hideQuestion": "Hide my question",
+    "shareText": "Share text",
+    "shareImage": "Share…",
+    "signature": "— {{who}} · Astropedia"
+  },
+  "card": {
+    "forName": "For {{name}} · ",
+    "sagaTag": "Vedic chart",
+    "krishnaTag": "Bhagavad Gita"
+  },
+  "starterPrompts": {
+    "you": {
+      "love": "What does my chart say about love and relationships right now?",
+      "career": "What is my chart saying about career and purpose this season?",
+      "money": "What does my chart show about financial energy and abundance?",
+      "family": "How does my chart reflect my family patterns and dynamics?",
+      "self": "What is my nature really working through right now?",
+      "today": "What should I know about today's energy from my chart?",
+      "vibes": "Read the current astrological vibes in my chart — what stands out?"
+    },
+    "other": {
+      "love": "What does {{name}}'s chart say about love and relationships right now?",
+      "career": "What is {{name}}'s chart saying about career and purpose this season?",
+      "money": "What does {{name}}'s chart show about financial energy and abundance?",
+      "family": "How does {{name}}'s chart reflect their family patterns and dynamics?",
+      "self": "What is {{name}}'s nature really working through right now?",
+      "today": "What should {{name}} know about today's energy from their chart?",
+      "vibes": "Read the current astrological vibes in {{name}}'s chart — what stands out?"
+    }
+  },
+  "krishnaPrompts": {
+    "lost": "I feel lost. I don't know what the right thing to do is anymore.",
+    "fear": "I have so much fear inside me. How do I stop feeling scared all the time?",
+    "tension": "I worry about everything. My mind never settles. What do I do?",
+    "failure": "I keep failing at the thing I really love. Should I just give up?",
+    "overthink": "My mind never stops. I keep overthinking everything. How do I make it quieter?",
+    "purpose": "I don't know what I'm supposed to do with my life. What's the point of all this?"
+  }
+}

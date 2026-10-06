@@ -1,6 +1,9 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useSettingsStore } from '@/stores/settings-store';
@@ -8,14 +11,13 @@ import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Toggle } from '@/components/atoms/Toggle';
 import { Icon } from '@/components/atoms/Icon';
-import { FONTS, RADIUS, ACCENT_THEMES, ACCENT_LABEL, type AccentKey } from '@/constants/themes';
+import { showDialog } from '@/components/overlays';
+import { FONTS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
 import { clearAllData } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
 import { useOnboardingStore } from '@/stores/onboarding-store';
 import { todayIso } from '@/utils/format';
-import { switchModel, getModelCatalog, getCurrentModelInfo } from '@/utils/local-llm';
-import { detectDeviceTier, type DeviceTier } from '@/utils/device-tier';
 import {
   ensureNotificationPermission,
   scheduleDailyHoroscope,
@@ -27,57 +29,19 @@ import {
 const ACCENT_KEYS: AccentKey[] = ['amber', 'sage', 'lilac', 'blush', 'ink'];
 
 export default function SettingsScreen() {
-  const { theme, accentKey, setAccentKey, isDark } = useAccent();
+  const { theme, accentKey, setAccentKey } = useAccent();
+  const { t } = useTranslation('settings');
   const { profiles } = useProfiles();
   const setDark = useSettingsStore((s) => s.setDarkModeOverride);
   const darkOverride = useSettingsStore((s) => s.darkModeOverride);
-  const [modelPref,       setModelPref]       = useState<string>(Storage.getPreferredModelTier());
   const [dailyHoroscope,  setDailyHoroscope]  = useState<boolean>(Storage.getDailyHoroscopePush());
   const [transitAlerts,   setTransitAlerts]   = useState<boolean>(Storage.getTransitAlerts());
-
-  const catalog        = getModelCatalog();
-  const currentInfo    = getCurrentModelInfo();
-  const detectedTier   = detectDeviceTier();
-  const TIER_OPTIONS: Array<{ key: 'auto' | DeviceTier; label: string; sub: string }> = [
-    { key: 'auto',     label: 'Auto-select',          sub: `Picks the best model for your phone (now: ${catalog[detectedTier].label}, ${catalog[detectedTier].size})` },
-    { key: 'flagship', label: catalog.flagship.label, sub: `${catalog.flagship.size} · best quality` },
-    { key: 'mid',      label: catalog.mid.label,      sub: `${catalog.mid.size} · solid quality` },
-    { key: 'budget',   label: catalog.budget.label,   sub: `${catalog.budget.size} · faster on older phones` },
-    { key: 'floor',    label: catalog.floor.label,    sub: `${catalog.floor.size} · minimum, weakest answers` },
-  ];
-
-  const handlePickModel = (preference: 'auto' | DeviceTier) => {
-    if (preference === modelPref) return;
-    const targetTier = preference === 'auto' ? detectedTier : preference;
-    const target     = catalog[targetTier];
-    const currentSize = currentInfo.def.size;
-    const willDownload = target.version !== currentInfo.def.version;
-    const confirm = () => {
-      setModelPref(preference);
-      switchModel(preference);
-    };
-    if (willDownload) {
-      Alert.alert(
-        'Switch offline model?',
-        `This will download ${target.label} (${target.size}) in the background. Currently using ${currentInfo.def.label} (${currentSize}).`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Switch', onPress: confirm },
-        ],
-      );
-    } else {
-      confirm();
-    }
-  };
 
   const handleToggleDailyHoroscope = async (next: boolean) => {
     if (next) {
       const ok = await ensureNotificationPermission();
       if (!ok) {
-        Alert.alert(
-          'Notifications off',
-          'Enable notifications for Astropedia in your phone settings to receive daily readings.',
-        );
+        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offDaily') });
         return;
       }
       Storage.setDailyHoroscopePush(true);
@@ -94,10 +58,7 @@ export default function SettingsScreen() {
     if (next) {
       const ok = await ensureNotificationPermission();
       if (!ok) {
-        Alert.alert(
-          'Notifications off',
-          'Enable notifications for Astropedia in your phone settings to receive transit alerts.',
-        );
+        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offTransit') });
         return;
       }
       Storage.setTransitAlerts(true);
@@ -119,19 +80,19 @@ export default function SettingsScreen() {
     // Also wipe semantic Q&A cache so chat replies regenerate with the
     // current system prompt instead of returning stale entries.
     Cache.clear();
-    Alert.alert('Cache cleared', 'Horoscope, chart readings, and chat cache will regenerate on next open.');
+    showDialog({ title: t('dev.clearedTitle'), message: t('dev.clearedMessage') });
   };
 
   const setOnboardingDone = useOnboardingStore((s) => s.setDone);
 
   const handleReset = () => {
-    Alert.alert(
-      'Reset all data',
-      'This will delete all profiles, chats, and settings. Cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
+    showDialog({
+      title:   t('reset.title'),
+      message: t('reset.message'),
+      actions: [
+        { label: t('reset.cancel'), style: 'cancel' },
         {
-          text: 'Reset',
+          label: t('reset.confirm'),
           style: 'destructive',
           onPress: async () => {
             await clearAllData();
@@ -142,25 +103,25 @@ export default function SettingsScreen() {
           },
         },
       ],
-    );
+    });
   };
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityLabel={t('back')}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.ink }]}>
-          <Text style={styles.titleItalic}>Settings</Text>
+          <Text style={styles.titleItalic}>{t('title')}</Text>
         </Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Appearance */}
-        <EyebrowLabel style={styles.sectionLabel}>Appearance</EyebrowLabel>
+        <EyebrowLabel style={styles.sectionLabel}>{t('appearance.section')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          <Text style={[styles.cardLabel, { color: theme.ink2 }]}>Accent color</Text>
+          <Text style={[styles.cardLabel, { color: theme.ink2 }]}>{t('appearance.accentColor')}</Text>
           <View style={styles.swatchRow}>
             {ACCENT_KEYS.map((key) => {
               const isActive = key === accentKey;
@@ -176,7 +137,7 @@ export default function SettingsScreen() {
                     },
                   ]}
                   onPress={() => setAccentKey(key)}
-                  accessibilityLabel={ACCENT_LABEL[key]}
+                  accessibilityLabel={t(`accent.${key}`)}
                 >
                   {isActive && (
                     <Text style={styles.swatchCheck}>✓</Text>
@@ -188,65 +149,56 @@ export default function SettingsScreen() {
 
           <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
 
-          <Toggle
-            value={isDark}
-            onValueChange={(v) => setDark(v ? 'dark' : 'light')}
-            label="Dark mode"
-            sublabel="Easier on the eyes after dusk."
-          />
+          <View style={styles.cardRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('appearance.theme')}</Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>{t('appearance.themeSub')}</Text>
+            </View>
+          </View>
+          <View style={styles.langOptions} accessibilityRole="radiogroup">
+            {(['light', 'dark', 'system'] as const).map((m) => {
+              const on = m === darkOverride;
+              return (
+                <TouchableOpacity
+                  key={m}
+                  onPress={() => setDark(m)}
+                  style={[
+                    styles.langPill,
+                    on
+                      ? { backgroundColor: theme.ink, borderColor: theme.ink }
+                      : { backgroundColor: theme.surface, borderColor: theme.hairline2 },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={t(`appearance.${m}`)}
+                >
+                  <Text style={[styles.langPillText, { color: on ? theme.bg : theme.ink }]}>{t(`appearance.${m}`)}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
-        {/* Offline AI — dev-only. Auto-tier selection runs for everyone;
-            this UI is for picking a specific model variant during testing. */}
-        {__DEV__ && (
-          <>
-            <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Offline AI</EyebrowLabel>
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-              {TIER_OPTIONS.map((opt, idx) => {
-                const isSelected = modelPref === opt.key;
-                return (
-                  <View key={opt.key}>
-                    <TouchableOpacity
-                      style={styles.modelRow}
-                      onPress={() => handlePickModel(opt.key)}
-                      activeOpacity={0.85}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.modelLabel, { color: theme.ink }]}>{opt.label}</Text>
-                        <Text style={[styles.modelSub, { color: theme.muted }]}>{opt.sub}</Text>
-                      </View>
-                      {isSelected && <Icon name="check" size={16} color={theme.accent} />}
-                    </TouchableOpacity>
-                    {idx < TIER_OPTIONS.length - 1 && (
-                      <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          </>
-        )}
-
         {/* Notifications */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Notifications</EyebrowLabel>
+        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('notifications.section')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <Toggle
             value={dailyHoroscope}
             onValueChange={handleToggleDailyHoroscope}
-            label="Daily reading"
-            sublabel="A gentle 8 AM nudge so you don't forget today's reading."
+            label={t('notifications.daily')}
+            sublabel={t('notifications.dailySub')}
           />
           <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
           <Toggle
             value={transitAlerts}
             onValueChange={handleToggleTransitAlerts}
-            label="Transit alerts"
-            sublabel="A day-before heads-up when Sun, Mars, Jupiter, or Saturn shifts sign."
+            label={t('notifications.transit')}
+            sublabel={t('notifications.transitSub')}
           />
         </View>
 
         {/* Conversations */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Conversations</EyebrowLabel>
+        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('conversations.section')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <TouchableOpacity
             style={styles.cardRow}
@@ -255,7 +207,18 @@ export default function SettingsScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
               <Icon name="archive" size={16} color={theme.ink2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.ink }]}>Archived chats</Text>
+            <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('conversations.archived')}</Text>
+            <Icon name="chevron" size={14} color={theme.faint} />
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
+          <TouchableOpacity
+            style={styles.cardRow}
+            onPress={() => router.push('/saved')}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+              <Icon name="bookmark" size={16} color={theme.ink2} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('conversations.saved')}</Text>
             <Icon name="chevron" size={14} color={theme.faint} />
           </TouchableOpacity>
         </View>
@@ -263,15 +226,15 @@ export default function SettingsScreen() {
         {/* Dev tools — only visible in development builds */}
         {__DEV__ && (
           <>
-            <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>Dev</EyebrowLabel>
+            <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('dev.section')}</EyebrowLabel>
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
               <TouchableOpacity style={styles.cardRow} onPress={handleClearAICache}>
                 <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
                   <Icon name="refresh" size={16} color={theme.ink2} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowLabel, { color: theme.ink }]}>Clear AI cache</Text>
-                  <Text style={[styles.rowSub, { color: theme.muted }]}>Force regenerate horoscope &amp; chart readings</Text>
+                  <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('dev.clearCache')}</Text>
+                  <Text style={[styles.rowSub, { color: theme.muted }]}>{t('dev.clearCacheSub')}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -279,7 +242,7 @@ export default function SettingsScreen() {
         )}
 
         <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-          <Text style={styles.resetText}>Reset all data</Text>
+          <Text style={styles.resetText}>{t('reset.button')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -364,26 +327,27 @@ const styles = StyleSheet.create({
     fontSize:      14.5,
     letterSpacing: -0.1,
   },
+  langOptions: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           8,
+    marginTop:     14,
+  },
+  langPill: {
+    minHeight:         40,
+    paddingHorizontal: 16,
+    borderRadius:      RADIUS.pill,
+    borderWidth:       StyleSheet.hairlineWidth,
+    justifyContent:    'center',
+  },
+  langPillText: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   14.5,
+  },
   rowSub: {
     fontFamily: FONTS.sansRegular,
     fontSize:   12,
     marginTop:  1,
-  },
-  modelRow: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    paddingVertical: 12,
-    gap:             12,
-  },
-  modelLabel: {
-    fontFamily: FONTS.serifRegular,
-    fontSize:   15,
-  },
-  modelSub: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   12,
-    lineHeight: 17,
-    marginTop:  2,
   },
   resetBtn: {
     marginTop:     24,

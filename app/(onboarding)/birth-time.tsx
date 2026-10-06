@@ -1,52 +1,58 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
+// GH's ScrollView lets the wheel's vertical pan win over page scrolling.
+import { ScrollView } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
 import { Button } from '@/components/atoms/Button';
+import { TimePicker } from '@/components/molecules/TimePicker';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getMoonSign } from '@/utils/astrology';
+import { intlLocale, localizeTime, tSign } from '@/utils/i18n';
 import OnboardingStore from './_store';
-
-function parseStoredTime(stored: string): Date | null {
-  if (!stored) return null;
-  const [h, m] = stored.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
-}
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 export default function BirthTimeScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('onboarding');
+  const indic = i18n.language !== 'en';   // taller line height for Devanagari/Bengali marks
 
-  const [time, setTime] = useState<Date | null>(
-    parseStoredTime(OnboardingStore.birthTime),
-  );
+  // "HH:mm" (24h) once the user has set it; null until then.
+  const [time, setTime] = useState<string | null>(OnboardingStore.birthTime || null);
 
   const handleContinue = () => {
     if (!time) return;
-    const hh = String(time.getHours()).padStart(2, '0');
-    const mm = String(time.getMinutes()).padStart(2, '0');
-    OnboardingStore.birthTime = `${hh}:${mm}`;
+    OnboardingStore.birthTime = time;
+    router.push('/(onboarding)/birth-place');
+  };
+
+  // No birth time: the chart is cast without houses/rising (birth-place saves
+  // an empty time as null).
+  const handleUnknown = () => {
+    OnboardingStore.birthTime = '';
     router.push('/(onboarding)/birth-place');
   };
 
   const timeLabel = time
-    ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ? (() => {
+        const [h, m] = time.split(':').map(Number);
+        const formatted = new Date(2000, 0, 1, h, m).toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit' });
+        return localizeTime(formatted);
+      })()
     : null;
 
   // Refined moon sign using the user's actual birth time. This is the same
   // sign we showed on the previous screen — confirmed when the time given
   // doesn't cross a sign boundary, otherwise corrected.
   const refinedMoon = time && OnboardingStore.birthDate
-    ? (() => {
-        const hh = String(time.getHours()).padStart(2, '0');
-        const mm = String(time.getMinutes()).padStart(2, '0');
-        return getMoonSign(OnboardingStore.birthDate, `${hh}:${mm}`);
-      })()
+    ? getMoonSign(OnboardingStore.birthDate, time)
     : null;
 
   return (
@@ -55,36 +61,28 @@ export default function BirthTimeScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
-        <Text style={[styles.step, { color: theme.muted }]}>04 / 05 — Time</Text>
+        <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthTime.step')}</Text>
       </View>
 
-      <View style={styles.content}>
-        <Text style={[styles.display, { color: theme.ink }]}>
-          What time did{'\n'}
-          <Text style={styles.italic}>you arrive?</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={[styles.display, { color: theme.ink }, indic && styles.displayIndic]}>
+          {t('birthTime.titleA')}{'\n'}
+          <Text style={styles.italic}>{t('birthTime.titleB')}</Text>
         </Text>
 
         <Text style={[styles.hint, { color: theme.ink2 }]}>
-          Birth time gives us your Rising sign and precise house placements — the most personal part of your chart.
+          {t('birthTime.hint')}
         </Text>
 
-        <EyebrowLabel style={styles.fieldLabel}>Time of birth</EyebrowLabel>
+        <EyebrowLabel style={styles.fieldLabel}>{t('birthTime.fieldLabel')}</EyebrowLabel>
 
         <View style={[styles.pickerCard, { backgroundColor: theme.surface2 }]}>
-          <DateTimePicker
-            value={time ?? new Date(0, 0, 0, 12, 0)}
-            mode="time"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            minuteInterval={1}
-            onChange={(_, t) => t && setTime(t)}
-            style={styles.picker}
-            themeVariant={theme.bg === '#faf9f6' ? 'light' : 'dark'}
-          />
+          <TimePicker value={time ?? '12:00'} onChange={setTime} />
         </View>
 
         {timeLabel && (
           <View style={[styles.preview, { backgroundColor: theme.surface2 }]}>
-            <Text style={[styles.previewLabel, { color: theme.muted }]}>Selected time</Text>
+            <Text style={[styles.previewLabel, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('birthTime.selected')}</Text>
             <Text style={[styles.previewValue, { color: theme.ink }]}>{timeLabel}</Text>
           </View>
         )}
@@ -93,34 +91,37 @@ export default function BirthTimeScreen() {
           <View style={[styles.signCard, { backgroundColor: theme.surface2 }]}>
             <Text style={[styles.signGlyph, { color: theme.accent }]}>{refinedMoon.glyph}</Text>
             <View style={styles.signInfo}>
-              <EyebrowLabel size={10}>Moon sign · Rashi</EyebrowLabel>
+              <EyebrowLabel size={10}>{t('birthTime.moonLabel')}</EyebrowLabel>
               <Text style={[styles.signName, { color: theme.ink }]}>
-                <Text style={styles.italic}>{refinedMoon.name}</Text>
+                <Text style={styles.italic}>{tSign(refinedMoon.name)}</Text>
                 {'  '}
-                <Text style={[styles.signElement, { color: theme.muted }]}>{refinedMoon.element}</Text>
+                <Text style={[styles.signElement, { color: theme.muted }]}>{t(`common:element.${refinedMoon.element}`)}</Text>
               </Text>
               <Text style={[styles.signNote, { color: theme.muted }]}>
-                now exact — this is your Rashi
+                {t('birthTime.exactNote')}
               </Text>
             </View>
           </View>
         )}
-      </View>
+      </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          label="Continue"
+          label={t('common:continue')}
           variant="accent"
           fullWidth
           disabled={!time}
           onPress={handleContinue}
         />
+        <TouchableOpacity onPress={handleUnknown} style={styles.unknownBtn} hitSlop={8} accessibilityRole="button">
+          <Text style={[styles.unknownText, { color: theme.muted }]}>{t('birthTime.unknown')}</Text>
+        </TouchableOpacity>
       </View>
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -136,8 +137,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.9,
     textTransform: 'uppercase',
   },
+  scroll: { flex: 1 },
   content: {
-    flex:       1,
     padding:    32,
     paddingTop: 20,
   },
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
     lineHeight:   44,
     marginBottom: 16,
   },
+  displayIndic: { lineHeight: 56 },
   italic: { fontFamily: FONTS.serifItalic },
   hint: {
     fontFamily:   FONTS.sansRegular,
@@ -159,10 +161,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.card,
     overflow:     'hidden',
     marginBottom: 20,
-    alignItems:   'flex-start',
-    padding:      8,
+    paddingVertical: 8,
   },
-  picker:  { alignSelf: 'flex-start' },
   preview: {
     borderRadius: RADIUS.card,
     padding:      16,
@@ -209,4 +209,6 @@ const styles = StyleSheet.create({
     padding:    32,
     paddingTop: 12,
   },
+  unknownBtn:  { alignSelf: 'center', marginTop: 14, paddingVertical: 4 },
+  unknownText: { fontFamily: FONTS.sansRegular, fontSize: 13.5, textDecorationLine: 'underline' },
 });

@@ -1,8 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { DotsLoader } from './DotsLoader';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 type Props = {
   text: string | null;
@@ -11,7 +13,9 @@ type Props = {
 };
 
 export function DailyTeaser({ text, loading, label }: Props) {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
+  const { t } = useTranslation('common');
 
   const teaser = text
     ? (() => {
@@ -38,7 +42,7 @@ export function DailyTeaser({ text, loading, label }: Props) {
             "{teaser}"
           </Text>
           <Text style={[styles.cta, { color: theme.accent }]}>
-            Read today's reading →
+            {t('readTodaysReading')}
           </Text>
         </>
       )}
@@ -46,7 +50,7 @@ export function DailyTeaser({ text, loading, label }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   card: {
     padding:      18,
     borderRadius: RADIUS.card,

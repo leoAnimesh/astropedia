@@ -1,36 +1,51 @@
-import { useEffect, useMemo } from 'react';
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   FlatList,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useThreads } from '@/hooks/use-threads';
-import { useChat } from '@/hooks/use-chat';
+import { isChatErrorMessage, useChat } from '@/hooks/use-chat';
 import { Avatar } from '@/components/atoms/Avatar';
 import { Icon } from '@/components/atoms/Icon';
+import { showActionSheet, showDialog } from '@/components/overlays';
 import { ChatBubble } from '@/components/molecules/ChatBubble';
 import { ChatComposer } from '@/components/organisms/ChatComposer';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
+import { KeyboardSpacer } from '@/components/keyboard';
 import { FONTS } from '@/constants/themes';
 import { buildPersonalizedStarters } from '@/constants/starters';
-import type { Message } from '@/utils/database';
-import { KRISHNA_PROFILE, KRISHNA_STARTERS, isKrishnaProfile } from '@/utils/krishna';
-import type { AIMode } from '@/utils/ai';
+import { getSavedMessageIds, saveAnswer, unsaveAnswer, type Message } from '@/utils/database';
+import { KRISHNA_PROFILE, getKrishnaStarters, isKrishnaProfile } from '@/utils/krishna';
+import { stripMarkdown, type AIMode } from '@/utils/ai';
+import { tAsk } from '@/utils/i18n';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
+
+/**
+ * Quick follow-ups offered under Saga's latest reply. The chip shows
+ * chat:followUps.<key>; tAsk() sends it in the language the model speaks.
+ */
+const FOLLOW_UPS = ['when', 'do', 'know'];
 
 export default function ChatScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
-  const { threadId, profileId, isNew } = useLocalSearchParams<{
+  const { t, i18n } = useTranslation('chat');
+  const indic = i18n.language !== 'en';
+  const { threadId, profileId, isNew, ask } = useLocalSearchParams<{
     threadId: string;
     profileId: string;
     isNew?: string;
+    /** A question to send as soon as a new chat opens (home chips, life-phase screen). */
+    ask?: string;
   }>();
 
   const isKrishna = isKrishnaProfile(profileId);
@@ -48,12 +63,13 @@ export default function ChatScreen() {
     if (isKrishna) return;
     if (profiles.length === 0) return; // still hydrating
     if (!profile) {
-      Alert.alert(
-        'Conversation unavailable',
-        'The profile this chat belonged to has been removed.',
-        [{ text: 'OK', onPress: () => router.replace('/') }],
-      );
+      showDialog({
+        title:   t('unavailable.title'),
+        message: t('unavailable.message'),
+        actions: [{ label: t('unavailable.ok'), onPress: () => router.replace('/') }],
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKrishna, profiles.length, profile]);
 
   // For Krishna chat, pass the active profile's first name so Krishna can address them.
@@ -63,11 +79,11 @@ export default function ChatScreen() {
 
   const starters = useMemo(
     () => {
-      if (isKrishna) return KRISHNA_STARTERS;
+      if (isKrishna) return getKrishnaStarters();
       return profile ? buildPersonalizedStarters(profile) : [];
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [profile?.id, isKrishna],
+    [profile?.id, isKrishna, i18n.language],
   );
 
   const { threads, archiveThread, setPinned } = useThreads(profileId ?? null);
@@ -102,8 +118,102 @@ export default function ChatScreen() {
     krishnaUserName,
   );
 
+  // Send the question this chat was opened with, once, as soon as the
+  // profile is available.
+  const askedRef = useRef(false);
+  useEffect(() => {
+    if (askedRef.current || !ask || isNew !== 'true' || !profile || messages.length > 0) return;
+    askedRef.current = true;
+    sendMessage(ask);
+  }, [ask, isNew, profile, messages.length, sendMessage]);
+
   // Inverted list expects newest-first data — reverse once, memoized
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+
+  // ─── Saved answers ─────────────────────────────────────────────────────────
+  // Refreshed on focus so un-saving from the Saved screen shows up here.
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
+  useFocusEffect(
+    useCallback(() => {
+      getSavedMessageIds().then(setSavedIds).catch(() => {});
+    }, []),
+  );
+
+  // The user message an assistant reply answers — the nearest one before it.
+  const questionFor = useCallback(
+    (messageId: string): string => {
+      const idx = messages.findIndex((m) => m.id === messageId);
+      for (let i = idx - 1; i >= 0; i--) {
+        if (messages[i].role === 'user') return messages[i].content;
+      }
+      return '';
+    },
+    [messages],
+  );
+
+  const toggleSave = useCallback(
+    async (msg: Message) => {
+      const wasSaved = savedIds.has(msg.id);
+      // Optimistic flip; the DB write is cheap and local.
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.delete(msg.id); else next.add(msg.id);
+        return next;
+      });
+      try {
+        if (wasSaved) {
+          await unsaveAnswer(msg.id);
+        } else {
+          await saveAnswer({
+            messageId: msg.id,
+            threadId:  threadId ?? null,
+            profileId: profileId ?? '',
+            persona:   mode,
+            question:  questionFor(msg.id),
+            answer:    msg.content,
+          });
+        }
+      } catch {
+        getSavedMessageIds().then(setSavedIds).catch(() => {});
+      }
+    },
+    [savedIds, threadId, profileId, mode, questionFor],
+  );
+
+  const shareAnswer = useCallback(
+    (msg: Message) => {
+      router.push({
+        pathname: '/share-answer',
+        params: {
+          question:    questionFor(msg.id),
+          answer:      stripMarkdown(msg.content),
+          persona:     mode,
+          profileName: isKrishna ? (activeProfile?.name ?? '') : (profile?.name ?? ''),
+        },
+      });
+    },
+    [questionFor, mode, isKrishna, activeProfile?.name, profile?.name],
+  );
+
+  // Long-press menu — same JS action sheet on iOS and Android.
+  const openAnswerMenu = useCallback(
+    (msg: Message) => {
+      const saved = savedIds.has(msg.id);
+      showActionSheet({
+        options: [
+          {
+            label:   saved ? t('menu.remove') : t('menu.save'),
+            icon:    saved ? 'bookmark-filled' : 'bookmark',
+            onPress: () => toggleSave(msg),
+          },
+          { label: t('menu.share'), icon: 'share', onPress: () => shareAnswer(msg) },
+        ],
+        cancelLabel: t('menu.cancel'),
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [savedIds, toggleSave, shareAnswer, i18n.language],
+  );
 
   const handleArchive = () => {
     archiveThread(threadId ?? '').then(() => router.back());
@@ -114,22 +224,37 @@ export default function ChatScreen() {
     setPinned(threadId, !isPinned);
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <ChatBubble role={item.role} content={item.content} />
-  );
+  const renderMessage = ({ item }: { item: Message }) =>
+    item.role === 'assistant' && isChatErrorMessage(item) ? (
+      // Error bubbles: nothing to save or share.
+      <ChatBubble role="assistant" content={item.content} />
+    ) : item.role === 'assistant' ? (
+      <ChatBubble
+        role="assistant"
+        content={item.content}
+        actions={{
+          saved:        savedIds.has(item.id),
+          onToggleSave: () => toggleSave(item),
+          onShare:      () => shareAnswer(item),
+        }}
+        onLongPress={() => openAnswerMenu(item)}
+      />
+    ) : (
+      <ChatBubble role={item.role} content={item.content} />
+    );
+
+  // Follow-up chips sit under Saga's latest reply once it has finished.
+  const lastMessage   = messages[messages.length - 1];
+  const showFollowUps = !isKrishna && !isTyping && lastMessage?.role === 'assistant' && !isChatErrorMessage(lastMessage);
 
   const isNewEmpty = isNew === 'true' && messages.length === 0;
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
+      <View style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityLabel={t('header.back')}>
             <Icon name="back" size={22} color={theme.ink} />
           </TouchableOpacity>
           {isKrishna ? (
@@ -141,14 +266,19 @@ export default function ChatScreen() {
           )}
           <View style={styles.headerText}>
             <Text style={[styles.headerName, { color: theme.ink }]} numberOfLines={1}>
-              {isKrishna ? 'Krishna' : (profile?.name ?? 'Chat')}
+              {isKrishna ? t('persona.krishna') : (profile?.name ?? t('header.fallback'))}
             </Text>
             <Text style={[styles.headerSub, { color: theme.muted }]}>
-              {isKrishna ? 'Bhagavad Gita' : 'with Saga'}
+              {isKrishna ? t('header.krishnaSub') : t('header.sagaSub')}
             </Text>
           </View>
           {!isNewEmpty && !isKrishna && (
-            <TouchableOpacity style={styles.iconBtn} onPress={handleTogglePin} hitSlop={8}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={handleTogglePin}
+              hitSlop={8}
+              accessibilityLabel={isPinned ? t('header.unpin') : t('header.pin')}
+            >
               <Icon
                 name={isPinned ? 'pin-filled' : 'pin'}
                 size={16}
@@ -156,10 +286,10 @@ export default function ChatScreen() {
               />
             </TouchableOpacity>
           )}
-          {!isNewEmpty && (
+          {!isNewEmpty && !isKrishna && (
             <TouchableOpacity style={styles.archiveBtn} onPress={handleArchive}>
               <Icon name="archive" size={16} color={theme.muted} />
-              <Text style={[styles.archiveBtnLabel, { color: theme.muted }]}>Archive</Text>
+              <Text style={[styles.archiveBtnLabel, { color: theme.muted }]}>{t('header.archive')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -170,6 +300,7 @@ export default function ChatScreen() {
           data={reversedMessages}
           keyExtractor={(m) => m.id}
           renderItem={renderMessage}
+          extraData={savedIds}
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -182,8 +313,21 @@ export default function ChatScreen() {
                 isStreaming
                 status={status}
                 streamText={streamText || undefined}
-                persona={isKrishna ? 'Krishna' : 'Saga'}
+                persona={isKrishna ? t('persona.krishna') : t('persona.saga')}
               />
+            ) : showFollowUps ? (
+              <View style={styles.followUps}>
+                {FOLLOW_UPS.map((key) => (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => sendMessage(tAsk(`chat:followUps.${key}`))}
+                    style={[styles.followUp, { backgroundColor: theme.surface, borderColor: theme.hairline2 }]}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.followUpText, { color: theme.ink }]}>{t(`followUps.${key}`)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             ) : null
           }
           // With inverted, ListFooterComponent renders at the visual TOP.
@@ -192,7 +336,7 @@ export default function ChatScreen() {
           ListFooterComponent={
             messages.length > 6 ? (
               <Text style={[styles.contextNote, { color: theme.muted }]}>
-                Saga only remembers the last few messages in this thread.
+                {t('contextNote')}
               </Text>
             ) : null
           }
@@ -201,32 +345,30 @@ export default function ChatScreen() {
             !isTyping ? (
               isKrishna ? (
                 <View style={styles.emptyState}>
-                  <Text style={[styles.emptyTitle, { color: theme.ink }]}>
-                    {krishnaUserName ? (
-                      <>
-                        What's on your mind,{' '}
-                        <Text style={styles.emptyItalic}>{krishnaUserName}?</Text>
-                      </>
-                    ) : (
-                      <>
-                        What's on <Text style={styles.emptyItalic}>your mind?</Text>
-                      </>
-                    )}
+                  <Text style={[styles.emptyTitle, indic && styles.emptyTitleIndic, { color: theme.ink }]}>
+                    <Trans
+                      t={t}
+                      i18nKey={krishnaUserName ? 'empty.krishnaNamed' : 'empty.krishna'}
+                      values={{ name: krishnaUserName }}
+                      components={{ em: <Text style={styles.emptyItalic} /> }}
+                    />
                   </Text>
                   <Text style={[styles.emptySub, { color: theme.muted }]}>
-                    Krishna is listening — quietly, like an old friend.
+                    {t('empty.krishnaSub')}
                   </Text>
                 </View>
               ) : (
                 <View style={styles.emptyState}>
-                  <Text style={[styles.emptyTitle, { color: theme.ink }]}>
-                    Ask anything about{' '}
-                    <Text style={styles.emptyItalic}>
-                      {profile?.isYou ? 'yourself' : (profile?.name.split(' ')[0] ?? 'them')}.
-                    </Text>
+                  <Text style={[styles.emptyTitle, indic && styles.emptyTitleIndic, { color: theme.ink }]}>
+                    <Trans
+                      t={t}
+                      i18nKey={profile?.isYou ? 'empty.sagaSelf' : profile ? 'empty.sagaOther' : 'empty.sagaUnknown'}
+                      values={{ name: profile?.name.split(' ')[0] ?? '' }}
+                      components={{ em: <Text style={styles.emptyItalic} /> }}
+                    />
                   </Text>
                   <Text style={[styles.emptySub, { color: theme.muted }]}>
-                    Saga reads {profile?.isYou ? 'your' : 'their'} chart and chats like a thoughtful friend.
+                    {profile?.isYou ? t('empty.sagaSubSelf') : t('empty.sagaSubOther')}
                   </Text>
                 </View>
               )
@@ -240,12 +382,14 @@ export default function ChatScreen() {
           disabled={isTyping}
           starters={messages.length === 0 ? starters : undefined}
         />
-      </KeyboardAvoidingView>
+        {/* Room for the keyboard (app or phone) below the composer. */}
+        <KeyboardSpacer />
+      </View>
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -289,6 +433,23 @@ const styles = StyleSheet.create({
     gap:           8,
     flexGrow:      1,
   },
+  followUps: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           8,
+    marginTop:     4,
+  },
+  followUp: {
+    minHeight:         40,
+    paddingHorizontal: 14,
+    borderRadius:      999,
+    borderWidth:       StyleSheet.hairlineWidth,
+    justifyContent:    'center',
+  },
+  followUpText: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   13.5,
+  },
   contextNote: {
     fontFamily:     FONTS.sansRegular,
     fontSize:       11.5,
@@ -307,6 +468,7 @@ const styles = StyleSheet.create({
     lineHeight:   32,
     marginBottom: 8,
   },
+  emptyTitleIndic: { lineHeight: 40 },
   emptyItalic: { fontFamily: FONTS.serifItalic },
   emptySub: {
     fontFamily: FONTS.sansRegular,

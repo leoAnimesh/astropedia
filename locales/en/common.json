@@ -1,0 +1,105 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "done": "Done",
+  "delete": "Delete",
+  "remove": "Remove",
+  "back": "Back",
+  "continue": "Continue",
+  "edit": "Edit",
+  "close": "Close",
+  "skip": "Skip",
+  "share": "Share",
+  "retry": "Try again",
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "notNow": "Not now",
+  "loading": "Loading…",
+  "search": "Search…",
+  "noResults": "No results",
+  "unknown": "Unknown",
+  "optional": "optional",
+  "notApplicable": "N/A",
+  "you": "You",
+  "archive": "Archive",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "tomorrow": "Tomorrow",
+  "readTodaysReading": "Read today's reading →",
+  "time": {
+    "justNow": "just now",
+    "minutesAgo_one": "{{count}}m ago",
+    "minutesAgo_other": "{{count}}m ago",
+    "hoursAgo_one": "{{count}}h ago",
+    "hoursAgo_other": "{{count}}h ago",
+    "daysAgo_one": "{{count}}d ago",
+    "daysAgo_other": "{{count}}d ago"
+  },
+  "greeting": {
+    "lateNight": "Still up",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "gender": {
+    "woman": "Woman",
+    "man": "Man",
+    "non_binary": "Non-binary",
+    "unspecified": "Prefer not to say"
+  },
+  "element": {
+    "Fire": "Fire",
+    "Earth": "Earth",
+    "Air": "Air",
+    "Water": "Water"
+  },
+  "dignity": {
+    "exalted": "exalted",
+    "debilitated": "debilitated",
+    "own": "own sign"
+  },
+  "signDescription": {
+    "Aries": "Bold, ambitious, and driven by passion.",
+    "Taurus": "Grounded, patient, and deeply sensual.",
+    "Gemini": "Curious, adaptable, and endlessly communicative.",
+    "Cancer": "Intuitive, nurturing, and deeply emotional.",
+    "Leo": "Confident, creative, and naturally magnetic.",
+    "Virgo": "Analytical, precise, and quietly devoted.",
+    "Libra": "Balanced, charming, and deeply fair-minded.",
+    "Scorpio": "Intense, perceptive, and transformative.",
+    "Sagittarius": "Philosophical, free-spirited, and endlessly curious.",
+    "Capricorn": "Disciplined, ambitious, and quietly powerful.",
+    "Aquarius": "Original, humanitarian, and intellectually daring.",
+    "Pisces": "Empathic, dreamy, and spiritually attuned."
+  },
+  "location": {
+    "country": "Country",
+    "state": "State / Province",
+    "stateNone": "State / Province · none for this country",
+    "city": "City",
+    "selectCountry": "Select country…",
+    "selectState": "Select state…",
+    "selectCity": "Select or type city…",
+    "pickCountryTitle": "Select Country",
+    "pickStateTitle": "Select State / Province",
+    "pickCityTitle": "Select City",
+    "useQuery": "Use \"{{query}}\"",
+    "geocodedNote": "Will be geocoded automatically"
+  },
+  "overlay": {
+    "dismiss": "Dismiss",
+    "menu": "Options",
+    "swipeHint": "Swipe down or tap outside to close"
+  },
+  "picker": {
+    "day": "Day",
+    "month": "Month",
+    "year": "Year",
+    "hour": "Hour",
+    "minute": "Minute",
+    "period": "AM or PM",
+    "selectDate": "Select date",
+    "selectTime": "Select time"
+  }
+}

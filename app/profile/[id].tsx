@@ -1,22 +1,29 @@
+'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
+
 import { useRef, useEffect } from 'react';
-import { Alert, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useThreads } from '@/hooks/use-threads';
 import { useHoroscope } from '@/hooks/use-horoscope';
 import { useAstrology } from '@/hooks/use-astrology';
 import { useChartReading } from '@/hooks/use-chart-reading';
-import { BirthChart } from '@/components/organisms/BirthChart';
+import { KundliChart } from '@/components/organisms/KundliChart';
 import { Avatar } from '@/components/atoms/Avatar';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { DetailRow } from '@/components/molecules/DetailRow';
 import { Icon } from '@/components/atoms/Icon';
+import { showDialog } from '@/components/overlays';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { formatBirthDate, formatBirthTime, formatFullDate } from '@/utils/format';
 import { ZODIAC } from '@/constants/astrology';
+import { tNakshatra, tPlanet, tSign } from '@/utils/i18n';
+import { localizePlace } from '@/utils/place-names';
 import type { ZodiacSign } from '@/constants/astrology';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 
 const DIGNITY_COLOR: Record<string, string> = {
   exalted:    '#6B9B7A',
@@ -46,13 +53,16 @@ function SkeletonLine({ color, width, style }: { color: string; width: number | 
 }
 
 export default function ProfileDetailScreen() {
+  const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
+  const { t, i18n } = useTranslation('profile');
+  const tracking = i18n.language === 'en' ? null : { letterSpacing: 0 };   // spacing breaks Devanagari/Bengali conjuncts
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profiles, removeProfile } = useProfiles();
   const profile = profiles.find((p) => p.id === id);
 
   const { sunSign, moonSign, risingSign, chartPositions, nakshatra, dasha } = useAstrology(
-    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null },
+    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null, birthTz: null },
   );
   useThreads(id ?? null);
   const { text: horoscopeText } = useHoroscope(profile ?? null);
@@ -64,13 +74,13 @@ export default function ProfileDetailScreen() {
   }
 
   const handleDelete = () => {
-    Alert.alert(
-      'Remove chart',
-      'This will delete all conversations with this profile.',
-      [
-        { text: 'Cancel', style: 'cancel' },
+    showDialog({
+      title:   t('detail.removeTitle'),
+      message: t('detail.removeBody'),
+      actions: [
+        { label: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          label: t('common:remove'),
           style: 'destructive',
           onPress: async () => {
             await removeProfile(profile.id);
@@ -78,13 +88,13 @@ export default function ProfileDetailScreen() {
           },
         },
       ],
-    );
+    });
   };
 
   const bigThree: Array<{ label: string; sign: ZodiacSign | null; dim: boolean; aiKey: 'sun' | 'moon' | 'rising' }> = [
-    { label: 'Sun',    sign: sunSign,    dim: false,               aiKey: 'sun' },
-    { label: 'Moon',   sign: moonSign,   dim: false,               aiKey: 'moon' },
-    { label: 'Rising', sign: risingSign, dim: !profile.birthTime,  aiKey: 'rising' },
+    { label: tPlanet('Sun'),      sign: sunSign,    dim: false,               aiKey: 'sun' },
+    { label: tPlanet('Moon'),     sign: moonSign,   dim: false,               aiKey: 'moon' },
+    { label: t('detail.rising'),  sign: risingSign, dim: !profile.birthTime,  aiKey: 'rising' },
   ];
 
   return (
@@ -94,15 +104,15 @@ export default function ProfileDetailScreen() {
           <Icon name="back" size={22} color={theme.ink} />
         </TouchableOpacity>
         <EyebrowLabel>
-          {profile.isYou ? 'Your chart' : `${profile.name.split(' ')[0]}'s chart`}
+          {profile.isYou ? t('detail.yourChart') : t('detail.namedChart', { name: profile.name.split(' ')[0] })}
         </EyebrowLabel>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => router.push(`/profile/edit/${profile.id}`)} style={styles.headerAction}>
-          <Text style={[styles.headerActionText, { color: theme.muted }]}>Edit</Text>
+          <Text style={[styles.headerActionText, { color: theme.muted }, tracking]}>{t('common:edit')}</Text>
         </TouchableOpacity>
         {!profile.isYou && (
           <TouchableOpacity onPress={handleDelete} style={styles.headerAction}>
-            <Text style={[styles.headerActionText, { color: theme.muted }]}>Remove</Text>
+            <Text style={[styles.headerActionText, { color: theme.muted }, tracking]}>{t('common:remove')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -115,22 +125,23 @@ export default function ProfileDetailScreen() {
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[styles.name, { color: theme.ink }]}>{profile.name}</Text>
             <Text style={[styles.nameSub, { color: theme.muted }]}>
-              {sunSign ? `${sunSign.glyph} ${sunSign.name}` : 'No birth date'}
+              {sunSign ? `${sunSign.glyph} ${tSign(sunSign.name)}` : t('detail.noBirthDate')}
               {profile.relationship ? ` · ${profile.relationship}` : ''}
             </Text>
           </View>
         </View>
 
         {/* Birth chart */}
-        <BirthChart profile={profile} size={290} />
+        <KundliChart profile={profile} />
 
         {/* Big Three — desc is always available (sign description fallback); spinner omitted */}
         <View style={styles.bigThree}>
           {bigThree.map(({ label, sign, dim, aiKey }) => {
-            const desc = reading?.[aiKey] ?? sign?.description ?? null;
+            const desc = reading?.[aiKey]
+              ?? (sign ? t(`common:signDescription.${sign.name}`, { defaultValue: sign.description }) : null);
             return (
               <View
-                key={label}
+                key={aiKey}
                 style={[
                   styles.bigOneCard,
                   { backgroundColor: theme.surface, borderColor: theme.hairline, opacity: dim ? 0.5 : 1 },
@@ -141,7 +152,7 @@ export default function ProfileDetailScreen() {
                   <EyebrowLabel size={9.5}>{label}</EyebrowLabel>
                   <Text style={[styles.bigOneGlyph, { color: theme.accent }]}>{sign?.glyph ?? '—'}</Text>
                   <Text style={[styles.bigOneName, { color: theme.ink }]}>
-                    {sign?.name ?? (dim ? 'No time' : '—')}
+                    {sign ? tSign(sign.name) : (dim ? t('detail.noTime') : '—')}
                   </Text>
                 </View>
                 {/* Right: description — AI text replaces static when ready, no spinner */}
@@ -160,7 +171,7 @@ export default function ProfileDetailScreen() {
         {/* Saga's reading overview */}
         {(reading?.overview || readingLoading) && (
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <EyebrowLabel style={{ marginBottom: 12 }}>Saga's reading</EyebrowLabel>
+            <EyebrowLabel style={{ marginBottom: 12 }}>{t('detail.sagaReading')}</EyebrowLabel>
             {readingLoading && !reading ? (
               <View style={styles.skeletonBlock}>
                 <SkeletonLine color={theme.hairline2} width="92%" />
@@ -176,7 +187,7 @@ export default function ProfileDetailScreen() {
         {/* Planet positions table */}
         {chartPositions.length > 0 && (
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <EyebrowLabel style={{ marginBottom: 12 }}>Planetary positions</EyebrowLabel>
+            <EyebrowLabel style={{ marginBottom: 12 }}>{t('detail.positions')}</EyebrowLabel>
             {chartPositions.map((p, i) => {
               const sign = ZODIAC[p.signIndex];
               const isLast = i === chartPositions.length - 1;
@@ -189,15 +200,15 @@ export default function ProfileDetailScreen() {
                   ]}
                 >
                   <Text style={[styles.planetGlyph, { color: theme.ink }]}>{p.glyph}</Text>
-                  <Text style={[styles.planetName, { color: theme.ink2 }]}>{p.name}</Text>
+                  <Text style={[styles.planetName, { color: theme.ink2 }]}>{tPlanet(p.name)}</Text>
                   <Text style={[styles.planetSign, { color: theme.ink }]}>
-                    {sign?.glyph} {sign?.name}
+                    {sign?.glyph} {sign ? tSign(sign.name) : ''}
                   </Text>
                   <Text style={[styles.planetDeg, { color: theme.muted }]}>{p.degInSign}°</Text>
                   {p.dignity !== 'neutral' && (
                     <View style={[styles.dignityBadge, { borderColor: DIGNITY_COLOR[p.dignity] }]}>
                       <Text style={[styles.dignityText, { color: DIGNITY_COLOR[p.dignity] }]}>
-                        {p.dignity}
+                        {t(`common:dignity.${p.dignity}`)}
                       </Text>
                     </View>
                   )}
@@ -210,14 +221,14 @@ export default function ProfileDetailScreen() {
         {/* Nakshatra card */}
         {nakshatra && (
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <EyebrowLabel style={{ marginBottom: 8 }}>Moon nakshatra</EyebrowLabel>
+            <EyebrowLabel style={{ marginBottom: 8 }}>{t('detail.moonNakshatra')}</EyebrowLabel>
             <View style={styles.nakshatraRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.nakshatraName, { color: theme.ink }]}>
-                  <Text style={styles.italic}>{nakshatra.name}</Text>
+                  <Text style={styles.italic}>{tNakshatra(nakshatra.name)}</Text>
                 </Text>
                 <Text style={[styles.nakshatraLord, { color: theme.muted }]}>
-                  Ruled by {nakshatra.lord}
+                  {t('detail.ruledBy', { lord: tPlanet(nakshatra.lord) })}
                 </Text>
               </View>
             </View>
@@ -235,17 +246,17 @@ export default function ProfileDetailScreen() {
         {/* Mahadasha card */}
         {dasha && (
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <EyebrowLabel style={{ marginBottom: 8 }}>Current Mahadasha</EyebrowLabel>
+            <EyebrowLabel style={{ marginBottom: 8 }}>{t('detail.mahadasha')}</EyebrowLabel>
             <View style={styles.dashaHeader}>
               <Text style={[styles.dashaLord, { color: theme.ink }]}>
-                <Text style={styles.italic}>{dasha.lord}</Text>
-                <Text style={[styles.dashaYears, { color: theme.muted }]}>  {dasha.yearsTotal} yr period</Text>
+                <Text style={styles.italic}>{tPlanet(dasha.lord)}</Text>
+                <Text style={[styles.dashaYears, { color: theme.muted }]}>  {t('detail.yearPeriod', { count: dasha.yearsTotal })}</Text>
               </Text>
             </View>
             <View style={styles.dashaDateRow}>
-              <Text style={[styles.dashaDate, { color: theme.muted }]}>{dasha.startDate}</Text>
+              <Text style={[styles.dashaDate, { color: theme.muted }]}>{formatBirthDate(dasha.startDate)}</Text>
               <View style={[styles.dashaBar, { backgroundColor: theme.hairline2 }]} />
-              <Text style={[styles.dashaDate, { color: theme.accent }]}>{dasha.endDate}</Text>
+              <Text style={[styles.dashaDate, { color: theme.accent }]}>{formatBirthDate(dasha.endDate)}</Text>
             </View>
             {reading?.dasha ? (
               <Text style={[styles.nakshatraDesc, { color: theme.ink2 }]}>{reading.dasha}</Text>
@@ -260,16 +271,16 @@ export default function ProfileDetailScreen() {
 
         {/* Birth info */}
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          <DetailRow label="Born"  value={formatBirthDate(profile.birthDate)} />
-          <DetailRow label="Time"  value={profile.birthTime ? formatBirthTime(profile.birthTime) : 'Unknown'} />
-          <DetailRow label="Place" value={profile.birthCity ?? 'Unknown'} last />
+          <DetailRow label={t('detail.born')}  value={formatBirthDate(profile.birthDate)} />
+          <DetailRow label={t('detail.time')}  value={profile.birthTime ? formatBirthTime(profile.birthTime) : t('common:unknown')} />
+          <DetailRow label={t('detail.place')} value={profile.birthCity ? localizePlace(profile.birthCity, i18n.language) : t('common:unknown')} last />
         </View>
 
         {/* Daily horoscope preview */}
         {horoscopeText && (
           <>
             <EyebrowLabel style={{ marginTop: 24, marginBottom: 12 }}>
-              {formatFullDate(new Date())} · Daily reading
+              {t('detail.dailyReading', { date: formatFullDate(new Date()) })}
             </EyebrowLabel>
             <Text style={[styles.horoscope, { color: theme.ink }]}>
               {horoscopeText.split('\n')[0]}
@@ -284,7 +295,7 @@ export default function ProfileDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header:         { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
   back:           { padding: 4 },
   removeBtn:      { fontFamily: FONTS.monoRegular, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },

@@ -1,0 +1,78 @@
+{
+  "form": {
+    "nameLabel": "নাম",
+    "namePlaceholder": "যেমন মা, সমীর, প্রিয়া",
+    "relLabel": "সম্পর্ক · ঐচ্ছিক",
+    "relLabelFor": "{{name}}-এর সঙ্গে সম্পর্ক · ঐচ্ছিক",
+    "relPlaceholder": "সঙ্গী, বন্ধু, মা-বাবা…",
+    "relPlaceholderFor": "{{name}}-এর সঙ্গী, বন্ধু, মা-বাবা…",
+    "genderLabel": "লিঙ্গ · ঐচ্ছিক",
+    "dobLabel": "জন্ম তারিখ",
+    "tobLabel": "জন্মের সময় · ঐচ্ছিক",
+    "futureTitle": "এই তারিখ তো এখনও আসেনি",
+    "futureBody": "অতীতের আসল জন্মতারিখ বেছে নিন — কুষ্ঠি তৈরি হয় এমন মুহূর্তের, যা পেরিয়ে গেছে।",
+    "dobPlaceholder": "তারিখ বেছে নিন",
+    "tobPlaceholder": "দেওয়া নেই",
+    "clearTime": "সময় জানা নেই"
+  },
+  "new": {
+    "eyebrow": "নতুন কুষ্ঠি",
+    "titleA": "প্রিয়জনের জন্য",
+    "titleB": "একটি কুষ্ঠি।",
+    "locationLabel": "জন্মস্থান · ঐচ্ছিক",
+    "sunOf": "{{name}}-এর সূর্য রাশি",
+    "sunOfThem": "সূর্য রাশি",
+    "save": "কুষ্ঠি সেভ করুন"
+  },
+  "edit": {
+    "eyebrow": "কুষ্ঠি বদলান",
+    "titleBefore": "",
+    "titleName": "{{name}}-এর",
+    "titleAfter": " তথ্য বদলান",
+    "titleNoName": "তথ্য বদলান",
+    "locationLabel": "জন্মস্থান",
+    "changeLocation": "জায়গা বদলান",
+    "cancelLocationChange": "জায়গা বদলাবেন না",
+    "save": "পরিবর্তন সেভ করুন"
+  },
+  "detail": {
+    "yourChart": "আপনার কুষ্ঠি",
+    "namedChart": "{{name}}-এর কুষ্ঠি",
+    "noBirthDate": "জন্ম তারিখ দেওয়া নেই",
+    "rising": "লগ্ন",
+    "noTime": "সময় নেই",
+    "sagaReading": "সাগার রিডিং",
+    "positions": "গ্রহের অবস্থান",
+    "moonNakshatra": "চন্দ্র নক্ষত্র",
+    "ruledBy": "অধিপতি: {{lord}}",
+    "mahadasha": "চলতি মহাদশা",
+    "yearPeriod_one": "{{count}} বছরের দশা",
+    "yearPeriod_other": "{{count}} বছরের দশা",
+    "born": "জন্ম",
+    "time": "সময়",
+    "place": "স্থান",
+    "dailyReading": "{{date}} · আজকের রিডিং",
+    "removeTitle": "কুষ্ঠি সরান",
+    "removeBody": "এই প্রোফাইলের সব কথোপকথনও মুছে যাবে।"
+  },
+  "block": {
+    "kundliTitle": "কুষ্ঠি · জন্ম ছক",
+    "pinned": "পিন করা",
+    "conversation": "কথোপকথন",
+    "tapToStart": "কথা শুরু করতে ট্যাপ করুন"
+  },
+  "switcher": {
+    "title": "কুষ্ঠি বদলান",
+    "addChart": "নতুন কুষ্ঠি যোগ করুন",
+    "editA11y": "{{name}}-এর তথ্য বদলান"
+  },
+  "chart": {
+    "asc": "লগ্ন",
+    "moonCaption": "চন্দ্র কুণ্ডলী — সম্পূর্ণ কুণ্ডলীর জন্য জন্মসময় যোগ করুন",
+    "a11yLagna": "লগ্ন {{sign}}।",
+    "a11yMoon": "চন্দ্র কুণ্ডলী, চন্দ্র {{sign}} রাশিতে।",
+    "a11yHouse": "ভাব {{n}}: {{planets}}",
+    "a11yNone": "খালি",
+    "a11yEmpty": "কুণ্ডলী পাওয়া যায়নি"
+  }
+}

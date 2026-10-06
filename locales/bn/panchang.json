@@ -1,0 +1,84 @@
+{
+  "title": "পঞ্জিকা",
+  "eyebrow": "{{date}} · পঞ্জিকা",
+  "back": "ফিরে যান",
+  "timesFor": "{{city}}-এর সময়",
+  "timesApprox": "সময় আপনার টাইমজোন অনুযায়ী আনুমানিক",
+  "section": {
+    "limbs": "পাঁচ অঙ্গ",
+    "sun": "সূর্য",
+    "muhurat": "মুহূর্ত"
+  },
+  "row": {
+    "tithi": "তিথি",
+    "vara": "বার",
+    "nakshatra": "নক্ষত্র",
+    "yoga": "যোগ",
+    "karana": "করণ"
+  },
+  "tithiSub": "{{paksha}} পক্ষ · দিন {{index}}",
+  "varaSub": "অধিপতি গ্রহ: {{lord}}",
+  "nakshatraSub": "অধিপতি: {{lord}}",
+  "yogaSub": "২৭টির মধ্যে {{index}} নম্বর যোগ",
+  "sunrise": "সূর্যোদয়",
+  "sunset": "সূর্যাস্ত",
+  "abhijit": {
+    "label": "অভিজিৎ মুহূর্ত (শুভ)",
+    "desc": "দুপুরের কাছাকাছি অল্প একটু সময়, যখন শক্তি পরিষ্কার আর অনুকূল থাকে।"
+  },
+  "rahuKaal": {
+    "label": "রাহুকাল (এড়িয়ে চলুন)",
+    "desc": "এই সময়ে নতুন কিছু শুরু না করাই ভালো — সই-সাবুদ, যাত্রা বা বড় সিদ্ধান্ত।"
+  },
+  "vara": {
+    "Ravivara": "রবিবার",
+    "Somavara": "সোমবার",
+    "Mangalavara": "মঙ্গলবার",
+    "Budhavara": "বুধবার",
+    "Guruvara": "বৃহস্পতিবার",
+    "Shukravara": "শুক্রবার",
+    "Shanivara": "শনিবার"
+  },
+  "yoga": {
+    "Vishkambha": "বিষ্কম্ভ",
+    "Priti": "প্রীতি",
+    "Ayushman": "আয়ুষ্মান",
+    "Saubhagya": "সৌভাগ্য",
+    "Shobhana": "শোভন",
+    "Atiganda": "অতিগণ্ড",
+    "Sukarma": "সুকর্মা",
+    "Dhriti": "ধৃতি",
+    "Shula": "শূল",
+    "Ganda": "গণ্ড",
+    "Vriddhi": "বৃদ্ধি",
+    "Dhruva": "ধ্রুব",
+    "Vyaghata": "ব্যাঘাত",
+    "Harshana": "হর্ষণ",
+    "Vajra": "বজ্র",
+    "Siddhi": "সিদ্ধি",
+    "Vyatipata": "ব্যতীপাত",
+    "Variyan": "বরীয়ান",
+    "Parigha": "পরিঘ",
+    "Shiva": "শিব",
+    "Siddha": "সিদ্ধ",
+    "Sadhya": "সাধ্য",
+    "Shubha": "শুভ",
+    "Shukla": "শুক্ল",
+    "Brahma": "ব্রহ্ম",
+    "Indra": "ইন্দ্র",
+    "Vaidhriti": "বৈধৃতি"
+  },
+  "karana": {
+    "Bava": "বব",
+    "Balava": "বালব",
+    "Kaulava": "কৌলব",
+    "Taitila": "তৈতিল",
+    "Garaja": "গর",
+    "Vanija": "বণিজ",
+    "Vishti": "বিষ্টি (ভদ্রা)",
+    "Shakuni": "শকুনি",
+    "Chatushpada": "চতুষ্পদ",
+    "Naga": "নাগ",
+    "Kimstughna": "কিংস্তুঘ্ন"
+  }
+}

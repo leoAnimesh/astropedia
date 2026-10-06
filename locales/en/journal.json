@@ -1,0 +1,48 @@
+{
+  "back": "Back",
+  "eyebrow": "{{date}} · Moon in {{nakshatra}}",
+  "subPeriod": "{{planet}} sub-period",
+  "title": {
+    "you": {
+      "before": "How did today "
+    },
+    "other": {
+      "before": "How did {{name}}’s day "
+    },
+    "em": "feel?",
+    "after": ""
+  },
+  "mood": {
+    "Calm": "Calm",
+    "Happy": "Happy",
+    "Focused": "Focused",
+    "Restless": "Restless",
+    "Anxious": "Anxious",
+    "Drained": "Drained"
+  },
+  "placeholder": "What happened? (optional)",
+  "save": {
+    "saving": "Saving…",
+    "saved": "Saved for today",
+    "update": "Update today’s entry",
+    "save": "Save today’s entry"
+  },
+  "privacy": "Entries stay on this phone.",
+  "pattern": "A pattern",
+  "patternProgress": "A pattern · {{n}} of {{total}} entries",
+  "empty": {
+    "noBirth": "Add a birth date to see how your moods line up with your life phases.",
+    "tooFew": "Patterns appear after about two weeks of entries.",
+    "noPattern": "No clear pattern yet. Your moods are spread fairly evenly so far."
+  },
+  "earlier": "Earlier",
+  "swipeHint": "Swipe left on an entry to delete it.",
+  "delete": "Delete",
+  "rowMeta": "Moon in {{nakshatra}}",
+  "rowMetaSub": "{{planet}} sub-period · Moon in {{nakshatra}}",
+  "insight": {
+    "sub": "You’ve logged ‘{{mood}}’ most often during {{planet}} sub-periods ({{days}} of {{of}} days).",
+    "waxing": "You’ve logged ‘{{mood}}’ most often in the waxing-Moon fortnight ({{days}} of {{of}} days).",
+    "waning": "You’ve logged ‘{{mood}}’ most often in the waning-Moon fortnight ({{days}} of {{of}} days)."
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "back": "Back",
+  "eyebrow": "Alerts",
+  "title": {
+    "before": "What’s ",
+    "em": "moving."
+  },
+  "lead": "A heads-up the day before Sun, Mars, Jupiter or Saturn changes sign, and when your own phase turns.",
+  "comingUp": "Coming up",
+  "empty": "Nothing shifts in the next few months.",
+  "permission": {
+    "title": "Notifications off",
+    "body": "Enable notifications for Astropedia in your phone settings to receive transit alerts."
+  },
+  "toggle": {
+    "label": "Transit alerts",
+    "sublabel": "A notification the day before each shift, and a week before your phase turns."
+  },
+  "passed": {
+    "titleBefore": "This one has ",
+    "titleEm": "passed.",
+    "lead": "The sky has moved on since this alert. Your latest alerts are waiting on the Alerts screen.",
+    "goBack": "Go back"
+  },
+  "detail": {
+    "yourPhase": "Your phase",
+    "transit": "Transit",
+    "titleEnd": ".",
+    "starts": "Starts",
+    "lasts": "Lasts",
+    "forYou": "For you",
+    "forYouName": "For you, {{name}}",
+    "ask": "Ask Saga what this means for me",
+    "findTime": "Find a good time",
+    "remind": "We’ll remind you {{date}} at 9 AM."
+  },
+  "explain": {
+    "phaseTitle": {
+      "chapter": "{{planet}} chapter begins",
+      "sub": "{{planet}} sub-period begins"
+    },
+    "phaseFallback": "A new stretch of your life begins.",
+    "runsUntil": "It runs until {{date}}.",
+    "transitTitle": "{{planet}} moves into {{sign}}",
+    "leaves": "{{planet}} leaves {{from}} and settles into {{to}}.",
+    "addBirthDate": "Add a birth date to see what it touches for you."
+  },
+  "house": {
+    "1": "It lights up how you feel and how you come across for you.",
+    "2": "It lights up money, food and family for you.",
+    "3": "It lights up messages, siblings and short trips for you.",
+    "4": "It lights up home, comfort and your mother for you.",
+    "5": "It lights up creativity, romance and children for you.",
+    "6": "It lights up health, daily work and routines for you.",
+    "7": "It lights up partners and close relationships for you.",
+    "8": "It lights up shared money and deep changes for you.",
+    "9": "It lights up luck, learning and long journeys for you.",
+    "10": "It lights up career and reputation for you.",
+    "11": "It lights up friends, networks and gains for you.",
+    "12": "It lights up rest, spending and letting go for you."
+  },
+  "tone": {
+    "Sun": {
+      "easy": "A good month to step up and be noticed.",
+      "steady": "Give it attention, but don’t force things."
+    },
+    "Mars": {
+      "easy": "Extra energy here. Use it to get things moving.",
+      "steady": "Energy runs high here, so go steady and pick your battles."
+    },
+    "Jupiter": {
+      "easy": "A slow, generous opening. Say yes to good offers.",
+      "steady": "Growth comes quietly here. Patience pays."
+    },
+    "Saturn": {
+      "easy": "Steady effort here pays off well.",
+      "steady": "Things may feel slower here. Small, steady steps work best."
+    }
+  },
+  "lasts": {
+    "Sun": "About a month",
+    "Mars": "About 6 weeks",
+    "Jupiter": "About a year",
+    "Saturn": "About 2½ years",
+    "fewWeeks": "A few weeks",
+    "aboutMonth": "About a month",
+    "aboutMonths_one": "About {{count}} month",
+    "aboutMonths_other": "About {{count}} months",
+    "aboutYears_one": "About {{count}} year",
+    "aboutYears_other": "About {{count}} years"
+  },
+  "notify": {
+    "dailyTitle": "Today for you",
+    "dailyBody": "Moon in {{nakshatra}} · {{tithi}}. Open for today's reading.",
+    "transitTitle": "{{planet}} is shifting",
+    "transitBody": {
+      "Sun": "{{planet}} moves into {{sign}} tomorrow — a fresh chapter of focus and identity opens.",
+      "Mars": "{{planet}} enters {{sign}} tomorrow — your drive and energy shift gear.",
+      "Jupiter": "{{planet}} moves into {{sign}} tomorrow — a wider, more generous season begins.",
+      "Saturn": "{{planet}} enters {{sign}} tomorrow — a slow, steady reshaping starts.",
+      "other": "{{planet}} enters {{sign}} tomorrow."
+    },
+    "phaseTitle": "{{title}} next week"
+  },
+  "question": {
+    "chapter": "My {{planet}} life chapter starts on {{date}}. What does it mean for me?",
+    "sub": "My {{planet}} sub-period starts on {{date}}. What does it mean for me?",
+    "transit": "{{planet}} moves into {{sign}} on {{date}}. What does this mean for me?"
+  }
+}

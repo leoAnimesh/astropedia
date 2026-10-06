@@ -2,16 +2,31 @@ import { useMemo, useState } from 'react';
 import {
   FlatList,
   Modal,
+  Platform,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  initialWindowMetrics,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { Icon } from '@/components/atoms/Icon';
+import {
+  AppTextInput,
+  KeyboardHost,
+  KeyboardSpacer,
+  KeyboardTouchZone,
+  useKeyboardApi,
+} from '@/components/keyboard';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { useAppLanguage } from '@/utils/i18n';
+import { localCityName, localCountryName, localStateName } from '@/utils/place-names';
 
 export type PickerItem = {
   label: string;
@@ -29,20 +44,64 @@ type Props = {
   onSelect: (item: PickerItem) => void;
   onClose: () => void;
   allowManual?: boolean; // show "Use '{query}'" when no match
+  /** Which list this is — enables Hindi/Bengali display names (display only). */
+  kind?: 'country' | 'state' | 'city';
+  /** ISO code of the chosen country (needed for state / city names). */
+  countryCode?: string;
 };
 
+type Row = { item: PickerItem; main: string; english?: string; haystack: string };
+
+const norm = (s: string) => s.normalize('NFC').toLowerCase();
+
 export function LocationPickerModal({
-  visible, title, items, selectedValue, onSelect, onClose, allowManual,
+  visible, title, items, selectedValue, onSelect, onClose, allowManual, kind, countryCode,
 }: Props) {
-  const { theme }  = useAccent();
-  const insets     = useSafeAreaInsets();
+  const { theme, isDark } = useAccent();
+  const { t }      = useTranslation('common');
   const [query, setQuery] = useState('');
+  const keyboard   = useKeyboardApi();
+
+  const lng = useAppLanguage();
+
+  // Display rows. item.label / item.value (what callers store) are never altered;
+  // only the shown label changes in Hindi/Bengali, with English kept underneath.
+  const rows = useMemo<Row[]>(() => {
+    const localized = lng === 'hi' || lng === 'bn';
+    const built = items.map<Row>((item) => {
+      if (!localized || !kind) return { item, main: item.label, haystack: norm(item.label) };
+      let flag = '';
+      let english = item.label;
+      let main = item.label;
+      if (kind === 'country') {
+        const m = item.label.match(/^(\S+)\s(.*)$/);
+        flag = m ? `${m[1]} ` : '';
+        english = m ? m[2] : item.label;
+        main = flag + localCountryName(item.value, english, lng);
+      } else if (kind === 'state') {
+        main = localStateName(countryCode ?? '', english, lng);
+      } else {
+        main = localCityName(countryCode ?? '', english, lng);
+      }
+      const shown = main.slice(flag.length);
+      return {
+        item,
+        main,
+        english: shown !== english ? english : undefined,
+        haystack: `${norm(shown)}\n${norm(english)}`,
+      };
+    });
+    if (localized && kind) {
+      built.sort((a, b) => a.main.localeCompare(b.main, lng));
+    }
+    return built;
+  }, [items, kind, countryCode, lng]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return items;
-    const q = query.toLowerCase();
-    return items.filter(i => i.label.toLowerCase().includes(q));
-  }, [items, query]);
+    if (!query.trim()) return rows;
+    const q = norm(query.trim());
+    return rows.filter(r => r.haystack.includes(q));
+  }, [rows, query]);
 
   const handleClose = () => {
     setQuery('');
@@ -61,30 +120,55 @@ export function LocationPickerModal({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+      // Android: draw edge-to-edge like the rest of the app; we pad by the insets ourselves.
+      statusBarTranslucent
+      navigationBarTranslucent
+      // Android back: close the keyboard first, then the picker.
+      onRequestClose={() => { if (!keyboard?.dismiss()) handleClose(); }}
     >
-      <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: insets.bottom + 8 }]}>
+      {/* A Modal is its own window, so it gets its own insets provider. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <ModalFrame backgroundColor={theme.bg}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
           <Text style={[styles.title, { color: theme.ink }]}>{title}</Text>
-          <TouchableOpacity onPress={handleClose} hitSlop={12}>
+          <TouchableOpacity
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t('close')}
+          >
             <Icon name="close" size={20} color={theme.muted} />
           </TouchableOpacity>
         </View>
 
         {/* Search */}
-        <View style={[styles.searchWrap, { backgroundColor: theme.surface2 }]}>
+        <KeyboardTouchZone style={[styles.searchWrap, { backgroundColor: theme.surface2 }]}>
           <Icon name="search" size={16} color={theme.muted} />
-          <TextInput
+          <AppTextInput
             style={[styles.searchInput, { color: theme.ink }]}
-            placeholder="Search…"
+            placeholder={t('search')}
             placeholderTextColor={theme.muted}
             value={query}
             onChangeText={setQuery}
             autoFocus
-            clearButtonMode="while-editing"
+            autoCapitalize="words"
+            returnKeyType="search"
+            submitBehavior="blurAndSubmit"
+            accessibilityLabel={t('search')}
           />
-        </View>
+          {query.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setQuery('')}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('keyboard:a11y.clear')}
+            >
+              <Icon name="close" size={16} color={theme.muted} />
+            </TouchableOpacity>
+          )}
+        </KeyboardTouchZone>
 
         {/* Manual entry fallback */}
         {showManual && (
@@ -93,10 +177,10 @@ export function LocationPickerModal({
             onPress={() => handleSelect({ label: query.trim(), value: query.trim() })}
           >
             <Text style={[styles.manualText, { color: theme.accent }]}>
-              Use "{query.trim()}"
+              {t('location.useQuery', { query: query.trim() })}
             </Text>
             <Text style={[styles.manualSub, { color: theme.muted }]}>
-              Will be geocoded automatically
+              {t('location.geocodedNote')}
             </Text>
           </TouchableOpacity>
         )}
@@ -104,9 +188,11 @@ export function LocationPickerModal({
         {/* List */}
         <FlatList
           data={filtered}
-          keyExtractor={(i) => i.value}
+          keyExtractor={(r) => r.item.value}
           keyboardShouldPersistTaps="always"
-          renderItem={({ item }) => (
+          renderItem={({ item: row }) => {
+            const item = row.item;
+            return (
             <TouchableOpacity
               style={[
                 styles.row,
@@ -115,9 +201,16 @@ export function LocationPickerModal({
               ]}
               onPress={() => handleSelect(item)}
             >
-              <Text style={[styles.rowLabel, { color: theme.ink }]} numberOfLines={1}>
-                {item.label}
-              </Text>
+              <View style={styles.rowLabelWrap}>
+                <Text style={[styles.rowLabel, { color: theme.ink }]} numberOfLines={1}>
+                  {row.main}
+                </Text>
+                {row.english && (
+                  <Text style={[styles.rowEnglish, { color: theme.muted }]} numberOfLines={1}>
+                    {row.english}
+                  </Text>
+                )}
+              </View>
               {item.sublabel && (
                 <Text style={[styles.rowSub, { color: theme.muted }]} numberOfLines={1}>
                   {item.sublabel}
@@ -127,15 +220,35 @@ export function LocationPickerModal({
                 <Icon name="check" size={16} color={theme.accent} />
               )}
             </TouchableOpacity>
-          )}
+            );
+          }}
           ListEmptyComponent={
             !showManual ? (
-              <Text style={[styles.empty, { color: theme.muted }]}>No results</Text>
+              <Text style={[styles.empty, { color: theme.muted }]}>{t('noResults')}</Text>
             ) : null
           }
         />
-      </View>
+      </ModalFrame>
+      </SafeAreaProvider>
     </Modal>
+  );
+}
+
+/**
+ * Root of the picker window. On Android the window is full-screen edge-to-edge,
+ * so pad the top by the status-bar inset; on iOS the pageSheet already starts
+ * below the status bar, so no top padding there.
+ */
+function ModalFrame({ backgroundColor, children }: { backgroundColor: string; children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const top = Platform.OS === 'android' ? insets.top : 0;
+  return (
+    <View style={[styles.root, { backgroundColor, paddingTop: top, paddingBottom: insets.bottom + 8 }]}>
+      {children}
+      {/* The picker is its own window: reserve room for, and draw, the app keyboard here. */}
+      <KeyboardSpacer offset={insets.bottom + 8} system={false} />
+      <KeyboardHost />
+    </View>
   );
 }
 
@@ -183,7 +296,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap:              8,
   },
-  rowLabel: { flex: 1, fontFamily: FONTS.sansRegular, fontSize: 15 },
+  rowLabelWrap: { flex: 1 },
+  rowLabel: { fontFamily: FONTS.sansRegular, fontSize: 15 },
+  rowEnglish: { fontFamily: FONTS.sansRegular, fontSize: 12, marginTop: 2 },
   rowSub:   { fontFamily: FONTS.sansRegular, fontSize: 12 },
   empty: {
     fontFamily:  FONTS.sansRegular,

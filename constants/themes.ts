@@ -2,6 +2,7 @@
 
 export type AccentKey = 'amber' | 'sage' | 'lilac' | 'blush' | 'ink';
 export type ColorScheme = 'light' | 'dark';
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 export type ColorTokens = {
   bg: string;
