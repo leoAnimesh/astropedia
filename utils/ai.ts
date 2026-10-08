@@ -2,13 +2,14 @@ import { Platform } from 'react-native';
 import type { Profile } from './database';
 import { getAstrologyContext, getFullKundli, getTimingContext } from './astrology';
 import {
-  runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW,
-  type ChatMessage, type RunOptions,
+  runLocalLLM, ensureLocalLLM, isLLMReady, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW,
+  MODEL_FOLLOWUPS, type ChatMessage, type RunOptions,
 } from './local-llm';
+import { generateFollowUps, FOLLOWUPS_MAX_TOKENS, type FollowUpMessage } from './follow-ups';
 import i18n, { getAppLanguage } from './i18n';
 import {
-  isPureGreeting, readingScriptRatio, readingSeed, runGuarded,
-  NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, type ReplyGuard,
+  cannedQuestion, createSentenceFilter, isPureGreeting, isTimingQuestion, missingAdvice, readingScriptRatio,
+  readingSeed, runGuarded, stripCountdowns, NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, type ReplyGuard,
 } from './reply-guards';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
 import { pickGitaVerse, formatGitaQuote } from './gita';
@@ -88,7 +89,7 @@ export type AIStreamResult = {
 
 // ─── Reply language ───────────────────────────────────────────────────────────
 
-type ReplyLang = 'en' | 'hi' | 'bn';
+export type ReplyLang = 'en' | 'hi' | 'bn';
 
 /**
  * The language the model should answer in: the app language, unless the user
@@ -149,29 +150,44 @@ function readingSystem(profile: Profile, lang: ReplyLang): string {
   return `[reading]${langLine(lang)}\n${lines.join('\n')}`;
 }
 
+type StreamOptions = {
+  /** Text appended after the reply: fixed, or computed from the finished reply ('' for none). */
+  suffix?: string | ((reply: string) => string);
+  guard?: ReplyGuard | null;
+  /**
+   * Rewrites the reply one sentence at a time before it is shown
+   * (createSentenceFilter), so removed text never flashes on screen.
+   */
+  sentenceTransform?: (text: string) => string;
+};
+
 /** Bridge the model's token callback to an async iterator for the UI. */
 async function* streamLocal(
   messages: ChatMessage[],
   maxNewTokens: number,
-  suffix?: string,
-  guard?: ReplyGuard | null,
+  { suffix, guard, sentenceTransform }: StreamOptions = {},
 ): AsyncGenerator<string> {
   const queue: string[] = [];
   let wakeup:   (() => void) | null = null;
   let finished = false;
   let failure: unknown = null;
+  let reply = '';
 
-  const emit = (token: string) => {
+  const push = (token: string) => {
     if (!token) return;
+    reply += token;
     queue.push(token);
     wakeup?.();
     wakeup = null;
   };
+  const filter = sentenceTransform ? createSentenceFilter(sentenceTransform, push) : null;
+  const emit = filter ? (token: string) => filter.push(token) : push;
   const run = guard
     ? runGuarded((onToken, temperature) => runLocalLLM(messages, onToken,
         temperature == null ? { maxNewTokens } : { maxNewTokens, temperature }), guard, emit)
     : runLocalLLM(messages, emit, { maxNewTokens });
   const done = run.catch((err) => { failure = err; }).finally(() => {
+    filter?.flush();
     finished = true;
     wakeup?.();
   });
@@ -186,15 +202,23 @@ async function* streamLocal(
   }
   await done;
   if (failure) throw failure;
-  if (suffix) yield suffix;
+  const tail = typeof suffix === 'function' ? (reply.trim() ? suffix(reply) : '') : suffix;
+  if (tail) yield tail;
 }
 
 /** The checks for a chat reply (CONTEXT_VERSION 2 only; see utils/reply-guards.ts runGuarded). */
-function replyGuard(lang: ReplyLang, names: (string | undefined)[], history: AIMessage[] = []): ReplyGuard | null {
+function replyGuard(
+  lang: ReplyLang, names: (string | undefined)[], history: AIMessage[] = [], question?: string,
+): ReplyGuard | null {
   if (CONTEXT_VERSION !== 2) return null;
   const previous = [...history].reverse().find(m => m.role === 'assistant')?.content;
-  if (lang === 'en' && !previous) return null;
-  return { lang, previous, ignore: names.flatMap(n => (n ? [n.split(' ')[0]] : [])) };
+  // Saga's "when" questions should get a month or year (Krishna's never do).
+  const needsDate = question != null && isTimingQuestion(question);
+  if (lang === 'en' && !previous && !needsDate) return null;
+  return {
+    lang, previous, needsDate, today: needsDate ? todayIso() : undefined,
+    ignore: names.flatMap(n => (n ? [n.split(' ')[0]] : [])),
+  };
 }
 
 /**
@@ -354,6 +378,13 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     return { stream: yieldOnce(greeting), tier: 'deterministic' };
   }
 
+  // Baby's-sex and partner-name questions get a fixed, gentle decline: v2.1
+  // answered "likely to be a boy", and no chart shows a name.
+  const canned = CONTEXT_VERSION === 2 && mode === 'saga' ? cannedQuestion(req.userMessage) : null;
+  if (canned) {
+    return { stream: yieldOnce(i18n.t(`chat:safety.${canned}`, { lng: lang })), tier: 'deterministic' };
+  }
+
   // L0 — deterministic answers (rashi, nakshatra, dasha, lunar phase, etc.).
   // Krishna mode is always conversational, so it skips the classifier. The
   // templates are English, so other languages go to the model.
@@ -380,7 +411,10 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
       { role: 'user',   content: req.userMessage },
     ];
     const guard = replyGuard(lang, [req.userName]);
-    return { stream: streamLocal(messages, REPLY_MAX_TOKENS, `\n\n${formatGitaQuote(verse, lang)}`, guard), tier: 'executorch' };
+    return {
+      stream: streamLocal(messages, REPLY_MAX_TOKENS, { suffix: `\n\n${formatGitaQuote(verse, lang)}`, guard }),
+      tier: 'executorch',
+    };
   }
 
   const system = sagaSystem(req.profile, lang);
@@ -389,8 +423,23 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     ...sagaHistory(system, req.history, req.userMessage),
     { role: 'user', content: req.userMessage },
   ];
-  const guard = replyGuard(lang, [req.profile.name, req.userName], req.history);
-  return { stream: streamLocal(messages, REPLY_MAX_TOKENS, undefined, guard), tier: 'executorch' };
+  const guard = replyGuard(lang, [req.profile.name, req.userName], req.history, req.userMessage);
+  if (CONTEXT_VERSION !== 2) {
+    return { stream: streamLocal(messages, REPLY_MAX_TOKENS, { guard }), tier: 'executorch' };
+  }
+  // v2.1's "about N months from now" countdowns are wrong almost every time:
+  // they are cut sentence by sentence before display. Health and legal
+  // answers without a doctor / lawyer mention get a one-line pointer.
+  const question = req.userMessage;
+  return {
+    stream: streamLocal(messages, REPLY_MAX_TOKENS, {
+      guard,
+      sentenceTransform: stripCountdowns,
+      suffix: (reply) => missingAdvice(question, reply)
+        .map(kind => `\n\n${i18n.t(`chat:safety.${kind}`, { lng: lang })}`).join(''),
+    }),
+    tier: 'executorch',
+  };
 }
 
 export async function askAI(req: AIRequest): Promise<{ text: string; tier: ModelTier }> {
@@ -420,10 +469,11 @@ export type ChartReadingResult = {
  * format that use-chart-reading parses. Returns null if the model isn't
  * available.
  *
- * With CONTEXT_VERSION 2, hi/bn readings are checked for script: Bengali is
- * seeded with "SUN: স্বভাবে " (v2 otherwise writes it in English), a reading
- * still mostly in Latin script is retried once with another seed, and if that
- * fails too the reading is generated in English (lang 'en' in the result).
+ * With CONTEXT_VERSION 2, hi/bn readings are checked for script: the first
+ * attempt is unseeded (v2.1 writes hi/bn readings in the right script), a
+ * reading mostly in Latin script is retried once with a native seed
+ * (readingSeed), and if that fails too the reading is generated in English
+ * (lang 'en' in the result).
  * `skipEnglishFallback` returns text null instead of generating that English
  * reading (the caller has one cached).
  */
@@ -461,4 +511,51 @@ export async function askThreadTitle(userMessage: string, aiReply: string): Prom
     { role: 'system', content: `[title]${langLine(replyLanguage(userMessage + aiReply))}` },
     { role: 'user',   content: `User: ${userMessage}\nAssistant: ${aiReply}` },
   ], 16);
+}
+
+/**
+ * Up to 3 model-written follow-up chips for Saga's reply `lastAnswer` (the
+ * v2.1 "[followups]" task; utils/follow-ups.ts generateFollowUps). `history`
+ * is the thread before that reply, error bubbles left out, ending with the
+ * question it answers; `lang` is the reply's language (replyLanguage(question)),
+ * so the chips are in the language of the conversation and are sent as written.
+ * The prompt has no chart facts, only the conversation (build_sft.py), so
+ * `profile` is not part of it.
+ *
+ * Returns [] when MODEL_FOLLOWUPS is off, on web, or when the model isn't
+ * already loaded (chips never load the model by themselves). Runs in the model
+ * queue after anything already queued; `isCancelled` (polled on every token)
+ * lets the chat stop it when the user sends a message.
+ */
+export async function suggestFollowUps(
+  _profile: Profile | null,
+  history: AIMessage[],
+  lastAnswer: string,
+  lang: ReplyLang,
+  { isCancelled }: { isCancelled?: () => boolean } = {},
+): Promise<string[]> {
+  const enabled = MODEL_FOLLOWUPS && Platform.OS !== 'web' && isLLMReady();
+  try {
+    return await generateFollowUps(
+      async ({ system, user, maxNewTokens, temperature }, onText) => {
+        let text = '';
+        return runLocalLLM(
+          [{ role: 'system', content: system }, { role: 'user', content: user }],
+          (token) => { text += token; return onText(text); },
+          { maxNewTokens, temperature, isCancelled },
+        );
+      },
+      {
+        enabled,
+        history: history as FollowUpMessage[],
+        lastAnswer,
+        lang,
+        isCancelled,
+        fits: ({ system, user }) =>
+          estimateTokens(system) + estimateTokens(user) + FOLLOWUPS_MAX_TOKENS[lang] + PROMPT_MARGIN_TOKENS <= CONTEXT_WINDOW,
+      },
+    );
+  } catch {
+    return [];
+  }
 }

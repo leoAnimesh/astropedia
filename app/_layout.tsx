@@ -27,6 +27,8 @@ import { useThreadStore } from '@/stores/thread-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
 import { OverlayProvider } from '@/components/overlays';
 import { unloadLocalLLM } from '@/utils/local-llm';
+import { handleModelAppState, startModelSetup, useModelSetup } from '@/utils/model-download';
+import { ModelSetupOverlay } from '@/components/overlays/ModelSetupOverlay';
 import {
   setupNotifications,
   scheduleDailyHoroscope,
@@ -39,6 +41,11 @@ SplashScreen.preventAutoHideAsync();
 // this is expected and harmless; the download succeeds via chunked transfer.
 LogBox.ignoreLogs(['[React Native ExecuTorch] No content-length header']);
 
+// The on-device model downloads from Hugging Face on first launch
+// (utils/model-download.ts). Start as early as possible so it is usually
+// done by the end of onboarding; a verified install is found in milliseconds.
+startModelSetup();
+
 export const unstable_settings = {
   anchor: '(app)',
 };
@@ -49,6 +56,8 @@ export default function RootLayout() {
   // When this flips to true (after the birth-place step creates the profile), the router
   // automatically redirects out of the onboarding stack into the app stack.
   const onboardingDone = useOnboardingStore((s) => s.done);
+  // "Preparing Saga…" overlay owed after onboarding (model still downloading).
+  const modelOverlay = useModelSetup((s) => s.overlayPending);
 
   const [fontsLoaded, fontError] = useFonts({
     'InstrumentSerif-Regular': InstrumentSerif_400Regular,
@@ -63,8 +72,8 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
-        // The on-device model ships inside the app and loads on demand (~1 s)
-        // the first time a chat or chart reading needs it.
+        // The on-device model loads on demand (~1 s) the first time a chat or
+        // chart reading needs it, once utils/model-download.ts installed it.
         const [allProfiles, threads] = await Promise.all([
           getAllProfiles(),
           getAllThreads(),
@@ -75,6 +84,17 @@ export default function RootLayout() {
         // to a valid profile_id. They must never appear in the switcher.
         const profiles = allProfiles.filter((p) => !isSystemProfile(p.id));
         useProfileStore.getState().setProfiles(profiles);
+
+        // A profile exists but onboarding was never marked done: the app was
+        // closed on the optional notifications step (birth-place saves the
+        // profile first). Don't restart onboarding — it would create a second
+        // "you" profile — treat it as finished; Settings has the toggles.
+        // MMKV and SQLite both live in the app sandbox, so a reinstall wipes
+        // both and lands on the language picker.
+        if (profiles.length > 0 && !useOnboardingStore.getState().done) {
+          Storage.clearOnboardingDraft();
+          useOnboardingStore.getState().setDone(true);
+        }
 
         const byProfile: Record<string, typeof threads> = {};
         for (const t of threads) {
@@ -117,6 +137,8 @@ export default function RootLayout() {
   //                 daily push off-target.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
+      // Model download: resume / retry when the app comes back.
+      handleModelAppState(next);
       if (next === 'background' || next === 'inactive') {
         unloadLocalLLM();
       } else if (next === 'active') {
@@ -197,10 +219,10 @@ export default function RootLayout() {
         </Stack.Protected>
       </Stack>
 
-      {/* Model-download / model-load overlay. Renders once onboarding is done
-          and stays mounted across every app screen so a model swap from
-          Settings (or a re-download after a version bump) shows progress
-          everywhere, not just on home. */}
+      {/* "Preparing Saga…": full screen over home right after onboarding while
+          the model is still downloading; fades out by itself when ready.
+          Returning users see the inline ModelSetupPill instead. */}
+      {onboardingDone && modelOverlay && <ModelSetupOverlay />}
       </OverlayProvider>
       </BottomSheetModalProvider>
       </KeyboardProvider>

@@ -21,6 +21,8 @@ Student prompt (what the app must send)
       [krishna]\nLang: bn\nName: Asha\nVerse: ...
       [reading]\nLang: hi\nName: ...
       [title]\nLang: bn
+      [followups]\nLang: hi            (v5: user = "User: ...\nAssistant: ..." for the conversation so far,
+                                        model = exactly 3 lines, one suggested question each)
   English has no Lang line. Facts, the verse, "Read my chart." and the title's
   "User: ...\nAssistant: ..." wrapper stay in English for every language.
 
@@ -106,6 +108,34 @@ def student_reading_system(p: dict, lang: str = "en") -> str:
 
 def student_title_system(lang: str = "en") -> str:
     return f"[title]{lang_line(lang)}"
+
+
+def student_followups_system(lang: str = "en") -> str:
+    return f"[followups]{lang_line(lang)}"
+
+
+def followups_convo(turns: list[dict]) -> str:
+    """Same wrapper as [title]'s, one User/Assistant pair per turn (the app sends the last 1-2 turns)."""
+    return "\n".join(f"User: {tr['user'].strip()}\nAssistant: {tr['assistant'].strip()}" for tr in turns)
+
+
+def build_followups(rec: dict, lang: str) -> tuple[str | None, dict | None]:
+    """v5: the [followups] example from rec["followups"] (generate.py ask_followups), after the
+    record's Saga turns have been built/repaired. Validated with validate_answer.validate_followups."""
+    fu = rec["followups"]
+    if fu.get("val_ok") is False:
+        return "followups_gen_val_failed", None
+    turns = rec["turns"][: fu["after_turn"] + 1]
+    if len(turns) != fu["after_turn"] + 1:
+        return "followups_turns_missing", None
+    text = native_digits(fu["text"].strip(), lang) if lang != "en" else fu["text"].strip()
+    v = VA.validate_followups(text, lang, turns)
+    if not v.ok:
+        return f"followups_val:{v.reasons[0]}", None
+    return None, {"task": "followups", "messages": [
+        {"role": "system", "content": student_followups_system(lang)},
+        {"role": "user", "content": followups_convo(turns)},
+        {"role": "assistant", "content": "\n".join(v.meta["lines"])}]}
 
 
 def gemma_prompt(messages: list[dict]) -> tuple[str, str]:
@@ -513,13 +543,14 @@ def v4_check(rec: dict, lang: str) -> str | None:
     first = None
     codes: set[str] = set()
     qbs = []
+    style = "v5" if rec.get("prompt_version", 1) >= 5 else "v4"
     for i, tr in enumerate(turns):
-        fixed, done = VA.repair(tr["assistant"], lang)
+        fixed, done = VA.repair(tr["assistant"], lang, style)
         for d in done:
             VAL_META[(lang, f"repaired_{d}")] += 1
         tr["assistant"] = fixed
         v = VA.validate(chart, tr["user"], lang, turns[:i], fixed, today=rec.get("today"),
-                        kind="short" if rec["task"] == "offtopic" else None, max_tokens=MAX_TOKENS)
+                        kind="short" if rec["task"] == "offtopic" else None, max_tokens=MAX_TOKENS, style=style)
         qbs.append(v.meta.get("question_back", False))
         if not v.ok:
             codes |= set(v.reasons)
@@ -694,7 +725,7 @@ def cap_repetition(examples: list[dict], rejected: collections.Counter, max_shar
     kept = []
     for ex in order:
         task = ex["task"]
-        if task in ("title", "reading"):
+        if task in ("title", "reading", "followups"):
             kept.append(ex)
             continue
         limit = max(3, int(totals[task] * max_share))
@@ -803,7 +834,7 @@ def split_stratified(rows: list[dict], frac: float, seed: int = 0) -> tuple[list
 
 
 def table(counter: collections.Counter, title: str) -> None:
-    tasks = ["saga", "saga_multi", "offtopic", "krishna", "reading", "title"]
+    tasks = ["saga", "saga_multi", "offtopic", "krishna", "reading", "title", "followups"]
     print(f"\n{title}")
     print("lang " + "".join(f"{t:>11}" for t in tasks) + f"{'total':>9}")
     for lang in LANGS:
@@ -891,6 +922,14 @@ def main() -> None:
                 ex["teacher"] = rec.get("teacher", "unknown")
                 ex["pv"] = rec.get("prompt_version", 0)
                 kept[lang].append(ex)
+                if rec.get("followups"):
+                    raw_c[(lang, "followups")] += 1
+                    r2, ex2 = build_followups(rec, lang)
+                    if r2:
+                        rejected[f"{lang}:followups:{r2}"] += 1
+                    else:
+                        ex2.update(lang=lang, teacher=ex["teacher"], pv=ex["pv"])
+                        kept[lang].append(ex2)
             teacher_raw[(lang, rec.get("teacher", "unknown"))] += 1
     rows: list[dict] = []
     date_report: dict[str, tuple] = {}

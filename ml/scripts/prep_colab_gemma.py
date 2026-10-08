@@ -65,7 +65,7 @@ CKPT = "ckpt"
 if USE_DRIVE:
     from google.colab import drive
     drive.mount("/content/drive")
-    CKPT = "/content/drive/MyDrive/astro-gemma-v2-ckpt"
+    CKPT = "/content/drive/MyDrive/astro-gemma-v21-ckpt"
 !rm -rf astro-gemma astro-gemma.zip
 !python train_gemma.py --model {model_dir} --out astro-gemma --ckpt-dir $CKPT --qat $QAT --smooth $SMOOTH --epochs $EPOCHS --precision $PRECISION --batch $BATCH --grad-accum $GRAD_ACCUM --max-length 2048 2>&1 | tee train.log
 

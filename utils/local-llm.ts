@@ -20,15 +20,18 @@ function executorch(): ExecuTorch {
   return _et;
 }
 
-// The one on-device model: Gemma 3 270M fine-tuned for Astropedia (ml/), shipped
-// inside the app by plugins/with-bundled-model.js. Bump MODEL_VERSION whenever
-// the bundled files change so Android re-copies them out of the APK.
-const MODEL_VERSION = 'astro-gemma-v2';
+// The one on-device model: Gemma 3 270M fine-tuned for Astropedia (ml/).
+// Downloaded from Hugging Face on first launch by utils/model-download.ts
+// (MODEL_SOURCE 'remote', its PINNED_MODEL names the version and hashes).
+// Rollback: MODEL_SOURCE 'bundled' ships it inside the app via
+// plugins/with-bundled-model.js; bump BUNDLED_MODEL_VERSION whenever the
+// bundled files change so Android re-copies them out of the APK.
+const BUNDLED_MODEL_VERSION = 'astro-gemma-v21';
 /**
  * Chart-context format the bundled model was trained on (utils/astrology.ts
- * ContextVersion). astro-gemma-v1 knew format 1; astro-gemma-v2 (bundled) is
- * trained on ml/data/gen_profiles.ts output in format 2. Switch together with
- * the model file.
+ * ContextVersion). astro-gemma-v1 knew format 1; astro-gemma-v2 and v2.1
+ * (bundled) are trained on ml/data/gen_profiles.ts output in format 2. Switch
+ * together with the model file.
  */
 export const CONTEXT_VERSION = 2 as 1 | 2;
 /**
@@ -44,6 +47,14 @@ export const CONTEXT_VERSION = 2 as 1 | 2;
  * chunks (cpp/extensions/llm/llm_runner.cpp clamps the chunk to the graph's
  * input bound), so a ~1,400-token prompt is 3 prefill calls.
  */
+/**
+ * The bundled model was trained on the "[followups]" task (model-written
+ * suggestion chips, ml/data/build_sft.py, prompt v5 / Saga v2.1). Off for
+ * astro-gemma-v2, which never saw it; set true only together with bundling a
+ * v2.1 model. Off = the chat shows only the rule-based chips (utils/follow-ups.ts).
+ * On: astro-gemma-v21 is bundled (>= 2 valid chips in 97% of eval runs).
+ */
+export const MODEL_FOLLOWUPS = true as boolean;
 export const REPLY_MAX_TOKENS = CONTEXT_VERSION === 1 ? 160 : 260;
 export const CONTEXT_WINDOW = CONTEXT_VERSION === 1 ? 1024 : 2048;
 const MODEL_FILE = 'astro-gemma.pte';
@@ -55,7 +66,7 @@ const TOKENIZER_FILE = 'astro-gemma-tokenizer.json';
 // Gemma's turn format and also answers in Hindi and Bengali. Switch both
 // together with the model files.
 type ChatFormat = 'chatml' | 'gemma';
-const CHAT_FORMAT = 'gemma' as ChatFormat;
+export const CHAT_FORMAT = 'gemma' as ChatFormat;
 export const MODEL_LANGUAGES: readonly ('en' | 'hi' | 'bn')[] = ['en', 'hi', 'bn'];
 
 const STOP_TOKENS: Record<ChatFormat, string[]> = {
@@ -95,12 +106,36 @@ export function isLLMReady(): boolean {
 
 // ─── Model files ──────────────────────────────────────────────────────────────
 
+/** Thrown while the model is still downloading (or setup failed). */
+export class ModelNotInstalledError extends Error {
+  constructor() { super('on-device model not installed yet'); this.name = 'ModelNotInstalledError'; }
+}
+
+type ModelDownload = typeof import('./model-download');
+// Required lazily: model-download imports this module's constants.
+const modelDownload = () => require('./model-download') as ModelDownload;
+
 /**
- * Local paths of the bundled model and tokenizer. iOS reads them straight from
- * the app bundle; Android assets live inside the APK, so they're copied to the
- * documents folder once per MODEL_VERSION.
+ * Local paths of the model and tokenizer. Remote (default): the files
+ * utils/model-download.ts installed; throws ModelNotInstalledError until then.
  */
 async function resolveModelFiles(): Promise<{ model: string; tokenizer: string }> {
+  const md = modelDownload();
+  if (md.MODEL_SOURCE === 'bundled') return resolveBundledModelFiles();
+  const files = await md.awaitInstalledModelFiles();
+  if (!files) {
+    md.startModelSetup(); // no-op while running; retries a failed setup
+    throw new ModelNotInstalledError();
+  }
+  return files;
+}
+
+/**
+ * Rollback path (MODEL_SOURCE 'bundled'). iOS reads the files straight from
+ * the app bundle; Android assets live inside the APK, so they're copied to the
+ * documents folder once per BUNDLED_MODEL_VERSION.
+ */
+async function resolveBundledModelFiles(): Promise<{ model: string; tokenizer: string }> {
   const { fs } = RNBlobUtil;
   if (Platform.OS === 'ios') {
     return {
@@ -110,14 +145,14 @@ async function resolveModelFiles(): Promise<{ model: string; tokenizer: string }
   }
 
   const root = `${fs.dirs.DocumentDir}/models`;
-  const dir  = `${root}/${MODEL_VERSION}`;
+  const dir  = `${root}/${BUNDLED_MODEL_VERSION}`;
   const files = { model: `${dir}/${MODEL_FILE}`, tokenizer: `${dir}/${TOKENIZER_FILE}` };
   if (await fs.exists(files.model) && await fs.exists(files.tokenizer)) return files;
 
   // Drop copies of older versions before writing the new one.
   if (await fs.exists(root)) {
     for (const name of await fs.ls(root)) {
-      if (name !== MODEL_VERSION) await fs.unlink(`${root}/${name}`).catch(() => {});
+      if (name !== BUNDLED_MODEL_VERSION) await fs.unlink(`${root}/${name}`).catch(() => {});
     }
   }
   if (!(await fs.exists(dir))) await fs.mkdir(dir);
@@ -133,7 +168,11 @@ async function resolveModelFiles(): Promise<{ model: string; tokenizer: string }
 
 let _initPromise: Promise<void> | null = null;
 
-/** Load the bundled model into memory (no download). Safe to call repeatedly. */
+/**
+ * Load the model into memory (never downloads; a model still downloading
+ * rejects with ModelNotInstalledError and leaves the state unchanged). Safe
+ * to call repeatedly.
+ */
 export function initLocalLLM(): Promise<void> {
   if (Platform.OS === 'web') return Promise.resolve();
   if (_runner) return Promise.resolve();
@@ -141,14 +180,22 @@ export function initLocalLLM(): Promise<void> {
 
   _initPromise = (async () => {
     try {
-      setState({ status: 'loading' });
+      // Before 'loading': while the model is still downloading this throws
+      // without touching the state, so subscribers (useChartReading) don't
+      // re-run in a loop; they re-run when the warmed-up model turns 'ready'.
       const { model, tokenizer } = await resolveModelFiles();
+      setState({ status: 'loading' });
       const { wrapAsync, createLLMRunner } = executorch();
       _runner = await wrapAsync(createLLMRunner)(model, tokenizer);
       setState({ status: 'ready' });
+      // Loaded without a request (e.g. warmed after the download): release
+      // it again if nothing uses it.
+      scheduleIdleUnload();
     } catch (e) {
       _runner = null;
-      setState({ status: 'error', message: e instanceof Error ? e.message : String(e) });
+      if (!(e instanceof ModelNotInstalledError)) {
+        setState({ status: 'error', message: e instanceof Error ? e.message : String(e) });
+      }
       throw e;
     } finally {
       _initPromise = null;
@@ -158,8 +205,10 @@ export function initLocalLLM(): Promise<void> {
 }
 
 /**
- * Make sure the model is loaded, waiting at most `timeoutMs`. The bundled model
- * loads in about a second, so callers normally just await this.
+ * Make sure the model is loaded, waiting at most `timeoutMs`. An installed
+ * model loads in about a second, so callers normally just await this. Returns
+ * false at once while the model is still downloading (callers that should
+ * wait for the download use waitForModelReady() from utils/model-download.ts).
  */
 export async function ensureLocalLLM(timeoutMs?: number): Promise<boolean> {
   if (Platform.OS === 'web') return false;
@@ -173,7 +222,7 @@ export async function ensureLocalLLM(timeoutMs?: number): Promise<boolean> {
   return isLLMReady();
 }
 
-/** Release the model from RAM; the next request reloads it from the bundle. */
+/** Release the model from RAM; the next request reloads it from disk. */
 export async function unloadLocalLLM(): Promise<void> {
   cancelIdleUnload();
   const runner = _runner;
@@ -258,6 +307,12 @@ export type RunOptions = LLMGenerationConfig & {
    * to the reply if it wants it there.
    */
   replyPrefix?: string;
+  /**
+   * Polled before the run starts and on every token: true skips the run or
+   * stops it (the text so far is returned). For background work such as
+   * suggestion chips that must give way to the user's next message.
+   */
+  isCancelled?: () => boolean;
 };
 
 // Runs on ExecuTorch's background worklet runtime so generation never blocks
@@ -284,6 +339,17 @@ function generateAsync(runner: LLMRunner, prompt: string, options: GenerateOptio
 // The native runner handles one generation at a time.
 let _activeGeneration: Promise<string> | null = null;
 
+// Callers queue in order (title, chips, the next reply, ...): waiting on
+// _activeGeneration alone would let two waiters start together once it ends.
+let _queueTail: Promise<void> = Promise.resolve();
+function acquireRunner(): Promise<() => void> {
+  let release!: () => void;
+  const mine = new Promise<void>(r => { release = r; });
+  const prev = _queueTail;
+  _queueTail = prev.then(() => mine);
+  return prev.then(() => release);
+}
+
 /**
  * Generate a reply. `tokenCallback` may return true to stop generation early
  * (the reply so far is returned).
@@ -291,8 +357,25 @@ let _activeGeneration: Promise<string> | null = null;
 export async function runLocalLLM(
   messages: ChatMessage[],
   tokenCallback: (token: string) => boolean | void,
-  { replyPrefix = '', ...genConfig }: RunOptions = {},
+  { replyPrefix = '', isCancelled, ...genConfig }: RunOptions = {},
 ): Promise<string> {
+  cancelIdleUnload();
+  const release = await acquireRunner();
+  try {
+    return await runLocked(messages, tokenCallback, replyPrefix, genConfig, isCancelled);
+  } finally {
+    release();
+  }
+}
+
+async function runLocked(
+  messages: ChatMessage[],
+  tokenCallback: (token: string) => boolean | void,
+  replyPrefix: string,
+  genConfig: LLMGenerationConfig,
+  isCancelled?: () => boolean,
+): Promise<string> {
+  if (isCancelled?.()) return '';
   cancelIdleUnload();
   if (!_runner) await initLocalLLM().catch(() => {});
   const runner = _runner;
@@ -307,7 +390,7 @@ export async function runLocalLLM(
   let stopped = false;
   const onToken = (token: string) => {
     if (stopped) return;
-    const stop = tokenCallback(token) === true;
+    const stop = tokenCallback(token) === true || isCancelled?.() === true;
     if (stop || detector.feed(token)) {
       stopped = true;
       try { runner.stop(); } catch {}

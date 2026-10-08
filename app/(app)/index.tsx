@@ -11,6 +11,7 @@ import { useHoroscope } from '@/hooks/use-horoscope';
 import { ProfileSwitcherTrigger, ProfileSwitcherSheet, type ProfileSwitcherSheetRef } from '@/components/organisms/ProfileSwitcher';
 import { ProfileBlock } from '@/components/organisms/ProfileBlock';
 import { DotsLoader } from '@/components/molecules/DotsLoader';
+import { ModelSetupPill } from '@/components/molecules/ModelSetupPill';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Icon, type IconName } from '@/components/atoms/Icon';
@@ -141,6 +142,9 @@ export default function HomeScreen() {
           <Icon name="settings" size={20} color={theme.ink2} />
         </TouchableOpacity>
       </View>
+
+      {/* Saga's model still downloading (returning users; renders nothing once ready). */}
+      <ModelSetupPill style={styles.setupPill} />
 
       <ScrollView
         style={styles.scroll}
@@ -347,6 +351,7 @@ export default function HomeScreen() {
 }
 
 const baseStyles = StyleSheet.create({
+  setupPill: { marginTop: 2, marginBottom: 6 },
   header: {
     flexDirection:     'row',
     alignItems:        'center',

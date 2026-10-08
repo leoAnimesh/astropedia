@@ -27,6 +27,7 @@ export type IconName =
   | 'bookmark'
   | 'bookmark-filled'
   | 'share'
+  | 'download'
   | 'calendar'
   | 'book'
   | 'people'
@@ -61,6 +62,7 @@ const IOS_MAP: IOSMap = {
   bookmark:          'bookmark',
   'bookmark-filled': 'bookmark.fill',
   share:             'square.and.arrow.up',
+  download:          'square.and.arrow.down',
   calendar:          'calendar',
   book:              'book',
   people:            'person.2',
@@ -93,6 +95,7 @@ const ANDROID_MAP: AndroidMap = {
   bookmark:          'bookmark-border',
   'bookmark-filled': 'bookmark',
   share:             'ios-share',
+  download:          'file-download',
   calendar:          'calendar-today',
   book:              'menu-book',
   people:            'group',

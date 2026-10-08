@@ -11,6 +11,7 @@ type StorageBackend = {
   set: (key: string, value: string | boolean | number) => void;
   getString: (key: string) => string | undefined;
   delete: (key: string) => void;
+  keys: () => string[];
 };
 
 function getStorage(): StorageBackend {
@@ -25,6 +26,7 @@ function getStorage(): StorageBackend {
       set: (key, value) => localStorage.setItem(key, String(value)),
       getString: (key) => localStorage.getItem(key) ?? undefined,
       delete: (key) => localStorage.removeItem(key),
+      keys: () => Object.keys(localStorage),
     };
   } else {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -35,16 +37,17 @@ function getStorage(): StorageBackend {
       set:        (key, value) => mmkv.set(key, value as string | boolean | number),
       getString:  (key) => mmkv.getString(key),
       delete:     (key) => { mmkv.remove(key); },
+      keys:       () => mmkv.getAllKeys(),
     };
   }
 
   return _storage;
 }
 
-// v3: readings from astro-gemma-v2 (v1's cached hi/bn readings were often in
-// the wrong script, so they are regenerated once).
+// v4: readings from astro-gemma-v21 (plainer style; v2's cached Bengali
+// readings were mostly English), so they are regenerated once.
 const chartReadingKey = (profileId: string, lang: string) =>
-  lang === 'en' ? `chart_reading_v3_${profileId}` : `chart_reading_v3_${profileId}_${lang}`;
+  lang === 'en' ? `chart_reading_v4_${profileId}` : `chart_reading_v4_${profileId}_${lang}`;
 
 export const Storage = {
   // Onboarding
@@ -71,7 +74,6 @@ export const Storage = {
       const next: ThemeMode = legacyDark ? 'dark' : 'system';
       s.set('theme_mode', next);
       s.delete('dark_mode');
-    s.delete('theme_mode');
       return next;
     } catch {
       return 'system';
@@ -138,11 +140,51 @@ export const Storage = {
     for (const lang of ['en', 'hi', 'bn']) getStorage().delete(chartReadingKey(profileId, lang));
   },
 
+  // Model-written follow-up chips (MODEL_FOLLOWUPS), per assistant message id,
+  // so reopening a chat doesn't run the model again. [] = the model gave too
+  // few usable chips (the rule-based ones are shown); null = not generated.
+  getFollowUps: (messageId: string): string[] | null => {
+    const raw = getStorage().getString(`followups_v1_${messageId}`);
+    if (!raw) return null;
+    try {
+      const v = JSON.parse(raw);
+      return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : null;
+    } catch { return null; }
+  },
+  setFollowUps: (messageId: string, chips: string[]): void =>
+    getStorage().set(`followups_v1_${messageId}`, JSON.stringify(chips)),
+
   // In-app keyboard: 'custom' (the app's own keyboard) or 'system' (the
   // phone's keyboard, chosen with the 🌐 key). Remembered until changed.
   getKeyboardMode: (): 'custom' | 'system' =>
     getStorage().getString('keyboard_mode') === 'system' ? 'system' : 'custom',
   setKeyboardMode: (v: 'custom' | 'system'): void => getStorage().set('keyboard_mode', v),
+
+  // On-device model download (utils/model-download.ts). Raw JSON strings;
+  // the caller parses and validates. Not cleared by reset or backup restore:
+  // the model on disk survives both.
+  getModelInstall: (): string | null => getStorage().getString('model_install_v1') ?? null,
+  setModelInstall: (json: string): void => getStorage().set('model_install_v1', json),
+  clearModelInstall: (): void => getStorage().delete('model_install_v1'),
+  getModelResume: (): string | null => getStorage().getString('model_resume_v1') ?? null,
+  setModelResume: (json: string): void => getStorage().set('model_resume_v1', json),
+  clearModelResume: (): void => getStorage().delete('model_resume_v1'),
+  // The full-screen "Preparing Saga…" overlay owed after onboarding; kept
+  // until the model is ready so a relaunch mid-download shows it again.
+  getModelOverlayPending: (): boolean => getStorage().getBoolean('model_overlay_pending') ?? false,
+  setModelOverlayPending: (v: boolean): void => getStorage().set('model_overlay_pending', v),
+
+  // Everything derived from profile data (daily horoscopes, chart readings,
+  // model follow-up chips). Used after a backup restore, when those may
+  // describe charts or messages that no longer match. All regenerate on demand.
+  clearDerivedCaches: (): void => {
+    const s = getStorage();
+    for (const key of s.keys()) {
+      if (key.startsWith('horoscope_') || key.startsWith('chart_reading_') || key.startsWith('followups_')) {
+        s.delete(key);
+      }
+    }
+  },
 
   // Clear everything (used by reset)
   clear: (): void => {

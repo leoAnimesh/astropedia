@@ -20,7 +20,30 @@
   "followUps": {
     "when": "When exactly?",
     "do": "What should I do now?",
-    "know": "How will I know?"
+    "know": "How will I know?",
+    "after": "What changes after {{date}}?",
+    "area": {
+      "money": "What's ahead for my money?",
+      "effort": "Will my efforts pay off?",
+      "home": "What's ahead for my home life?",
+      "love": "What's ahead in my love life?",
+      "health": "What's ahead for my health?",
+      "relationship": "What's ahead in my relationship?",
+      "luck": "Is luck on my side?",
+      "career": "What's ahead for my career?",
+      "income": "Will my income grow?",
+      "spending": "Should I watch my spending?"
+    },
+    "topic": {
+      "love": "How can I strengthen my relationship?",
+      "marriage": "How can I prepare for marriage?",
+      "career": "What can I do to grow my career?",
+      "money": "How can I improve my finances?",
+      "health": "How can I take care of my health?",
+      "family": "How can I bring peace at home?",
+      "study": "How can I study better?",
+      "abroad": "Is moving abroad right for me?"
+    }
   },
   "contextNote": "Saga only remembers the last few messages in this thread.",
   "empty": {
@@ -72,11 +95,18 @@
   },
   "errors": {
     "modelLoad": "I couldn't load the on-device model right now. Try again in a moment.",
-    "generic": "Something went wrong — please try again."
+    "generic": "Something went wrong — please try again.",
+    "modelPreparing": "Saga is still being set up on your phone. Ask again once it's ready."
   },
   "greeting": {
     "self": "Hello! I'm Saga. Ask me anything about your chart — love, work, money, family, or what the coming months hold.",
     "other": "Hello! I'm Saga. Ask me anything about {{name}}'s chart — love, work, money, family, or what the coming months hold."
+  },
+  "safety": {
+    "childSex": "No chart can show whether a baby will be a boy or a girl, and in India finding out a baby's sex before birth isn't allowed by law. Every child is a blessing. If you like, ask me what the coming months look like for your family and home.",
+    "partnerName": "A chart can't show anyone's name or initial, so I won't guess one. What it can show is when love and marriage look more likely and what kind of partner suits you. Ask me about either.",
+    "doctor": "Please also see a doctor about this.",
+    "lawyer": "Please also talk to a lawyer about this."
   },
   "archived": {
     "back": "Back",

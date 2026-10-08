@@ -3,11 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, {
+  Easing, FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming,
+} from 'react-native-reanimated';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
@@ -19,27 +23,74 @@ import { Icon } from '@/components/atoms/Icon';
 import { showActionSheet, showDialog } from '@/components/overlays';
 import { ChatBubble } from '@/components/molecules/ChatBubble';
 import { ChatComposer } from '@/components/organisms/ChatComposer';
+import { ModelSetupPill } from '@/components/molecules/ModelSetupPill';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { KeyboardSpacer } from '@/components/keyboard';
 import { FONTS } from '@/constants/themes';
 import { buildPersonalizedStarters } from '@/constants/starters';
 import { getSavedMessageIds, saveAnswer, unsaveAnswer, type Message } from '@/utils/database';
 import { KRISHNA_PROFILE, getKrishnaStarters, isKrishnaProfile } from '@/utils/krishna';
-import { stripMarkdown, type AIMode } from '@/utils/ai';
-import { tAsk } from '@/utils/i18n';
+import { replyLanguage, stripMarkdown, suggestFollowUps, type AIMode } from '@/utils/ai';
+import { MODEL_FOLLOWUPS, isLLMReady } from '@/utils/local-llm';
+import { Storage } from '@/utils/storage';
+import { askLanguage, tAsk, useAppLanguage } from '@/utils/i18n';
+import {
+  followUpCandidates, followUpKey, followUpVars, mergeFollowUps, pickFollowUps, MODEL_FOLLOWUPS_MIN, type FollowUp,
+} from '@/utils/follow-ups';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
 
-/**
- * Quick follow-ups offered under Saga's latest reply. The chip shows
- * chat:followUps.<key>; tAsk() sends it in the language the model speaks.
- */
-const FOLLOW_UPS = ['when', 'do', 'know'];
+// Model-written chips per assistant message id (MODEL_FOLLOWUPS); MMKV behind it.
+const modelChipCache = new Map<string, string[]>();
+function cachedModelChips(messageId: string): string[] | null {
+  const hit = modelChipCache.get(messageId);
+  if (hit) return hit;
+  const stored = Storage.getFollowUps(messageId);
+  if (stored) modelChipCache.set(messageId, stored);
+  return stored;
+}
+
+// Chip row height (chips, skeleton pills and the reserved space all share it).
+const CHIP_ROW_HEIGHT = 40;
+// Longest we wait quietly for the model's chips before showing the rule-based ones.
+const MODEL_CHIPS_TIMEOUT_MS = 8000;
+
+/** Same-height stand-in for the chip row while the model writes the chips: soft pulsing pills. */
+function ChipSkeleton({ color }: { color: string }) {
+  const pulse = useSharedValue(0.35);
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(0.9, { duration: 800, easing: Easing.inOut(Easing.quad) }),
+        withTiming(0.35, { duration: 800, easing: Easing.inOut(Easing.quad) }),
+      ),
+      -1,
+    );
+  }, [pulse]);
+  const animated = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  return (
+    <View
+      style={styles_skeleton.row}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents="none"
+    >
+      {[96, 132, 84].map((w, i) => (
+        <Animated.View key={i} style={[styles_skeleton.pill, { width: w, backgroundColor: color }, animated]} />
+      ))}
+    </View>
+  );
+}
+const styles_skeleton = StyleSheet.create({
+  row:  { flexDirection: 'row', gap: 8, height: CHIP_ROW_HEIGHT, alignItems: 'center' },
+  pill: { height: CHIP_ROW_HEIGHT, borderRadius: 999 },
+});
 
 export default function ChatScreen() {
   const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('chat');
   const indic = i18n.language !== 'en';
+  const appLang = useAppLanguage();
   const { threadId, profileId, isNew, ask } = useLocalSearchParams<{
     threadId: string;
     profileId: string;
@@ -247,6 +298,71 @@ export default function ChatScreen() {
   const lastMessage   = messages[messages.length - 1];
   const showFollowUps = !isKrishna && !isTyping && lastMessage?.role === 'assistant' && !isChatErrorMessage(lastMessage);
 
+  // Chosen from what the reply said (utils/follow-ups.ts). The chip shows the
+  // app language; tAsk() sends it in the language the model speaks.
+  const followUps = useMemo(() => {
+    if (!showFollowUps || !lastMessage) return [];
+    const askLang = askLanguage();
+    const asked = messages.filter((m) => m.role === 'user').map((m) => m.content);
+    const label = (c: FollowUp) => t(followUpKey(c), followUpVars(c, appLang));
+    const send  = (c: FollowUp) => tAsk(`chat:${followUpKey(c)}`, followUpVars(c, askLang));
+    const candidates = followUpCandidates({ reply: lastMessage.content, question: asked[asked.length - 1] });
+    return pickFollowUps(candidates, asked, (c) => [label(c), send(c)])
+      .map((c) => ({ id: followUpKey(c), label: label(c), ask: send(c) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFollowUps, lastMessage?.id, lastMessage?.content, messages.length, appLang]);
+
+  // ─── Model-written chips (MODEL_FOLLOWUPS, v2.1 model) ────────────────────
+  // Only model-written chips are shown. For a reply that just finished on this
+  // screen, the row is a same-height skeleton while the model writes them (after
+  // the title, in the model queue), then they fade in (opacity only). If the
+  // model gives fewer than MODEL_FOLLOWUPS_MIN valid chips, errors, isn't loaded,
+  // or takes over MODEL_CHIPS_TIMEOUT_MS, the rule-based chips fade in instead.
+  // Cached chips (per message id, MMKV) show at once with no skeleton or fade;
+  // so do older replies without a cache, and canned replies (greetings,
+  // declines), which get the rule-based chips directly. Sending a message
+  // cancels the run. Flag off: the rule-based row, as before.
+  const [settledId, setSettledId] = useState<string | null>(null); // wait over for this message id
+  const typingSeen = useRef(false); // a reply finished while this screen was open
+  if (isTyping) typingSeen.current = true;
+  const waitedIds = useRef(new Set<string>()); // ids that showed the skeleton: their row fades in
+  const lastId = lastMessage?.id ?? null;
+  const modelEligible = MODEL_FOLLOWUPS && showFollowUps && lastMessage?.modelTier === 'executorch' && isLLMReady();
+  const cachedChips = modelEligible && lastId ? cachedModelChips(lastId) : null;
+  const waiting = modelEligible && typingSeen.current && !!lastId && cachedChips === null && settledId !== lastId;
+  if (waiting && lastId) waitedIds.current.add(lastId);
+
+  useEffect(() => {
+    if (!waiting || !lastMessage) return;
+    const id = lastMessage.id;
+    let cancelled = false;
+    const history = messages.slice(0, -1).filter((m) => !isChatErrorMessage(m))
+      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    const question = [...history].reverse().find((m) => m.role === 'user')?.content ?? '';
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      cancelled = true; // stops the run; the late result would only shift the row
+      setSettledId(id);
+    }, MODEL_CHIPS_TIMEOUT_MS);
+    suggestFollowUps(profile, history, lastMessage.content, replyLanguage(question), { isCancelled: () => cancelled })
+      .then((chips) => {
+        if (cancelled) return;
+        clearTimeout(timer);
+        modelChipCache.set(id, chips);
+        Storage.setFollowUps(id, chips);
+        setSettledId(id);
+      })
+      .catch(() => { if (!cancelled) { clearTimeout(timer); setSettledId(id); } });
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waiting, lastId]);
+
+  const shownFollowUps = mergeFollowUps(followUps, cachedChips, appLang);
+  const fadeInRow = !!lastId && waitedIds.current.has(lastId);
+
   const isNewEmpty = isNew === 'true' && messages.length === 0;
 
   return (
@@ -294,6 +410,9 @@ export default function ChatScreen() {
           )}
         </View>
 
+        {/* Saga's model still downloading: progress, or Retry after a failure. */}
+        <ModelSetupPill style={styles.setupPill} />
+
         {/* Messages — inverted so newest is always at the bottom */}
         <FlatList
           inverted
@@ -316,17 +435,31 @@ export default function ChatScreen() {
                 persona={isKrishna ? t('persona.krishna') : t('persona.saga')}
               />
             ) : showFollowUps ? (
-              <View style={styles.followUps}>
-                {FOLLOW_UPS.map((key) => (
-                  <TouchableOpacity
-                    key={key}
-                    onPress={() => sendMessage(tAsk(`chat:followUps.${key}`))}
-                    style={[styles.followUp, { backgroundColor: theme.surface, borderColor: theme.hairline2 }]}
-                    accessibilityRole="button"
-                  >
-                    <Text style={[styles.followUpText, { color: theme.ink }]}>{t(`followUps.${key}`)}</Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={styles.followUpsBox}>
+                {waiting ? (
+                  <ChipSkeleton color={theme.hairline2} />
+                ) : (
+                  <Animated.View key={lastId} entering={fadeInRow ? FadeIn.duration(220) : undefined}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                      style={styles.followUpsScroll}
+                      contentContainerStyle={styles.followUps}
+                    >
+                      {shownFollowUps.map((chip) => (
+                        <TouchableOpacity
+                          key={chip.id}
+                          onPress={() => sendMessage(chip.ask)}
+                          style={[styles.followUp, { backgroundColor: theme.surface, borderColor: theme.hairline2 }]}
+                          accessibilityRole="button"
+                        >
+                          <Text numberOfLines={1} style={[styles.followUpText, { color: theme.ink }]}>{chip.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </Animated.View>
+                )}
               </View>
             ) : null
           }
@@ -390,6 +523,7 @@ export default function ChatScreen() {
 }
 
 const baseStyles = StyleSheet.create({
+  setupPill: { marginTop: 8, marginBottom: 2 },
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -433,14 +567,22 @@ const baseStyles = StyleSheet.create({
     gap:           8,
     flexGrow:      1,
   },
+  // One swipeable row, edge to edge (like the home screen): a fixed height, so
+  // the skeleton, the model chips and the fallback chips never move the list.
+  followUpsBox: {
+    height:    CHIP_ROW_HEIGHT,
+    marginTop: 4,
+  },
+  followUpsScroll: {
+    marginHorizontal: -16,   // bleed past the list padding
+  },
   followUps: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           8,
-    marginTop:     4,
+    flexDirection:     'row',
+    gap:               8,
+    paddingHorizontal: 16,
   },
   followUp: {
-    minHeight:         40,
+    height:            CHIP_ROW_HEIGHT,
     paddingHorizontal: 14,
     borderRadius:      999,
     borderWidth:       StyleSheet.hairlineWidth,

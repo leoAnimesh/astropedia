@@ -19,6 +19,7 @@ import {
 } from '@/utils/notifications';
 import { resetOnboardingDraft } from './_store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
+import { requestModelOverlay } from '@/utils/model-download';
 
 export default function NotificationsScreen() {
   const styles = useIndicStyles(baseStyles);
@@ -39,8 +40,11 @@ export default function NotificationsScreen() {
 
   // Flipping the store makes the <Stack.Protected> guards in the root layout
   // swap into the app stack — no imperative navigation needed.
+  // If Saga's model is still downloading, the root layout shows the
+  // "Preparing Saga…" overlay over home until it's ready.
   const finish = () => {
     resetOnboardingDraft();
+    requestModelOverlay();
     setOnboardingDone(true);
   };
 
@@ -73,7 +77,9 @@ export default function NotificationsScreen() {
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <View />
+        {/* Back is disabled here; keep the back button's footprint so the
+            title sits at the same height as on the other steps. */}
+        <View style={styles.headerSpacer} />
         <Text style={[styles.step, { color: theme.muted }, indic && { letterSpacing: 0 }]}>{t('notifications.step')}</Text>
       </View>
 
@@ -107,6 +113,7 @@ export default function NotificationsScreen() {
             onValueChange={setDaily}
             label={t('notifications.daily')}
             sublabel={t('notifications.dailySub')}
+            style={styles.toggleRow}
           />
           <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
           <Toggle
@@ -114,6 +121,7 @@ export default function NotificationsScreen() {
             onValueChange={setTransit}
             label={t('notifications.transit')}
             sublabel={t('notifications.transitSub')}
+            style={styles.toggleRow}
           />
         </View>
 
@@ -146,6 +154,8 @@ const baseStyles = StyleSheet.create({
     paddingTop:        20,
     paddingBottom:     8,
   },
+  // Same box as the 22px back icon + 4px padding on the other steps.
+  headerSpacer: { width: 30, height: 30 },
   step: {
     fontFamily:    FONTS.monoRegular,
     fontSize:      11,
@@ -153,7 +163,7 @@ const baseStyles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   scroll:  { flex: 1 },
-  content: { padding: 32, paddingTop: 20 },
+  content: { padding: 32, paddingTop: 20, paddingBottom: 24 },
   display: {
     fontFamily:   FONTS.serifRegular,
     fontSize:     40,
@@ -194,12 +204,16 @@ const baseStyles = StyleSheet.create({
   },
   notifTitle: { fontFamily: FONTS.sansMedium ?? FONTS.sansRegular, fontSize: 14 },
   notifText:  { fontFamily: FONTS.sansRegular, fontSize: 13, lineHeight: 19 },
+  // Rows carry their own vertical padding so the whole padded row is the
+  // tap target (Toggle is a Pressable with accessibilityRole="switch").
   card: {
     borderRadius:      RADIUS.card,
     borderWidth:       StyleSheet.hairlineWidth,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
+    overflow:          'hidden',
   },
-  divider: { height: StyleSheet.hairlineWidth },
+  toggleRow: { paddingVertical: 16 },
+  divider:   { height: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
   privacy: {
     fontFamily: FONTS.sansRegular,
     fontSize:   13,

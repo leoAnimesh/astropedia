@@ -781,7 +781,9 @@ RANGE_SEP = {"en": re.compile(r"^\s*(?:to|and|through|until|till|-|–)\s*$", re
 COMPETING = {"en": re.compile(r"\bor\b", re.I), "hi": re.compile(r"\bया\b|या "), "bn": re.compile(r"\bবা\b|অথবা|বা ")}
 
 
-def check_dates(ans: str, lang: str, chart: Chart, fails: list, warns: list) -> None:
+def check_dates(ans: str, lang: str, chart: Chart, fails: list, warns: list, next_month: bool = True) -> None:
+    """next_month=False (v5): next month is not a free date. In the v5 sample gate the teacher used
+    'Nov 2026' (today + 1 month, in no context line) as a confident answer date in 4 of 30 answers."""
     t = norm(ans)
     if re.search(r"\b\d{4}-\d{2}-\d{2}\b", t):
         fails.append(("jargon_iso_date", "YYYY-MM-DD"))
@@ -793,7 +795,8 @@ def check_dates(ans: str, lang: str, chart: Chart, fails: list, warns: list) -> 
     if today:
         allowed.add((today.year, today.month))
         nm = (today.year + today.month // 12, today.month % 12 + 1)
-        allowed.add(nm)
+        if next_month:
+            allowed.add(nm)
     years = {y for y, _ in allowed} | ({today.year} if today else set()) | ({chart.birth.year} if chart.birth else set())
     near_months = set()
     for y, m in allowed:
@@ -1093,7 +1096,8 @@ def check_script(ans: str, lang: str, allowed_latin: set[str], fails: list, warn
 # ─── length ──────────────────────────────────────────────────────────────────
 
 
-def check_length(ans: str, lang: str, short: bool, fails: list, warns: list, max_tokens: int) -> dict:
+def check_length(ans: str, lang: str, short: bool, fails: list, warns: list, max_tokens: int,
+                 max_words: int = MAX_WORDS) -> dict:
     n_s = len(split_sentences(ans))
     n_w = words(ans, lang)
     n_t = gemma_tokens(ans)
@@ -1102,7 +1106,7 @@ def check_length(ans: str, lang: str, short: bool, fails: list, warns: list, max
         fails.append(("length_too_few_sentences", str(n_s)))
     if n_s > hi:
         fails.append(("length_too_many_sentences", str(n_s)))
-    if n_w > MAX_WORDS:
+    if n_w > max_words:
         fails.append(("length_words", str(n_w)))
     if n_t is not None and n_t > max_tokens:
         fails.append(("length_tokens", str(n_t)))
@@ -1460,6 +1464,266 @@ def check_safety(ans: str, lang: str, chart: Chart, question: str, history: list
     return tags
 
 
+# ─── v5 (prompt v5, Saga v2.1): plain answers + follow-up chips ─────────────
+# v5 answers carry the human meaning, not the chart: no sign names, no house
+# names, no ruler / lord, no period labels (stretch, chapter, "Jupiter period"),
+# at most one planet name. plain_stats() counts those for any answer (v4 or v5,
+# for comparisons); check_plain_v5() turns them into fails for style="v5".
+
+EN_SIGN = re.compile(rf"\b({'|'.join(SIGNS)})s?\b")
+EN_SIGN_WORD = re.compile(r"\b(zodiac|star signs?|sun signs?|moon signs?|rising signs?|your signs?|"
+                          r"(?:his|her|their) signs?|ascendant)\b", re.I)
+SIGN_WORD = {"hi": re.compile(_bare(r"राशि|राशी")), "bn": re.compile(_bare(r"রাশি|রাশী"))}
+RULER_WORD = {"en": re.compile(r"\b(rulers?|ruled by|rules (?:over )?(?:your|the|his|her|their|this)|lords?|lordship|"
+                               r"governs|governed by|owner of)\b", re.I),
+              "hi": re.compile(r"स्वामी|अधिपति|स्वामित्व|स्वामि"),
+              "bn": re.compile(r"অধিপতি|শাসক|অধিকর্তা")}
+LABEL_WORD = {"en": re.compile(r"\b(stretch(es)?|chapters?|sub-?periods?|life phases?|dashas?|mahadashas?|antardashas?)\b",
+                               re.I),
+              "hi": re.compile(r"अध्याय|(मौजूदा|वर्तमान|अगला|अगले|अभी का|अभी वाला|इसके बाद का|उसके बाद का)\s+(दौर|समय|अध्याय)|"
+                               r"(?:सूर्य|चंद्रमा|चंद्र|मंगल|बुध|गुरु|बृहस्पति|शुक्र|शनि|राहु|केतु)\s+की\s+बारी"),
+              "bn": re.compile(r"অধ্যায়|(বর্তমান|এখনকার|পরের|পরবর্তী|তারপরের)\s+(পর্ব|সময়|অধ্যায়)|"
+                               r"(?:সূর্য|চন্দ্র|মঙ্গল|বুধ|বৃহস্পতি|শুক্র|শনি|রাহু|কেতু)(?:ের|র)\s+পালা")}
+BARE_LABEL = {"en": re.compile(r"$^"), "hi": re.compile(r"दौर"), "bn": re.compile(r"পর্ব")}
+HI_HOUSE_PHRASE = re.compile(r"(?:वाले|वाला|वाली)\s+घर(?![ऀ-ॿ])")
+# House talk in other words ("पार्टनरशिप वाले हिस्से में राहु", "আপনার ভাগ্যের জায়গায় বুধ", "Jupiter moves into your
+# work area"): counted only in a sentence that names a planet.
+AREA_WITH_PLANET = {
+    "en": re.compile(r"\b(?:your|their|his|her) [a-z-]+(?: and [a-z-]+)? (?:area|areas|zone|sector|corner|part of "
+                     r"(?:your|their|his|her) (?:life|chart))\b", re.I),
+    "hi": re.compile(r"(?:वाले|वाली|वाला|की|के)\s+(?:हिस्से|हिस्सा|क्षेत्र|जगह|स्थान|खाने)(?![ऀ-ॿ])"),
+    "bn": re.compile(r"(?<![ঀ-৿])(?:ঘরে|ঘরের|ঘর|ঘরটা|জায়গায়|জায়গা|জায়গার|ক্ষেত্রে|খানে)(?![ঀ-৿])"),
+}
+V5_MAX_WORDS = 90
+WHEN_Q = {"en": re.compile(r"\bwhen\b|how soon|\bsoon\b|which month|what month|exact(ly)?\b|by when|how long|"
+                           r"what date|which year", re.I),
+          "hi": re.compile(r"कब|कितने (समय|दिन|महीने)|कितना समय|जल्दी|जल्द|किस महीने|किस साल|तारीख|"
+                           r"\bkab\b|jaldi|\bkitne din\b", re.I),
+          "bn": re.compile(r"কবে|কত দিন|কতদিন|কত সময়|শীঘ্র|তাড়াতাড়ি|কোন মাসে|কোন বছর|তারিখ|"
+                           r"\bkobe\b|taratari|\bkoto din\b", re.I)}
+
+
+def is_when_question(question: str, lang: str) -> bool:
+    q = norm(question)
+    return any(WHEN_Q[l].search(q) for l in {lang, "en"})
+
+
+def _user_text(question: str, history: list | None) -> str:
+    return norm(" ".join([question] + [h.get("user", "") for h in history or []]))
+
+
+def plain_stats(ans: str, lang: str, question: str = "", history: list | None = None) -> dict:
+    """Chart-talk counts in one answer: sign names / sign words, house names, ruler words,
+    period labels, planets (distinct + mentions). Anything the user typed is not counted."""
+    t = norm(ans)
+    said = _user_text(question, history)
+    said_low = said.lower()
+    out = {"signs": [], "houses": [], "rulers": [], "labels": [], "planets": [], "planet_mentions": 0}
+    if lang == "en":
+        for m in EN_SIGN.finditer(t):
+            if m.group(1).lower() not in said_low:
+                out["signs"].append(m.group(0))
+        out["signs"] += [m.group(0) for m in EN_SIGN_WORD.finditer(t) if m.group(0).lower() not in said_low]
+    else:
+        for _, s in find_signs(t, lang):
+            if not any(f in said for f in SIGN_WORDS[lang][SIGNS[s]]):
+                out["signs"].append(SIGNS[s])
+        if (m := SIGN_WORD[lang].search(_bare(t))) and not SIGN_WORD[lang].search(_bare(said)):
+            out["signs"].append(m.group(0))
+        # English sign names in Latin letters inside a hi/bn answer
+        out["signs"] += [m.group(0) for m in EN_SIGN.finditer(t) if m.group(1).lower() not in said_low]
+    for sent in split_sentences(t):
+        out["houses"] += [h[2] for h in find_houses(sent, lang)]
+        if find_planets(sent, lang) and (m := AREA_WITH_PLANET[lang].search(sent)) and not find_houses(sent, lang):
+            out["houses"].append(m.group(0))
+    if lang == "en":
+        out["houses"] += [m.group(0) for m in EN_HOUSE_NUM.finditer(t)]
+    elif lang == "hi":
+        out["houses"] += [m.group(0) for m in HI_HOUSE_PHRASE.finditer(t)][: max(0, 1 - len(out["houses"]))]
+        out["houses"] += [m.group(0) for m in HI_HOUSE_NUM.finditer(t)]
+    else:
+        out["houses"] += [m.group(0) for m in BN_HOUSE_NUM.finditer(t)]
+    out["rulers"] = [m.group(0) for m in RULER_WORD[lang].finditer(t) if m.group(0).lower() not in said_low]
+    out["labels"] = [m.group(0) for m in LABEL_WORD[lang].finditer(t) if m.group(0).lower() not in said_low]
+    planets = []
+    for sent in split_sentences(t) or [t]:
+        toks = tokens(sent, lang)
+        for i, p in find_planets(sent, lang):
+            planets.append(p)
+            if period_attached(toks, i, lang):
+                out["labels"].append(f"{p} + {' '.join(toks[i + 1:i + 3])}")
+    out["planet_mentions"] = len(planets)
+    out["planets"] = sorted(set(planets))
+    out["bare_labels"] = len(BARE_LABEL[lang].findall(t))
+    out["jargon"] = len(out["signs"]) + len(out["houses"]) + len(out["rulers"]) + len(out["labels"])
+    return out
+
+
+def _example_grams() -> set[str]:
+    """5-grams of the v5 prompt's example answers (Nemotron Super copied them nearly verbatim)."""
+    try:
+        from teacher_prompts import SAGA_SYSTEM_V5
+    except Exception:
+        return set()
+    out: set[str] = set()
+    for a in re.findall(r'^A: "(.+)"$', SAGA_SYSTEM_V5, re.M):
+        out |= ngram_set(a.replace("**", ""), "en", 5)
+    return out
+
+
+EXAMPLE_GRAMS = _example_grams()
+
+
+def check_plain_v5(ans: str, lang: str, chart: Chart, question: str, history: list, fails: list, warns: list,
+                   st: dict, short: bool) -> None:
+    if lang == "en" and EXAMPLE_GRAMS:
+        shared = ngram_set(norm(ans).replace("**", ""), "en", 5) & EXAMPLE_GRAMS
+        if len(shared) >= 2:
+            fails.append(("behav_copies_example", sorted(shared)[0]))
+    if st["signs"]:
+        fails.append(("jargon_v5_sign", ", ".join(st["signs"][:3])))
+    if st["houses"]:
+        fails.append(("jargon_v5_house", ", ".join(st["houses"][:3])))
+    if st["rulers"]:
+        fails.append(("jargon_v5_ruler", ", ".join(st["rulers"][:3])))
+    if st["labels"]:
+        fails.append(("jargon_v5_period_label", ", ".join(st["labels"][:3])))
+    if len(st["planets"]) > 1:
+        fails.append(("jargon_v5_planets", ", ".join(st["planets"])))
+    if set(st["planets"]) & {"Rahu", "Ketu"}:
+        warns.append(("jargon_v5_node", ",".join(st["planets"])))
+    if st["bare_labels"]:
+        warns.append(("jargon_v5_bare_label", str(st["bare_labels"])))
+    if short and (st["planets"] or any(d.get("year") for d in find_dates(ans, lang))):
+        warns.append(("jargon_v5_short_chart_talk", ",".join(st["planets"])))
+    # "When ...?" gets a month and year (not for death, minors' romance, greetings / off-topic).
+    if short or not chart.dates or not is_when_question(question, lang):
+        return
+    tags = classify(question)
+    minor = chart.age is not None and chart.age < 18 and (
+        "marriage" in tags or is_romance_question(_user_text(question, history[-1:] if history else [])))
+    if tags & {"death", "greeting", "offtopic", "rude"} or minor:
+        return
+    ad = {(d["year"], d["month"]) for d in find_dates(ans, lang) if d.get("year") and d.get("month")}
+    if not ad:
+        fails.append(("behav_when_no_date", "a 'when' question needs a month and year"))
+    elif history:
+        prev = history[-1].get("assistant", "")
+        pd = {(d["year"], d["month"]) for d in find_dates(prev, lang) if d.get("year") and d.get("month")}
+        if pd and ad <= pd:
+            fails.append(("behav_followup_same_date", f"{sorted(ad)} already given"))
+
+
+# Follow-up suggestion chips ([followups]): exactly 3 short user-voice questions.
+FOLLOWUP_MAX_WORDS = {"en": 8, "hi": 9, "bn": 8}
+FOLLOWUP_BAD_TOPIC = re.compile(TOPICS["death"] + "|" + TOPICS["child_sex"] + "|" + TOPICS["name"] + "|" +
+                                r"उम्र कितनी|कितने साल जी|आयु|আয়ু|lottery|लॉटरी|লটারি|gemstone|रत्न|রত্ন|पूजा|পুজো|\bpuja\b|upay|उपाय|প্রতিকার", re.I)
+FOLLOWUP_ASTRO = re.compile(r"sade\s*sati|साढ़े?\s*साती|সাড়ে\s*সাতি|\bdasha|\btransit|\bhouse\b|planet|ग्रह|গ্রহ", re.I)
+
+
+def parse_followups(text: str) -> list[str]:
+    """The app's parser: non-empty lines, stripped (no other cleanup)."""
+    return [l.strip() for l in text.strip().splitlines() if l.strip()]
+
+
+def _qset(q: str, lang: str) -> set[str]:
+    return {w.lower().strip("?") for w in tokens(norm(q), lang)} - {""}
+
+
+# Consonant skeletons, to compare a native-script suggestion with a Hinglish / Banglish
+# question ("amar biye kobe hobe?" ~ "আমার বিয়ে কবে হবে?" -> {mr, bj, kb, b}). Devanagari and
+# Bengali share their layout (Bengali = Devanagari + 0x80), so one table by offset.
+_IND_CONS = dict(zip(range(0x15, 0x3A), "kkggn" "ccjjn" "ttddn" "ttddn" "n" "ppbbm" "jrrlll" "bsssh"))
+_IND_CONS |= {0x5C: "r", 0x5D: "r", 0x5F: "j", 0x02: "n"}  # ড় ঢ় য় (Bengali), anusvara
+_LAT_SKEL = str.maketrans({"v": "b", "w": "b", "y": "j", "z": "j", "f": "p", "q": "k", "x": "k"})
+
+
+def _skeleton(word: str) -> str:
+    out = []
+    for ch in unicodedata.normalize("NFD", word.lower()):
+        o = ord(ch)
+        if 0x0900 <= o <= 0x09FF:
+            c = _IND_CONS.get((o - 0x0900) % 0x80)
+            if c:
+                out.append(c)
+        elif "a" <= ch <= "z" and ch not in "aeiouh":
+            out.append(ch.translate(_LAT_SKEL))
+    sk = re.sub(r"(.)\1+", r"\1", "".join(out))
+    return sk.replace("h", "")
+
+
+def _skset(q: str) -> set[str]:
+    return {_skeleton(w) for w in re.findall(r"[\w\u0900-\u09FF]+", norm(q))} - {""}
+
+
+def _similar(a: str, b: str, lang: str) -> bool:
+    x, y = _qset(a, lang), _qset(b, lang)
+    if x and y and len(x & y) / len(x | y) >= 0.6:
+        return True
+    if lang != "en" and re.search(r"[A-Za-z]", a + b):
+        x, y = _skset(a), _skset(b)
+        return bool(x and y and len(x & y) / len(x | y) >= 0.6)
+    return False
+
+
+def validate_followups(text: str, lang: str, history: list) -> Verdict:
+    """history: the conversation the chips follow, [{"user", "assistant"}, ...] (oldest first)."""
+    fails: list = []
+    warns: list = []
+    raw = text.strip()
+    lines = parse_followups(raw)
+    if len(lines) != 3 or len(raw.splitlines()) != 3:
+        fails.append(("format_followups_lines", f"{len(lines)} lines"))
+    convo = norm(" ".join(f"{h.get('user', '')} {h.get('assistant', '')}" for h in history))
+    asked = [h.get("user", "") for h in history]
+    allowed_latin = {w.lower() for w in re.findall(r"[A-Za-z][A-Za-z']*", " ".join(asked))} if lang == "en" else set()
+    conv_dates = {(d["year"], d["month"]) for d in find_dates(convo, lang) if d.get("year")}
+    for i, l in enumerate(lines):
+        if re.match(r"^\s*(\d+\s*[.)]|[-*•]|Q\d)", l) or "**" in l:
+            fails.append(("format_followups_numbering", l[:40]))
+        if re.match(r"^[\"'“‘]", l):
+            fails.append(("format_followups_quotes", l[:40]))
+        if not l.rstrip().endswith("?"):
+            fails.append(("format_followups_no_qmark", l[:40]))
+        n = words(l, lang)
+        if n > FOLLOWUP_MAX_WORDS[lang]:
+            fails.append(("length_followups_words", f"{n}: {l[:40]}"))
+        if n < 2:
+            fails.append(("length_followups_too_short", l))
+        sub: list = []
+        check_script(l, lang, allowed_latin if lang == "en" else set(), sub, [])
+        fails += [(c.replace("script_", "script_followups_"), d) for c, d in sub]
+        st = plain_stats(l, lang)
+        jt = []
+        check_jargon(l, lang, Chart(), "", jt, [], [])
+        if st["jargon"] or st["planets"] or FOLLOWUP_ASTRO.search(l) or any(c.startswith("jargon") for c, _ in jt):
+            fails.append(("jargon_followups", l[:50]))
+        if FOLLOWUP_BAD_TOPIC.search(norm(l)):
+            fails.append(("safety_followups_topic", l[:50]))
+        if lang == "en" and re.search(r"\byour\b", l, re.I):
+            fails.append(("behav_followups_second_person", l[:50]))
+        elif lang == "en" and re.search(r"\byou\b", l, re.I):
+            warns.append(("behav_followups_you", l[:50]))
+        if lang == "hi" and re.search(r"आपकी|आपका|आपके|तुम्हारी|तुम्हारा", l):
+            warns.append(("behav_followups_second_person", l[:50]))
+        if lang == "bn" and re.search(r"আপনার|তোমার", l):
+            warns.append(("behav_followups_second_person", l[:50]))
+        for d in find_dates(l, lang):
+            if d.get("year") and (d["year"], d.get("month") or 0) not in conv_dates \
+                    and not any(y == d["year"] for y, _ in conv_dates):
+                fails.append(("date_followups_invented", d["text"]))
+        for q in asked:
+            if _similar(l, q, lang):
+                fails.append(("behav_followups_repeats_asked", f"{l[:40]} ~ {q[:40]}"))
+                break
+        for l2 in lines[:i]:
+            if _similar(l, l2, lang):
+                fails.append(("behav_followups_duplicate", f"{l[:40]} ~ {l2[:40]}"))
+                break
+    fails = list(dict.fromkeys(fails))
+    return Verdict(not fails, fails, warns, {"lines": lines})
+
+
 # ─── deterministic repairs (applied before validation in build_sft) ─────────
 
 
@@ -1487,7 +1751,7 @@ def trim_to_cap(t: str, lang: str, max_words: int = MAX_WORDS) -> str | None:
     return None
 
 
-def repair(answer: str, lang: str) -> tuple[str, list[str]]:
+def repair(answer: str, lang: str, style: str = "v4") -> tuple[str, list[str]]:
     """Safe, meaning-preserving fixes for the teacher's most common slips:
     keep only the first **bold** phrase; English "sub-period(s)" -> "stretch(es)",
     "life phase" -> "chapter"; over MAX_WORDS, drop trailing sentences
@@ -1499,7 +1763,7 @@ def repair(answer: str, lang: str) -> tuple[str, list[str]]:
         first = bolds[0]
         t = t[:first.end()] + re.sub(r"\*\*(.+?)\*\*", r"\1", t[first.end():], flags=re.S)
         done.append("extra_bold")
-    if lang == "en":
+    if lang == "en" and style == "v4":  # v5 bans "stretch"/"chapter" too: fail, don't rewrite
         t2 = re.sub(r"\bsub-?periods\b", "stretches", t, flags=re.I)
         t2 = re.sub(r"\bsub-?period\b", "stretch", t2, flags=re.I)
         t2 = re.sub(r"\blife phases\b", "chapters", t2, flags=re.I)
@@ -1507,7 +1771,8 @@ def repair(answer: str, lang: str) -> tuple[str, list[str]]:
         if t2 != t:
             done.append("period_words")
             t = t2
-    if words(t, lang) > MAX_WORDS and (cut := trim_to_cap(t, lang)):
+    cap = V5_MAX_WORDS if style == "v5" else MAX_WORDS
+    if words(t, lang) > cap and (cut := trim_to_cap(t, lang, cap)):
         t = cut
         done.append("trim_length")
     return t, done
@@ -1530,8 +1795,12 @@ class Verdict:
 
 def validate(context: str | Chart, question: str, lang: str, history: list | None, answer: str, *,
              today: date | str | None = None, kind: str | None = None, max_tokens: int = MAX_TOKENS,
+             style: str = "v4",
              allowed_latin: set[str] | None = None) -> Verdict:
     """kind: 'saga' (default) or 'short' (greetings, off-topic: 1-4 sentences).
+    style: 'v4' (prompt v4: house names, stretch/chapter labels allowed) or 'v5' (prompt v5,
+    plain answers: check_plain_v5 on top of every v4 check, a 90-word cap, "when" needs a
+    month-year, a "when" follow-up needs a new date).
     Inferred from the question when None."""
     history = history or []
     chart = context if isinstance(context, Chart) else parse_context(context, today)
@@ -1545,13 +1814,17 @@ def validate(context: str | Chart, question: str, lang: str, history: list | Non
     if allowed_latin is None:
         allowed_latin = {w.lower() for w in re.findall(r"[A-Za-z][A-Za-z']*", " ".join(
             [chart.name, question] + [h.get("user", "") for h in history]))}
-    meta = check_length(ans, lang, short, fails, warns, max_tokens)
+    meta = check_length(ans, lang, short, fails, warns, max_tokens,
+                        V5_MAX_WORDS if style == "v5" else MAX_WORDS)
     check_jargon(ans, lang, chart, question, fails, warns, history)
     check_script(ans, lang, allowed_latin, fails, warns)
     meta["claims"] = check_claims(ans, lang, chart, fails, warns)
-    check_dates(ans, lang, chart, fails, warns)
+    check_dates(ans, lang, chart, fails, warns, next_month=style != "v5")
     meta |= check_behaviour(ans, lang, chart, question, history, fails, warns)
     meta["tags"] = sorted(check_safety(ans, lang, chart, question, history, fails, warns))
+    meta["plain"] = plain_stats(ans, lang, question, history)
+    if style == "v5":
+        check_plain_v5(ans, lang, chart, question, history, fails, warns, meta["plain"], short)
     # de-duplicate (same code + detail)
     fails = list(dict.fromkeys(fails))
     return Verdict(not fails, fails, warns, meta)
@@ -1575,6 +1848,128 @@ def summarize(rows: list[dict]) -> dict:
 
 
 # ─── CLI ─────────────────────────────────────────────────────────────────────
+
+
+def _selftest_v5() -> tuple[int, int]:
+    """style='v5' (plain answers) and validate_followups(). Returns (ok, total)."""
+    ctx = """Reading for: Animesh Mondal
+Born: 2001-08-06 at 07:40 in Durgapur, West Bengal, India
+Age: 25
+Gender: man (he/him).
+Moon sign: Aquarius
+Rising sign: Leo
+Planets (sign, house): Sun Cancer 12th, Moon Aquarius 7th, Mercury Cancer 12th, Venus Gemini 11th, Mars Scorpio 4th own, Jupiter Gemini 11th, Saturn Taurus 10th, Rahu Gemini 11th, Ketu Sagittarius 5th
+Life areas:
+- Love/marriage: partnership house has Moon (feelings, care), its ruler Saturn (duty, slow but lasting) in career house; Venus (love, comfort) in gains house
+Now (sky today):
+- Saturn in Pisces, your change house (retro). Sade sati: yes, last part; weight lifting, watch spending. From around Jun 2027 it moves into Aries, your luck house (back in Pisces Oct 2027 to Feb 2028); sade sati ends.
+- Jupiter in Cancer, your abroad house; less supportive, growth takes effort. From around Oct 2026 it moves into Leo, your self house (back in Cancer Jan 2027 to Jun 2027); supportive, help and openings.
+- Rahu in Aquarius, your partnership house; restless push there. From around Dec 2026 it moves into Capricorn, your work and health house.
+Timing (never invent other dates):
+- Current stretch: Moon, ends Nov 2027 (in 1 year 1 month)
+- Next stretch: Mars, Nov 2027 to Oct 2028
+- Current chapter: Jupiter, ends Mar 2031 (in 4 years 5 months)
+- Next chapter: Saturn, from Mar 2031"""
+    c = parse_context(ctx, "2026-10-06")
+    good_en = ("Love is on your mind, and that's a good sign. This year is more about getting clear than rushing. "
+               "You need a partner who gives you space; love grows slowly with you, but it lasts. Things warm up "
+               "**from Oct 2026**, when meeting people feels easier. Say yes to one plan with friends this month.")
+    good_hi = ("प्यार के बारे में सोचना अच्छा है। ये साल जल्दबाज़ी का नहीं, समझने का है। आपको ऐसा साथी चाहिए जो "
+               "आपको जगह दे; आपका प्यार धीरे बढ़ता है, पर टिकता है। **अक्टूबर 2026** से लोगों से मिलने में मन लगेगा। "
+               "इस महीने दोस्तों के साथ एक प्लान ज़रूर बनाइए।")
+    good_bn = ("চাকরির অপেক্ষা সত্যিই কঠিন, বুঝতে পারছি। নতুন চাকরি আসবে, তবে একটু ধৈর্য লাগবে। আপনি এমন কাজে সবচেয়ে "
+               "ভালো করেন যেখানে সম্মান পান, তাই তাড়াহুড়ো করে ভুল জায়গায় ঢুকবেন না। **জুন ২০২৭-এর মধ্যে** ভালো সুযোগ "
+               "আসবে। এই সপ্তাহে পাঁচজন পুরনো সহকর্মীকে মেসেজ করুন।")
+    hist = [{"user": "Will I find love?", "assistant": good_en}]
+    cases = [  # (lang, question, history, answer, expected fail code or None)
+        ("en", "How is love this year?", [], good_en, None),
+        ("hi", "इस साल प्यार कैसा रहेगा?", [], good_hi, None),
+        ("bn", "এ বছর চাকরি কবে পাব?", [], good_bn, None),
+        ("bn", "amar chakri kobe hobe?", [], good_bn, None),
+        ("en", "How is love this year?", [], good_en.replace("You need a partner", "With your Moon in Aquarius, you need a partner"),
+         "jargon_v5_sign"),
+        ("en", "How is love this year?", [], good_en.replace("You need a partner", "Your partnership house says you need a partner"),
+         "jargon_v5_house"),
+        ("en", "How is love this year?", [], good_en.replace("but it lasts", "but its ruler makes it last"), "jargon_v5_ruler"),
+        ("en", "How is love this year?", [], good_en.replace("Things warm up", "This stretch warms up"), "jargon_v5_period_label"),
+        ("en", "How is love this year?", [], good_en.replace("Things warm up", "Jupiter warms things up").replace(
+            "This year is", "Saturn says this year is"), "jargon_v5_planets"),
+        ("en", "How is love this year?", [], good_en.replace("Things warm up", "Jupiter warms things up"), None),
+        ("en", "When will I find love?", [], good_en.replace("**from Oct 2026**", "**soon**"), "behav_when_no_date"),
+        ("en", "When exactly?", hist, "The first real spark comes around **Jun 2027**, once the pressure on you lifts. "
+                                      "It's likely through a friend's circle rather than an app. Keep that month's "
+                                      "weekends open and go when you're invited.", None),
+        ("en", "When exactly?", hist, "It really warms up **from Oct 2026**, as I said. It's likely through a friend's "
+                                      "circle rather than an app. Keep those weekends open and go when invited.",
+         "behav_followup_same_date"),
+        ("hi", "इस साल प्यार कैसा रहेगा?", [], good_hi.replace("आपको ऐसा साथी", "आपके शादी वाले घर में चंद्रमा है, इसलिए आपको ऐसा साथी"),
+         "jargon_v5_house"),
+        ("hi", "इस साल प्यार कैसा रहेगा?", [], good_hi.replace("आपको ऐसा साथी", "आपकी कुंभ राशि की वजह से आपको ऐसा साथी"),
+         "jargon_v5_sign"),
+        ("hi", "इस साल प्यार कैसा रहेगा?", [], good_hi.replace("**अक्टूबर 2026** से", "गुरु का दौर **मार्च 2031** तक है, और अक्टूबर 2026 से"),
+         "jargon_v5_period_label"),
+        ("bn", "এ বছর চাকরি কবে পাব?", [], good_bn.replace("আপনি এমন কাজে", "শনি আপনার কেরিয়ারের অধিপতি, তাই আপনি এমন কাজে"),
+         "jargon_v5_ruler"),
+        ("bn", "এ বছর চাকরি কবে পাব?", [], good_bn.replace("**জুন ২০২৭-এর মধ্যে**", "**শীঘ্রই**"), "behav_when_no_date"),
+        ("en", "hi", [], "Hi there, lovely to hear from you. Ask me anything about love, work or the year ahead.", None),
+        ("hi", "इस साल प्यार कैसा रहेगा?", [], good_hi.replace("आपको ऐसा साथी", "शनि अभी आपकी कमाई वाले हिस्से में है, इसलिए आपको ऐसा साथी"),
+         "jargon_v5_house"),
+        ("bn", "এ বছর চাকরি কবে পাব?", [], good_bn.replace("আপনি এমন কাজে", "বুধ আপনার ভাগ্যের জায়গায় বসে আছে, তাই আপনি এমন কাজে"),
+         "jargon_v5_house"),
+        ("en", "When will I find love?", [], good_en.replace("Oct 2026", "Nov 2026"), "date_invented"),  # today + 1 month
+    ]
+    bad = 0
+    for lang, q, h, a, want in cases:
+        v = validate(c, q, lang, h, a, style="v5")
+        got = set(v.reasons)
+        if (want is None and not v.ok) or (want is not None and want not in got):
+            bad += 1
+            print("v5 FAIL", lang, q, want, v.fails)
+    # v4 style is unchanged: house names and stretch labels pass there
+    v4a = ("Love is on your mind. Your partnership house holds your Moon, so you need someone who shows up "
+           "emotionally. This Moon stretch until **Nov 2027** favours slow, real connection. Say yes to one plan "
+           "with friends this month.")
+    if not validate(c, "How is love this year?", "en", [], v4a).ok:
+        bad += 1
+        print("v4 regression", validate(c, "How is love this year?", "en", [], v4a).fails)
+    if validate(c, "How is love this year?", "en", [], v4a, style="v5").ok:
+        bad += 1
+        print("v5 should fail the v4-style answer")
+    fh = [{"user": "How is love this year?", "assistant": good_en}]
+    fcases = [  # (lang, text, history, expected fail code or None)
+        ("en", "When will I meet someone?\nWhat should I do this month?\nHow will work go this year?", fh, None),
+        ("en", "1. When will I meet someone?\n2. What should I do?\n3. How is work?", fh, "format_followups_numbering"),
+        ("en", "When will I meet someone?\nWhat should I do this month?", fh, "format_followups_lines"),
+        ("en", "When will I meet someone special in my life this year?\nWhat should I do?\nHow is work?", fh,
+         "length_followups_words"),
+        ("en", "When will I meet someone?\nWhat is my Moon sign?\nHow will work go?", fh, "jargon_followups"),
+        ("en", "When will I meet someone?\nWhen does Saturn leave?\nHow will work go?", fh, "jargon_followups"),
+        ("en", "How is love this year?\nWhat should I do now?\nHow will work go?", fh, "behav_followups_repeats_asked"),
+        ("en", "When will I meet someone?\nWhen will I meet someone new?\nHow will work go?", fh, "behav_followups_duplicate"),
+        ("en", "When will I die?\nWhat should I do now?\nHow will work go?", fh, "safety_followups_topic"),
+        ("en", "What happens in June 2029?\nWhat should I do now?\nHow will work go?", fh, "date_followups_invented"),
+        ("en", "What changes in Oct 2026?\nWhat should I do now?\nHow will work go?", fh, None),
+        ("en", "When will you meet someone?\nWhat should you do now?\nHow will your work go?", fh,
+         "behav_followups_second_person"),
+        ("en", "When will I meet someone\nWhat should I do now?\nHow will work go?", fh, "format_followups_no_qmark"),
+        ("hi", "मुझे सही साथी कब मिलेगा?\nइस महीने मुझे क्या करना चाहिए?\nमेरा करियर कैसा रहेगा?",
+         [{"user": "इस साल प्यार कैसा रहेगा?", "assistant": good_hi}], None),
+        ("hi", "मुझे सही साथी कब मिलेगा?\nशनि कब हटेगा?\nमेरा करियर कैसा रहेगा?",
+         [{"user": "इस साल प्यार कैसा रहेगा?", "assistant": good_hi}], "jargon_followups"),
+        ("hi", "mujhe sahi saathi kab milega?\nइस महीने मुझे क्या करना चाहिए?\nमेरा करियर कैसा रहेगा?",
+         [{"user": "इस साल प्यार कैसा रहेगा?", "assistant": good_hi}], "script_followups_latin_word"),
+        ("bn", "আমার বিয়ে কবে হবে?\nএখন আমার কী করা উচিত?\nটাকা পয়সা কেমন যাবে?",
+         [{"user": "amar biye kobe hobe?", "assistant": good_bn}], "behav_followups_repeats_asked"),
+        ("bn", "বিয়ের আগে কী করব?\nএখন আমার কী করা উচিত?\nটাকা পয়সা কেমন যাবে?",
+         [{"user": "amar biye kobe hobe?", "assistant": good_bn}], None),
+    ]
+    for lang, text, h, want in fcases:
+        v = validate_followups(text, lang, h)
+        if (want is None and not v.ok) or (want is not None and want not in set(v.reasons)):
+            bad += 1
+            print("followups FAIL", lang, repr(text[:40]), want, v.fails)
+    total = len(cases) + 2 + len(fcases)
+    return total - bad, total
 
 
 def _selftest() -> None:
@@ -1832,7 +2227,9 @@ Timing (never invent other dates):
           f"{len(cases2) - bad2}/{len(cases2)} ok (v2 context format), "
           f"{len(cases3) + len(cases2b) - bad3}/{len(cases3) + len(cases2b)} ok (date-event, names, now, address, "
           "minors), repair ok")
-    if bad or bad2 or bad3:
+    ok5, n5 = _selftest_v5()
+    print(f"selftest v5: {ok5}/{n5} ok (plain answers, followups)")
+    if bad or bad2 or bad3 or ok5 != n5:
         raise SystemExit(1)
 
 
