@@ -27,7 +27,7 @@ from pathlib import Path
 from openai import AsyncOpenAI
 
 import validate_answer as VA
-from questions import KRISHNA, OFF_TOPIC, SAGA, SAGA_FOLLOWUPS
+from questions import GREETINGS, KRISHNA, OFF_TOPIC, SAGA, SAGA_FOLLOWUPS
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = Path(__file__).resolve().parent
@@ -55,8 +55,8 @@ def load_env() -> None:
                 os.environ.setdefault(k.strip(), v.strip())
 
 
-from teacher_prompts import (KRISHNA_SYSTEM, LANG_NAMES, LANG_RULES, READING_LANG_RULE,  # noqa: E402
-                             SAGA_SYSTEM, TITLE_LANG_RULE)
+from teacher_prompts import (FOLLOWUPS_LANG_RULE, FOLLOWUPS_SYSTEM, KRISHNA_SYSTEM, LANG_NAMES,  # noqa: E402
+                             LANG_RULES, READING_LANG_RULE, TITLE_LANG_RULE, saga_prompts)
 
 ASTRO = {e["id"]: e["text"] for f in glob.glob(str(ROOT / "assets/astrology-corpus/**/*.json"), recursive=True)
          for e in json.loads(Path(f).read_text())}
@@ -178,7 +178,8 @@ def saga_system(p: dict, lang: str = "en", questions=()) -> str:
     """Teacher system prompt. `questions`: the user's messages in this
     conversation (they switch on the minor-romance note)."""
     note = (PRECISION_NOTE if not p["birthTime"] else "") + age_note(p)
-    out = (f"{SAGA_SYSTEM}{OFF_TOPIC_RULE}{LANG_RULES[lang]}\n\nToday: {profile_today(p)}\n\n{p['context']}{note}"
+    system, rules = saga_prompts(PROMPT_VERSION)
+    out = (f"{system}{OFF_TOPIC_RULE}{rules[lang]}\n\nToday: {profile_today(p)}\n\n{p['context']}{note}"
            f"\n\n{p['timing']}")
     if SAGA_REFERENCE:
         refs = "\n".join(ASTRO[c] for c in dict.fromkeys(p["corpusIds"]) if c in ASTRO)
@@ -217,7 +218,21 @@ SUN: one sentence about who {fn} is at their core — their main personality str
 MOON: one sentence about how {fn} feels and handles emotions — their inner world{rising}
 NAKSHATRA: one sentence about {fn}'s instinctive nature and what makes them unique
 DASHA: one sentence about what kind of chapter of life {fn} is going through right now
-OVERVIEW: two sentences describing {fn} as a whole person — what makes them special and what to embrace""" + READING_LANG_RULE[lang]
+OVERVIEW: two sentences describing {fn} as a whole person — what makes them special and what to embrace""" + READING_LANG_RULE[lang] \
+        + READING_NAME_RULE.get(lang, "").format(fn=fn)
+
+
+# Teacher-only (v2.1): Bengali readings write the name in Bengali script. The v2 model answered
+# bn readings in English 9-11/12, and v4 bn readings mixed Latin and Bengali spellings of the name.
+# With it, a Latin-letter name is not in allowed_text (reading_allowed), so it triggers a script retry.
+READING_NAME_RULE = {
+    "bn": " Write the name {fn} in Bengali script (as it is said aloud), never in English letters.",
+}
+
+
+def reading_allowed(p: dict, lang: str) -> str:
+    """Latin words a reading may contain (script check)."""
+    return READING_KEYS if lang in READING_NAME_RULE else f"{p['name']} {READING_KEYS}"
 
 
 TITLE_SYSTEM = ("You output ONLY a 2–4 word title for the conversation. "
@@ -339,7 +354,13 @@ def done_ids(path: Path) -> set[str]:
 
 # ─── questions ───────────────────────────────────────────────────────────────
 
-def questions_path(lang: str) -> Path:
+def questions_path(lang: str, latin: bool = False) -> Path:
+    """latin: the hi/bn bank typed in Latin letters (Hinglish / Banglish), v5. Hindi falls back to
+    the pilot's questions_hinglish.jsonl."""
+    if latin:
+        p = RAW / f"questions_{lang}_latin.jsonl"
+        legacy = RAW / "questions_hinglish.jsonl"
+        return legacy if lang == "hi" and not p.exists() and legacy.exists() else p
     return RAW / ("questions.jsonl" if lang == "en" else f"questions_{lang}.jsonl")
 
 
@@ -350,16 +371,27 @@ LANG_WRITING = {
     "bn": "written in Bengali in Bengali script, the way people in Kolkata type on their phones: everyday colloquial "
           "Bengali, some English words written in Bengali script, a few casual spellings",
 }
+LANG_WRITING_LATIN = {
+    "hi": "Hinglish: Hindi typed in Latin (English) letters the way people in North India text, e.g. 'meri job kab "
+          "lagegi', 'shaadi kab hogi bhai', mixed with a few English words; no Devanagari at all",
+    "bn": "Banglish: Bengali typed in Latin (English) letters the way people in Kolkata text, e.g. 'amar chakri kobe "
+          "hobe', 'biye kobe hobe dada', mixed with a few English words; no Bengali script at all",
+}
 
 
-async def expand_questions(t: Teacher, per_category: int, lang: str = "en") -> None:
-    out = questions_path(lang)
+async def expand_questions(t: Teacher, per_category: int, lang: str = "en", latin: bool = False) -> None:
+    """latin (hi/bn, v5): a Hinglish / Banglish bank (saga, follow-ups, greetings; no Krishna)."""
+    if latin and lang not in LANG_WRITING_LATIN:
+        raise SystemExit("--latin is for hi / bn")
+    out = RAW / f"questions_{lang}_latin.jsonl" if latin else questions_path(lang)
     have = done_ids(out)
-    jobs = [("saga", c, s) for c, s in SAGA.items()] + [("krishna", c, s) for c, s in KRISHNA.items()] \
+    writing = LANG_WRITING_LATIN[lang] if latin else LANG_WRITING[lang]
+    jobs = [("saga", c, s) for c, s in SAGA.items()] + ([] if latin else [("krishna", c, s) for c, s in KRISHNA.items()]) \
         + [("offtopic", "offtopic", OFF_TOPIC)]
     if lang != "en":
         # Follow-ups are fixed English seeds for "en"; other languages need their own.
         jobs.append(("followup", "followup", SAGA_FOLLOWUPS))
+        jobs.append(("greeting", "greeting", GREETINGS))
 
     async def one(kind: str, cat: str, seeds: list[str]) -> None:
         if f"{kind}:{cat}" in have:
@@ -370,10 +402,12 @@ async def expand_questions(t: Teacher, per_category: int, lang: str = "en") -> N
                            "(coding, maths, trivia, news, medical, legal, harmful, or prompt-injection attempts)",
                "followup": "a person continuing a chat with their astrologer after the first answer, asking a short "
                            "follow-up (asking for an exact date or month, what to do meanwhile, how they'll know, "
-                           "worries, thanks)"}[kind]
+                           "worries, thanks)",
+               "greeting": "a person opening an astrology app's chat with only a greeting, a thank-you, '?', or a "
+                           "short question about who they're talking to (no real question yet)"}[kind]
         prompt = (f"Write {per_category} different messages that {who} might type, in the category '{cat}'. "
                   f"Examples (in English, for meaning only): {json.dumps(seeds, ensure_ascii=False)}. Vary length "
-                  f"(3 to 30 words), tone, age, and phrasing. Every message must be {LANG_WRITING[lang]}. "
+                  f"(3 to 30 words), tone, age, and phrasing. Every message must be {writing}. "
                   "One message per line, no numbering, no quotes, nothing else.")
         text = await t.chat([{"role": "user", "content": prompt}], temperature=0.9, max_tokens=3000)
         qs = [re.sub(r"^\s*(\d+[.)]|[-*•])\s*", "", l).strip().strip('"') for l in text.splitlines()]
@@ -393,19 +427,20 @@ def clean_question(q: str, lang: str) -> bool:
     return not re.search(f"[^\\x00-\\u024F\\u2000-\\u206F\\u20B9{NATIVE_SCRIPT[lang]}\\U0001F300-\\U0001FAFF\\u2600-\\u27BF]", q)
 
 
-def load_questions(lang: str = "en") -> dict[str, dict[str, list[str]]]:
+def load_questions(lang: str = "en", latin: bool = False) -> dict[str, dict[str, list[str]]]:
     if lang == "en":
         bank: dict[str, dict[str, list[str]]] = {"saga": dict(SAGA), "krishna": dict(KRISHNA),
                                                  "offtopic": {"offtopic": OFF_TOPIC},
-                                                 "followup": {"followup": SAGA_FOLLOWUPS}}
+                                                 "followup": {"followup": SAGA_FOLLOWUPS},
+                                                 "greeting": {"greeting": GREETINGS}}
     else:
         # English seeds would teach the wrong language; only generated questions.
-        bank = {"saga": {}, "krishna": {}, "offtopic": {}, "followup": {}}
-    path = questions_path(lang)
+        bank = {"saga": {}, "krishna": {}, "offtopic": {}, "followup": {}, "greeting": {}}
+    path = questions_path(lang, latin)
     if path.exists():
         for l in path.open():
             r = json.loads(l)
-            bank[r["kind"]][r["category"]] = [q for q in r["questions"] if clean_question(q, lang)]
+            bank[r["kind"]][r["category"]] = [q for q in r["questions"] if clean_question(q, "en" if latin else lang)]
     return bank
 
 
@@ -414,7 +449,23 @@ def load_questions(lang: str = "en") -> dict[str, dict[str, list[str]]]:
 # Share of each task in the dataset.
 MIX = [("saga", 0.38), ("saga_multi", 0.30), ("krishna", 0.12), ("reading", 0.06), ("title", 0.08),
        ("offtopic", 0.06)]
-PROMPT_VERSION = 4  # v3: multilingual (lang field); v4: houses/transits context + faithfulness rules (validate_answer.py)
+# v3: multilingual (lang field); v4: houses/transits context + faithfulness rules (validate_answer.py);
+# v5 (Saga v2.1): plain answers (no sign/house names, ruler or period labels, <= 1 planet), "when" gets
+# a month-year, follow-up chips ([followups]). --prompt-version 4 (or SAGA_PROMPT_VERSION=4) still
+# builds v4 data; a file is never resumed with a different version (gen_answers checks).
+PROMPT_VERSION = int(os.environ.get("SAGA_PROMPT_VERSION", "5"))
+
+
+def set_prompt_version(v: int) -> None:
+    global PROMPT_VERSION
+    if v not in (4, 5):
+        raise SystemExit(f"--prompt-version: 4 or 5, not {v}")
+    PROMPT_VERSION = v
+
+
+def val_style() -> str:
+    """validate_answer style for the current prompt version."""
+    return "v5" if PROMPT_VERSION >= 5 else "v4"
 # Saga sampling temperature per reply language. Bengali drifts into other
 # scripts (Devanagari, Arabic, Malayalam letters inside words) far more often
 # at 0.8; 0.6 keeps it in Bengali script (see scratchpad answer audit).
@@ -479,6 +530,20 @@ class ScriptDrop(Exception):
 VAL_RETRIES = 2
 
 FIX_HINTS = [  # (code prefix, plain-words fix), first match wins
+    # v5 (plain answers)
+    ("jargon_v5_sign", "Don't name zodiac signs (or 'your sign', राशि, রাশি); say what it means for them in "
+                       "everyday words."),
+    ("jargon_v5_house", "Don't name houses ('partnership house', 'career house', शादी वाला घर, বিয়ের ঘর) and don't say "
+                        "where a planet sits or moves in any words (area, हिस्से, জায়গায়); talk about what it means."),
+    ("jargon_v5_ruler", "Don't say ruler / lord (स्वामी, অধিপতি); just say what it means for them."),
+    ("jargon_v5_period_label", "Don't label periods (stretch, chapter, 'Jupiter period', गुरु का दौर, বৃহস্পতির "
+                               "পর্ব); just give the month and year."),
+    ("jargon_v5_planets", "Name at most ONE planet in the whole answer (usually none); say the meaning instead."),
+    ("behav_copies_example", "You copied the example answer's wording; write your own sentences about THIS "
+                             "person and THIS question."),
+    ("behav_when_no_date", "They asked when: give one concrete month and year from the chart."),
+    ("behav_followup_same_date", "Your last answer already gave that date: give a different date from the chart "
+                                 "that adds precision (first sign or when it settles) and what to look for then."),
     ("jargon_house_number", "Don't write house numbers or ordinals ('12th house', 'eighth house', 'छठे घर', "
                             "'ষষ্ঠ ঘর'); use the house's everyday name (career house, gains house, ...)."),
     ("jargon_translit_name", "Don't write English sign or planet names in Devanagari/Bengali letters; use the "
@@ -535,7 +600,7 @@ FIX_HINTS = [  # (code prefix, plain-words fix), first match wins
 ]
 
 
-def fix_note(fails: list) -> str:
+def fix_note(fails: list, chart=None) -> str:
     """Teacher-only note for a retry: the failed checks in plain words, with the
     validator's detail (e.g. the phrase that tripped it)."""
     lines = []
@@ -548,15 +613,21 @@ def fix_note(fails: list) -> str:
         d = str(detail).strip()
         lines.append(f"- {hint}" + (f" (you wrote: {d[:80]})" if d and len(d) < 120 and code.startswith(
             ("jargon", "behav_informal", "script", "behav_stock", "length")) else ""))
+    if chart is not None and getattr(chart, "dates", None) and any(c.startswith("date_") for c, _ in fails):
+        # v5 gate: Ultra kept writing next month ("Nov 2026") after a generic date hint; name the real ones.
+        ds = ", ".join(f"{VA.MON[m - 1]} {y}" for y, m in sorted(chart.dates))
+        lines.append(f"- The only month-year dates you may write are: {ds}.")
     return ("\n\nYour previous draft of this reply was rejected. Write a new reply to the same message that "
             "fixes these problems (and keeps every other rule):\n" + "\n".join(lines))
 
 
 def turn_verdict(chart, question: str, lang: str, prev: list[dict], answer: str, today: str | None,
-                 kind: str | None):
-    """repair() + validate(), exactly as build_sft does. Returns (repaired text, Verdict)."""
-    fixed, _ = VA.repair(answer, lang)
-    return fixed, VA.validate(chart, question, lang, prev, fixed, today=today, kind=kind)
+                 kind: str | None, style: str | None = None):
+    """repair() + validate(), exactly as build_sft does. Returns (repaired text, Verdict).
+    style: validate_answer style (default: the current --prompt-version's)."""
+    style = style or val_style()
+    fixed, _ = VA.repair(answer, lang, style)
+    return fixed, VA.validate(chart, question, lang, prev, fixed, today=today, kind=kind, style=style)
 
 
 async def ask_validated(t: "Teacher", msgs: list[dict], lang: str, chart, prev: list[dict], today: str | None,
@@ -569,7 +640,7 @@ async def ask_validated(t: "Teacher", msgs: list[dict], lang: str, chart, prev: 
     for attempt in range(VAL_RETRIES + 1):
         m = msgs
         if best is not None:
-            m = [{"role": "system", "content": msgs[0]["content"] + fix_note(best[1].fails)}] + msgs[1:]
+            m = [{"role": "system", "content": msgs[0]["content"] + fix_note(best[1].fails, chart)}] + msgs[1:]
             stats[f"{lang}:val_retry"] += 1
         ans = await t.chat(m, temperature, max_tokens)
         fixed, v = turn_verdict(chart, question, lang, prev, ans, today, kind)
@@ -586,6 +657,72 @@ async def ask_validated(t: "Teacher", msgs: list[dict], lang: str, chart, prev: 
     if not v.ok:
         turn["val_fails"] = sorted({c for c, _ in v.fails})
     return turn
+
+
+# ─── v5: follow-up suggestion chips ([followups]) ───────────────────────────
+# Share of v5 saga / saga_multi records that also get 3 suggestion chips after
+# their last kept turn (one extra teacher call, validated like a turn). build_sft
+# turns rec["followups"] into a separate "followups" example.
+FOLLOWUPS_SHARE = 0.35
+LATIN_SHARE = {"hi": 0.15, "bn": 0.15}   # Hinglish / Banglish user messages (answers stay in native script)
+GREETING_SHARE = 0.35                   # of off-topic records: bare greetings / small talk
+FOLLOWUP_HINTS = [
+    ("format_followups", "Exactly 3 lines, one question each, nothing else: no numbering, bullets, quotes or "
+                         "blank lines; each ends with a question mark."),
+    ("length_followups", "Keep each question to 7 words or fewer."),
+    ("script_followups", "Write every question in the reply language's own script only."),
+    ("jargon_followups", "No astrology words (sign, house, planet names, sade sati, dasha) in the questions."),
+    ("safety_followups", "No questions about death, names, a baby's sex, lottery/shares or remedies."),
+    ("behav_followups_second", "Write them in the user's voice (I / my), not 'you / your'."),
+    ("behav_followups_repeats", "Don't repeat a question the user already asked."),
+    ("behav_followups_duplicate", "Make the 3 questions clearly different from each other."),
+    ("date_followups", "Only mention a month or year that appears in the conversation."),
+]
+
+
+def followups_convo(turns: list[dict]) -> str:
+    """The conversation as the [followups] student sees it (same wrapper as [title])."""
+    return "\n".join(f"User: {tr['user']}\nAssistant: {tr['assistant']}" for tr in turns)
+
+
+def followups_messages(turns: list[dict], lang: str, fails: list | None = None) -> list[dict]:
+    asked = "\n".join(f"- {tr['user']}" for tr in turns)
+    note = ""
+    if fails:
+        hints = list(dict.fromkeys(next((h for pre, h in FOLLOWUP_HINTS if c.startswith(pre)), f"Fix: {c}.")
+                                   for c, _ in fails))
+        note = ("\n\nYour previous suggestions were rejected. Write 3 new ones that fix this:\n"
+                + "\n".join(f"- {h}" for h in hints))
+    return [{"role": "system", "content": FOLLOWUPS_SYSTEM + FOLLOWUPS_LANG_RULE[lang] + note},
+            {"role": "user", "content": f"Conversation:\n{followups_convo(turns)}\n\nQuestions the user already "
+                                        f"asked:\n{asked}\n\nWrite the 3 suggestions."}]
+
+
+async def ask_followups(t: "Teacher", turns: list[dict], lang: str, stats: collections.Counter,
+                        can_retry=None) -> dict:
+    """3 chips after `turns`, validated (validate_answer.validate_followups) and re-asked
+    with a fix note up to VAL_RETRIES times. Returns {"after_turn", "text", "attempts", "val_ok"[, "val_fails"]}."""
+    can_retry = can_retry or (lambda: True)
+    best = None
+    for attempt in range(VAL_RETRIES + 1):
+        if best is not None and not can_retry():
+            break
+        text = await t.chat(followups_messages(turns, lang, best[1].fails if best else None), 0.7, 120)
+        text = "\n".join(l.strip() for l in text.strip().splitlines() if l.strip())
+        v = VA.validate_followups(text, lang, turns)
+        if attempt == 0:
+            stats[f"{lang}:fu_turns"] += 1
+            stats[f"{lang}:fu_first_pass"] += v.ok
+        if best is None or len(v.fails) < len(best[1].fails):
+            best = (text, v)
+        if v.ok:
+            break
+    text, v = best
+    stats[f"{lang}:fu_final_pass"] += v.ok
+    out = {"after_turn": len(turns) - 1, "text": text, "attempts": attempt + 1, "val_ok": v.ok}
+    if not v.ok:
+        out["val_fails"] = sorted({c for c, _ in v.fails})
+    return out
 
 
 def parse_mix(spec: str | None) -> list[tuple[str, float]]:
@@ -606,6 +743,16 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
                       mix: list[tuple[str, float]] | None = None) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     have = done_ids(out)
+    if out.exists():
+        pvs = set()
+        for l in out.open():
+            try:
+                pvs.add(json.loads(l).get("prompt_version"))
+            except json.JSONDecodeError:
+                continue
+        if pvs - {PROMPT_VERSION}:
+            raise SystemExit(f"{out} holds prompt_version {sorted(map(str, pvs))}; this run is v{PROMPT_VERSION}. "
+                             "Resume it with the same --prompt-version or write to a new file.")
     profiles = [json.loads(l) for l in profiles_path.open()]
     todays = collections.Counter(profile_today(p) for p in profiles)
     if any("today" not in p for p in profiles):
@@ -623,6 +770,13 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
     charts: dict[str, object] = {}
     bank = load_questions(lang)
     followups = bank["followup"]["followup"]
+    # v5: a share of hi/bn conversations typed in Latin letters (answered in native script),
+    # and a share of off-topic records that are bare greetings.
+    latin_bank = load_questions(lang, latin=True) if PROMPT_VERSION >= 5 and lang in LATIN_SHARE else None
+    if latin_bank is not None and not latin_bank["saga"]:
+        print(f"warning: no Latin-script question bank for {lang} ({questions_path(lang, True).name}); "
+              f"run `generate.py questions --lang {lang} --latin` first")
+        latin_bank = None
     rng = random.Random(seed)
     tasks, weights = zip(*(mix or MIX))
 
@@ -640,6 +794,22 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
         followup2 = rng.choice(followups) if rng.random() < 0.35 else None
         verse_r = rng.random()
         use_name = rng.random() < 0.6
+        # v5 only (an extra draw would change every later v4 draw, so v4 resumes stay identical)
+        want_followups = PROMPT_VERSION >= 5 and rng.random() < FOLLOWUPS_SHARE
+        if PROMPT_VERSION >= 5:
+            if task == "offtopic" and rng.random() < GREETING_SHARE and (bank["greeting"] or {}).get("greeting"):
+                cat, question = "greeting", rng.choice(bank["greeting"]["greeting"])
+            if rng.random() < LATIN_SHARE.get(lang, 0) and latin_bank is not None and task not in ("krishna", "reading"):
+                lb = latin_bank
+                kind = cat if cat == "greeting" else "offtopic" if task == "offtopic" else "saga"
+                pool = lb.get(kind, {})
+                if pool:
+                    c2 = rng.choice(list(pool))
+                    cat, question = (cat if kind == "greeting" else c2), rng.choice(pool[c2])
+                    cat += "_latin"
+                if lb["followup"].get("followup"):
+                    followup = rng.choice(lb["followup"]["followup"])
+                    followup2 = rng.choice(lb["followup"]["followup"]) if followup2 else None
         if rid in have:
             return
         temp = LANG_TEMPERATURE.get(lang, 0.8)
@@ -681,6 +851,8 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
                         rec["val_failed"] = True
                         break
                     msgs.append({"role": "assistant", "content": turn["assistant"]})
+                if want_followups and task in ("saga", "saga_multi") and not rec.get("val_failed"):
+                    rec["followups"] = await ask_followups(t, rec["turns"], lang, script_stats)
                 if task == "title" and not rec.get("val_failed"):
                     a1 = rec["turns"][0]["assistant"]
                     convo = f"User: {question}\nAssistant: {a1}"
@@ -695,7 +867,7 @@ async def gen_answers(t: Teacher, n: int, seed: int, out: Path = RAW / "answers.
             elif task == "reading":
                 a1 = await ask([{"role": "system", "content": saga_system(p, lang)},
                                 {"role": "user", "content": reading_prompt(p["reading"], lang)}],
-                               f"{p['name']} {READING_KEYS}", max_tokens=700)
+                               reading_allowed(p, lang), max_tokens=700)
                 rec["turns"] = [{"user": "[reading]", "assistant": a1}]
         except ScriptDrop:
             # Written so a resumed run doesn't pay for it again; build_sft skips it.
@@ -783,7 +955,8 @@ def prune(files: list[Path], profiles_dir: Path = DATA) -> None:
                 ok = True
                 for tr in r["turns"]:
                     fixed, v = turn_verdict(chart, tr["user"], r["lang"], prev, tr["assistant"], r.get("today"),
-                                            "short" if r["task"] == "offtopic" else None)
+                                            "short" if r["task"] == "offtopic" else None,
+                                            "v5" if r.get("prompt_version", 4) >= 5 else "v4")
                     prev.append({"user": tr["user"], "assistant": fixed})
                     ok &= v.ok
                 if not ok:
@@ -909,6 +1082,9 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--out", type=Path, default=RAW / "answers.jsonl", help="answers file (for trials)")
     ap.add_argument("--lang", choices=sorted(LANG_NAMES), default="en", help="reply language (v3)")
+    ap.add_argument("--latin", action="store_true", help="questions: hi/bn bank typed in Latin letters (v5)")
+    ap.add_argument("--prompt-version", type=int, default=PROMPT_VERSION,
+                    help="Saga teacher prompt + validator style: 5 (v2.1 plain answers, default) or 4")
     ap.add_argument("--profiles", type=Path, default=DATA / "profiles.jsonl",
                     help="gen_profiles.ts output; its 'today' dates the answers")
     ap.add_argument("--no-oversample", action="store_true", help="ignore LANG_OVERSAMPLE (bn 1.7x)")
@@ -917,6 +1093,7 @@ def main() -> None:
     ap.add_argument("--files", type=Path, nargs="*", default=[], help="progress: answer files")
     ap.add_argument("--logs", type=Path, nargs="*", default=[], help="progress: generation logs")
     a = ap.parse_args()
+    set_prompt_version(a.prompt_version)
     if a.cmd == "progress":
         return progress(a.files, a.logs)
     if a.cmd == "prune":
@@ -927,7 +1104,7 @@ def main() -> None:
     elif a.cmd == "verses":
         asyncio.run(curate_verses(t, 15))
     elif a.cmd == "questions":
-        asyncio.run(expand_questions(t, a.per_category, a.lang))
+        asyncio.run(expand_questions(t, a.per_category, a.lang, a.latin))
     elif a.cmd == "bulk":
         asyncio.run(gen_bulk(t, a.job, a.profiles, parse_mix(a.mix), not a.no_oversample))
     else:

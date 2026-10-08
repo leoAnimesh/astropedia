@@ -37,17 +37,24 @@ def ctx_of(p: dict) -> str:
     return p["context"] + "\n" + p["timing"]
 
 
+def style_of(rec: dict) -> str:
+    """validate_answer style: records from --prompt-version 5 are checked as v5 (older ones carry no version)."""
+    return "v5" if rec.get("prompt_version", 4) >= 5 else "v4"
+
+
 def check(rec: dict, profiles: dict) -> list:
     p = profiles[rec["profile"]]
     out = []
     for i, tr in enumerate(rec["turns"]):
-        v = validate(ctx_of(p), tr["user"], rec["lang"], rec["turns"][:i], tr["assistant"], today=rec["today"])
+        v = validate(ctx_of(p), tr["user"], rec["lang"], rec["turns"][:i], tr["assistant"], today=rec["today"],
+                     style=style_of(rec))
         out.append(v)
     return out
 
 
 async def run(a) -> None:
     import generate as G  # needs NVIDIA_API_KEY in ml/.env (never printed)
+    G.set_prompt_version(a.prompt_version)
     profiles = load_profiles(a.profiles)
     qs = json.loads((DATA / "eval_questions.json").read_text())
     skip = set(filter(None, a.skip.split(",")))
@@ -55,6 +62,8 @@ async def run(a) -> None:
         failed = {r["id"] for r in map(json.loads, a.rerun_failing.open()) if not r["ok"]}
         qs = [q for q in qs if q["id"] in failed]
     qs = [q for q in qs if q["id"] not in skip]
+    if a.lang:
+        qs = [q for q in qs if q["lang"] in a.lang.split(",")]
     if a.only:
         only = set(a.only.split(","))
         qs = [q for q in qs if q["id"] in only or q["id"].rsplit("_", 1)[0] in only
@@ -95,7 +104,7 @@ async def run(a) -> None:
                 turns.append({"user": user, "assistant": ans, "calls": t.started - before, "script_ok": script_ok})
             msgs.append({"role": "assistant", "content": ans})
         rec = {"id": q["id"], "lang": q["lang"], "cat": q["cat"], "profile": pid, "today": G.profile_today(p),
-               "turns": turns}
+               "turns": turns, "prompt_version": G.PROMPT_VERSION, "teacher": a.model}
         vs = check(rec, profiles)
         rec["ok"] = all(v.ok for v in vs)
         rec["verdicts"] = [{"ok": v.ok, "fails": v.fails, "warns": v.warns, "meta": v.meta} for v in vs]
@@ -132,7 +141,7 @@ async def bulk_turn(t, msgs: list, lang: str, p: dict, prev: list, temp: float, 
         if best is not None:
             if not can_retry():
                 break
-            m = [{"role": "system", "content": msgs[0]["content"] + G.fix_note(best[1].fails)}] + msgs[1:]
+            m = [{"role": "system", "content": msgs[0]["content"] + G.fix_note(best[1].fails, chart)}] + msgs[1:]
             stats[f"{lang}:val_retry"] += 1
         ans = await t.chat(m, temp, 400)
         fixed, v = G.turn_verdict(chart, question, lang, prev, ans, G.profile_today(p), None)
@@ -202,6 +211,8 @@ def main() -> None:
     ap.add_argument("--bulk-validate", action="store_true",
                     help="per turn: repair + validate + up to 2 re-asks with a fix note, like generate.py bulk")
     ap.add_argument("--lang-temp", action="store_true", help="use generate.LANG_TEMPERATURE (bn 0.6) instead of 0.8")
+    ap.add_argument("--prompt-version", type=int, default=5, help="Saga teacher prompt (5 = v2.1 plain, 4 = v2)")
+    ap.add_argument("--lang", default="", help="only these languages, e.g. 'hi,bn'")
     a = ap.parse_args()
     if a.cmd == "run":
         asyncio.run(run(a))

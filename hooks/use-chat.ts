@@ -12,6 +12,7 @@ import {
 } from '@/utils/database';
 import { streamAI, askThreadTitle, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
 import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
+import { isModelReady, waitForModelReady } from '@/utils/model-download';
 import { GITA_QUOTE_START } from '@/utils/gita';
 import i18n from '@/utils/i18n';
 
@@ -116,7 +117,7 @@ async function generateThreadTitle(
 /** True for the error bubbles sendMessage adds (any app language). */
 export function isChatErrorMessage(m: Pick<Message, 'role' | 'content'>): boolean {
   if (m.role !== 'assistant') return false;
-  return ['chat:errors.generic', 'chat:errors.modelLoad'].some((key) =>
+  return ['chat:errors.generic', 'chat:errors.modelLoad', 'chat:errors.modelPreparing'].some((key) =>
     (['en', 'hi', 'bn'] as const).some((lng) => i18n.t(key, { lng, postProcess: [] }) === m.content || i18n.t(key, { lng }) === m.content),
   ) || m.content === "I couldn't load the on-device model right now. Try again in a moment.";
 }
@@ -195,7 +196,9 @@ export function useChat(
     // The actual readiness check: state === 'ready' AND module loaded in RAM.
     // (getLLMState() alone can say 'ready' as soon as the model is on disk —
     // but the module may still be loading. ensureLocalLLM awaits that.)
-    if (!isLLMReady()) {
+    // While the model is still downloading this is skipped: deterministic
+    // replies don't need it, and a model reply waits for the download below.
+    if (!isLLMReady() && isModelReady()) {
       storeSetStatus(threadId, 'loading-model');
       // Wait up to 60s for the disk-cached model to fully load. ensureLocalLLM
       // resolves once isLLMReady() will return true.
@@ -235,7 +238,26 @@ export function useChat(
         role: m.role as 'user' | 'assistant',
         content: toEnglish[m.content] ?? m.content,
       }));
-      const { stream, tier } = await streamAI({ profile, history: recentHistory, userMessage: text.trim(), mode, userName });
+      const request = { profile, history: recentHistory, userMessage: text.trim(), mode, userName };
+      let { stream, tier } = await streamAI(request);
+
+      // The model is still downloading (utils/model-download.ts): wait for
+      // it with the "waking" status; the inline pill shows the progress.
+      if (tier === 'pending' && !isModelReady()) {
+        for await (const _ of stream) { /* drain */ }
+        storeSetStatus(threadId, 'loading-model');
+        const ready = (await waitForModelReady()) && (await ensureLocalLLM(60_000));
+        if (!ready) {
+          // Shown only (not saved), like the generic error.
+          storeAppend(threadId, { ...buildAiMsgBase(threadId), content: i18n.t('chat:errors.modelPreparing') });
+          storeClearStreaming(threadId);
+          storeSetStatus(threadId, 'idle');
+          storeSetTyping(threadId, false);
+          return;
+        }
+        storeSetStatus(threadId, 'thinking');
+        ({ stream, tier } = await streamAI(request));
+      }
 
       // Defensive: if streamAI returned the 'pending' offline-fallback stream,
       // the model failed to actually run. Don't display that text as a chat

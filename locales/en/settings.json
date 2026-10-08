@@ -32,6 +32,43 @@
     "archived": "Archived chats",
     "saved": "Saved answers"
   },
+  "data": {
+    "section": "Your data",
+    "export": "Export backup",
+    "exportSub": "Save your profiles, chats, journal and settings to a file",
+    "restore": "Restore from backup",
+    "restoreSub": "Bring back data from a backup file",
+    "reset": "Reset all data",
+    "resetSub": "Delete every profile, chat and setting on this device"
+  },
+  "backup": {
+    "shareTitle": "Save Astropedia backup",
+    "doneTitle": "Backup ready",
+    "doneMessage": "Keep the file somewhere private. It has everyone's birth details and your chats, so only share it with people you trust.",
+    "failedTitle": "Couldn't make a backup",
+    "failedMessage": "Something went wrong while saving your data to a file. Please try again."
+  },
+  "restore": {
+    "confirmTitle": "Restore this backup?",
+    "madeOn": "Backup from {{date}}",
+    "counts": "Profiles: {{profiles}} · Chats: {{chats}} · Journal entries: {{journal}}",
+    "replaceWarning": "This replaces all data on this device, including anything added after the backup was made. It can't be undone.",
+    "cancel": "Cancel",
+    "confirm": "Restore",
+    "doneTitle": "Backup restored",
+    "doneMessage": "Your profiles, chats, journal and settings are back.",
+    "notificationsBlocked": "Notifications are still off because Astropedia isn't allowed to send them. You can allow them in your phone settings.",
+    "errorTitle": "Can't restore",
+    "errors": {
+      "notJson": "This file isn't an Astropedia backup. Pick the file whose name starts with astropedia-backup.",
+      "notAstropedia": "This file wasn't made by Astropedia, so it can't be restored.",
+      "newerSchema": "This backup was made by a newer version of Astropedia. Update the app, then try again.",
+      "invalid": "This backup file is damaged or incomplete. Nothing on this device was changed.",
+      "empty": "This backup has no profiles in it, so there's nothing to restore.",
+      "readFailed": "Couldn't open that file. Please try again.",
+      "failed": "Something went wrong while restoring. Your existing data hasn't been changed."
+    }
+  },
   "dev": {
     "section": "Dev",
     "clearCache": "Clear AI cache",
@@ -40,9 +77,8 @@
     "clearedMessage": "Horoscope, chart readings, and chat cache will regenerate on next open."
   },
   "reset": {
-    "button": "Reset all data",
     "title": "Reset all data",
-    "message": "This will delete all profiles, chats, and settings. Cannot be undone.",
+    "message": "This deletes every profile, chat, journal entry and setting on this device. It can't be undone. If you might want them back, export a backup first.",
     "cancel": "Cancel",
     "confirm": "Reset"
   }

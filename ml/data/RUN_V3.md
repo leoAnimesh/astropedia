@@ -89,3 +89,102 @@ scripts/export_astro_gemma.sh <hf_dir> astro_gemma_v2
 - **utils/local-llm.ts:** `MODEL_VERSION = 'astro-gemma-v2'` (Android re-copies the model), `CONTEXT_VERSION = 2` → v2 chart context, reply cap 260, `CONTEXT_WINDOW` 2048, budget-aware Saga history.
 - **App guards (CONTEXT_VERSION 2 only; utils/reply-guards.ts):** follow-up repetition retry (4-gram/sentence overlap ≥ 0.5 with the previous answer → one retry at T=0.6), hi/bn script retry (< 40% native letters), Bengali reading seeded with `SUN: স্বভাবে ` (retry `SUN: তিনি `, Hindi retry `SUN: स्वभाव से `, then English fallback), canned greeting for pure greetings (`chat:greeting.*`). Chart-reading cache key bumped to `chart_reading_v3_*` so v1 readings regenerate.
 - Eval: scratchpad `v2-eval.md`. Next data pass: Bengali readings (~400+), Hinglish/Banglish questions with native answers, follow-ups that need new content, short greetings.
+
+## v2.1 (prompt v5: plain answers + follow-up chips) — LEAN run started 2026-10-06
+
+Why: user feedback on v2 — replies read like a chart dump ("your Moon sits in Aquarius in the partnership house … its ruler Saturn in your career house … the Jupiter chapter runs until March 2031"); follow-ups repeat the previous answer; no suggestion chips. v5 answers lead with the human meaning: at most one chart fact said as everyday meaning, no sign names, no house names (in any words: "work area", "… वाले हिस्से", "… জায়গায়"), no ruler/lord, no period labels (stretch, chapter, "Jupiter period", गुरु का दौर, বৃহস্পতির পর্ব), at most one planet name, a concrete month-year for "when", and a different date for a "when exactly?" follow-up.
+
+What changed in code (no API needed to review):
+- `teacher_prompts.py`: `SAGA_SYSTEM_V5`, `LANG_RULES_V5` (hi/bn), `FOLLOWUPS_SYSTEM` + `FOLLOWUPS_LANG_RULE`, `saga_prompts(version)`. v4 prompts untouched.
+- `generate.py`: `--prompt-version 5` (default; `4` or `SAGA_PROMPT_VERSION=4` rebuilds v4). A file is never resumed with a different prompt version. v5-only draws (v4 resumes stay identical): 35% of saga/saga_multi records also get 3 follow-up chips (`rec["followups"]`, validated + up to 2 re-asks); hi/bn: 15% of conversations typed in Latin letters (Hinglish/Banglish banks, answered in native script); 35% of off-topic records are bare greetings. `questions --latin` builds the Hinglish/Banglish bank (hi falls back to `raw/questions_hinglish.jsonl`).
+- `validate_answer.py`: `validate(..., style="v5")` = every v4 check + `check_plain_v5` (jargon_v5_sign / house / ruler / period_label / planets, behav_when_no_date, behav_followup_same_date, behav_copies_example) + 90-word cap + next month is not a free date. `validate_followups()` (exactly 3 lines, ≤ 8 words (hi 9), "?", script, no astro words, no death/name/baby-sex/remedy topics, no "your", not a repeat of an asked question incl. Hinglish/Banglish ↔ native via consonant skeletons, no duplicates, dates only from the conversation). `plain_stats()` counts chart talk for any answer. `--selftest` covers both.
+- `build_sft.py`: v5 records validated with style v5; `rec["followups"]` becomes a `followups` example: system `[followups]` (+ `Lang: xx`), user = `User: …\nAssistant: …` per turn (same wrapper as `[title]`), model = exactly 3 lines. The app will need the same prompt and a 3-line parser (not done: no app changes in this step).
+- `eval_saga.py`: `--prompt-version`, `--lang`; records carry `prompt_version` and are revalidated with the matching style.
+
+Sample gate (2026-10-06; scratchpad `v21-samples.md`): after bulk-style retries v5 passes the v5 rules at en 17/17, hi 12/16, bn 14/16 (first try 71% / 69% / 33%); v4 answers to the same questions pass 1/43 under v5 rules (≈4 chart-jargon terms and ≈3.7 planet names per answer). v4 raw data under v5 rules: saga/saga_multi/title 0–1%, offtopic 15–24%. So v4 Saga-family data can't be mixed in: it is exactly the style being removed.
+
+### Recommendation
+Regenerate the whole Saga family (saga, saga_multi, offtopic/greetings) in v5; add follow-up chips; reuse what doesn't depend on the answer style:
+- **Reuse:** Krishna (v3, as in v2), readings en/hi (v4 + v3), titles (v4; the title is a 2–4-word label, its input being a v4-style answer is a small shift — optionally regenerate en titles from v5 turns with Super, cheap).
+- **New:** bn readings ×450 (Ultra; the v2 model answered bn readings in English 9–11/12), Banglish question bank, hi/bn greeting banks.
+- **Do not mix** v4 saga/saga_multi/offtopic into v2.1 SFT.
+
+### Counts and teachers (raw records; kept ≈ 90% en/hi, ≈ 80% bn)
+
+| job | teacher | records | mix | ≈ teacher calls |
+|---|---|---|---|---|
+| en | Nemotron 3 Super (`--rpm 30`) | 6,000 on `profiles_v2_dates.jsonl` (dated 2025–2029) | saga .45, saga_multi .42, offtopic .08 (35% greetings), title .05 | ≈ 14k (≈ 1.35 calls/turn at 71% first pass + ≈ 2,000 chip calls) |
+| hi | Nemotron 3 Ultra | 2,000 on `profiles_v2_dates.jsonl` | saga .45, saga_multi .42, offtopic .13; 15% Hinglish | ≈ 5k (1.4 calls/turn) |
+| bn | Nemotron 3 Ultra | 2,000 (`--no-oversample`) + 450 readings | as hi; 15% Banglish | ≈ 7.5k (≈ 1.9 calls/turn at 33–40% first pass + script retries) |
+| question banks | Ultra | bn `--latin` (≈ 20), hi/bn greetings (2) | | ≈ 25 |
+
+Chips come out at ≈ 0.35 × kept saga-family records: en ≈ 1,900, hi ≈ 600, bn ≈ 550.
+
+### ETA at current NVIDIA rates
+- Super: 25–30 calls/min sustained, 0 errors in the sample gate (latency 1.6–3.7 s) → en ≈ 14k calls ≈ **8–10 h**.
+- Ultra: the v4 bulk run averaged ≈ 2.6 successful calls/min over 11 h (429/503 on most attempts). In today's gate it was worse: 503 "Service temporarily overloaded" on ≈ 70% of attempts, 6–490 s per successful call including backoff, ≈ 1 call/min with 3 jobs sharing it. hi + bn ≈ 12.5k calls → **≈ 3.3 days at 2.6/min, up to ≈ 8 days at 1/min**. Run hi and bn as one `bulk` (they share the Ultra limit), en in a separate process on Super.
+- Lean option if that is too slow: hi 1,200 + bn 1,200 (+ 450 bn readings) ≈ 7.5k Ultra calls ≈ 2 days at 2.6/min. Hindi/Bengali quality with Super is not an option (v4 test: hi 29→51%, bn 17→20% after retries).
+
+### Commands (when approved; nothing below has been run)
+```sh
+# from ml/; profiles: reuse profiles_v2_dates.jsonl (per-row today 2025..2029) for every language
+# 0. question banks (≈ 25 Ultra calls): greetings for hi/bn (only the new categories are generated), Banglish bank
+.venv/bin/python data/generate.py questions --lang hi --per-category 60 --model nvidia/nemotron-3-ultra-550b-a55b
+.venv/bin/python data/generate.py questions --lang bn --per-category 60 --model nvidia/nemotron-3-ultra-550b-a55b
+.venv/bin/python data/generate.py questions --lang bn --latin --per-category 60 --model nvidia/nemotron-3-ultra-550b-a55b
+# 1. en on Super
+nohup caffeinate -dimsu sh -c 'for pass in 1 2 3; do .venv/bin/python -u data/generate.py bulk --prompt-version 5 --model nvidia/nemotron-3-super-120b-a12b --profiles data/profiles_v2_dates.jsonl --mix saga=0.45,saga_multi=0.42,offtopic=0.08,title=0.05,krishna=0,reading=0 --concurrency 6 --rpm 30 --job en:6000:51:data/raw/answers_v5_en.jsonl; done' > out/gen_v5_en.log 2>&1 &
+# 2. hi + bn on Ultra (one process, shared limit); bn readings as their own job (reading-only mix)
+nohup caffeinate -dimsu sh -c 'for pass in 1 2 3 4; do .venv/bin/python -u data/generate.py bulk --prompt-version 5 --model nvidia/nemotron-3-ultra-550b-a55b --profiles data/profiles_v2_dates.jsonl --mix saga=0.45,saga_multi=0.42,offtopic=0.13,title=0,krishna=0,reading=0 --no-oversample --concurrency 8 --rpm 8 --job hi:2000:52:data/raw/answers_v5_hi.jsonl --job bn:2000:53:data/raw/answers_v5_bn.jsonl; done' > out/gen_v5_hibn.log 2>&1 &
+#    then: bulk --mix saga=0,saga_multi=0,offtopic=0,title=0,krishna=0,reading=1 --job bn:450:54:data/raw/answers_v5_bn_readings.jsonl
+# 3. SFT: v5 files + reused Krishna (v3) + readings/titles (v4/v3)
+.venv/bin/python data/build_sft.py --raw data/raw/answers_v5_{en,hi,bn}.jsonl data/raw/answers_v5_bn_readings.jsonl --reuse data/raw/answers.jsonl data/raw/answers_ml.jsonl data/raw/pilot_ml.jsonl data/raw/pilot_ml2.jsonl data/raw/answers_v4_en.jsonl data/raw/answers_v4_en_dates.jsonl data/raw/answers_v4_hi.jsonl data/raw/answers_v4_bn.jsonl --reuse-tasks krishna,reading,title --date-share-cap 0.06,hi=0.12,bn=0.12 --out data/sft_v21
+```
+Open items before bulk: (1) the app side of `[followups]` (prompt + 3-line parse; chips UI) and the v5 reply cap (answers are now ≈ 50–70 words, so 260 tokens is ample); (2) relative-time phrases ("about 1 month from now") are not checked against Today; (3) v4 titles/readings in `--reuse` must be the v4-validated ones (build_sft already applies the v4 checks by their prompt_version).
+
+App side of `[followups]` (prepared, off): `utils/local-llm.ts` `MODEL_FOLLOWUPS = false` — **flip to true when bundling v2.1** (together with MODEL_VERSION; leave false for astro-gemma-v2, which never saw the task). `utils/follow-ups.ts` builds the prompt byte-for-byte as `student_followups_system` + `followups_convo` (last ≤ 3 turns, the reply's language), parses/validates the 3 lines like `validate_followups` (≤ 8 words, hi 9, ≤ 60 chars, "?", script, no astro words, no unsafe topics, no "your", no invented years, not a repeat of an asked question incl. Hinglish/Banglish skeletons, no duplicates); `utils/ai.ts` `suggestFollowUps` runs it at T=0.2, ≤ 48 new tokens (hi/bn 64), only when the model is already loaded. The chat shows rule-based chips at once and swaps in model chips (≥ 2 valid; rule-based chips fill the rest) with a short fade; the user's next message cancels the run; chips are cached per message id (MMKV `followups_v1_<id>`).
+
+### Launched 2026-10-06 (lean option)
+Status: `cd ml && .venv/bin/python scripts/gen_status.py --v5` (plain `gen_status.py` still shows the v4 run).
+- Banks (Ultra, ≈ 22 calls): `questions --lang hi|bn` added `greeting:greeting`; `questions --lang bn --latin` → `raw/questions_bn_latin.jsonl` (20 entries); `raw/questions_hi_latin.jsonl` = `questions_hinglish.jsonl` minus Krishna, plus `greeting:greeting` from `questions --lang hi --latin`. A few real questions were removed from the generated greeting lists by hand (e.g. 'शादी कब होगी?').
+- Profiles: `profiles_v2_dates.jsonl` for every job (per-row today 2025-01-01..2029-12-31, 1,487 distinct; 231 minors, 208 aged 60+, 444 asked about someone else, 592 without birth time, 120 without place, 347 southern hemisphere).
+- en: Super, `--rpm 28 --concurrency 6`, mix as in the table (incl. title .05), `--job en:6000:51:data/raw/answers_v5_en.jsonl`, log `out/gen_v5_en.log`, 3 resume passes.
+- hi + bn: one Ultra process, `--rpm 7 --concurrency 2 --no-oversample`, mix saga .45 / saga_multi .42 / offtopic .13, `--job hi:1200:52:data/raw/answers_v5_hi.jsonl --job bn:1200:53:data/raw/answers_v5_bn.jsonl`, log `out/gen_v5_hibn.log`, 4 passes.
+- bn readings: separate Ultra process, `--rpm 3 --concurrency 1 --no-oversample --mix …reading=1 --job bn:700:54:data/raw/answers_v5_bn_readings.jsonl`, log `out/gen_v5_bn_readings.log`, 4 passes. 700 indices because ≈ 35% are script drops (target ≈ 450 kept). Teacher-only `READING_NAME_RULE` (generate.py): the bn reading prompt asks for the name in Bengali script and a Latin-letter name now fails the script check (re-asked).
+- Account budget: 28 + 7 + 3 = 38 rpm. SFT command above: replace `answers_v5_bn_readings.jsonl` with `answers_v5_bn_readings.jsonl`.
+
+### v2.1 build (2026-10-08)
+build_sft as above but WITHOUT answers_v4_en_dates.jsonl in --reuse, then en reading/title downsampled (seed 7) to ~800/~950 to keep the v2 task balance: train 12411, val 660 (data/sft_v21). Log: out/build_sft_v21.log.
+
+## Shipped v2.1 (2026-10-08)
+
+- **Model:** `ml/out/astro_gemma_v21_8da8w.pte` → `assets/model/astro-gemma.pte`, and over the prebuilt native copies `ios/astropedia/astro-gemma.pte` and `android/app/src/main/assets/models/astro-gemma.pte`. md5 `1333982650092d4ab2e21c5109276318` (all three checked), 195,659,264 B. Same recipe and metadata as v2: 8da8w, context 2048, prefill chunk 511.
+- **Tokenizer:** unchanged (`astro-gemma-tokenizer.json`, md5 `56270e9ef1b419486193829a80f09df3`). Every .pte eval run used this file.
+- **utils/local-llm.ts:** `MODEL_VERSION = 'astro-gemma-v21'` (Android re-copies the model), `MODEL_FOLLOWUPS = true` (model-written chips, ≥ 2 valid in 97% of eval runs). `CONTEXT_VERSION` stays 2, reply cap stays 260, `CONTEXT_WINDOW` stays 2048.
+- **App guards** (`utils/reply-guards.ts`, wired in `utils/ai.ts`; Saga with CONTEXT_VERSION 2 only):
+  - **Canned replies, no model run.**
+    - Baby's-sex questions (en/hi/bn and Hinglish/Banglish) get a gentle decline: `chat:safety.childSex`. It says no chart can show this and that sex determination before birth isn't allowed in India.
+    - Partner name or initial questions get `chat:safety.partnerName`.
+    - Detection is `cannedQuestion`. Questions that only state a name, or that ask "what kind of boy", are not caught.
+  - **Countdown strip.** `stripCountdowns` removes clauses like "about N months from now", "यानी करीब N महीने में" and "মানে প্রায় N মাসের মধ্যে" (Western or native digits) and tidies the punctuation. The month-year stays. While streaming, the reply goes through `createSentenceFilter` one sentence at a time, so a countdown is never shown and then removed. A run-on of more than 240 characters is let through early. In the eval this caught 108 of 108.
+  - **Health and legal.** If the question is about health or medicine and the reply names no doctor, `chat:safety.doctor` is appended as its own paragraph. A legal question with no lawyer named gets `chat:safety.lawyer`. Detection is `missingAdvice`. On the 101-question set it flags exactly the 6 eval failures.
+  - **Current-month guard.** For a timing question (`needsDate`, `today` = the prompt's Today), a reply whose only date is the current month counts as failed (`dateStatus` = 'current'). It is held and retried once at T=0.6. The retry is kept only if it names a later date; otherwise the first reply is shown.
+  - **Kept from v2:**
+    - repeat retry
+    - hi/bn script retry
+    - the "when → needs a month or year" check
+    - the canned greeting
+  - **Reading:** `readingSeed('bn', 0)` = `''` (v2.1 is 12/12 Bengali unseeded). The script check and the retry seeds `SUN: তিনি ` / `SUN: स्वभाव से ` stay. The cache key is bumped to `chart_reading_v4_*` so v2 readings regenerate.
+  - **Strings:** `locales/{en,hi,bn}/chat.json` `safety.{childSex,partnerName,doctor,lawyer}`. The key sets are identical across the three languages.
+- **Rollback to v2:**
+  1. Copy `ml/out/astro_gemma_v2_8da8w.pte` (md5 `0a88b9114ecf7d3bb09284e1c6cc9e7c`) over the three files above.
+  2. Set `MODEL_VERSION = 'astro-gemma-v2'` and `MODEL_FOLLOWUPS = false`.
+
+  The guards are harmless with v2. You can optionally set `readingSeed('bn', 0)` back to `'SUN: স্বভাবে '`, since v2 needs it for Bengali readings.
+- **Rebuild:** `npx expo run:ios --configuration Release --device` and `npx expo run:android --variant release`. The copies in `ios/` and `android/` are already replaced, so no prebuild is needed. A `yarn clean-prebuild` would copy `assets/model` again via `plugins/with-bundled-model.js`.
+- Eval: scratchpad `v21-eval.md`. Still open for v2.2:
+  - date collapse onto the nearest transit
+  - follow-up repetition
+  - Bengali weather fabrication
+  - Hindi date attribution
+  - a gender line in the reading prompt

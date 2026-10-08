@@ -1,3 +1,8 @@
+// ROLLBACK ONLY — not in app.json. The model is downloaded from Hugging Face
+// by utils/model-download.ts (MODEL_SOURCE 'remote'). To ship it inside the
+// app again: add "./plugins/with-bundled-model" back to app.json plugins, set
+// MODEL_SOURCE = 'bundled' in utils/model-download.ts, and prebuild.
+//
 // Ships the on-device model inside the native app instead of downloading it:
 // iOS: files are copied into the app target and added to its Resources, so
 //      they're readable at `${MainBundleDir}/<file>`.

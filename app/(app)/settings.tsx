@@ -1,7 +1,7 @@
 'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
 
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
@@ -12,12 +12,17 @@ import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Toggle } from '@/components/atoms/Toggle';
 import { Icon } from '@/components/atoms/Icon';
 import { showDialog } from '@/components/overlays';
+import { overlayPalette } from '@/components/overlays/palette';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 import { FONTS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
 import { clearAllData } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
 import { useOnboardingStore } from '@/stores/onboarding-store';
 import { todayIso } from '@/utils/format';
+import { intlLocale, localizeDigits } from '@/utils/i18n';
+import { parseBackup, type ParsedBackup } from '@/utils/backup';
+import { deleteBackupFiles, exportBackup, pickBackupText, restoreBackup } from '@/utils/backup-io';
 import {
   ensureNotificationPermission,
   scheduleDailyHoroscope,
@@ -29,13 +34,16 @@ import {
 const ACCENT_KEYS: AccentKey[] = ['amber', 'sage', 'lilac', 'blush', 'ink'];
 
 export default function SettingsScreen() {
-  const { theme, accentKey, setAccentKey } = useAccent();
+  const { theme, accentKey, setAccentKey, isDark } = useAccent();
+  const styles = useIndicStyles(baseStyles);
+  const danger = overlayPalette(theme, isDark).destructive;
   const { t } = useTranslation('settings');
   const { profiles } = useProfiles();
   const setDark = useSettingsStore((s) => s.setDarkModeOverride);
   const darkOverride = useSettingsStore((s) => s.darkModeOverride);
   const [dailyHoroscope,  setDailyHoroscope]  = useState<boolean>(Storage.getDailyHoroscopePush());
   const [transitAlerts,   setTransitAlerts]   = useState<boolean>(Storage.getTransitAlerts());
+  const [busy, setBusy] = useState<'export' | 'restore' | null>(null);
 
   const handleToggleDailyHoroscope = async (next: boolean) => {
     if (next) {
@@ -97,6 +105,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             await clearAllData();
             Storage.clear();
+            deleteBackupFiles();
             // Flipping the store causes the root layout's <Stack.Protected>
             // guards to swap to the onboarding stack — no router.replace needed.
             setOnboardingDone(false);
@@ -105,6 +114,86 @@ export default function SettingsScreen() {
       ],
     });
   };
+
+  const handleExport = async () => {
+    if (busy) return;
+    setBusy('export');
+    try {
+      await exportBackup(t('backup.shareTitle'));
+      setBusy(null);
+      showDialog({ title: t('backup.doneTitle'), message: t('backup.doneMessage') });
+    } catch {
+      setBusy(null);
+      showDialog({ title: t('backup.failedTitle'), message: t('backup.failedMessage') });
+    }
+  };
+
+  const handleRestore = async () => {
+    if (busy) return;
+    let text: string | null;
+    try {
+      text = await pickBackupText();
+    } catch {
+      showDialog({ title: t('restore.errorTitle'), message: t('restore.errors.readFailed') });
+      return;
+    }
+    if (text === null) return; // picker cancelled
+
+    const parsed = parseBackup(text);
+    if (!parsed.ok) {
+      showDialog({ title: t('restore.errorTitle'), message: t(`restore.errors.${parsed.error}`) });
+      return;
+    }
+    const backup = parsed.backup;
+    const made = backup.exportedAt ? new Date(backup.exportedAt) : null;
+    const lines = [
+      made && !Number.isNaN(made.getTime())
+        ? t('restore.madeOn', {
+            date: localizeDigits(made.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short', year: 'numeric' })),
+          })
+        : null,
+      t('restore.counts', {
+        profiles: backup.counts.profiles,
+        chats:    backup.counts.chats,
+        journal:  backup.counts.journal,
+      }),
+      t('restore.replaceWarning'),
+    ].filter(Boolean);
+
+    showDialog({
+      title:   t('restore.confirmTitle'),
+      message: lines.join('\n\n'),
+      actions: [
+        { label: t('restore.cancel'), style: 'cancel' },
+        { label: t('restore.confirm'), style: 'destructive', onPress: () => runRestore(backup) },
+      ],
+    });
+  };
+
+  const runRestore = async (backup: ParsedBackup) => {
+    setBusy('restore');
+    try {
+      const outcome = await restoreBackup(backup);
+      setDailyHoroscope(Storage.getDailyHoroscopePush());
+      setTransitAlerts(Storage.getTransitAlerts());
+      setBusy(null);
+      await showDialog({
+        title:   t('restore.doneTitle'),
+        message: outcome.notificationsBlocked
+          ? `${t('restore.doneMessage')}\n\n${t('restore.notificationsBlocked')}`
+          : t('restore.doneMessage'),
+      });
+      router.dismissTo('/');
+    } catch {
+      setBusy(null);
+      showDialog({ title: t('restore.errorTitle'), message: t('restore.errors.failed') });
+    }
+  };
+
+  const busyOrChevron = (which: 'export' | 'restore') =>
+    busy === which
+      ? <ActivityIndicator size="small" color={theme.muted} />
+      : <Icon name="chevron" size={14} color={theme.faint} />;
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
@@ -223,6 +312,66 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Your data — backup, restore, reset */}
+        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('data.section')}</EyebrowLabel>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          <TouchableOpacity
+            style={[styles.cardRow, busy !== null && styles.rowDisabled]}
+            onPress={handleExport}
+            disabled={busy !== null}
+            accessibilityRole="button"
+            accessibilityLabel={t('data.export')}
+            accessibilityHint={t('data.exportSub')}
+            accessibilityState={{ disabled: busy !== null, busy: busy === 'export' }}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+              <Icon name="share" size={16} color={theme.ink2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('data.export')}</Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>{t('data.exportSub')}</Text>
+            </View>
+            {busyOrChevron('export')}
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
+          <TouchableOpacity
+            style={[styles.cardRow, busy !== null && styles.rowDisabled]}
+            onPress={handleRestore}
+            disabled={busy !== null}
+            accessibilityRole="button"
+            accessibilityLabel={t('data.restore')}
+            accessibilityHint={t('data.restoreSub')}
+            accessibilityState={{ disabled: busy !== null, busy: busy === 'restore' }}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+              <Icon name="download" size={16} color={theme.ink2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('data.restore')}</Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>{t('data.restoreSub')}</Text>
+            </View>
+            {busyOrChevron('restore')}
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
+          <TouchableOpacity
+            style={[styles.cardRow, busy !== null && styles.rowDisabled]}
+            onPress={handleReset}
+            disabled={busy !== null}
+            accessibilityRole="button"
+            accessibilityLabel={t('data.reset')}
+            accessibilityHint={t('data.resetSub')}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+              <Icon name="trash" size={16} color={danger} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: danger }]}>{t('data.reset')}</Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>{t('data.resetSub')}</Text>
+            </View>
+            <Icon name="chevron" size={14} color={theme.faint} />
+          </TouchableOpacity>
+        </View>
+
         {/* Dev tools — only visible in development builds */}
         {__DEV__ && (
           <>
@@ -241,17 +390,13 @@ export default function SettingsScreen() {
           </>
         )}
 
-        <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-          <Text style={styles.resetText}>{t('reset.button')}</Text>
-        </TouchableOpacity>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </ScreenLayout>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -349,13 +494,7 @@ const styles = StyleSheet.create({
     fontSize:   12,
     marginTop:  1,
   },
-  resetBtn: {
-    marginTop:     24,
-    paddingVertical: 10,
-  },
-  resetText: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   14,
-    color:      '#C44',
+  rowDisabled: {
+    opacity: 0.5,
   },
 });

@@ -1,5 +1,11 @@
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import { guessTimeZone } from './timezone';
+import { MIGRATIONS, SYSTEM_PROFILES } from './db-schema';
+
+import type { BackupTable, RestoreStep } from './backup';
+
+export { SCHEMA_VERSION } from './db-schema';
 
 export type Profile = {
   id: string;
@@ -54,113 +60,6 @@ export type Message = {
 
 let db: SQLite.SQLiteDatabase;
 
-const MIGRATIONS = [
-  {
-    version: 1,
-    sql: [
-      `CREATE TABLE IF NOT EXISTS schema_migrations (
-        version INTEGER PRIMARY KEY,
-        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
-      )`,
-      `CREATE TABLE IF NOT EXISTS profiles (
-        id           TEXT PRIMARY KEY,
-        name         TEXT NOT NULL,
-        relationship TEXT,
-        birth_date   TEXT NOT NULL DEFAULT '',
-        birth_time   TEXT,
-        birth_city   TEXT,
-        birth_lat    REAL,
-        birth_lng    REAL,
-        is_you       INTEGER NOT NULL DEFAULT 0,
-        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
-        synced_at    TEXT
-      )`,
-      `CREATE TABLE IF NOT EXISTS threads (
-        id          TEXT PRIMARY KEY,
-        profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-        title       TEXT,
-        archived    INTEGER NOT NULL DEFAULT 0,
-        archived_at TEXT,
-        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
-        synced_at   TEXT
-      )`,
-      `CREATE TABLE IF NOT EXISTS messages (
-        id          TEXT PRIMARY KEY,
-        thread_id   TEXT NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
-        role        TEXT NOT NULL,
-        content     TEXT NOT NULL DEFAULT '',
-        model_tier  TEXT,
-        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-        synced_at   TEXT
-      )`,
-      `CREATE INDEX IF NOT EXISTS idx_threads_profile  ON threads(profile_id)`,
-      `CREATE INDEX IF NOT EXISTS idx_threads_archived ON threads(archived)`,
-      `CREATE INDEX IF NOT EXISTS idx_messages_thread  ON messages(thread_id)`,
-      `CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at)`,
-    ],
-  },
-  {
-    version: 2,
-    sql: [
-      `ALTER TABLE threads ADD COLUMN last_message_preview TEXT`,
-    ],
-  },
-  {
-    version: 3,
-    sql: [
-      `ALTER TABLE threads ADD COLUMN pinned    INTEGER NOT NULL DEFAULT 0`,
-      `ALTER TABLE threads ADD COLUMN pinned_at TEXT`,
-      `CREATE INDEX IF NOT EXISTS idx_threads_pinned ON threads(pinned)`,
-    ],
-  },
-  {
-    version: 4,
-    sql: [
-      `ALTER TABLE profiles ADD COLUMN gender TEXT`,
-    ],
-  },
-  {
-    version: 5,
-    sql: [
-      // Answers the user bookmarked from a chat. Question and answer are
-      // copied so a saved answer survives its thread being deleted.
-      `CREATE TABLE IF NOT EXISTS saved_answers (
-        id          TEXT PRIMARY KEY,
-        message_id  TEXT NOT NULL UNIQUE,
-        thread_id   TEXT,
-        profile_id  TEXT NOT NULL,
-        persona     TEXT NOT NULL,
-        question    TEXT NOT NULL DEFAULT '',
-        answer      TEXT NOT NULL,
-        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-      )`,
-      `CREATE INDEX IF NOT EXISTS idx_saved_created ON saved_answers(created_at)`,
-      // One journal entry per profile per local day.
-      `CREATE TABLE IF NOT EXISTS journal_entries (
-        id          TEXT PRIMARY KEY,
-        profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-        date        TEXT NOT NULL,
-        mood        TEXT NOT NULL,
-        text        TEXT NOT NULL DEFAULT '',
-        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
-        UNIQUE (profile_id, date)
-      )`,
-      `CREATE INDEX IF NOT EXISTS idx_journal_profile ON journal_entries(profile_id, date)`,
-    ],
-  },
-  {
-    version: 6,
-    sql: [
-      // IANA zone of the birth place. Existing rows are backfilled lazily
-      // from city/lat/lng the first time profiles load (backfillBirthTz).
-      `ALTER TABLE profiles ADD COLUMN birth_tz TEXT`,
-    ],
-  },
-];
-
 async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
   await database.execAsync(`PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;`);
 
@@ -195,18 +94,20 @@ export async function initDatabase(): Promise<void> {
 
 // System (synthetic) profiles are filtered out of the profile switcher but
 // satisfy the threads.profile_id foreign key for special chats like Krishna.
-const SYSTEM_PROFILE_IDS = ['__krishna__'] as const;
+const SYSTEM_PROFILE_IDS: readonly string[] = SYSTEM_PROFILES.map((p) => p.id);
 
 async function ensureSystemProfiles(database: SQLite.SQLiteDatabase): Promise<void> {
-  await database.runAsync(
-    `INSERT OR IGNORE INTO profiles (id, name, relationship, birth_date, is_you)
-     VALUES (?, ?, ?, ?, ?)`,
-    ['__krishna__', 'Krishna', null, '', 0],
-  );
+  for (const p of SYSTEM_PROFILES) {
+    await database.runAsync(
+      `INSERT OR IGNORE INTO profiles (id, name, relationship, birth_date, is_you)
+       VALUES (?, ?, ?, ?, ?)`,
+      [p.id, p.name, null, '', 0],
+    );
+  }
 }
 
 export function isSystemProfile(id: string): boolean {
-  return (SYSTEM_PROFILE_IDS as readonly string[]).includes(id);
+  return SYSTEM_PROFILE_IDS.includes(id);
 }
 
 // ─── Profile queries ───────────────────────────────────────────────────
@@ -430,6 +331,48 @@ export async function clearAllData(): Promise<void> {
   await db.execAsync(
     `DELETE FROM saved_answers; DELETE FROM journal_entries; DELETE FROM messages; DELETE FROM threads; DELETE FROM profiles;`,
   );
+}
+
+// ─── Backup / restore ─────────────────────────────────────────────────────────
+
+/** Raw rows of the given tables, for utils/backup.ts to serialize. */
+export async function readTablesForBackup(
+  tables: readonly BackupTable[],
+): Promise<Record<BackupTable, Record<string, unknown>[]>> {
+  const out = {} as Record<BackupTable, Record<string, unknown>[]>;
+  for (const t of tables) {
+    out[t] = await db.getAllAsync<Record<string, unknown>>(`SELECT * FROM ${t} ORDER BY rowid ASC`);
+  }
+  return out;
+}
+
+/**
+ * Runs a restore plan (wipe + inserts) in a single transaction. If any
+ * statement fails the transaction rolls back and the existing data is kept.
+ */
+export async function replaceAllData(steps: RestoreStep[]): Promise<void> {
+  const run = async (conn: SQLite.SQLiteDatabase) => {
+    for (const step of steps) {
+      if (step.kind === 'exec') {
+        await conn.execAsync(step.sql);
+        continue;
+      }
+      if (step.rows.length === 0) continue;
+      const stmt = await conn.prepareAsync(step.sql);
+      try {
+        for (const params of step.rows) await stmt.executeAsync(params);
+      } finally {
+        await stmt.finalizeAsync();
+      }
+    }
+  };
+  // Exclusive transactions keep other async writes out of the restore; they
+  // aren't available on web, where a plain transaction does the same job.
+  if (Platform.OS === 'web') {
+    await db.withTransactionAsync(() => run(db));
+  } else {
+    await db.withExclusiveTransactionAsync((txn) => run(txn));
+  }
 }
 
 // ─── Saved answers ───────────────────────────────────────────────────────────

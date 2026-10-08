@@ -1,13 +1,18 @@
 /*
- * Small deterministic checks on the on-device model's replies (astro-gemma-v2,
- * CONTEXT_VERSION 2). Pure functions with no React Native imports, so they can be
- * unit-tested in Node. utils/ai.ts decides when to apply them.
+ * Small deterministic checks on the on-device model's replies (astro-gemma-v2
+ * and v2.1, CONTEXT_VERSION 2). Pure functions with no React Native imports, so
+ * they can be unit-tested in Node. utils/ai.ts decides when to apply them.
  *
- * Known v2 failure modes (scratchpad v2-eval.md) they target:
+ * Known failure modes (scratchpad v2-eval.md, v21-eval.md) they target:
  *  - follow-up turns that repeat the previous answer, often verbatim;
  *  - hi/bn replies that come out in English (Latin script), mostly chart
  *    readings in Bengali and Hinglish/Banglish questions;
- *  - pure greetings answered with a full chart dump.
+ *  - pure greetings answered with a full chart dump;
+ *  - "when" questions answered without any month or year, or (v2.1) with only
+ *    the current month;
+ *  - (v2.1) baby's-sex and partner-name questions answered instead of declined;
+ *  - (v2.1) invented "about N months from now" countdowns, wrong 21 of 21 times;
+ *  - (v2.1) health / legal answers without "see a doctor / lawyer".
  */
 
 export type GuardLang = 'en' | 'hi' | 'bn';
@@ -155,13 +160,14 @@ export function isPureGreeting(message: string): boolean {
 
 /**
  * Text placed at the start of the model's reading turn to steer it into the
- * right script. Bengali readings come out in English 9-11/12 times unseeded;
- * "SUN: স্বভাবে " gave Bengali in 11/12 (scratchpad seed.py). Hindi readings
- * are right 11/12 unseeded, so Hindi is seeded only on the retry. Returns ''
- * for no seed. parseReading reads the "SUN:" line, so seeds keep that key.
+ * right script. astro-gemma-v21 writes Bengali and Hindi readings in the right
+ * script unseeded (12/12 each; v2 needed "SUN: স্বভাবে ", which makes v2.1
+ * open awkwardly), so the first attempt is unseeded in every language and only
+ * the retry after a wrong-script reading is seeded. Returns '' for no seed.
+ * parseReading reads the "SUN:" line, so seeds keep that key.
  */
 export function readingSeed(lang: GuardLang, attempt: 0 | 1): string {
-  if (lang === 'bn') return attempt === 0 ? 'SUN: স্বভাবে ' : 'SUN: তিনি ';
+  if (lang === 'bn') return attempt === 0 ? '' : 'SUN: তিনি ';
   if (lang === 'hi') return attempt === 0 ? '' : 'SUN: स्वभाव से ';
   return '';
 }
@@ -173,6 +179,352 @@ export function readingScriptRatio(text: string, lang: GuardLang, firstName: str
   return nativeScriptRatio(text.replace(READING_KEYS, ''), lang, [firstName]);
 }
 
+// ─── Dates and timing questions ───────────────────────────────────────────────
+
+const MONTH_NAMES: Record<GuardLang, string[][]> = {
+  // Index 0 = January. English full names; short forms are matched separately.
+  en: [['january'], ['february'], ['march'], ['april'], ['may'], ['june'], ['july'], ['august'],
+    ['september'], ['october'], ['november'], ['december']],
+  hi: [['जनवरी'], ['फरवरी', 'फ़रवरी'], ['मार्च'], ['अप्रैल', 'अप्रेल'], ['मई'], ['जून'], ['जुलाई'], ['अगस्त'],
+    ['सितंबर', 'सितम्बर'], ['अक्टूबर', 'अक्तूबर'], ['नवंबर', 'नवम्बर'], ['दिसंबर', 'दिसम्बर']],
+  bn: [['জানুয়ারি', 'জানুয়ারী'], ['ফেব্রুয়ারি', 'ফেব্রুয়ারী'], ['মার্চ'], ['এপ্রিল'], ['মে'], ['জুন'], ['জুলাই'],
+    ['আগস্ট', 'অগাস্ট', 'অগস্ট'], ['সেপ্টেম্বর'], ['অক্টোবর'], ['নভেম্বর'], ['ডিসেম্বর']],
+};
+const EN_SHORT = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const MONTH_INDEX = new Map<string, number>();
+for (const lang of ['en', 'hi', 'bn'] as const) {
+  MONTH_NAMES[lang].forEach((names, i) => names.forEach(n => MONTH_INDEX.set(n.normalize('NFC'), i + 1)));
+}
+EN_SHORT.forEach((n, i) => MONTH_INDEX.set(n, i + 1));
+MONTH_INDEX.set('sept', 9);
+// Bengali case endings on month names ("নভেম্বরে", "জুনের").
+const BN_MONTH_SUFFIX = ['ের', 'এর', 'র', 'ে', 'েই', 'ই', 'ও'];
+
+/** Devanagari/Bengali digits → Western digits. */
+export function westernDigits(text: string): string {
+  return text.replace(/[०-९]/g, d => String(d.charCodeAt(0) - 0x966))
+    .replace(/[০-৯]/g, d => String(d.charCodeAt(0) - 0x9e6));
+}
+
+export type FoundDate = { month: number | null; year: number | null; index: number };
+
+/**
+ * Month-year, month-only and year-only mentions in a reply (any of en/hi/bn,
+ * Western or native digits), in order. "May" and short English months count
+ * only with a year after them ("you may" is not a date); English month names
+ * must be capitalised.
+ */
+export function findDates(text: string): FoundDate[] {
+  const t = westernDigits(text.normalize('NFC'));
+  const toks = [...t.matchAll(/[\p{L}\p{M}]+|\d+/gu)].map(m => ({ s: m[0], i: m.index ?? 0 }));
+  const isYear = (s?: string) => !!s && /^(19|20)\d\d$/.test(s);
+  const out: FoundDate[] = [];
+  const usedYear = new Set<number>();
+  toks.forEach((tk, k) => {
+    let key = tk.s;
+    const latin = /^[A-Za-z]+$/.test(key);
+    if (latin) {
+      if (!/^[A-Z]/.test(key)) return;
+      key = key.toLowerCase();
+    } else if (!MONTH_INDEX.has(key)) {
+      const suf = BN_MONTH_SUFFIX.find(x => key.endsWith(x) && MONTH_INDEX.has(key.slice(0, -x.length)));
+      if (suf) key = key.slice(0, -suf.length);
+    }
+    const month = MONTH_INDEX.get(key);
+    if (!month) return;
+    let year: number | null = null;
+    for (let j = k + 1; j <= k + 2 && j < toks.length; j++) {
+      if (isYear(toks[j].s)) { year = Number(toks[j].s); usedYear.add(j); break; }
+    }
+    if (latin && year == null && (EN_SHORT.includes(key) || key === 'sept')) return;
+    out.push({ month, year, index: tk.i });
+  });
+  toks.forEach((tk, k) => {
+    if (!usedYear.has(k) && isYear(tk.s)) out.push({ month: null, year: Number(tk.s), index: tk.i });
+  });
+  return out.sort((a, b) => a.index - b.index);
+}
+
+/** True when the text mentions a month or a year (any script). */
+export function hasDate(text: string): boolean {
+  return findDates(text).length > 0;
+}
+
+const TIMING_EN = /\b(when|how long|how soon|what date|which date|what month|which month|what year|which year|exact date|kab|kobe)\b/i;
+const TIMING_PHRASES = [
+  'कितने समय', 'कितना समय', 'कितने दिन', 'किस महीने', 'किस साल', 'किस तारीख', 'कौन से महीने', 'कौन-से महीने', 'कौनसे महीने', 'तारीख',
+  'কত দিন', 'কতদিন', 'কত সময়', 'কতক্ষণ', 'কোন মাস', 'কোন সাল', 'কোন বছর', 'কোন তারিখ', 'তারিখ',
+];
+const TIMING_WORDS = new Set(['कब', 'কবে', 'কখন']);
+
+/**
+ * True when a question asks when something will happen ("When will I marry?",
+ * "When exactly?", "शादी कब होगी?", "কতদিন লাগবে?", "kab hogi").
+ */
+export function isTimingQuestion(question: string): boolean {
+  const q = question.normalize('NFC');
+  if (TIMING_EN.test(q)) return true;
+  if (TIMING_PHRASES.some(p => q.includes(p))) return true;
+  return words(q).some(w => TIMING_WORDS.has(w));
+}
+
+/**
+ * How a reply's dates relate to `today` (YYYY-MM-DD, the prompt's "Today:"):
+ *  - 'none': no month or year at all;
+ *  - 'current': no date after the current month, and at least one that is the
+ *    current month (or the current year alone) — "by October 2026" said in
+ *    October 2026 answers nothing;
+ *  - 'ok': anything else (a later date, or only past dates).
+ * A month without a year counts as later unless it is the current month.
+ * Without a valid `today`, any date is 'ok'.
+ */
+export function dateStatus(text: string, today?: string): 'none' | 'current' | 'ok' {
+  const dates = findDates(text);
+  if (dates.length === 0) return 'none';
+  const m = /^(\d{4})-(\d{2})/.exec(today ?? '');
+  if (!m) return 'ok';
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  let current = false;
+  for (const d of dates) {
+    if (d.year == null) {
+      if (d.month !== mo) return 'ok';
+      current = true;
+    } else if (d.year > y || (d.year === y && d.month != null && d.month > mo)) {
+      return 'ok';
+    } else if (d.year === y && (d.month == null || d.month === mo)) {
+      current = true;
+    }
+  }
+  return current ? 'current' : 'ok';
+}
+
+// ─── Questions answered without the model ─────────────────────────────────────
+
+const nfc = (s: string) => s.normalize('NFC');
+// Devanagari ड/ढ with or without nukta (NFC keeps ड़ decomposed), Bengali য় likewise.
+const DA = 'ड़?';
+const KIND_HI = '(?<!(?:कैसा|कैसी|कैसे|कौन सा|कौन सी|कौनसा|कौनसी|वाला|वाली|किस) )';
+const KIND_BN = '(?<!(?:কেমন|কোন|কী রকম|কিরকম|কি রকম) )';
+const KIND_EN = '(?<!\\b(?:kaisa|kaisi|kaise|kaun sa|kaun si|kaunsa|kaunsi|wala|wali|kemon|kon) )';
+
+const CHILD_SEX = new RegExp(nfc([
+  // English
+  '\\b(?:boy|girl|son|daughter) or (?:a )?(?:boy|girl|son|daughter)\\b',
+  "\\b(?:baby|child|kid|f(?:o)?etus)(?:'s)? (?:gender|sex)\\b",
+  '\\b(?:gender|sex) of (?:my|our|the|her) (?:first |next |second |third |unborn )?(?:baby|child|kid)',
+  '\\b(?:will|would) (?:it|he or she|my (?:first |next |second |third )?(?:baby|child|kid)|our (?:first |next |second )?(?:baby|child|kid)) be a (?:baby )?(?:boy|girl|son|daughter)\\b',
+  '\\b(?:will|would|can|could|shall) (?:i|we) (?:have|get|be blessed with|give birth to) a (?:baby )?(?:boy|girl|son|daughter)\\b',
+  "\\b(?:is it|it'?s|it will be) a (?:baby )?(?:boy|girl)\\b",
+  // Hinglish / Banglish
+  '\\b(?:ladka|ladki|beta|beti) (?:ya|or|yaa) (?:ladka|ladki|beta|beti)\\b',
+  `${KIND_EN}\\b(?:ladka|beta|putra) (?:hoga|paida)`,
+  `${KIND_EN}\\b(?:ladki|beti) (?:hogi|paida)`,
+  '\\b(?:chele|cheley|meye) (?:na|naki|ki|ba|othoba) (?:chele|cheley|meye)\\b',
+  `${KIND_EN}\\b(?:chele|cheley|meye) hobe\\b`,
+  // Hindi
+  `(?:ल${DA}का|ल${DA}की|बेटा|बेटी|पुत्र|पुत्री) (?:या|अथवा) (?:ल${DA}का|ल${DA}की|बेटा|बेटी|पुत्र|पुत्री)`,
+  `${KIND_HI}(?:ल${DA}का|बेटा|पुत्र) (?:होगा|पैदा)`,
+  `${KIND_HI}(?:ल${DA}की|बेटी|पुत्री) (?:होगी|पैदा)`,
+  'पुत्र प्राप्ति|पुत्र योग|(?:बच्चे|शिशु|संतान|सन्तान|गर्भ) (?:का|के) लिंग',
+  // Bengali
+  '(?:ছেলে|মেয়ে|পুত্র|কন্যা) (?:না|নাকি|কি|কী|বা|অথবা) (?:ছেলে|মেয়ে|পুত্র|কন্যা)',
+  `${KIND_BN}(?:ছেলে|মেয়ে) (?:হবে|হবেনা|সন্তান হবে)`,
+  '(?:পুত্র|কন্যা) ?সন্তান (?:হবে|জন্ম|লাভ)|(?:সন্তানের|বাচ্চার|শিশুর|গর্ভের) লিঙ্গ',
+].join('|')), 'i');
+
+const PARTNER = '(?:future |would-?be |next |life )?(?:wife|husband|spouse|partner|girlfriend|boyfriend|soul ?mate|fianc[eé]e?|bride|groom)';
+const PARTNER_NAME = new RegExp(nfc([
+  // English
+  `\\b${PARTNER}(?:'s|s'|s)? (?:name|initials?|first letter)(?!\\s+(?:is|was)\\b)`,
+  `\\b(?:name|initials?|first letter|starting letter) of (?:my |our |the |her |his )?${PARTNER}`,
+  "\\b(?:name|initials?|first letter) of (?:the )?(?:person|girl|boy|guy|man|woman|one) (?:i|i'?ll|i will|i'?m going to) marry",
+  "\\bwhat (?:will|would) (?:his|her|their) name be\\b|\\b(?:his|her|their) name (?:will )?(?:start|begin)s? with\\b|\\bwhat(?:'s| is| will be) (?:his|her) name\\b",
+  // Hinglish / Banglish
+  '\\b(?:naam|nam) (?:kya|kia) (?:hoga|hogi|hogaa)\\b|\\b(?:naam|nam) ka (?:pehla|pahla|first) (?:akshar|letter|word)\\b|\\b(?:naam|nam) kis (?:akshar|letter)',
+  '\\b(?:naam|nam) ki hobe\\b|\\b(?:naam|nam)er (?:prothom|first) (?:okkhor|akshar|letter)',
+  // Hindi
+  'नाम क्या होगा|नाम क्या होगी|नाम किस अक्षर|नाम का पहला अक्षर|नाम का पहला लेटर',
+  `(?:उसका|उसकी|उनका|पति|पत्नी|जीवनसाथी|जीवन साथी|बीवी|पार्टनर|दूल्हे|दुल्हन|ल${DA}की|ल${DA}के) (?:का |की )?नाम (?:क्या|कौन|किस)`,
+  // Bengali
+  'নাম (?:কী|কি) হবে|নামের প্রথম অক্ষর|নামের আদ্যক্ষর|নাম কোন অক্ষর',
+  '(?:বরের|বউয়ের|বৌয়ের|বউএর|স্বামীর|স্ত্রীর|জীবনসঙ্গীর|পার্টনারের|তার|ওর|ওঁর|তাঁর) নাম (?:কী|কি|কোন)',
+].join('|')), 'i');
+
+/**
+ * Questions Saga answers with a canned reply instead of the model (v2.1 answers
+ * the baby's-sex question "likely to be a boy", and partner-name questions
+ * aren't declined in Bengali):
+ *  - 'childSex': will the baby be a boy or a girl (en/hi/bn, Hinglish/Banglish);
+ *  - 'partnerName': a future partner's name or initial.
+ */
+export function cannedQuestion(question: string): 'childSex' | 'partnerName' | null {
+  const q = nfc(question).toLowerCase();
+  if (CHILD_SEX.test(q)) return 'childSex';
+  if (PARTNER_NAME.test(q)) return 'partnerName';
+  return null;
+}
+
+// ─── Countdown phrases ────────────────────────────────────────────────────────
+//
+// v2.1 adds "meaning within about N months" after a month-year (bn 19/35
+// turns, hi 4/35) and gets the arithmetic wrong almost every time, so the
+// clause is removed and the absolute month-year kept.
+
+const N = '(?:\\d+|[०-९]+|[০-৯]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a few|a couple of|a|an)';
+const EN_UNIT = '(?:months?|years?|weeks?)';
+const EN_CUE = '(?:about|roughly|around|approximately|approx\\.?|nearly|almost|some|just|only|maybe|perhaps)';
+const EN_LEAD = "(?:(?:that'?s|that is|which is|i\\.e\\.,?|meaning|so)\\s+)?";
+const NOT_AGE = '(?!\\s*(?:old|of age|ago|of (?:effort|work|savings|practice)))';
+const COUNTDOWN_EN = [
+  // "in about 5 months (from now)", "within roughly 2 years"
+  `${EN_LEAD}\\b(?:in|within)\\s+${EN_CUE}\\s+${N}\\s+${EN_UNIT}(?:\\s+(?:from now|from today|away(?!\\s+from)|later|time)|'s time)?\\b${NOT_AGE}`,
+  // "about 5 months from now", "in 5 months from now", "5 months away"
+  `${EN_LEAD}\\b(?:(?:in|within)\\s+|${EN_CUE}\\s+)?${N}\\s+${EN_UNIT}\\s+(?:from now|from today|away(?!\\s+from))\\b`,
+  // "in 5 months' time"
+  `${EN_LEAD}\\bin\\s+${N}\\s+${EN_UNIT}(?:'s?|\\s+)\\s*time\\b`,
+  // ", about 5 months." closing a clause after a date
+  `(?:,|[—–])\\s*${EN_CUE}\\s+${N}\\s+${EN_UNIT}(?=\\s*[.!?—–,;)]|\\s*$)`,
+];
+// Longest alternatives first ("सालों" before "साल"), so a match never ends mid-word.
+const HI_UNIT = '(?:महीनों|महीने|महीना|माह|सालों|साल|वर्षों|वर्ष|हफ्तों|हफ़्तों|हफ्ते|हफ़्ते|सप्ताहों|सप्ताह)';
+const HI_CUE = '(?:करीब|क़रीब|लगभग|तकरीबन|तक़रीबन|अंदाज़न|अंदाजन|कोई)';
+const HI_AFTER = '(?:में|के अंदर|के भीतर|के बाद|बाद)';
+const COUNTDOWN_HI = [
+  `(?:यानी|याने|मतलब|अर्थात|यानि)\\s+(?:${HI_CUE}\\s+)?(?:अब से\\s+|आज से\\s+)?${N}\\s+${HI_UNIT}(?:\\s+(?:${HI_AFTER}|तक))?(?![ऀ-ॣॱ-ॿ])`,
+  `(?:${HI_CUE}\\s+|अब से\\s+|आज से\\s+)(?:${HI_CUE}\\s+)?${N}\\s+${HI_UNIT}\\s+${HI_AFTER}(?![ऀ-ॣॱ-ॿ])`,
+];
+const BN_UNIT = '(?:মাসের|মাসে|মাস|বছরের|বছরে|বছর|সপ্তাহের|সপ্তাহে|সপ্তাহ)';
+const BN_CUE = '(?:প্রায়|মোটামুটি|আনুমানিক|আন্দাজ|মাত্র)';
+const BN_AFTER = '(?:মধ্যেই|মধ্যে|পরেই|পরে|পর|বাদে|নাগাদ|ভিতরে|ভেতরে)';
+const COUNTDOWN_BN = [
+  `(?:মানে|অর্থাৎ|যার মানে)\\s+(?:${BN_CUE}\\s+)?(?:এখন থেকে\\s+|আজ থেকে\\s+|আর\\s+)?${N}\\s*-?${BN_UNIT}(?:\\s+${BN_AFTER})?(?![ঀ-ৣ])`,
+  `(?:${BN_CUE}\\s+|এখন থেকে\\s+|আজ থেকে\\s+)(?:${BN_CUE}\\s+)?${N}\\s*-?${BN_UNIT}\\s*${BN_AFTER}(?![ঀ-ৣ])`,
+];
+const COUNTDOWN = new RegExp(nfc([...COUNTDOWN_EN, ...COUNTDOWN_HI, ...COUNTDOWN_BN].join('|')), 'gi');
+const SENT_END = '.!?।॥';
+
+/**
+ * Removes relative-time countdowns ("about 5 months from now", "यानी करीब 5
+ * महीने में", "মানে প্রায় ২ মাসের মধ্যে", Western or native digits) and tidies
+ * the punctuation around them; the month-year next to them stays. Text without
+ * a countdown is returned unchanged (leading/trailing whitespace included, so
+ * it is safe on streamed chunks).
+ */
+export function stripCountdowns(text: string): string {
+  const src = nfc(text);
+  if (src.search(COUNTDOWN) < 0) return text;
+  let out = src.replace(COUNTDOWN, '\u0000');
+  out = out
+    // "(\u0000)" or "** \u0000 **" left empty
+    .replace(/\(\s*\u0000\s*\)/g, '\u0000')
+    .replace(/\*\*\s*\u0000\s*\*\*/g, '\u0000')
+    // separator + removed clause before the end of a sentence: drop both
+    .replace(new RegExp(`[ \\t]*[,;—–-]?[ \\t]*\\u0000[ \\t]*(?=[${SENT_END}]|\\n|$)`, 'g'), '')
+    // at the start of a sentence: drop the clause and its trailing comma
+    .replace(new RegExp(`(^|[${SENT_END}\\n][ \\t]*)\\u0000[ \\t]*[,;—–]?[ \\t]*(\\p{Ll})?`, 'gu'),
+      (_m, lead: string, ch?: string) => lead + (ch ? ch.toUpperCase() : ''))
+    // mid-sentence: keep one separator
+    .replace(/([ \t]*[,;—–][ \t]*)\u0000[ \t]*(?:[,;—–][ \t]*)?/g, ', ')
+    .replace(/[ \t]*\u0000[ \t]*(?:([,;—–])[ \t]*)?/g, (_m, sep?: string) => (sep ? `${sep} ` : ' '))
+    .replace(/,\s*,/g, ',')
+    .replace(/[ \t]{2,}/g, ' ');
+  return out;
+}
+
+// ─── Health and legal questions ───────────────────────────────────────────────
+
+const HEALTH_Q = new RegExp(nfc([
+  '\\b(?:health|healthy|ill|illness|sick|sickness|disease|symptoms?|fever|surgery|hospital|hospitali[sz]ed|cancer|tumou?r|diabetes|blood pressure|bp',
+  'heart (?:attack|disease|problem|condition|surgery)|(?:chest|back|stomach|body|joint|knee|neck|leg|period|tooth) ?pains?|stomach ?ache|headaches?|backache',
+  'pregnan\\w*|conceive|conceiving|miscarriage|infertil\\w*|ivf|depress\\w*|anxiety|panic attacks?|mental health|suicid\\w*|self[- ]harm',
+  'medicines?|medication|treatment|therapy|injur\\w*|infection|thyroid|pcos|pcod|migraine|insomnia|asthma|kidney|liver|stroke|paralysis|diagnos\\w*',
+  'bimari|bimaari|beemari|bimar|bimaar|beemar|dard|bukhar|bukhaar|sehat|tabiyat|tabiyet|ilaj|ilaaj|dawai|davai',
+  'osukh|asukh|osustho|asustho|byatha|betha|shorir kharap|sorir kharap|chikitsa|oshudh|osudh)\\b',
+  // Hindi
+  'स्वास्थ्य|सेहत|तबीयत|तबियत|बीमार|बिमार|रोग|दर्द|बुखार|सर्जरी|ऑपरेशन|अस्पताल|हॉस्पिटल|कैंसर|डायबिटीज|मधुमेह|ब्लड प्रेशर|बीपी',
+  'हार्ट|दिल की बीमारी|दिल का दौरा|गर्भ|प्रेग्नें|प्रेगनें|डिप्रेशन|अवसाद|मानसिक (?:स्वास्थ्य|बीमारी|रोग)|इलाज|दवा|थायराइड|माइग्रेन|चोट|संक्रमण|आत्महत्या',
+  // Bengali
+  'স্বাস্থ্য|শরীর খারাপ|শরীরের অবস্থা|অসুখ|অসুস্থ|রোগ|ব্যথা|ব্যাথা|জ্বর|সার্জারি|অপারেশন|হাসপাতাল|ক্যান্সার|ক্যানসার|ডায়াবেটিস|সুগার|প্রেসার',
+  'হার্ট|গর্ভ|প্রেগন্যান্ট|অন্তঃসত্ত্বা|ডিপ্রেশন|অবসাদ|মানসিক (?:স্বাস্থ্য|রোগ|অসুখ)|চিকিৎসা|ওষুধ|থাইরয়েড|মাইগ্রেন|আত্মহত্যা',
+].join('|')), 'i');
+
+const LEGAL_Q = new RegExp(nfc([
+  '\\b(?:court|courts|lawsuit|legal|divorce|custody|alimony|police|fir|arrest\\w*|jail|prison|bail|litigation|sue|sued|suing|inheritance',
+  '(?:property|land|inheritance|family) dispute|case (?:against|filed|hearing)|(?:court|legal|police|criminal|civil|property|land|divorce) case',
+  '(?:win|lose|won|lost|winning|losing) (?:the|my|this|our|a) case',
+  'mukadma|mukadama|muqadma|muqadama|talaq|talak|thana|zamanat|jamanat|adalat|adalot|kachahri|mamla|mamla[ay])\\b',
+  '(?<!\\bin )\\bmy case\\b',
+  // Hindi
+  'कोर्ट|अदालत|कचहरी|मुकदमा|मुक़दमा|मुकद्दमा|केस|कानूनी|क़ानूनी|तलाक|तलाक़|डिवोर्स|पुलिस|एफआईआर|एफ़आईआर|जेल|जमानत|ज़मानत|वसीयत|बंटवारा',
+  '(?:संपत्ति|सम्पत्ति|ज़मीन|जमीन|प्रॉपर्टी|जायदाद)(?: का| की| को लेकर| पर)? (?:विवाद|झग़?ड़ा|झगड़ा)',
+  // Bengali
+  'কোর্ট|আদালত|মামলা|কেস|আইনি|ডিভোর্স|বিবাহবিচ্ছেদ|পুলিশ|থানা|জেল(?!া)|জামিন|বাটোয়ারা',
+  '(?:সম্পত্তি|জমি|প্রপার্টি)(?:র|র নিয়ে| নিয়ে)? ?(?:বিবাদ|ঝামেলা|ঝগড়া)',
+].join('|')), 'i');
+
+const DOCTOR = new RegExp(nfc([
+  '\\b(?:doctors?|gp|physician|specialists?|medical (?:professional|advice|help|check-?up)|health ?care professional|therapist|counsell?or',
+  'psychiatrist|psychologist|gyn(?:a)?ecologist|cardiologist)\\b',
+  'डॉक्टर|डाक्टर|डॉ\\.|चिकित्सक|विशेषज्ञ|वैद्य|ডাক্তার|চিকিৎসক|বিশেষজ্ঞ',
+].join('|')), 'i');
+const LAWYER = new RegExp(nfc(
+  '\\b(?:lawyers?|advocates?|attorneys?|solicitors?|legal (?:advice|counsel|expert|help))\\b|वकील|अधिवक्ता|क़ानूनी सलाह|कानूनी सलाह|উকিল|আইনজীবী|আইনি পরামর্শ',
+), 'i');
+
+/**
+ * The advice lines Saga's reply needs and lacks: 'doctor' for a health or
+ * medical question whose reply names no doctor, 'lawyer' for a legal question
+ * whose reply names no lawyer (en/hi/bn and Hinglish/Banglish questions; the
+ * reply is checked in all three languages).
+ */
+export function missingAdvice(question: string, reply: string): ('doctor' | 'lawyer')[] {
+  const q = nfc(question).toLowerCase();
+  const r = nfc(reply);
+  const out: ('doctor' | 'lawyer')[] = [];
+  if (HEALTH_Q.test(q) && !DOCTOR.test(r)) out.push('doctor');
+  if (LEGAL_Q.test(q) && !LAWYER.test(r)) out.push('lawyer');
+  return out;
+}
+
+// ─── Sentence-buffered streaming ──────────────────────────────────────────────
+
+/** Characters a partial sentence may grow to before part of it is let through anyway. */
+export const SENTENCE_HOLD_MAX = 240;
+
+/**
+ * Passes streamed text through `transform` one whole sentence at a time, so a
+ * clause that `transform` removes (stripCountdowns) is never shown and then
+ * taken back. Text is let through at each sentence end (. ! ? । ॥ followed by
+ * a space, or a newline); a run-on longer than SENTENCE_HOLD_MAX characters is
+ * let through except for its last 80 characters. `flush` sends the rest.
+ */
+export function createSentenceFilter(transform: (text: string) => string, emit: (text: string) => void) {
+  let pending = '';
+  const out = (t: string) => {
+    const s = transform(t);
+    if (s) emit(s);
+  };
+  return {
+    push(text: string) {
+      pending += text;
+      let cut = -1;
+      for (const m of pending.matchAll(/[.!?।॥](?=\s)|\n/g)) cut = (m.index ?? 0) + m[0].length;
+      if (cut < 0 && pending.length > SENTENCE_HOLD_MAX) {
+        cut = pending.lastIndexOf(' ', pending.length - 80);
+      }
+      if (cut > 0) {
+        out(pending.slice(0, cut));
+        pending = pending.slice(cut);
+      }
+    },
+    flush() {
+      if (pending) out(pending);
+      pending = '';
+    },
+  };
+}
+
 // ─── Guarded generation ───────────────────────────────────────────────────────
 //
 // A guarded reply is held back (the chat bubble keeps showing "thinking…")
@@ -181,7 +533,10 @@ export function readingScriptRatio(text: string, lang: GuardLang, firstName: str
 //    Latin reply is stopped right there and retried;
 //  - repetition (follow-ups): decided after REPEAT_DECIDE_WORDS words; if that
 //    prefix already overlaps the previous answer, the whole reply is held and
-//    judged when it ends.
+//    judged when it ends;
+//  - date (timing questions, `needsDate`): held until a month or year appears
+//    that is not just the current month (dateStatus with `today`); a reply that
+//    ends without one, or whose only date is the current month, is retried.
 // A failing reply is regenerated once at RETRY_TEMPERATURE; if the retry fails
 // too, the better of the two is shown in one go. Text on screen is never
 // replaced, and there is never more than one retry.
@@ -192,6 +547,15 @@ export type ReplyGuard = {
   previous?: string;
   /** Latin-script words a hi/bn reply may contain (names). */
   ignore: string[];
+  /** The question asks "when" (isTimingQuestion): the reply should name a month or year. */
+  needsDate?: boolean;
+  /**
+   * The prompt's "Today:" (YYYY-MM-DD). With `needsDate`, a reply whose only
+   * date is the current month counts as undated once (v2.1 answers 60% of
+   * questions "by October 2026" in October 2026); the retry is kept only if it
+   * names a later date.
+   */
+  today?: string;
 };
 
 /**
@@ -210,6 +574,14 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
   const scriptBad = (a: Attempt) =>
     checkScript && (a.stoppedLatin || (letterCount(a.text) >= 8 && scriptRatio(a.text) < NATIVE_SCRIPT_MIN));
   const repeatBad = (a: Attempt) => !!previous && overlap(a.text) >= REPEAT_OVERLAP_MAX;
+  const dates = (t: string) => dateStatus(t, guard.today);
+  // 2 = no date, 1 = only the current month, 0 = fine.
+  const dateFail = (a: Attempt) => {
+    if (!guard.needsDate) return 0;
+    const st = dates(a.text);
+    return st === 'none' ? 2 : st === 'current' ? 1 : 0;
+  };
+  const dateBad = (a: Attempt) => dateFail(a) > 0;
 
   // `final`: the last try, which is never stopped early (a Latin reply is held
   // to the end so there is always a whole reply to show).
@@ -218,6 +590,7 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
     let scriptDone = !checkScript;
     let repeatDone = !previous;
     let repeatSuspect = false;
+    let dateDone = !guard.needsDate;
     let hold = false;
     await generate((token) => {
       a.text += token;
@@ -239,7 +612,8 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
         if (overlap(a.text) < REPEAT_OVERLAP_MAX) repeatDone = true;
         else repeatSuspect = true; // hold to the end and judge the whole reply
       }
-      if (scriptDone && repeatDone && !hold) {
+      if (!dateDone && dates(a.text) === 'ok') dateDone = true;
+      if (scriptDone && repeatDone && dateDone && !hold) {
         a.released = true;
         emit(a.text);
       }
@@ -249,7 +623,7 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
 
   const first = await attempt();
   if (first.released) return;
-  if (!scriptBad(first) && !repeatBad(first)) {
+  if (!scriptBad(first) && !repeatBad(first) && !dateBad(first)) {
     emit(first.text);
     return;
   }
@@ -263,11 +637,12 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
     return;
   }
   if (second.released) return;
-  if (first.stoppedLatin || (!scriptBad(second) && !repeatBad(second))) {
+  if (first.stoppedLatin || (!scriptBad(second) && !repeatBad(second) && !dateBad(second))) {
     emit(second.text);
     return;
   }
-  // Both failed: prefer the right script, then the one that repeats less.
-  const rank = (a: Attempt) => (scriptBad(a) ? 2 : 0) + overlap(a.text);
+  // Both failed: prefer the right script, then one with a date (a later date
+  // over only the current month), then the one that repeats less; ties keep the first.
+  const rank = (a: Attempt) => (scriptBad(a) ? 4 : 0) + dateFail(a) + overlap(a.text);
   emit(rank(second) < rank(first) ? second.text : first.text);
 }

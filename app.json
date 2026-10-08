@@ -63,8 +63,7 @@
       ],
       "./plugins/with-min-pod-deployment-target",
       "./plugins/with-uiscene-lifecycle",
-      "./plugins/with-classic-hermes",
-      "./plugins/with-bundled-model"
+      "./plugins/with-classic-hermes"
     ],
     "experiments": {
       "typedRoutes": true,
