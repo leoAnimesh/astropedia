@@ -30,6 +30,8 @@ import {
 } from './facts';
 import { AREAS, focusFor, linked, linkedSubs, type Focus, type ReportKind } from './areas';
 import { timingWindows, type TimingTopic, type TimingWindow } from '../timing-engine';
+import { analyzeChart } from '../chart-analysis';
+import { planAsk } from '../agent/astrologer';
 import {
   REPORT_VERSION,
   type Chapter,
@@ -83,6 +85,26 @@ const join = (...parts: (string | null | undefined | false)[]) => parts.filter(B
 /** Main influence on a house: its first occupant, else its ruler. */
 function primary(f: ChartFacts, h: number): PlanetName {
   return occupants(f, h)[0] ?? lordOf(f, h);
+}
+
+/**
+ * The chat planner's top planet for an ask (utils/agent/astrologer.ts: the
+ * same career / partner / study ranking the chat names), so a report and a
+ * chat answer about the same chart lead with the same field or trait.
+ * Falls back to the house's main influence.
+ */
+function plannerTop(f: ChartFacts, ask: 'careerField' | 'partner' | 'studyField', h: number): PlanetName {
+  try {
+    const c = planAsk(ask, 'nature', f.profile, f.now, null);
+    const p = c?.items[0]?.planet;
+    if (p) return p as PlanetName;
+  } catch { /* fall back */ }
+  return primary(f, h);
+}
+
+/** Composite planet strength (utils/chart-analysis.ts), the same numbers the chat and timing engine use. */
+function strengthOf(f: ChartFacts, p: PlanetName): number | null {
+  try { return analyzeChart(f.profile).planets[p].strength; } catch { return null; }
 }
 
 const uniq = <T,>(xs: T[]) => [...new Set(xs)];
@@ -508,7 +530,7 @@ function buildLife(f: ChartFacts, focus: Focus): Built {
 
 function buildCareer(f: ChartFacts, focus: Focus): Built {
   const c = chips('career'), t = titles('career');
-  const P = primary(f, 10);
+  const P = plannerTop(f, 'careerField', 10);
   const lord2 = lordOf(f, 2);
   const gain = primary(f, 11);
   const strong = strongPlanets(f, [...occupants(f, 10), lordOf(f, 10), 'Mercury', lordOf(f, 1)]);
@@ -544,7 +566,7 @@ function buildCareer(f: ChartFacts, focus: Focus): Built {
 
 function buildLove(f: ChartFacts, focus: Focus): Built {
   const c = chips('love'), t = titles('love');
-  const P = primary(f, 7);
+  const P = plannerTop(f, 'partner', 7);
   const venus = f.planets.Venus;
   const vEl = elementOf(venus.sign);
   const give = join(
@@ -610,7 +632,7 @@ function buildStudy(f: ChartFacts, focus: Focus): Built {
   const c = chips('study'), t = titles('study');
   const merc = f.planets.Mercury;
   const mEl = elementOf(merc.sign);
-  const P = primary(f, 5);
+  const P = plannerTop(f, 'studyField', 5);
   return {
     lead: tr(`study.learn.${mEl}.lead`),
     glance: [
