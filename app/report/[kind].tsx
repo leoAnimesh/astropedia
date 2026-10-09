@@ -17,6 +17,7 @@ import { FeatureHeader } from '@/components/molecules/FeatureHeader';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Icon, type IconName } from '@/components/atoms/Icon';
 import { EmText, ReportSummaryCard } from '@/components/organisms/ReportSummaryCard';
+import { MatchDoshas } from '@/components/organisms/MatchDoshas';
 import { showDialog } from '@/components/overlays';
 import { FONTS, RADIUS } from '@/constants/themes';
 import type { AgentId } from '@/constants/gurus';
@@ -39,10 +40,10 @@ import {
 
 const TILE_BG = 'rgba(180,130,0,0.10)';
 const KIND_ICON: Record<AnyReportKind, IconName> = {
-  life: 'sun', career: 'briefcase', love: 'heart', health: 'sprout', study: 'study', family: 'house', compat: 'match',
+  life: 'sun', career: 'briefcase', love: 'heart', health: 'sprout', study: 'study', family: 'house', wealth: 'money', compat: 'match',
 };
 const KIND_GURU: Record<ReportKind, AgentId> = {
-  life: 'saga', career: 'career', love: 'love', health: 'health', study: 'study', family: 'family',
+  life: 'saga', career: 'career', love: 'love', health: 'health', study: 'study', family: 'family', wealth: 'career',
 };
 
 export default function ReportScreen() {
@@ -438,6 +439,16 @@ function ChapterBody({ c, open, onToggle, showDasha, onDasha, latin }: {
       )}
     </>
   );
+
+  if (c.type === 'checks') {
+    return (
+      <>
+        <EmText text={c.body} style={[styles.body, { color: theme.ink }]} />
+        <MatchDoshas items={c.items} />
+        {why}
+      </>
+    );
+  }
 
   if (c.type === 'timing') {
     return (

@@ -12,19 +12,22 @@
  *                                                           Mercury, Jupiter
  *   family  4th (home, mother), 9th (father), 5th (children), 2nd (family)
  *                                                           Moon, Jupiter
+ *   wealth  2nd (savings), 11th (income, gains), 9th (fortune)
+ *                                                           Jupiter
+ *           (rules.md 5.7 money_wealth; sade sati counts as money pressure)
  *
  * Focus dots count real triggers active today (never a score):
  *   - the running dasha sub-period, when its lord rules or sits in one of
  *     the area's houses or is one of its karakas;
  *   - each slow planet (Jupiter, Saturn, Rahu) now passing through one of
  *     the area's houses;
- *   - sade sati, for life and health (energy) only.
+ *   - sade sati, for life, health (energy) and wealth (money pressure) only.
  * Shown as 1–3 dots: 0–1 triggers Quiet, 2 Active, 3+ Busy.
  */
 import { lordOf, occupants, SLOW_PLANETS, type ChartFacts, type PlanetName, type SlowPlanet } from './facts';
 import type { DashaPeriod } from '../astrology';
 
-export const REPORT_KINDS = ['life', 'career', 'love', 'health', 'study', 'family'] as const;
+export const REPORT_KINDS = ['life', 'career', 'love', 'health', 'study', 'family', 'wealth'] as const;
 export type ReportKind = (typeof REPORT_KINDS)[number];
 export type AnyReportKind = ReportKind | 'compat';
 
@@ -45,6 +48,7 @@ export const AREAS: Record<ReportKind, AreaSpec> = {
   health: { houses: [1, 6, 12],     karakas: ['Sun', 'Moon'],                sade: true,  sadeTiming: true },
   study:  { houses: [5, 4, 9],      karakas: ['Mercury', 'Jupiter'],         sade: false, sadeTiming: false },
   family: { houses: [4, 9, 5, 2],   karakas: ['Moon', 'Jupiter'],            sade: false, sadeTiming: true },
+  wealth: { houses: [2, 11, 9],     karakas: ['Jupiter'],                    sade: true,  sadeTiming: true },
 };
 
 /** The planet rules or sits in one of the area's houses, or is one of its karakas. */

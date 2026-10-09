@@ -17,7 +17,8 @@ import { matchCharts, verdictFor, type KootaKey } from '../ashtakoota';
 import { computeCompatibility } from '../compatibility';
 import { guruLocked } from '../guru-context';
 import type { Profile } from '../database';
-import i18n, { tPlanet } from '../i18n';
+import i18n, { localizeDigits, tPlanet } from '../i18n';
+import { matchChecks } from '../match-detail';
 import { chartHash, elementOf, getChartFacts, type Element } from './facts';
 import { dmy, lang, minutesToRead, my, sg, tr } from './build';
 import { REPORT_VERSION, type Chapter, type CompatExtras, type KootaRow, type ReportPayload, type TimelineItem } from './types';
@@ -175,6 +176,20 @@ export function buildCompatReport(a: Person, b: Person, mode: CompatMode, now: D
       { type: 'text', id: 'ch-differ', chip: chip('differ'), title: chip('differ'),
         body: weak.length ? tr('compat.differIntro') : tr('compat.differNone'),
         items: weak, tone: 'watch', why: why(kootaWhy) },
+      {
+        type: 'checks', id: 'ch-checks', chip: chip('checks'), title: chip('checks'),
+        body: tr('compat.checks.body'),
+        items: matchChecks(
+          m, bride, groom,
+          (k, v) => tr(`compat.${k}`, v),
+          (k, v) => i18n.t(`compatibility:${k}`, v ?? {}) as string,
+          (n) => tPlanet(n), (n) => localizeDigits(String(n)),
+        ),
+        why: [tr('compat.whyChart'), tr('compat.checks.why', {
+          a: A, b: B,
+          signA: sg(fa.moonSign), signB: sg(fb.moonSign),
+        })].join(' '),
+      },
       { type: 'text', id: 'ch-home', chip: chip('home'), title: chip('home'),
         body: ea === eb
           ? tr('compat.homeSame', { h: tr(`compat.homeWant.${ea}`) })

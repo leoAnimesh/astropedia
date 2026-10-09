@@ -33,7 +33,7 @@ import { guruLocked } from '@/utils/guru-context';
 
 const TILE_BG = 'rgba(180,130,0,0.10)';
 
-const AREA_TILES: { kind: ReportKind | 'wealth'; icon: IconName }[] = [
+const AREA_TILES: { kind: Exclude<ReportKind, 'life'>; icon: IconName }[] = [
   { kind: 'career', icon: 'briefcase' },
   { kind: 'love', icon: 'heart' },
   { kind: 'health', icon: 'sprout' },
@@ -62,7 +62,7 @@ function useTabFacts(profile: Profile | null): TabFacts | null {
     const task = InteractionManager.runAfterInteractions(() => {
       try {
         const areas: TabFacts['areas'] = {};
-        for (const k of ['career', 'love', 'health', 'study', 'family'] as const) {
+        for (const { kind: k } of AREA_TILES) {
           const g = areaGlance(profile, k);
           if (g) areas[k] = g;
         }
@@ -277,11 +277,10 @@ export default function ReportsTabScreen() {
               </View>
               <View style={styles.grid}>
                 {AREA_TILES.map(({ kind, icon }) => {
-                  const soon = kind === 'wealth';
                   const locked = kind === 'love' && loveLocked;
-                  const g = !soon && !locked ? facts?.areas[kind as ReportKind] : undefined;
-                  const dim = soon || locked;
-                  const now = soon ? t('tab.comingSoon') : locked ? t('tab.lockedLine') : g?.now ?? ' ';
+                  const g = !locked ? facts?.areas[kind] : undefined;
+                  const dim = locked;
+                  const now = locked ? t('tab.lockedLine') : g?.now ?? ' ';
                   return (
                     <TouchableOpacity
                       key={kind}

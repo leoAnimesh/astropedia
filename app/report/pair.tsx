@@ -37,7 +37,7 @@ import { openGuruChat } from '@/utils/guru-nav';
 import { guruLocked } from '@/utils/guru-context';
 import { matchQuestion } from '@/utils/match-detail';
 import { captureAndShare } from '@/utils/share';
-import { orientPair, partnerAllowed, type CompatMode } from '@/utils/reports';
+import { orientPair, partnerAllowed, type ChecksChapter, type CompatMode } from '@/utils/reports';
 
 const TILE_BG = 'rgba(180,130,0,0.10)';
 
@@ -200,6 +200,8 @@ export default function PairScreen() {
   })) : undefined;
 
   const missing = [a, b].find((p) => p && !p.birthDate) ?? null;
+  // Nadi / Bhakoot / Gana / Manglik: the report's own chapter, so this screen, the full report and the PDF agree.
+  const checks = partner ? report?.chapters.find((c): c is ChecksChapter => c.type === 'checks') : undefined;
 
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
@@ -261,10 +263,10 @@ export default function PairScreen() {
           <>
             <ReportSummaryCard ref={cardRef} report={report} kootaNotes={kootaNotes} />
 
-            {match && bride && groom && (
+            {checks && (
               <View style={styles.section}>
                 <EyebrowLabel size={11}>{tc('match.doshas')}</EyebrowLabel>
-                <MatchDoshas match={match} bride={bride} groom={groom} />
+                <MatchDoshas items={checks.items} />
               </View>
             )}
 

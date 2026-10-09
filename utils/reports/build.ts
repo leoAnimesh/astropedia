@@ -9,6 +9,9 @@
  *  - planet names appear sparingly in the prose (timing, focus reason);
  *  - no scores except the focus dots, which count real triggers;
  *  - health is about energy and rest only, with a doctor line top and bottom;
+ *  - wealth describes how money comes and stays (rules.md 5.7): never an
+ *    investment, stock, crypto or lottery call; big decisions go to a
+ *    qualified adviser;
  *  - Love & marriage isn't written for under-18s (guruLocked('love')).
  */
 import { DASHA_YEARS, ZODIAC } from '../../constants/astrology';
@@ -30,7 +33,7 @@ import {
 } from './facts';
 import { AREAS, focusFor, linked, linkedSubs, type Focus, type ReportKind } from './areas';
 import { timingWindows, type TimingTopic, type TimingWindow } from '../timing-engine';
-import { analyzeChart } from '../chart-analysis';
+import { analyzeChart, yogasFor } from '../chart-analysis';
 import { planAsk } from '../agent/astrologer';
 import {
   REPORT_VERSION,
@@ -93,7 +96,7 @@ function primary(f: ChartFacts, h: number): PlanetName {
  * chat answer about the same chart lead with the same field or trait.
  * Falls back to the house's main influence.
  */
-function plannerTop(f: ChartFacts, ask: 'careerField' | 'partner' | 'studyField', h: number): PlanetName {
+function plannerTop(f: ChartFacts, ask: 'careerField' | 'partner' | 'studyField' | 'moneySources', h: number): PlanetName {
   try {
     const c = planAsk(ask, 'nature', f.profile, f.now, null);
     const p = c?.items[0]?.planet;
@@ -246,7 +249,7 @@ function subItem(f: ChartFacts, kind: ReportKind, s: DashaPeriod, isNow: boolean
  * window chat gives for that question, so chat and reports agree).
  */
 export const REPORT_TOPIC: Record<ReportKind, TimingTopic> = {
-  life: 'general', career: 'job', love: 'marriage', health: 'health', study: 'education', family: 'property',
+  life: 'general', career: 'job', love: 'marriage', health: 'health', study: 'education', family: 'property', wealth: 'money',
 };
 /** Kinds whose window is shown to under-18s (no job / home / marriage timing for minors). */
 const MINOR_WINDOW: ReportKind[] = ['life', 'health', 'study'];
@@ -431,6 +434,18 @@ function helpsChapter(f: ChartFacts, kind: ReportKind, focus: Focus, chip: strin
         'ask', 'phone',
       ];
       break;
+    case 'wealth': {
+      const pressure = f.sade.active || ['Rahu', 'Mars', 'Ketu', 'Saturn'].includes(sub);
+      keys = [
+        'saveFirst',
+        ...has(pressure, 'noLend'),
+        ...has(focus.dots >= 2 || pressure, 'cushion'),
+        ...has(f.minor, 'learn'),
+        ...has(!f.minor && ['Rahu', 'Mercury', 'Venus', 'Moon'].includes(sub), 'track'),
+        'leak', 'cushion', ...has(!f.minor, 'adviser'),
+      ];
+      break;
+    }
     case 'family':
       keys = [
         'meal',
@@ -689,8 +704,73 @@ function buildFamily(f: ChartFacts, focus: Focus): Built {
   };
 }
 
+/**
+ * Wealth (rules.md 5.7): where money comes from (the chat planner's money
+ * source, and where the ruler of the 11th sits), how it stays (the 2nd
+ * house's ruler, its hora half in D2 when the birth time is known, Jupiter),
+ * classical dhana yogas (utils/chart-analysis.ts), leaks to watch, and the
+ * timing engine's money window. Practical, free habits only.
+ */
+function buildWealth(f: ChartFacts, focus: Focus): Built {
+  const c = chips('wealth'), t = titles('wealth');
+  const P = plannerTop(f, 'moneySources', 11);
+  const lord2 = lordOf(f, 2), lord11 = lordOf(f, 11);
+  const src = f.planets[lord11].house;
+
+  // D2 (hora): the 2nd lord in the Sun's half earns, in the Moon's half keeps.
+  // Only with a birth time, and only when the half doesn't change within ±10 min.
+  let hora: 'sun' | 'moon' | null = null;
+  let analysis: ReturnType<typeof analyzeChart> | null = null;
+  try { analysis = analyzeChart(f.profile); } catch { analysis = null; }
+  const d2 = analysis?.vargas.charts.D2;
+  if (f.hasTime && f.hasPlace && d2 && d2.planetStable[lord2]) hora = d2.planets[lord2] === 4 ? 'sun' : 'moon';
+
+  const jup = f.planets.Jupiter;
+  const jupLevel: Level = isStrong(jup) ? 'strong' : jup.dignity === 'debilitated' ? 'weak' : 'mid';
+  const dhana = analysis ? yogasFor(analysis, [2, 11], ['dhana']) : [];
+
+  const watchCands: PlanetName[] = [
+    ...occupants(f, 12),
+    ...([2, 11, 12].includes(f.planets.Rahu.house) ? ['Rahu' as const] : []),
+    ...([2, 12].includes(f.planets.Mars.house) ? ['Mars' as const] : []),
+    ...(linked(f, 'wealth', f.dasha.antar.lord) ? [f.dasha.antar.lord as PlanetName] : []),
+    lordOf(f, 12), 'Venus', 'Moon',
+  ];
+  const watch = watchPlanets(f, watchCands, [P], 3);
+
+  return {
+    lead: tr(`wealth.p.${P}.lead`),
+    glance: [
+      { k: tr('glance.wealth.k1'), v: tr(`short.source.${P}`) },
+      { k: tr('glance.wealth.k2'), v: tr(`short.keep.${lord2}`) },
+    ],
+    chapters: [
+      text('ch-earn', c('earn'), t('earn'),
+        join(tr(`wealth.p.${P}.lead`), tr(`wealth.p.${P}.more`), tr(`wealth.src.${src}`)),
+        chartWhy(whyHouse(f, 11), dignityWhys(f, [P]), tr('why.moneyPlanner', { planet: pl(P) }))),
+      text('ch-keep', c('keep'), t('keep'),
+        join(tr(`wealth.keep.${lord2}`), hora ? tr(`wealth.hora.${hora}`) : ''),
+        chartWhy(whyHouse(f, 2), dignityWhys(f, [lord2]),
+          hora ? tr('why.hora', { planet: pl(lord2), half: tr(`why.horaHalf.${hora}`) }) : '')),
+      text('ch-signs', c('signs'), t('signs'),
+        join(tr(dhana.length ? 'wealth.yoga.found' : 'wealth.yoga.none'), tr(`wealth.jupiter.${jupLevel}`)),
+        chartWhy(
+          ...dhana.slice(0, 2).map((y) => tr('why.dhana', { a: pl(y.planets[0]), b: pl(y.planets[1] ?? y.planets[0]) })),
+          whyFor(f, ['Jupiter']),
+        )),
+      text('ch-watch', c('watch'), t('watch'), tr(focus.dots >= 2 ? 'wealth.watchIntroBusy' : 'wealth.watchIntro'),
+        timingWhy(whyStretch(f, 'wealth'), whyTransits(f, 'wealth'), tr('why.chart'), whyHouse(f, 12),
+          whyFor(f, watch.filter((p) => !occupants(f, 12).includes(p) && p !== lordOf(f, 12)))),
+        watch.map((p) => tr(`wealth.watch.${p}`)), 'watch'),
+      timingChapter(f, 'wealth', t('timing'), c('timing')),
+      helpsChapter(f, 'wealth', focus, c('helps')),
+    ],
+  };
+}
+
 const BUILDERS: Record<ReportKind, (f: ChartFacts, focus: Focus) => Built> = {
   life: buildLife, career: buildCareer, love: buildLove, health: buildHealth, study: buildStudy, family: buildFamily,
+  wealth: buildWealth,
 };
 
 // ─── Assembly ────────────────────────────────────────────────────────────────
@@ -702,7 +782,10 @@ export function minutesToRead(chapters: Chapter[], extra: string[] = []): number
   const words: string[] = [...extra];
   for (const c of chapters) {
     if (c.type === 'helps') c.items.forEach((h) => words.push(h.t, h.s));
-    else {
+    else if (c.type === 'checks') {
+      words.push(c.title, c.body, c.why);
+      c.items.forEach((i) => words.push(i.text, i.detail, ...i.people.flatMap((p) => [p.text, ...p.detail])));
+    } else {
       words.push(c.title, c.body, c.why);
       if (c.type === 'text') words.push(...c.items);
       else c.items.forEach((i) => words.push(i.title, i.sub));

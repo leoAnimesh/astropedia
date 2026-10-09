@@ -79,6 +79,14 @@ function chapterHtml(c: Chapter, n: number, labels: PdfLabels, accent: string): 
     return `<section class="ch">${head}<div class="card">${rows}</div><p class="note">${esc(labels.helpsNote)}</p></section>`;
   }
   const why = `<div class="why"><b>${esc(labels.why)}</b> ${esc(c.why)}</div>`;
+  if (c.type === 'checks') {
+    const rows = c.items.map((it) => {
+      const flag = it.state === 'note' ? `<span class="flag" style="background:${accent}"></span>` : '';
+      const people = it.people.map((p) => `<div class="cp"><div class="cp-t">${esc(p.text)}</div>${p.detail.map((d) => `<div class="cd">${esc(d)}</div>`).join('')}</div>`).join('');
+      return `<div class="check"><div class="check-h"><span class="check-n">${esc(it.name)}</span><span class="kt">${esc(it.trad)}</span>${flag}</div><div class="check-t">${esc(it.text)}</div>${people}${it.detail ? `<div class="cd">${esc(it.detail)}</div>` : ''}</div>`;
+    }).join('');
+    return `<section class="ch">${head}<p class="body">${esc(c.body, true)}</p><div class="card">${rows}</div>${why}</section>`;
+  }
   if (c.type === 'timing') {
     const rows = c.items.map((t) => `<div class="tl ${t.state}"><div class="tl-dot" style="${t.state === 'now' ? `background:${accent};border-color:${accent}` : t.state === 'soon' ? `border-color:${accent}` : ''}"></div><div class="tl-body"><div class="tl-meta"><span class="tl-date" style="${t.state === 'now' ? `color:${accent}` : ''}">${esc(t.date)}</span><span class="tag">${esc(t.tag)}</span></div><div class="tl-title">${esc(t.title)}</div><div class="tl-sub">${esc(t.sub)}</div></div></div>`).join('');
     return `<section class="ch">${head}<p class="body">${esc(c.body, true)}</p><div class="timeline">${rows}</div>${why}</section>`;
@@ -167,6 +175,15 @@ li{display:flex;gap:10px;color:${c.ink2};margin:4px 0}
 .tick{flex:none;font-weight:600}
 .help-t{font-weight:500}.help-s{color:${c.ink2};font-size:10pt}
 .note{color:${c.muted};font-size:9pt;margin-top:6px}
+.check{padding:12px 16px;border-top:1px solid ${c.hairline};page-break-inside:avoid}
+.check:first-child{border-top:0}
+.check-h{display:flex;align-items:baseline;gap:8px}
+.check-n{font-weight:500}
+.flag{display:inline-block;width:6px;height:6px;border-radius:3px;align-self:center}
+.check-t{color:${c.ink2};margin-top:2px}
+.cp{margin-top:8px}
+.cp-t{font-weight:500;font-size:10pt}
+.cd{color:${c.muted};font-size:8.5pt;margin-top:2px}
 .foot{margin-top:24px;padding-top:10px;border-top:1px solid ${c.hairline};color:${c.muted};font-size:8.5pt}
 </style></head>
 <body><div class="wrap">

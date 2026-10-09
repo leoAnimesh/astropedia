@@ -6,7 +6,7 @@
 import type { AnyReportKind } from './areas';
 
 /** Bumped whenever generated text or structure changes: cached payloads regenerate. */
-export const REPORT_VERSION = 2;
+export const REPORT_VERSION = 3;
 
 export type ReportLang = 'en' | 'hi' | 'bn';
 
@@ -63,7 +63,38 @@ export type HelpsChapter = {
   note: string;
 };
 
-export type Chapter = TextChapter | TimingChapter | HelpsChapter;
+/**
+ * One traditional check of a partner match (Nadi, Bhakoot, Gana, Manglik):
+ * a plain sentence, plus the traditional detail the compatibility screen
+ * shows (cancellation reasons, Manglik references and exemptions).
+ */
+export type CheckItem = {
+  key: 'nadi' | 'bhakoot' | 'gana' | 'manglik';
+  /** Plain name ("Health & children"). */
+  name: string;
+  /** Traditional name ("NADI"). */
+  trad: string;
+  /** clear: nothing to note; eased: flagged, then cancelled or softened; note: worth looking at. */
+  state: 'clear' | 'eased' | 'note';
+  /** Plain-language sentence. */
+  text: string;
+  /** The traditional detail, in the compatibility screen's words (may name signs, houses, nakshatras); '' for Manglik (see people). */
+  detail: string;
+  /** Manglik only: each person's reading. */
+  people: { name: string; text: string; detail: string[] }[];
+};
+
+export type ChecksChapter = {
+  type: 'checks';
+  id: 'ch-checks';
+  chip: string;
+  title: string;
+  body: string;
+  items: CheckItem[];
+  why: string;
+};
+
+export type Chapter = TextChapter | TimingChapter | HelpsChapter | ChecksChapter;
 
 export type KootaRow = { key: string; name: string; trad: string; score: number; max: number };
 

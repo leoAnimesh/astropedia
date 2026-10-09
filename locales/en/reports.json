@@ -73,7 +73,7 @@
     },
     "wealth": {
       "title": "Wealth",
-      "sub": "Earning, saving, shared money"
+      "sub": "Earning, saving, money timing"
     },
     "year": {
       "title": "Year ahead"
@@ -166,7 +166,8 @@
       "love": "love",
       "health": "your energy",
       "study": "study",
-      "family": "home and family"
+      "family": "home and family",
+      "wealth": "money"
     },
     "focus": {
       "word": {
@@ -292,7 +293,14 @@
         "10": "in the 10th house (career)",
         "11": "in the 11th house (gains)",
         "12": "in the 12th house (rest, abroad)"
-      }
+      },
+      "moneyPlanner": "The money-source reading weighs the rulers of your 2nd and 11th houses, Jupiter and any wealth yogas; {{planet}} comes out strongest.",
+      "hora": "In the hora (D2) chart, {{planet}}, ruler of your 2nd house, falls in {{half}}.",
+      "horaHalf": {
+        "sun": "the Sun's half (earning)",
+        "moon": "the Moon's half (keeping)"
+      },
+      "dhana": "Dhana yoga: {{a}} and {{b}}, rulers of your money and luck houses, are linked."
     },
     "gift": {
       "Sun": "Taking charge and being trusted with the whole job",
@@ -357,6 +365,11 @@
         "1": "Home is fairly calm now.",
         "2": "Home and family need some of your time now.",
         "3": "Family matters are busy now: patience goes a long way."
+      },
+      "wealth": {
+        "1": "Money is steady right now: a good time to build a saving habit.",
+        "2": "Money is moving now: decide where it goes before it arrives.",
+        "3": "These months are busy for money: keep a cushion and avoid big new commitments."
       }
     },
     "glance": {
@@ -384,6 +397,10 @@
       "family": {
         "k1": "Home life",
         "k2": "Your role"
+      },
+      "wealth": {
+        "k1": "Money comes from",
+        "k2": "Saving style"
       }
     },
     "short": {
@@ -477,6 +494,26 @@
         "earth": "The one everyone relies on",
         "air": "The one who keeps everyone talking",
         "water": "The one who keeps everyone close"
+      },
+      "source": {
+        "Sun": "A steady salary or senior role",
+        "Moon": "Work with people and daily needs",
+        "Mars": "Hands-on, technical or property work",
+        "Mercury": "Skills, trade and commissions",
+        "Jupiter": "Advice, teaching and patient growth",
+        "Venus": "Creative work and comforts",
+        "Saturn": "Long, steady work",
+        "Rahu": "New fields and far-off sources",
+        "Ketu": "Specialist skill"
+      },
+      "keep": {
+        "Sun": "Saves for a goal",
+        "Moon": "Up and down; needs a fixed habit",
+        "Mars": "Earns fast, spends fast",
+        "Mercury": "Good when tracked",
+        "Jupiter": "Steady and generous",
+        "Venus": "Likes comfort; needs a rule",
+        "Saturn": "Careful, grows slowly"
       }
     },
     "life": {
@@ -920,7 +957,8 @@
         "love": "It touches love and partnership directly.",
         "health": "It touches your energy and routines directly.",
         "study": "It touches learning directly.",
-        "family": "It touches home and family directly."
+        "family": "It touches home and family directly.",
+        "wealth": "It touches money directly."
       },
       "chapter": "A new {{years}}-year chapter",
       "in": {
@@ -931,7 +969,8 @@
           "love": "Jupiter starts a year-long pass over love. Good for meeting people and for commitment.",
           "health": "Jupiter starts a year-long pass over your energy. Good for starting habits that last.",
           "study": "Jupiter starts a year-long pass over learning. Good for starting a course or an exam push.",
-          "family": "Jupiter starts a year-long pass over home and family. Good for family plans and gatherings."
+          "family": "Jupiter starts a year-long pass over home and family. Good for family plans and gatherings.",
+          "wealth": "Jupiter starts a year-long pass over your money. Good for building savings and settling old dues."
         },
         "Saturn": {
           "title": "A time for steady effort",
@@ -940,7 +979,8 @@
           "love": "Saturn starts a slow pass over love. Commitment gets serious; take things step by step.",
           "health": "Saturn starts a slow pass over your energy. Fixed routines and sleep matter more now.",
           "study": "Saturn starts a slow pass over learning. Steady daily study beats last-minute pushes.",
-          "family": "Saturn starts a slow pass over home. Duties at home grow, so share them."
+          "family": "Saturn starts a slow pass over home. Duties at home grow, so share them.",
+          "wealth": "Saturn starts a slow pass over your money. Keep costs tight; steady saving now pays off later."
         },
         "Rahu": {
           "title": "A restless new pull",
@@ -949,7 +989,8 @@
           "love": "Rahu moves into love for about a year and a half. Unusual attractions and quick feelings; give them time.",
           "health": "Rahu moves through your energy for about a year and a half. Keep sleep and screen time in check.",
           "study": "Rahu moves into learning for about a year and a half. New subjects excite you; finish one before the next.",
-          "family": "Rahu moves into home life for about a year and a half. Moves or changes at home are possible; keep talking."
+          "family": "Rahu moves into home life for about a year and a half. Moves or changes at home are possible; keep talking.",
+          "wealth": "Rahu moves into your money life for about a year and a half. Tempting offers appear; check them slowly and stay away from quick bets."
         }
       },
       "out": {
@@ -981,7 +1022,8 @@
           "love": "Best window for marriage",
           "health": "Best window for better energy",
           "study": "Best window for studies",
-          "family": "Best window for a home of your own"
+          "family": "Best window for a home of your own",
+          "wealth": "Best window for money to improve"
         },
         "strong": "The life timeline and the slow planets line up here, peaking around {{peak}}.",
         "steady": "A steady window rather than a dramatic one, best around {{peak}}."
@@ -1135,6 +1177,36 @@
           "t": "Listen before you fix",
           "s": "Most family tension eases when people feel heard."
         }
+      },
+      "wealth": {
+        "saveFirst": {
+          "t": "Save before you spend",
+          "s": "Move a fixed amount to savings the day money comes in."
+        },
+        "noLend": {
+          "t": "Don’t lend or stand guarantee for now",
+          "s": "Say no kindly to loans and guarantees for others in this stretch."
+        },
+        "cushion": {
+          "t": "Build a small cushion first",
+          "s": "Aim for three months of basic costs, kept apart from daily money."
+        },
+        "learn": {
+          "t": "Learn how money works",
+          "s": "Ask a parent to show you how saving and a bank account work."
+        },
+        "track": {
+          "t": "Track one month of spending",
+          "s": "Write down every spend for 30 days. Most leaks show up in the first week."
+        },
+        "leak": {
+          "t": "Close one leak this month",
+          "s": "One subscription, habit or fee you don’t need. Small, but it repeats."
+        },
+        "adviser": {
+          "t": "Check big decisions with an adviser",
+          "s": "Before a loan, investment or big purchase, talk to a qualified financial adviser. No chart replaces that."
+        }
       }
     },
     "footer": {
@@ -1146,7 +1218,8 @@
       "study": "Choose with your teachers and family too.",
       "family": "",
       "compat": "Two charts can show where things come easily and where to talk more. They can’t decide a relationship for you.",
-      "compatBase": "Written on this phone from {{a}}’s and {{b}}’s birth charts on {{date}}. Astrology shows tendencies, not certainties."
+      "compatBase": "Written on this phone from {{a}}’s and {{b}}’s birth charts on {{date}}. Astrology shows tendencies, not certainties.",
+      "wealth": "This is not financial advice. For loans, investments or big purchases, talk to a qualified financial adviser."
     },
     "ask": {
       "life": {
@@ -1222,6 +1295,16 @@
           "q1": "How can {{a}} and {{b}} understand each other better?",
           "q2": "What are calmer times ahead for {{a}} and {{b}} at home?"
         }
+      },
+      "wealth": {
+        "you": {
+          "q1": "When will my finances improve?",
+          "q2": "Where does most of my money come from?"
+        },
+        "other": {
+          "q1": "When will {{name}}'s finances improve?",
+          "q2": "Where does most of {{name}}'s money come from?"
+        }
       }
     },
     "compat": {
@@ -1279,7 +1362,8 @@
           "differ": "Where you differ",
           "home": "Home & family life",
           "timing": "Good times ahead",
-          "helps": "What helps"
+          "helps": "What helps",
+          "checks": "Things to consider"
         },
         "friend": {
           "connect": "How you click",
@@ -1300,7 +1384,8 @@
           "differ": "Money, pace, and how you rest",
           "home": "Living together, families on both sides",
           "timing": "Warmer stretches, with dates",
-          "helps": "Small habits for you two. All free"
+          "helps": "Small habits for you two. All free",
+          "checks": "Traditional checks, in plain words"
         },
         "friend": {
           "connect": "What you bring out in each other",
@@ -1459,12 +1544,152 @@
       },
       "whyChart": "From your two charts:",
       "connectSame": "Both of you are {{e}} at heart. {{line}}",
-      "homeSame": "At home, you both want {{h}}. Agree early on how you share chores, money and time with both families."
+      "homeSame": "At home, you both want {{h}}. Agree early on how you share chores, money and time with both families.",
+      "checks": {
+        "body": "The traditional match also looks at four sensitive points. Each is here in plain words, with the traditional detail underneath. None of them decides a relationship.",
+        "why": "These are the dosha checks of kundli matching. Nadi, Bhakoot and Gana come from both Moons ({{a}}: Moon in {{signA}}; {{b}}: Moon in {{signB}}) and their nakshatras; Manglik counts Mars from the ascendant, the Moon and Venus.",
+        "nadi": {
+          "none": "Clear: your natures balance each other here.",
+          "present": "Flagged: tradition gives this point the most weight. If it matters to your families, look at it calmly with the full charts.",
+          "cancelled": "Flagged at first, then set aside by a traditional exception, so it is not counted against you."
+        },
+        "bhakoot": {
+          "none": "Clear: your emotional rhythms sit well together.",
+          "present": "Flagged: your moods and rhythms run differently. Something to talk about, not to fear.",
+          "cancelled": "Flagged at first, then set aside by a traditional exception, so it is not counted against you."
+        },
+        "gana": {
+          "none": "Clear: your temperaments sit well together.",
+          "present": "Flagged: you react to things in different ways. Patience on both sides helps.",
+          "softened": "A small mismatch in temperament, softened by how well your minds get along."
+        },
+        "manglik": {
+          "name": "Mars check",
+          "trad": "MANGLIK",
+          "person": {
+            "none": "{{name}}: no Mars concern.",
+            "mild": "{{name}}: a mild Mars note, from one way of counting only.",
+            "present": "{{name}}: Manglik by tradition.",
+            "cancelled": "{{name}}: Mars sits in a sensitive place, but a classical exception cancels it."
+          },
+          "status": {
+            "none": "Clear for both of you.",
+            "exempt": "Any Mars concern here is cancelled by a classical exception.",
+            "cancelled": "You are both Manglik, which tradition sees as balancing out.",
+            "one": "Only one of you is Manglik. Tradition has many exceptions; look at it calmly with the full charts. It needs no paid fix."
+          }
+        }
+      }
     },
     "planetOf": {
       "Jupiter": "Jupiter’s",
       "Saturn": "Saturn’s",
       "Rahu": "Rahu’s"
+    },
+    "wealth": {
+      "chips": {
+        "earn": "Earning",
+        "keep": "Saving",
+        "signs": "Strengths",
+        "watch": "Watch-outs",
+        "timing": "Timing",
+        "helps": "What helps"
+      },
+      "titles": {
+        "earn": "How money comes to you",
+        "keep": "How you keep it",
+        "signs": "What supports your money",
+        "watch": "Money leaks to watch",
+        "timing": "Timing: money periods",
+        "helps": "What helps"
+      },
+      "p": {
+        "Sun": {
+          "lead": "Your money comes best through <em>a steady position</em> and your good name.",
+          "more": "A salary, government work or a senior role suits how you earn. Income tends to rise with your standing."
+        },
+        "Moon": {
+          "lead": "Your money comes through <em>work with people</em>, close to their daily needs.",
+          "more": "Public-facing work, food, hospitality or everyday goods suit you. Income can rise and fall with the seasons, so keep a cushion."
+        },
+        "Mars": {
+          "lead": "Your money comes through <em>hands-on skill</em> and quick, firm decisions.",
+          "more": "Property, engineering or technical work suits how you earn. You earn fast when you act; watch the urge to spend just as fast."
+        },
+        "Mercury": {
+          "lead": "Your money comes through <em>skills, trade and talk</em>.",
+          "more": "Freelancing, commissions, selling or any work where your mind is the tool suits you. More than one small income stream works well for you."
+        },
+        "Jupiter": {
+          "lead": "Your money grows through <em>advice, teaching and patience</em>.",
+          "more": "Finance, guidance or teaching roles suit you, and money you leave alone for years tends to grow. Good mentors help your money as much as your work."
+        },
+        "Venus": {
+          "lead": "Your money comes through <em>creative work and good relations</em>.",
+          "more": "Design, beauty, the arts or comfort goods suit how you earn. You enjoy spending on nice things, so a saving rule keeps the balance."
+        },
+        "Saturn": {
+          "lead": "Your money builds <em>slowly and lasts</em>.",
+          "more": "Long, steady work and patient saving suit you far better than quick gains. Wealth tends to come later in life, and it stays."
+        },
+        "Rahu": {
+          "lead": "Your money can come from <em>new or far-off sources</em>.",
+          "more": "Technology, foreign links or new-age fields suit you. Gains can come in jumps; stay away from speculation and keep a cushion."
+        },
+        "Ketu": {
+          "lead": "Your money comes through <em>specialist skill</em>, more than through chasing it.",
+          "more": "Research or niche expertise suits you, with the odd unexpected gain. Simple, automatic saving works better for you than complex plans."
+        }
+      },
+      "src": {
+        "1": "Gains come mostly through your own effort and the way you present yourself.",
+        "2": "Gains tend to come through family, savings that grow, and your way with words.",
+        "3": "Gains come through your own initiative: writing, selling, short trips or side skills.",
+        "4": "Gains come through home, land, vehicles or a family business.",
+        "5": "Gains come through creative work, teaching or ideas you build on over time (patient plans, not bets).",
+        "6": "Gains come through service, daily hard work and solving problems for others.",
+        "7": "Gains come through partners, trade and dealing with the public.",
+        "8": "Gains can come through shared money, insurance or family inheritance, often in sudden steps.",
+        "9": "Gains come through teachers, elders, travel or work far from home.",
+        "10": "Gains come mainly through your career: a salary, promotions and your standing.",
+        "11": "Gains come through friends, networks and steady income that keeps adding up.",
+        "12": "Gains can come from far away or abroad, but spending runs high too, so saving needs a plan."
+      },
+      "keep": {
+        "Sun": "You keep money best when it is tied to a goal you are proud of. You spend on looking after others and on your image.",
+        "Moon": "Your savings rise and fall with your mood and your family's needs. A fixed amount saved each month steadies them.",
+        "Mars": "You earn quickly and spend quickly. Money kept out of easy reach stays longer with you.",
+        "Mercury": "You are good with money when you track it. Small, regular savings suit you better than one big plan.",
+        "Jupiter": "You hold money well and often help others with it. Generosity is a strength; just keep your own cushion first.",
+        "Venus": "You like comfort and beautiful things, and money goes there easily. A saving rule set before payday keeps the balance.",
+        "Saturn": "You are careful with money, sometimes too careful. Savings grow slowly but surely over the years."
+      },
+      "hora": {
+        "sun": "You tend to build wealth by earning more and taking the lead, more than by holding back.",
+        "moon": "You tend to build wealth by keeping and growing what you have, more than by chasing more."
+      },
+      "yoga": {
+        "found": "Your chart has a classic sign of wealth: the planets behind your income are linked with the ones behind luck and self-effort. It points to money that builds when you keep at it.",
+        "none": "No single classic sign of wealth stands out, which is common. Here money follows steady habits more than luck."
+      },
+      "jupiter": {
+        "strong": "Good advice and good timing tend to find you, and money you put away patiently tends to grow.",
+        "mid": "Money grows when you give it time; patience pays more than quick moves.",
+        "weak": "Be careful whose money advice you follow, and check twice before trusting any promise of quick returns."
+      },
+      "watchIntro": "Where money tends to slip away:",
+      "watchIntroBusy": "Where money tends to slip away, more so in these months:",
+      "watch": {
+        "Sun": "Spending to keep up appearances or to please people in charge.",
+        "Moon": "Mood spending: buying to feel better on a low day.",
+        "Mars": "Quick decisions, impulse buys, and lending to friends.",
+        "Mercury": "Too many small subscriptions and deals that add up.",
+        "Jupiter": "Giving or lending more than you can spare.",
+        "Venus": "Comforts, gifts and nice things that slowly eat the savings.",
+        "Saturn": "Holding back so hard that needed things wait too long.",
+        "Rahu": "Get-rich-quick offers, schemes and speculation.",
+        "Ketu": "Forgetting bills and loose ends because money feels unimportant."
+      }
     }
   }
 }
