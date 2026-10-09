@@ -30,6 +30,7 @@ import {
   type ReportKind,
 } from '@/utils/reports';
 import { guruLocked } from '@/utils/guru-context';
+import { logger } from '@/utils/logger';
 
 const TILE_BG = 'rgba(180,130,0,0.10)';
 
@@ -78,7 +79,7 @@ function useTabFacts(profile: Profile | null): TabFacts | null {
           sade,
         });
       } catch (e) {
-        console.warn('[reports] tab facts failed', e);
+        logger.warn('[reports] tab facts failed', e);
         setState({ key, areas: {}, dasha: null, sade: { state: 'none', date: null } });
       }
     });

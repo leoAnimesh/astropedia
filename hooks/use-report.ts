@@ -12,6 +12,7 @@ import { InteractionManager } from 'react-native';
 import { getReportRow, saveReportPayload, type Profile } from '@/utils/database';
 import { useAppLanguage } from '@/utils/i18n';
 import { todayIso } from '@/utils/format';
+import { logger } from '@/utils/logger';
 import {
   buildCompatReport,
   buildReport,
@@ -55,7 +56,7 @@ function useCached(
         try {
           report = build();
         } catch (e) {
-          console.warn('[reports] build failed', e);
+          logger.warn('[reports] build failed', e);
         }
         setState({ key, report });
         if (report) {

@@ -19,6 +19,7 @@ import { isModelReady, waitForModelReady } from '@/utils/model-download';
 import { GITA_QUOTE_START } from '@/utils/gita';
 import i18n from '@/utils/i18n';
 import type { AgentId } from '@/constants/gurus';
+import { logger } from '@/utils/logger';
 
 const THINK_OPEN  = '<think>';
 const THINK_CLOSE = '</think>';
@@ -450,11 +451,11 @@ export function useChat(
           generateThreadTitle(threadId, thread.profileId, profile, text.trim(), finalText);
         }
       } catch (err) {
-        console.error('[useChat] saving reply failed:', err);
+        logger.error('[useChat] saving reply failed:', err);
       }
     } catch (err) {
       activeTyper?.stop();
-      console.error('[useChat] AI error:', err);
+      logger.error('[useChat] AI error:', err);
       // Shown only (not saved), so it can be in the app language. Own id, so
       // it can never collide with a reply bubble.
       const errorMsg = { ...buildAiMsgBase(threadId), content: i18n.t('chat:errors.generic') };

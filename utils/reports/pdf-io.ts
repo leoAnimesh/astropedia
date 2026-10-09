@@ -12,6 +12,7 @@ import { InstrumentSerif_400Regular, InstrumentSerif_400Regular_Italic } from '@
 import { Geist_400Regular, Geist_500Medium } from '@expo-google-fonts/geist';
 import { reportHtml, type PdfFonts, type PdfLabels } from './pdf';
 import type { ReportPayload } from './types';
+import { logger } from '../logger';
 
 let fontsPromise: Promise<PdfFonts> | null = null;
 
@@ -60,7 +61,7 @@ export async function shareReportPdf(report: ReportPayload, labels: PdfLabels, a
   } catch (e) {
     const msg = String((e as Error)?.message ?? e);
     if (/native module|ExpoPrint|Cannot find/i.test(msg)) return 'unavailable';
-    console.warn('[reports] pdf failed', e);
+    logger.warn('[reports] pdf failed', e);
     return 'failed';
   }
 }
