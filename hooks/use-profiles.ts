@@ -8,6 +8,7 @@ import {
   deleteProfile as dbDeleteProfile,
   isSystemProfile,
   birthTzFor,
+  clearReportPayloads,
   takeBackfilledProfileIds,
   type Profile,
 } from '@/utils/database';
@@ -116,6 +117,9 @@ export function useProfiles() {
       };
     }
     await updateProfile(id, patch);
+    // Reports are cached by chart hash (which also covers the name), so they
+    // would regenerate anyway; dropping the text now frees the space at once.
+    await clearReportPayloads(id).catch(() => {});
 
     // Birth details directly drive the chart. Invalidate every cached
     // artifact keyed by the profile so the next read recomputes against the

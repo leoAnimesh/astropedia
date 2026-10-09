@@ -15,6 +15,7 @@ import { localDateIso } from '@/utils/format';
 import { formatDayDate, tPlanet } from '@/utils/i18n';
 import { alertQuestion, explainTransit, findAlert } from '@/utils/transits';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
+import { openGuruChat } from '@/utils/guru-nav';
 
 const fmtDay = formatDayDate;
 
@@ -29,8 +30,11 @@ export default function AlertDetailScreen() {
   const styles = useIndicStyles(baseStyles);
   const { t }             = useTranslation('alerts');
   const { theme }         = useAccent();
-  const { alertId }       = useLocalSearchParams<{ alertId: string }>();
-  const { activeProfile } = useProfiles();
+  const { alertId, profileId } = useLocalSearchParams<{ alertId: string; profileId?: string }>();
+  const { profiles, activeProfile: active } = useProfiles();
+  // The alert belongs to the profile it was created for (notification taps and
+  // list links pass profileId); fall back to the active one.
+  const activeProfile = (profileId ? profiles.find((p) => p.id === String(profileId)) : null) ?? active;
 
   const today = localDateIso(new Date());
   const alert = useMemo(
@@ -85,8 +89,7 @@ export default function AlertDetailScreen() {
   const askSaga = () => {
     if (!activeProfile) return;
     const q = alertQuestion(alert);
-    const tempId = 't_' + Math.random().toString(36).slice(2, 11);
-    router.push(`/chat/${tempId}?profileId=${activeProfile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
+    openGuruChat('saga', activeProfile.id, q);
   };
 
   return (

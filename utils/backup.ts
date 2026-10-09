@@ -11,19 +11,23 @@
  *     schema: <latest DB migration version>,
  *     exportedAt: ISO time, appVersion: '1.0.0' | null,
  *     data: { profiles: [...], threads: [...], messages: [...],
- *             saved_answers: [...], journal_entries: [...] },   // raw DB rows
+ *             saved_answers: [...], journal_entries: [...],
+ *             reports: [...] },                                 // raw DB rows
  *     settings: { language, theme_mode, ... }                   // see SETTINGS_SPEC
  *   }
  *
  * Caches (horoscopes, chart readings, follow-up chips, the AI answer cache,
  * daily message counters, the onboarding draft) are never written: only the
- * keys in SETTINGS_SPEC are, and unknown keys in a file are ignored.
+ * keys in SETTINGS_SPEC are, and unknown keys in a file are ignored. Reports
+ * (schema v8) keep only which report was read, how far and when: the cached
+ * text (payload, chart_hash, generated_at) is dropped on export and on import
+ * and is regenerated from the chart the next time the report opens.
  *
  * The file holds birth details and chats. It is only ever written to the
  * device and handed to the system share sheet; nothing is uploaded.
  */
 import type { AccentKey, ThemeMode } from '../constants/themes';
-import { SCHEMA_VERSION, SYSTEM_PROFILES } from './db-schema';
+import { SCHEMA_VERSION, SYSTEM_PROFILES, isAgentId } from './db-schema';
 
 export const BACKUP_APP = 'astropedia';
 
@@ -34,6 +38,7 @@ type ColumnKind =
   | 'text'      // required string (default used when missing)
   | 'textNull'  // string or null
   | 'real'      // finite number or null
+  | 'number'    // required finite number (default used when missing)
   | 'bool';     // stored as 0/1, accepts true/false too
 
 type Column = {
@@ -54,7 +59,7 @@ type TableSpec = {
   unique: string[][];
 };
 
-export type BackupTable = 'profiles' | 'threads' | 'messages' | 'saved_answers' | 'journal_entries';
+export type BackupTable = 'profiles' | 'threads' | 'messages' | 'saved_answers' | 'journal_entries' | 'reports';
 
 /** Every user table, in insert order (parents before children). */
 export const BACKUP_TABLES: readonly TableSpec[] = [
@@ -88,6 +93,9 @@ export const BACKUP_TABLES: readonly TableSpec[] = [
     columns: [
       { name: 'id',                   kind: 'id' },
       { name: 'profile_id',           kind: 'id' },
+      // Missing in v1-6 backups: every chat was a general Saga chat (Krishna's
+      // are fixed up from profile_id in fixThreadAgents).
+      { name: 'agent',                kind: 'text',     default: 'saga', since: 7 },
       { name: 'title',                kind: 'textNull', default: null },
       { name: 'last_message_preview', kind: 'textNull', default: null, since: 2 },
       { name: 'archived',             kind: 'bool',     default: 0 },
@@ -142,11 +150,28 @@ export const BACKUP_TABLES: readonly TableSpec[] = [
       { name: 'updated_at', kind: 'text', default: 'now' },
     ],
   },
+  {
+    // Reading progress only: the cache columns are always written as null
+    // (stripReportCache) and the report regenerates when opened.
+    name: 'reports',
+    since: 8,
+    unique: [['id']],
+    columns: [
+      { name: 'id',           kind: 'id' },
+      { name: 'profile_id',   kind: 'id' },
+      { name: 'kind',         kind: 'text' },
+      { name: 'chart_hash',   kind: 'textNull', default: null },
+      { name: 'generated_at', kind: 'textNull', default: null },
+      { name: 'payload',      kind: 'textNull', default: null },
+      { name: 'progress',     kind: 'number',   default: 0 },
+      { name: 'viewed_at',    kind: 'textNull', default: null },
+    ],
+  },
 ];
 
 /** Children first, so foreign keys never block the wipe. */
 export const WIPE_ORDER: readonly BackupTable[] =
-  ['saved_answers', 'journal_entries', 'messages', 'threads', 'profiles'];
+  ['reports', 'saved_answers', 'journal_entries', 'messages', 'threads', 'profiles'];
 
 export type Row = Record<string, string | number | null>;
 export type BackupData = Record<BackupTable, Row[]>;
@@ -164,6 +189,8 @@ export type BackupSettings = {
   accent_key?: AccentKey;
   push_daily_horoscope?: boolean;
   push_transit_alerts?: boolean;
+  push_festival_reminders?: boolean;
+  push_rahu_kaal?: boolean;
   active_profile_id?: string;
   onboarding_done?: boolean;
   keyboard_mode?: (typeof KEYBOARD_MODES)[number];
@@ -179,6 +206,8 @@ const SETTINGS_SPEC: Record<keyof BackupSettings, (v: unknown) => boolean> = {
   accent_key:           oneOf(ACCENTS),
   push_daily_horoscope: isBool,
   push_transit_alerts:  isBool,
+  push_festival_reminders: isBool,
+  push_rahu_kaal:       isBool,
   active_profile_id:    (v) => typeof v === 'string' && v.length > 0,
   onboarding_done:      isBool,
   keyboard_mode:        oneOf(KEYBOARD_MODES),
@@ -253,6 +282,11 @@ function normalizeRow(spec: TableSpec, raw: unknown, now: string): Row {
           throw new BackupFormatError(`${spec.name}.${col.name}: not a number`);
         }
         break;
+      case 'number':
+        if (typeof v !== 'number' || !Number.isFinite(v)) {
+          throw new BackupFormatError(`${spec.name}.${col.name}: not a number`);
+        }
+        break;
       case 'bool':
         if (v === true || v === 1) v = 1;
         else if (v === false || v === 0) v = 0;
@@ -295,10 +329,63 @@ function dropOrphans(data: BackupData): BackupData {
     messages:        data.messages.filter((m) => threadIds.has(m.thread_id as string)),
     saved_answers:   data.saved_answers,
     journal_entries: data.journal_entries.filter((j) => profileIds.has(j.profile_id as string)),
+    reports:         data.reports.filter((r) => profileIds.has(r.profile_id as string)),
   };
 }
 
+/**
+ * Reports keep reading progress only: the cached text and what it was made
+ * from are dropped (regenerated on open), progress is clamped to 0..1.
+ */
+function stripReportCache(rows: Row[]): Row[] {
+  return rows.map((r): Row => ({
+    ...r,
+    chart_hash:   null,
+    generated_at: null,
+    payload:      null,
+    progress:     Math.min(1, Math.max(0, Number(r.progress) || 0)),
+  }));
+}
+
 const isSystemId = (id: unknown) => SYSTEM_PROFILES.some((p) => p.id === id);
+
+const KRISHNA_PROFILE_ID = '__krishna__';
+
+/**
+ * Guru chats (schema v7): Krishna's threads are always agent 'krishna', an
+ * unknown agent becomes 'saga', and only the newest active thread per
+ * (profile, agent) stays active (pinned wins, as in migration 7); the others
+ * are archived. Without this, a pre-v7 backup with several open chats would
+ * break the one-active-chat index and abort the restore.
+ */
+function fixThreadAgents(threads: Row[], now: Date): Row[] {
+  const out: Row[] = threads.map((t): Row => ({
+    ...t,
+    agent: t.profile_id === KRISHNA_PROFILE_ID ? 'krishna' : isAgentId(t.agent) ? t.agent : 'saga',
+  }));
+  const str = (v: unknown) => (typeof v === 'string' ? v : '');
+  const keep = new Map<string, number>();
+  out.forEach((t, i) => {
+    if (t.archived) return;
+    const key = `${t.profile_id}\u0000${t.agent}`;
+    const j = keep.get(key);
+    if (j === undefined) { keep.set(key, i); return; }
+    const a = out[j];
+    // Same order as the migration: pinned, pinned_at, updated_at, created_at, later row.
+    const cmp =
+      (Number(t.pinned) - Number(a.pinned)) ||
+      str(t.pinned_at).localeCompare(str(a.pinned_at)) ||
+      str(t.updated_at).localeCompare(str(a.updated_at)) ||
+      str(t.created_at).localeCompare(str(a.created_at)) ||
+      1;
+    if (cmp > 0) keep.set(key, i);
+  });
+  const active = new Set(keep.values());
+  const stamp = now.toISOString();
+  return out.map((t, i): Row =>
+    t.archived || active.has(i) ? t : { ...t, archived: 1, archived_at: t.archived_at ?? stamp },
+  );
+}
 
 /**
  * Builds the backup object from raw `SELECT *` rows and the current settings.
@@ -317,6 +404,8 @@ export function buildBackup(input: {
   for (const spec of BACKUP_TABLES) {
     data[spec.name] = normalizeTable(spec, input.tables[spec.name] ?? [], stamp);
   }
+  data.threads = fixThreadAgents(data.threads, now);
+  data.reports = stripReportCache(data.reports);
   return {
     app:        BACKUP_APP,
     schema:     SCHEMA_VERSION,
@@ -389,6 +478,8 @@ export function parseBackup(text: string, now: Date = new Date()): ParseResult {
     return { ok: false, error: 'invalid', detail: e instanceof Error ? e.message : String(e) };
   }
   data = dropOrphans(data);
+  data.threads = fixThreadAgents(data.threads, now);
+  data.reports = stripReportCache(data.reports);
 
   const userProfiles = data.profiles.filter((p) => !isSystemId(p.id));
   if (userProfiles.length === 0) return { ok: false, error: 'empty' };

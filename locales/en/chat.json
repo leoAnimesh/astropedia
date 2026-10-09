@@ -6,7 +6,8 @@
   "unavailable": {
     "title": "Conversation unavailable",
     "message": "The profile this chat belonged to has been removed.",
-    "ok": "OK"
+    "ok": "OK",
+    "messageThread": "This conversation was deleted."
   },
   "header": {
     "back": "Back",
@@ -15,7 +16,9 @@
     "fallback": "Chat",
     "archive": "Archive",
     "pin": "Pin chat",
-    "unpin": "Unpin chat"
+    "unpin": "Unpin chat",
+    "about": "About {{name}}",
+    "aboutA11y": "{{guru}}, about {{name}}. Switch person"
   },
   "followUps": {
     "when": "When exactly?",
@@ -74,7 +77,8 @@
   },
   "composer": {
     "placeholder": "Ask Saga anything…",
-    "send": "Send"
+    "send": "Send",
+    "guruPlaceholder": "Message {{guru}}…"
   },
   "starters": {
     "love": "Love",
@@ -106,17 +110,18 @@
     "childSex": "No chart can show whether a baby will be a boy or a girl, and in India finding out a baby's sex before birth isn't allowed by law. Every child is a blessing. If you like, ask me what the coming months look like for your family and home.",
     "partnerName": "A chart can't show anyone's name or initial, so I won't guess one. What it can show is when love and marriage look more likely and what kind of partner suits you. Ask me about either.",
     "doctor": "Please also see a doctor about this.",
-    "lawyer": "Please also talk to a lawyer about this."
+    "lawyer": "Please also talk to a lawyer about this.",
+    "crisis": "I'm really glad you told me. You don't have to carry this alone. Please talk to someone right now: call Tele-MANAS on 14416 (or 1-800-891-4416). It's free, open 24×7 and you can talk in your language. If you're in danger or might act on these thoughts, call 112 now. If you can, tell someone you trust and stay with them."
   },
   "archived": {
     "back": "Back",
-    "eyebrow": "Archive",
-    "title": "Archived",
-    "empty": "No archived chats.\nSwipe a conversation on Home to archive it.",
-    "hint": "Swipe a row left to unarchive or delete.",
-    "unarchive": "Unarchive",
+    "eyebrow": "Chats",
+    "title": "Past conversations",
+    "empty": "No past conversations yet.\nWhen you start over with a guru, the old chat is kept here.",
+    "hint": "Older chats, read-only. Swipe a row left to delete it.",
     "delete": "Delete",
-    "fallbackTitle": "Conversation"
+    "fallbackTitle": "Conversation",
+    "a11yHint": "Opens the conversation to read"
   },
   "time": {
     "justNow": "just now",
@@ -169,5 +174,245 @@
     "failure": "I keep failing at the thing I really love. Should I just give up?",
     "overthink": "My mind never stops. I keep overthinking everything. How do I make it quieter?",
     "purpose": "I don't know what I'm supposed to do with my life. What's the point of all this?"
+  },
+  "tryAsking": "Try asking",
+  "wellbeingNote": "Not medical advice. If things feel too heavy, talk to someone now: <b>Tele-MANAS 14416</b> (free, 24×7) or <b>112</b> in an emergency.",
+  "minor": {
+    "title": "For adults",
+    "body": "The Love guru is for grown-ups. For school, friends and home, the Study and Family gurus are here for {{name}}.",
+    "tryInstead": "Try instead"
+  },
+  "nudgeA11y": "{{guru}}: ask this question there",
+  "contextNoteGuru": "{{guru}} only remembers the last few messages in this chat.",
+  "guruMenu": {
+    "a11y": "More options: start over, share",
+    "startOver": "Start over",
+    "share": "Share this chat",
+    "cancel": "Cancel",
+    "startOverTitle": "Start over?",
+    "startOverMessage": "This chat moves to Past conversations, and {{guru}} starts fresh.",
+    "startOverConfirm": "Start over",
+    "you": "You",
+    "signature": "Astropedia"
+  },
+  "past": {
+    "readOnly": "Past chat about {{name}}",
+    "continue": "Continue in {{guru}}"
+  },
+  "tab": {
+    "title": "Chat",
+    "eyebrow": "Gurus for {{name}}",
+    "guidance": "Guidance · for you",
+    "newChat": "New chat",
+    "forAdults": "For adults",
+    "savedAnswers": "Saved answers",
+    "past": "Past conversations",
+    "footnote": "Each guru keeps one ongoing chat about {{name}}. Everything stays on this phone.",
+    "a11yUnread": "new reply",
+    "when": {
+      "now": "Now",
+      "minutes": "{{n}}m",
+      "hours": "{{n}}h",
+      "yesterday": "Yesterday"
+    }
+  },
+  "notice": {
+    "eyebrow": "What’s new",
+    "title": "Chats are now organised by <em>guru</em>.",
+    "sub": "Each guru keeps one ongoing chat, so you can pick up where you left off.",
+    "p1": "<b>Pick a guru for the topic.</b> Love, Career & money, Wellbeing, Family and Study each know what to look for.",
+    "p2": "<b>Your latest chat is under Saga.</b> Krishna’s chat is where it was.",
+    "p3": "<b>Older chats are safe</b> in Past conversations, at the bottom of this tab.",
+    "ok": "Got it"
+  },
+  "gurus": {
+    "saga": {
+      "name": "Saga",
+      "short": "Saga",
+      "sub": "Anything",
+      "line": "Anything about your chart, in plain words.",
+      "title": "<em>Saga</em>",
+      "ask": "Ask Saga",
+      "welcome": {
+        "you": "Hi {{name}}, I'm Saga. Ask me anything about your chart, your timing or what's happening in your sky right now.",
+        "other": "Hi, I'm Saga. Ask me anything about {{name}}'s chart, their timing or what's happening in their sky right now."
+      },
+      "starters": {
+        "you": {
+          "s1": "What stands out in my chart?",
+          "s2": "What is this stretch of my life about?",
+          "s3": "What should I know about this month?",
+          "s4": "What are my strengths?"
+        },
+        "other": {
+          "s1": "What stands out in {{name}}'s chart?",
+          "s2": "What is this stretch of {{name}}'s life about?",
+          "s3": "What should {{name}} know about this month?",
+          "s4": "What are {{name}}'s strengths?"
+        }
+      }
+    },
+    "love": {
+      "name": "Love guru",
+      "short": "Love",
+      "sub": "Relationships",
+      "line": "Love, relationships and marriage timing.",
+      "title": "Love <em>guru</em>",
+      "ask": "Ask the Love guru",
+      "welcome": {
+        "you": "Hi {{name}}. I look at love and relationships in your chart: what you need in a partner, and when things look warmer. What's on your heart?",
+        "other": "Let's look at love and relationships in {{name}}'s chart: what they need in a partner, and when things look warmer. What would you like to know?"
+      },
+      "starters": {
+        "you": {
+          "s1": "When does marriage look likely for me?",
+          "s2": "What kind of partner suits me?",
+          "s3": "How is my love life this year?",
+          "s4": "Why do my relationships feel hard right now?"
+        },
+        "other": {
+          "s1": "When does marriage look likely for {{name}}?",
+          "s2": "What kind of partner suits {{name}}?",
+          "s3": "How is {{name}}'s love life this year?",
+          "s4": "Why do {{name}}'s relationships feel hard right now?"
+        }
+      },
+      "greeting": {
+        "self": "Hello! I'm the Love guru. Ask me about love, relationships or when marriage looks likely in your chart.",
+        "other": "Hello! I'm the Love guru. Ask me about love, relationships or when marriage looks likely in {{name}}'s chart."
+      }
+    },
+    "career": {
+      "name": "Career & money",
+      "short": "Career",
+      "sub": "Work & money",
+      "line": "Work, job changes, business and money timing.",
+      "title": "Career <em>& money</em>",
+      "ask": "Ask the Career & money guru",
+      "welcome": {
+        "you": "Hi {{name}}. Let's look at work and money: the stretch you're in, good windows for change, and what to build now.",
+        "other": "Let's look at {{name}}'s work and money: the stretch they're in, good windows for change, and what to build now."
+      },
+      "starters": {
+        "you": {
+          "s1": "When is a good time to change jobs?",
+          "s2": "Will this year be good for my career?",
+          "s3": "How does money look for me this year?",
+          "s4": "Is business or a job better for me?"
+        },
+        "other": {
+          "s1": "When is a good time for {{name}} to change jobs?",
+          "s2": "Will this year be good for {{name}}'s career?",
+          "s3": "How does money look for {{name}} this year?",
+          "s4": "Is business or a job better for {{name}}?"
+        }
+      },
+      "greeting": {
+        "self": "Hello! I'm the Career & money guru. Ask me about work, money, a job change or growth in your chart.",
+        "other": "Hello! I'm the Career & money guru. Ask me about work, money, a job change or growth in {{name}}'s chart."
+      }
+    },
+    "health": {
+      "name": "Wellbeing guide",
+      "short": "Wellbeing",
+      "sub": "Energy & rest",
+      "line": "Energy, stress and rest. Not medical advice.",
+      "title": "Wellbeing <em>guide</em>",
+      "ask": "Ask the Wellbeing guide",
+      "welcome": {
+        "you": "Hi {{name}}. I can talk about energy, stress and the rhythm of your year from your chart. For any symptom or illness, please see a doctor. Astrology is for reflection, not treatment.",
+        "other": "I can talk about {{name}}'s energy, stress and the rhythm of their year from their chart. For any symptom or illness, please see a doctor. Astrology is for reflection, not treatment."
+      },
+      "starters": {
+        "you": {
+          "s1": "How can I manage stress this month?",
+          "s2": "When will this tired phase ease?",
+          "s3": "What helps me feel balanced?",
+          "s4": "Is this a good time to start a new routine?"
+        },
+        "other": {
+          "s1": "How can {{name}} manage stress this month?",
+          "s2": "When will {{name}}'s tired phase ease?",
+          "s3": "What helps {{name}} feel balanced?",
+          "s4": "Is this a good time for {{name}} to start a new routine?"
+        }
+      },
+      "greeting": {
+        "self": "Hello! I'm the Wellbeing guide. Ask me about energy, stress and rest in your chart. For any symptom, please see a doctor.",
+        "other": "Hello! I'm the Wellbeing guide. Ask me about energy, stress and rest in {{name}}'s chart. For any symptom, please see a doctor."
+      }
+    },
+    "family": {
+      "name": "Family guru",
+      "short": "Family",
+      "sub": "Home & kids",
+      "line": "Home, parents, children and family harmony.",
+      "title": "Family <em>guru</em>",
+      "ask": "Ask the Family guru",
+      "welcome": {
+        "you": "Hi {{name}}. I look at home and family in your chart: harmony at home, parents, and children. What's going on?",
+        "other": "I look at home and family in {{name}}'s chart: harmony at home, parents, and children. What's going on?"
+      },
+      "starters": {
+        "you": {
+          "s1": "How is the mood at home this year?",
+          "s2": "When is a good time to buy or move home?",
+          "s3": "How can I get along better with my parents?",
+          "s4": "What does my chart say about children?"
+        },
+        "other": {
+          "s1": "How is the mood at home for {{name}} this year?",
+          "s2": "When is a good time for {{name}} to buy or move home?",
+          "s3": "How can {{name}} get along better with their parents?",
+          "s4": "What does {{name}}'s chart say about children?"
+        }
+      },
+      "greeting": {
+        "self": "Hello! I'm the Family guru. Ask me about home, parents, children or harmony at home in your chart.",
+        "other": "Hello! I'm the Family guru. Ask me about home, parents, children or harmony at home in {{name}}'s chart."
+      }
+    },
+    "study": {
+      "name": "Study guru",
+      "short": "Study",
+      "sub": "Exams & focus",
+      "line": "Studies, exams, focus and choosing a course.",
+      "title": "Study <em>guru</em>",
+      "ask": "Ask the Study guru",
+      "welcome": {
+        "you": "Hi {{name}}. Let's talk studies: how you learn best, focus, and good times for exams and big decisions.",
+        "other": "Let's talk about {{name}}'s studies: how they learn best, focus, and good times for exams and big decisions."
+      },
+      "starters": {
+        "you": {
+          "s1": "How can I focus better on my studies?",
+          "s2": "How will my exams go this year?",
+          "s3": "Which subjects suit me?",
+          "s4": "Is studying abroad good for me?"
+        },
+        "other": {
+          "s1": "How can {{name}} focus better on studies?",
+          "s2": "How will {{name}}'s exams go this year?",
+          "s3": "Which subjects suit {{name}}?",
+          "s4": "Is studying abroad good for {{name}}?"
+        }
+      },
+      "greeting": {
+        "self": "Hello! I'm the Study guru. Ask me about studies, exams, focus or studying abroad in your chart.",
+        "other": "Hello! I'm the Study guru. Ask me about studies, exams, focus or studying abroad in {{name}}'s chart."
+      }
+    },
+    "krishna": {
+      "name": "Krishna",
+      "short": "Krishna",
+      "sub": "With the Gita",
+      "line": "Talk it through, with the Gita.",
+      "title": "<em>Krishna</em>",
+      "ask": "Ask Krishna",
+      "welcome": {
+        "you": "I'm here, {{name}}. Tell me what's on your mind, and we'll look at it together, with the Gita.",
+        "anon": "I'm here. Tell me what's on your mind, and we'll look at it together, with the Gita."
+      }
+    }
   }
 }

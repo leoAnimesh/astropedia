@@ -19,6 +19,8 @@ import { askLanguage, tAsk, tNakshatra, tPlanet, tSign, type AppLanguage } from 
 import { FONTS, RADIUS } from '@/constants/themes';
 import type { Profile } from '@/utils/database';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
+import { openGuruChat } from '@/utils/guru-nav';
+import { guruLocked } from '@/utils/guru-context';
 
 type Role = 'bride' | 'groom';
 
@@ -136,8 +138,8 @@ export default function KundliMatchScreen() {
       Q(bride.isYou || groom.isYou ? 'ask.us' : 'ask.them'),
     ].filter(Boolean).join(' ');
     const owner = bride.isYou ? bride : groom.isYou ? groom : bride;
-    const tempId = 't_' + Math.random().toString(36).slice(2, 11);
-    router.push(`/chat/${tempId}?profileId=${owner.id}&isNew=true&ask=${encodeURIComponent(q)}`);
+    // Matching is a love/marriage question: the Love guru, unless the person is under 18.
+    openGuruChat(guruLocked('love', owner.birthDate) ? 'saga' : 'love', owner.id, q);
   };
 
   const tr = (k: string, v?: Record<string, unknown>) => t(k, v);

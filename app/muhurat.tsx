@@ -15,6 +15,7 @@ import { askLanguage, formatDayDate, intlLocale, tAsk, tTithi } from '@/utils/i1
 import { ACTIVITIES, findMuhurats, getTodayTimings, shortDay, type Activity } from '@/utils/muhurat';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
+import { openGuruChat } from '@/utils/guru-nav';
 
 /** "3 Oct" in the app language. */
 function shortDate(dateIso: string): string {
@@ -58,8 +59,7 @@ export default function MuhuratScreen() {
     const q = good.length
       ? tAsk('muhurat:question.windows', { verb, windows: good.join('; ') })
       : tAsk('muhurat:question.none', { verb });
-    const tempId = 't_' + Math.random().toString(36).slice(2, 11);
-    router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
+    openGuruChat('saga', profile.id, q);
   };
 
   return (

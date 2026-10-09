@@ -1,11 +1,11 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import { guessTimeZone } from './timezone';
-import { MIGRATIONS, SYSTEM_PROFILES } from './db-schema';
+import { MIGRATIONS, SYSTEM_PROFILES, isAgentId, type AgentId } from './db-schema';
 
 import type { BackupTable, RestoreStep } from './backup';
 
-export { SCHEMA_VERSION } from './db-schema';
+export { SCHEMA_VERSION, AGENT_IDS, isAgentId, type AgentId } from './db-schema';
 
 export type Profile = {
   id: string;
@@ -37,6 +37,8 @@ export type Profile = {
 export type Thread = {
   id: string;
   profileId: string;
+  /** Guru this chat belongs to (one active thread per profile and agent). */
+  agent: AgentId;
   title: string | null;
   lastMessagePreview: string | null;
   archived: boolean;
@@ -60,6 +62,11 @@ export type Message = {
 
 let db: SQLite.SQLiteDatabase;
 
+/** Schema version before this launch's migrations (0 = new database). */
+let _upgradedFrom = 0;
+/** Version 7 ran on a database that already had chats (see chatsMovedToGurus). */
+let _chatsMovedToGurus = false;
+
 async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
   await database.execAsync(`PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;`);
 
@@ -70,20 +77,39 @@ async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
     `SELECT MAX(version) as max_ver FROM schema_migrations`,
   );
   const currentVersion = row?.max_ver ?? 0;
+  _upgradedFrom = currentVersion;
 
   for (const m of MIGRATIONS) {
     if (m.version > currentVersion) {
+      if (m.version === 7 && currentVersion > 0) {
+        const n = await database.getFirstAsync<{ n: number }>(`SELECT COUNT(*) AS n FROM threads`);
+        _chatsMovedToGurus = (n?.n ?? 0) > 0;
+      }
       // Version 1: sql[0] is the schema_migrations table (already run above), skip it
       const statements = m.version === 1 ? m.sql.slice(1) : m.sql;
-      for (const sql of statements) {
-        await database.execAsync(sql);
-      }
-      await database.runAsync(
-        `INSERT INTO schema_migrations (version) VALUES (?)`,
-        [m.version],
-      );
+      // One transaction per migration: a crash mid-way leaves the previous
+      // version intact instead of a half-applied one (e.g. v7's column added
+      // but duplicate active chats not yet archived).
+      await database.withTransactionAsync(async () => {
+        for (const sql of statements) {
+          await database.execAsync(sql);
+        }
+        await database.runAsync(
+          `INSERT INTO schema_migrations (version) VALUES (?)`,
+          [m.version],
+        );
+      });
     }
   }
+}
+
+/**
+ * True once per install: this launch upgraded a database that had chats to
+ * guru chats (schema v7). Drives the one-time "Chats are now organised by
+ * guru" notice; fresh installs never see it.
+ */
+export function chatsMovedToGurus(): boolean {
+  return _chatsMovedToGurus && _upgradedFrom > 0;
 }
 
 export async function initDatabase(): Promise<void> {
@@ -213,6 +239,8 @@ export async function updateProfile(id: string, patch: Partial<Profile>): Promis
 
 export async function deleteProfile(id: string): Promise<void> {
   await db.runAsync(`DELETE FROM profiles WHERE id = ?`, [id]);
+  // Their own reports cascade; compatibility reports naming them don't.
+  await db.runAsync(`DELETE FROM reports WHERE instr(id, ?) > 0`, [`:compat:${id}:`]);
 }
 
 // ─── Thread queries ────────────────────────────────────────────────────
@@ -221,6 +249,7 @@ function rowToThread(row: Record<string, unknown>): Thread {
   return {
     id:                 row.id as string,
     profileId:          row.profile_id as string,
+    agent:              isAgentId(row.agent) ? row.agent : 'saga',
     title:              row.title as string | null,
     lastMessagePreview: row.last_message_preview as string | null,
     archived:           Boolean(row.archived),
@@ -254,14 +283,23 @@ export async function insertThread(
   t: Omit<Thread, 'createdAt' | 'updatedAt' | 'syncedAt'>,
 ): Promise<Thread> {
   await db.runAsync(
-    `INSERT INTO threads (id, profile_id, title, archived, archived_at) VALUES (?, ?, ?, ?, ?)`,
-    [t.id, t.profileId, t.title ?? null, t.archived ? 1 : 0, t.archivedAt ?? null],
+    `INSERT INTO threads (id, profile_id, agent, title, archived, archived_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    [t.id, t.profileId, t.agent, t.title ?? null, t.archived ? 1 : 0, t.archivedAt ?? null],
   );
   const row = await db.getFirstAsync<Record<string, unknown>>(
     `SELECT * FROM threads WHERE id = ?`, [t.id],
   );
   if (!row) throw new Error(`insertThread: failed to read back thread ${t.id} after insert`);
   return rowToThread(row);
+}
+
+/** The one active (non-archived) chat of a profile with a guru, if it has started. */
+export async function getActiveAgentThread(profileId: string, agent: AgentId): Promise<Thread | null> {
+  const row = await db.getFirstAsync<Record<string, unknown>>(
+    `SELECT * FROM threads WHERE profile_id = ? AND agent = ? AND archived = 0 LIMIT 1`,
+    [profileId, agent],
+  );
+  return row ? rowToThread(row) : null;
 }
 
 export async function updateThread(id: string, patch: Partial<Thread>): Promise<void> {
@@ -329,7 +367,7 @@ export async function updateMessageContent(id: string, content: string, modelTie
 
 export async function clearAllData(): Promise<void> {
   await db.execAsync(
-    `DELETE FROM saved_answers; DELETE FROM journal_entries; DELETE FROM messages; DELETE FROM threads; DELETE FROM profiles;`,
+    `DELETE FROM reports; DELETE FROM saved_answers; DELETE FROM journal_entries; DELETE FROM messages; DELETE FROM threads; DELETE FROM profiles;`,
   );
 }
 
@@ -382,7 +420,8 @@ export type SavedAnswer = {
   messageId: string;
   threadId:  string | null;
   profileId: string;
-  persona:   'saga' | 'krishna';
+  /** Guru that wrote the answer (older rows: 'saga' | 'krishna'). */
+  persona:   AgentId;
   question:  string;
   answer:    string;
   createdAt: string;
@@ -394,7 +433,7 @@ function rowToSaved(row: Record<string, unknown>): SavedAnswer {
     messageId: row.message_id as string,
     threadId:  row.thread_id as string | null,
     profileId: row.profile_id as string,
-    persona:   row.persona as SavedAnswer['persona'],
+    persona:   isAgentId(row.persona) ? row.persona : 'saga',
     question:  row.question as string,
     answer:    row.answer as string,
     createdAt: row.created_at as string,
@@ -406,6 +445,11 @@ export async function getSavedAnswers(): Promise<SavedAnswer[]> {
     `SELECT * FROM saved_answers ORDER BY created_at DESC`,
   );
   return rows.map(rowToSaved);
+}
+
+export async function countSavedAnswers(): Promise<number> {
+  const row = await db.getFirstAsync<{ n: number }>(`SELECT COUNT(*) AS n FROM saved_answers`);
+  return row?.n ?? 0;
 }
 
 export async function getSavedMessageIds(): Promise<Set<string>> {
@@ -470,4 +514,84 @@ export async function upsertJournalEntry(profileId: string, date: string, mood: 
 
 export async function deleteJournalEntry(id: string): Promise<void> {
   await db.runAsync(`DELETE FROM journal_entries WHERE id = ?`, [id]);
+}
+
+// ─── Reports (schema v8) ─────────────────────────────────────────────────────
+// A cache of generated reports plus reading progress. Row ids:
+//   "<profileId>:<kind>"                 life, career, love, health, study, family
+//   "<a>:compat:<b>:<mode>"              compatibility (a = whose Reports tab)
+
+export type ReportRow = {
+  id: string;
+  profileId: string;
+  kind: string;
+  chartHash: string | null;
+  generatedAt: string | null;
+  /** JSON of utils/reports/types.ts ReportPayload, or null (not cached). */
+  payload: string | null;
+  /** Furthest point read, 0..1. */
+  progress: number;
+  /** ISO time last opened, or null. */
+  viewedAt: string | null;
+};
+
+type ReportDbRow = {
+  id: string; profile_id: string; kind: string; chart_hash: string | null; generated_at: string | null;
+  payload: string | null; progress: number; viewed_at: string | null;
+};
+
+function toReportRow(r: ReportDbRow): ReportRow {
+  return {
+    id: r.id, profileId: r.profile_id, kind: r.kind, chartHash: r.chart_hash, generatedAt: r.generated_at,
+    payload: r.payload, progress: r.progress ?? 0, viewedAt: r.viewed_at,
+  };
+}
+
+export async function getReportRow(id: string): Promise<ReportRow | null> {
+  const r = await db.getFirstAsync<ReportDbRow>(`SELECT * FROM reports WHERE id = ?`, [id]);
+  return r ? toReportRow(r) : null;
+}
+
+/** Stores a freshly generated report; reading progress and last-viewed are kept. */
+export async function saveReportPayload(
+  id: string, profileId: string, kind: string, chartHash: string, generatedAt: string, payload: string,
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO reports (id, profile_id, kind, chart_hash, generated_at, payload) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET chart_hash = excluded.chart_hash, generated_at = excluded.generated_at,
+                                   payload = excluded.payload`,
+    [id, profileId, kind, chartHash, generatedAt, payload],
+  );
+}
+
+/** Marks a report opened now and records how far it has been read (keeps the furthest). */
+export async function saveReportProgress(id: string, profileId: string, kind: string, progress: number): Promise<void> {
+  const p = Math.min(1, Math.max(0, Number.isFinite(progress) ? progress : 0));
+  await db.runAsync(
+    `INSERT INTO reports (id, profile_id, kind, progress, viewed_at) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET progress = MAX(progress, excluded.progress), viewed_at = excluded.viewed_at`,
+    [id, profileId, kind, p, new Date().toISOString()],
+  );
+}
+
+/** Reports opened for a person, newest first (compatibility rows where they are the first person). */
+export async function getRecentReports(profileId: string, limit = 6): Promise<ReportRow[]> {
+  const rows = await db.getAllAsync<ReportDbRow>(
+    `SELECT * FROM reports WHERE profile_id = ? AND viewed_at IS NOT NULL ORDER BY viewed_at DESC LIMIT ?`,
+    [profileId, limit],
+  );
+  return rows.map(toReportRow);
+}
+
+/**
+ * Drops cached report text that involves a person (their own reports and
+ * any compatibility report with them), after their birth details or name
+ * change. Reading progress stays.
+ */
+export async function clearReportPayloads(profileId: string): Promise<void> {
+  await db.runAsync(
+    `UPDATE reports SET payload = NULL, chart_hash = NULL, generated_at = NULL
+      WHERE profile_id = ? OR instr(id, ?) > 0`,
+    [profileId, `:compat:${profileId}:`],
+  );
 }

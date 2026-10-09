@@ -27,6 +27,7 @@ export const NAMESPACES = [
   'common', 'onboarding', 'home', 'chat', 'profile', 'horoscope', 'panchang',
   'compatibility', 'settings', 'phase', 'saved', 'muhurat', 'forecast',
   'family', 'journal', 'alerts', 'astro', 'keyboard',
+  'festivals', 'sadesati', 'dasha', 'gita', 'reports',
 ] as const;
 
 // Metro needs static requires, so each file is listed explicitly.
@@ -50,6 +51,11 @@ const resources = {
     alerts:        require('../locales/en/alerts.json'),
     astro:         require('../locales/en/astro.json'),
     keyboard:      require('../locales/en/keyboard.json'),
+    festivals:     require('../locales/en/festivals.json'),
+    sadesati:      require('../locales/en/sadesati.json'),
+    dasha:         require('../locales/en/dasha.json'),
+    gita:          require('../locales/en/gita.json'),
+    reports:       require('../locales/en/reports.json'),
   },
   hi: {
     common:        require('../locales/hi/common.json'),
@@ -70,6 +76,11 @@ const resources = {
     alerts:        require('../locales/hi/alerts.json'),
     astro:         require('../locales/hi/astro.json'),
     keyboard:      require('../locales/hi/keyboard.json'),
+    festivals:     require('../locales/hi/festivals.json'),
+    sadesati:      require('../locales/hi/sadesati.json'),
+    dasha:         require('../locales/hi/dasha.json'),
+    gita:          require('../locales/hi/gita.json'),
+    reports:       require('../locales/hi/reports.json'),
   },
   bn: {
     common:        require('../locales/bn/common.json'),
@@ -90,6 +101,11 @@ const resources = {
     alerts:        require('../locales/bn/alerts.json'),
     astro:         require('../locales/bn/astro.json'),
     keyboard:      require('../locales/bn/keyboard.json'),
+    festivals:     require('../locales/bn/festivals.json'),
+    sadesati:      require('../locales/bn/sadesati.json'),
+    dasha:         require('../locales/bn/dasha.json'),
+    gita:          require('../locales/bn/gita.json'),
+    reports:       require('../locales/bn/reports.json'),
   },
 };
 

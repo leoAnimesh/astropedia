@@ -92,7 +92,7 @@ export default function AlertsScreen() {
               return (
                 <TouchableOpacity
                   key={alert.id}
-                  onPress={() => router.push(`/alerts/${alert.id}`)}
+                  onPress={() => router.push(`/alerts/${alert.id}?profileId=${encodeURIComponent(activeProfile?.id ?? '')}`)}
                   style={[styles.row, { borderBottomColor: theme.hairline }]}
                   accessibilityRole="button"
                   accessibilityLabel={`${info.title}, ${fmt(d, { day: 'numeric', month: 'long', year: 'numeric' })}`}

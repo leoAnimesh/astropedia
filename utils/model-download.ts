@@ -361,6 +361,40 @@ export function retryModelSetup(): void {
   startModelSetup();
 }
 
+/** What Settings → On-device model shows: the installed version and its size on disk. */
+export type ModelInfo = { version: string | null; bytes: number; installedAt: string | null };
+
+export function getModelInfo(): ModelInfo {
+  const marker = readMarker();
+  if (marker) {
+    return {
+      version: marker.version,
+      bytes: marker.files.reduce((n, f) => n + (f.size || 0), 0),
+      installedAt: marker.installedAt ?? null,
+    };
+  }
+  return { version: useModelSetup.getState().version, bytes: totalBytes(PINNED_MODEL), installedAt: null };
+}
+
+/**
+ * Settings → "Re-download": unloads the model, deletes every installed copy
+ * and its install record, then runs setup again (the pill / chat show the
+ * progress). For a damaged install; chats keep working on deterministic
+ * answers and wait for the model meanwhile.
+ */
+export async function redownloadModel(): Promise<void> {
+  if (!remoteEnabled) return;
+  if (_running) await _running.catch(() => {});
+  try {
+    await (require('./local-llm') as typeof import('./local-llm')).unloadLocalLLM();
+  } catch { /* not loaded */ }
+  Storage.clearModelInstall();
+  Storage.clearModelResume();
+  await cleanupVersions([]);
+  useModelSetup.setState({ ...INITIAL_SETUP_STATE });
+  startModelSetup();
+}
+
 async function run(): Promise<void> {
   dispatch({ type: 'check' });
   const caps = appCaps();

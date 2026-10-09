@@ -8,12 +8,14 @@ import {
 import { generateFollowUps, FOLLOWUPS_MAX_TOKENS, type FollowUpMessage } from './follow-ups';
 import i18n, { getAppLanguage } from './i18n';
 import {
-  cannedQuestion, createSentenceFilter, isPureGreeting, isTimingQuestion, missingAdvice, readingScriptRatio,
+  cannedQuestion, createSentenceFilter, isCrisisMessage, isPureGreeting, isTimingQuestion, missingAdvice, readingScriptRatio,
   readingSeed, runGuarded, stripCountdowns, NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, type ReplyGuard,
 } from './reply-guards';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
 import { pickGitaVerse, formatGitaQuote } from './gita';
 import { todayIso } from './format';
+import { GURUS, GURU_CONTEXT_FOCUS, type AgentId } from '../constants/gurus';
+import { focusContext } from './guru-context';
 
 /*
  * The on-device model (SmolLM2-135M fine-tuned in ml/) was trained on short
@@ -80,6 +82,12 @@ export type AIRequest = {
   userMessage: string;
   mode?:       AIMode;
   userName?:   string;
+  /**
+   * Guru of the chat (constants/gurus.ts). Chart gurus all run the [saga]
+   * task; the agent picks the app-side rules (crisis guard, focused context
+   * when GURU_CONTEXT_FOCUS is on). Defaults to the mode's own agent.
+   */
+  agent?:      AgentId;
 };
 
 export type AIStreamResult = {
@@ -107,8 +115,8 @@ export function replyLanguage(userText = ''): ReplyLang {
 /** "" for English, "\nLang: hi" / "\nLang: bn" otherwise (ml/data/build_sft.py lang_line). */
 const langLine = (lang: ReplyLang) => (lang === 'en' ? '' : `\nLang: ${lang}`);
 
-function sagaSystem(profile: Profile, lang: ReplyLang): string {
-  const context = getAstrologyContext({
+function sagaSystem(profile: Profile, lang: ReplyLang, agent: AgentId = 'saga'): string {
+  const full = getAstrologyContext({
     name:      profile.name,
     gender:    profile.gender,
     birthDate: profile.birthDate,
@@ -120,6 +128,9 @@ function sagaSystem(profile: Profile, lang: ReplyLang): string {
     relationship: profile.relationship,
     isYou:     profile.isYou,
   }, { version: CONTEXT_VERSION });
+  // Topic-focused context per guru: off until evaluated (constants/gurus.ts).
+  // The task tag stays [saga] either way; v2.1 knows no guru tags.
+  const context = GURU_CONTEXT_FOCUS && CONTEXT_VERSION === 2 ? focusContext(full, agent) : full;
   const timeNote = profile.birthTime ? '' : '\nBirth time unknown.';
   const timing = getTimingContext(profile, new Date(), CONTEXT_VERSION);
   return `[saga]${langLine(lang)}\nToday: ${todayIso()}\n${context}${timeNote}\n${timing}`;
@@ -367,14 +378,23 @@ async function* yieldOnce(text: string): AsyncGenerator<string> {
 
 export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
   const mode = req.mode ?? 'saga';
+  const agent: AgentId = req.agent ?? mode;
   const lang = replyLanguage(req.userMessage);
+
+  // Self-harm / suicide: a fixed reply with helplines, never the model.
+  if (GURUS[agent]?.crisisGuard !== false && isCrisisMessage(req.userMessage)) {
+    return { stream: yieldOnce(i18n.t('chat:safety.crisis', { lng: lang })), tier: 'deterministic' };
+  }
 
   // A bare "hi" / "नमस्ते" / "নমস্কার" gets a short hello that invites a
   // question; v2 answers it with a chart dump (or introduces itself as the user).
+  // Each chart guru introduces itself (chat:gurus.<id>.greeting); Saga keeps
+  // chat:greeting. Krishna (mode 'krishna') is left to the model as before.
   if (CONTEXT_VERSION === 2 && mode === 'saga' && isPureGreeting(req.userMessage)) {
+    const base = agent === 'saga' || agent === 'krishna' ? 'chat:greeting' : `chat:gurus.${agent}.greeting`;
     const greeting = req.profile.isYou
-      ? i18n.t('chat:greeting.self', { lng: lang })
-      : i18n.t('chat:greeting.other', { lng: lang, name: req.profile.name.split(' ')[0] });
+      ? i18n.t(`${base}.self`, { lng: lang })
+      : i18n.t(`${base}.other`, { lng: lang, name: req.profile.name.split(' ')[0] });
     return { stream: yieldOnce(greeting), tier: 'deterministic' };
   }
 
@@ -417,7 +437,7 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     };
   }
 
-  const system = sagaSystem(req.profile, lang);
+  const system = sagaSystem(req.profile, lang, agent);
   const messages: ChatMessage[] = [
     { role: 'system', content: system },
     ...sagaHistory(system, req.history, req.userMessage),

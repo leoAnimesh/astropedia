@@ -10,7 +10,6 @@
   "friend": "friend",
   "a11y": {
     "alerts": "Sky alerts",
-    "settings": "Settings",
     "phase": "Life phase: {{lord}} chapter, {{pct}} percent through. Open timeline"
   },
   "empty": {
@@ -19,9 +18,13 @@
   },
   "today": {
     "eyebrow": "{{date}} · Today for {{name}}",
-    "readLink": "Read today’s reading →",
-    "moonIn": "Moon in",
-    "tithi": "Tithi"
+    "moonIn": "☾ Moon in",
+    "tithi": "Tithi",
+    "periods": "Today · Week · Month",
+    "openA11y": "Opens today's reading",
+    "rahuKaal": "Rahu Kaal",
+    "lucky": "Lucky today",
+    "skyA11y": "Today's sky: Moon in {{nakshatra}}, {{tithi}}, Rahu Kaal {{start}} to {{end}}, lucky colour {{color}}, lucky number {{number}}. Opens Panchang"
   },
   "phase": {
     "eyebrow": "Your life phase",
@@ -30,34 +33,75 @@
     "subEnds": "{{lord}} sub-period ends <b>{{date}}</b>",
     "nextAfter": " · {{lord}} after"
   },
-  "ask": {
-    "eyebrow": "Ask Saga",
-    "placeholder": "Ask about love, work, timing…",
-    "you": {
-      "job": "When will I get a new job?",
-      "love": "How is love this year?",
-      "phase": "When does this phase end?",
-      "strength": "What is my biggest strength?"
+  "tiles": {
+    "muhurat": {
+      "title": "Muhurat",
+      "sub": "Pick a good time"
     },
-    "other": {
-      "job": "When will {{name}} get a new job?",
-      "love": "How is love for {{name}} this year?",
-      "phase": "When does {{name}}'s phase end?",
-      "strength": "What is {{name}}'s biggest strength?"
+    "family": {
+      "title": "Family",
+      "sub": "{{count}} people",
+      "sub_one": "{{count}} person",
+      "sub_other": "{{count}} people"
+    },
+    "journal": {
+      "title": "Journal",
+      "sub": "Mood & notes"
+    },
+    "panchang": {
+      "title": "Panchang",
+      "sub": "Rahu Kaal {{time}}"
+    },
+    "matching": {
+      "title": "Matching",
+      "sub": "Two kundlis"
+    },
+    "festivals": {
+      "title": "Festivals",
+      "sub": "Vrat & festivals"
     }
   },
-  "tiles": {
-    "krishna": { "title": "Krishna", "sub": "Talk it through" },
-    "muhurat": { "title": "Muhurat", "sub": "Good times" },
-    "family": { "title": "Family", "sub": "Everyone’s phase" },
-    "forecast": { "title": "Your year", "sub": "12 months ahead" },
-    "journal": { "title": "Journal", "sub": "Mood & notes" },
-    "panchang": { "title": "Panchang" }
+  "tabs": {
+    "home": "Home",
+    "reports": "Reports",
+    "chat": "Chat",
+    "chatUnread": "Chat, new replies",
+    "settings": "Settings"
   },
-  "matchCard": { "title": "Kundli matching", "sub": "36 guna milan for two charts" },
-  "recent": {
-    "eyebrow": "Recent",
-    "saved": "Saved",
-    "addProfile": "+ Add profile"
+  "gurus": {
+    "eyebrow": "Ask a guru",
+    "all": "All chats",
+    "askSaga": "Ask Saga anything…"
+  },
+  "sky": {
+    "eyebrow": "Your sky · next few weeks",
+    "all": "See all"
+  },
+  "life": {
+    "eyebrow": "Your life",
+    "kundli": "Your kundli",
+    "kundliSub": "{{rising}} rising · {{moon}} Moon",
+    "kundliMoon": "Moon in {{moon}}",
+    "kundliEmpty": "Your birth chart",
+    "year": "Your year",
+    "sadeTitle": "<em>Sade sati</em> · {{state}}",
+    "sade": {
+      "rising": "first phase",
+      "peak": "peak",
+      "setting": "final phase",
+      "return": "brief return",
+      "none": "not now"
+    },
+    "sadeEases": "eases {{date}}",
+    "sadeNext": "next from {{date}}",
+    "sadeA11y": "Sade sati, {{state}}"
+  },
+  "explore": {
+    "eyebrow": "Explore"
+  },
+  "gita": {
+    "eyebrow": "Gita · verse of the day",
+    "a11y": "Gita verse of the day, {{ref}}. Opens the verse",
+    "talk": "Talk it through with Krishna"
   }
 }

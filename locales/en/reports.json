@@ -1,0 +1,1457 @@
+{
+  "tab": {
+    "title": "Reports",
+    "lead": "Written from {{name}}’s birth chart, in plain words. Made on this phone, free.",
+    "featuredEyebrow": "Start here · Life report",
+    "featuredTitle": "Who you are, and <em>where you’re headed</em>",
+    "featuredMeta": "{{count}} chapters · about {{min}} min",
+    "featuredA11y": "Life report for {{name}}. {{count}} chapters, about {{min}} minutes",
+    "read": "Read",
+    "recent": "Recently viewed",
+    "recentWhere": "Chapter {{n}} of {{total}} · {{chapter}}",
+    "recentWhereShort": "Chapter {{n}} of {{total}}",
+    "recentStart": "Not started",
+    "recentDone": "Read to the end",
+    "recentCompat": "Compatibility · {{mode}}",
+    "when": {
+      "today": "TODAY",
+      "yesterday": "YESTERDAY",
+      "days": "{{n}} DAYS AGO",
+      "lastWeek": "LAST WEEK"
+    },
+    "areas": "Life areas",
+    "dotsHint": "dots = in focus now",
+    "focusA11y": "In focus now: {{word}}",
+    "comingSoon": "Coming soon",
+    "lockedLine": "For adults. Not shown under 18",
+    "timing": "Timing",
+    "twoPeople": "Two people",
+    "compatTitle": "Compatibility",
+    "compatSub": "Partner, friend or family. Pick two people.",
+    "lastRead": "Last read: <b>{{pair}}</b>",
+    "lastReadScore": "Last read: <b>{{pair}}</b> · {{score}} of 36",
+    "footnote": "Reports show tendencies and timing, not fixed fate. Nothing here asks for money: no paid rituals, gemstones or fixes. Focus dots count how many current life chapters and planet moves touch an area; they are not a score.",
+    "noBirth": "Add {{name}}’s birth date to read their reports.",
+    "addDetails": "Add birth details",
+    "noProfile": "Add a person to read their reports.",
+    "loading": "Writing from the chart…",
+    "yearSub": "{{from}} – {{to}} · month by month",
+    "dashaSub": "{{chapter}} chapter, {{stretch}} stretch · until {{date}}",
+    "sadeSub": {
+      "rising": "First phase · eases {{date}}",
+      "peak": "Peak · eases {{date}}",
+      "setting": "Final phase · eases {{date}}",
+      "return": "Brief return · eases {{date}}",
+      "next": "Not now · next from {{date}}",
+      "none": "Not in this stretch of life"
+    }
+  },
+  "kind": {
+    "life": {
+      "title": "Life report",
+      "sub": "Who you are, strengths, your life chapters"
+    },
+    "career": {
+      "title": "Career & money",
+      "sub": "Work style, money habits, when to move"
+    },
+    "love": {
+      "title": "Love & marriage",
+      "sub": "What you need, what you give, timing"
+    },
+    "health": {
+      "title": "Health & energy",
+      "sub": "Energy, rest, stress. Not medical advice"
+    },
+    "study": {
+      "title": "Study & skills",
+      "sub": "How you learn, focus, choosing a course"
+    },
+    "family": {
+      "title": "Family & home",
+      "sub": "Parents, home, children, harmony"
+    },
+    "wealth": {
+      "title": "Wealth",
+      "sub": "Earning, saving, shared money"
+    },
+    "year": {
+      "title": "Year ahead"
+    },
+    "dasha": {
+      "title": "Life chapters"
+    },
+    "sade": {
+      "title": "Sade sati"
+    },
+    "compat": {
+      "title": "Compatibility"
+    }
+  },
+  "detail": {
+    "fromChart": "{{name}} · from birth chart",
+    "share": "Share report",
+    "chapters": "Chapters",
+    "inOneLine": "In one line",
+    "why": "Why we say this",
+    "seeAllChapters": "See all life chapters",
+    "helpsNote": "All free. No gemstones, paid rituals or fixes are suggested in any report.",
+    "askTitle": {
+      "saga": "Ask Saga",
+      "love": "Ask the Love guru",
+      "career": "Ask the Career & money guru",
+      "health": "Ask the Wellbeing guide",
+      "family": "Ask the Family guru",
+      "study": "Ask the Study guru"
+    },
+    "askSub": "It reads the same chart as this report about {{name}}",
+    "shareSummary": "Share summary",
+    "savePdf": "Save as PDF",
+    "pdfBusy": "Making the PDF…",
+    "pdfFailed": "Couldn’t make the PDF. Please try again.",
+    "pdfUnavailable": "Saving as PDF needs the latest app build.",
+    "readNext": "Read next",
+    "lockedTitle": "Love & marriage is for adults",
+    "lockedBody": "This report isn’t shown for people under 18. The Family and Study reports are open.",
+    "notReady": "Add a birth date to this profile to read the report.",
+    "approx": "No birth time, so this report counts from the Moon. The broad picture holds; details and dates are approximate.",
+    "shareCardFooter": "Astropedia · written from the birth chart",
+    "chapterA11y": "Chapter {{n}}: {{title}}"
+  },
+  "pair": {
+    "title": "Compatibility",
+    "subtitle": "Two birth charts, side by side",
+    "who": "Who",
+    "you": "You",
+    "change": "Change",
+    "changeA11y": "Second person: {{name}}. Tap to change",
+    "firstA11y": "First person: {{name}}. Tap to change",
+    "pick": "Choose a person",
+    "kindA11y": "Kind of relationship",
+    "mode": {
+      "partner": "Partner",
+      "friend": "Friend",
+      "family": "Family"
+    },
+    "eyebrow": {
+      "partner": "{{a}} + {{b}} · as partners",
+      "friend": "{{a}} + {{b}} · as friends",
+      "family": "{{a}} + {{b}} · as family"
+    },
+    "ofPoints": "of 36 points",
+    "scoreNote": "The traditional 8-part kundli count. 18 or more is the usual bar. It counts Moon-sign fit only, not the whole story.",
+    "marsCheck": "Mars check:",
+    "inReport": "In the report",
+    "readFull": "Read the full report",
+    "fullMatch": "See the full guna milan",
+    "askLove": "Ask the Love guru about you two",
+    "askLoveOther": "Ask the Love guru about {{a}} and {{b}}",
+    "askSaga": "Ask Saga about this friendship",
+    "askFamily": "Ask the Family guru",
+    "footnote": "Two charts can show where things come easily and where to talk more. They can’t decide a relationship for you. Both birth details stay on this phone.",
+    "needTwo": "Add another person to compare two charts.",
+    "addPerson": "Add a person",
+    "needBirth": "{{name}} needs a birth date first.",
+    "minorNote": "Partner matching is for adults, so it isn’t shown when someone is under 18."
+  },
+  "pdf": {
+    "title": "{{report}} · {{name}}",
+    "made": "Made on this phone with Astropedia on {{date}}."
+  },
+  "e": {
+    "and": "{{a}} and {{b}}",
+    "listSep": ", ",
+    "area": {
+      "life": "your life",
+      "career": "work and money",
+      "love": "love",
+      "health": "your energy",
+      "study": "study",
+      "family": "home and family"
+    },
+    "focus": {
+      "word": {
+        "1": "Quiet",
+        "2": "Active",
+        "3": "Busy"
+      },
+      "label": "In focus now: {{word}}",
+      "reason_one": "One thing touches {{area}} right now: {{list}}. Not a score, just how much is going on.",
+      "reason_other": "{{count}} things touch {{area}} right now: {{list}}. Not a score, just how much is going on.",
+      "none": "Nothing big touches {{area}} right now. Not a score, just how much is going on.",
+      "sub": "your {{planet}} stretch",
+      "transit": "{{planetOf}} pass",
+      "sade": "Saturn’s long pass over your Moon"
+    },
+    "now": {
+      "line": "{{word}} · {{what}}",
+      "until": "{{what}} until {{date}}",
+      "from": "{{what}} from {{date}}",
+      "steady": "steady for now",
+      "sub": {
+        "Sun": "a stretch of being seen",
+        "Moon": "a feeling-led stretch",
+        "Mars": "an active stretch",
+        "Mercury": "a quick, busy stretch",
+        "Jupiter": "a growing stretch",
+        "Venus": "a warm stretch",
+        "Saturn": "a slow, steady stretch",
+        "Rahu": "a restless stretch",
+        "Ketu": "a quiet stretch"
+      },
+      "in": {
+        "Jupiter": "more support",
+        "Saturn": "slower, steadier going",
+        "Rahu": "a busier pull"
+      },
+      "out": {
+        "Jupiter": "support eases",
+        "Saturn": "pressure eases",
+        "Rahu": "things settle"
+      },
+      "stay": {
+        "Jupiter": "support here",
+        "Saturn": "steady effort here",
+        "Rahu": "a restless pull here"
+      },
+      "sadeEnds": "a long test ends"
+    },
+    "place": {
+      "1": "your own self and how you come across",
+      "2": "money, food and family",
+      "3": "effort, courage and siblings",
+      "4": "home, mother and peace of mind",
+      "5": "creativity, romance and children",
+      "6": "daily work, routine and health habits",
+      "7": "partners and close one-to-one ties",
+      "8": "sudden changes and shared money",
+      "9": "luck, teachers, father and beliefs",
+      "10": "career and public standing",
+      "11": "gains, friends and networks",
+      "12": "rest, spending and faraway places"
+    },
+    "why": {
+      "chart": "From your chart:",
+      "timing": "From your timing:",
+      "rising": "Your rising sign is {{rising}} and your Moon is in {{moon}}.",
+      "moonOnly": "Without a birth time we count from your Moon sign, {{moon}}.",
+      "nak": "Your birth star is {{nak}}.",
+      "one": "{{planet}} sits {{in}}.",
+      "many": "{{planets}} sit {{in}}.",
+      "lord": "The ruler of your {{house}}, {{planet}}, sits {{in}}.",
+      "lordHome": "The ruler of your {{house}}, {{planet}}, sits in it.",
+      "own": "{{planet}} is in its own sign, {{sign}}, which makes it strong.",
+      "exalted": "{{planet}} is in {{sign}}, its strongest sign.",
+      "debilitated": "{{planet}} is in {{sign}}, its weakest sign.",
+      "inSign": "{{planet}} is in {{sign}}, one of the {{element}} signs.",
+      "moonSign": "Your Moon is in {{sign}}, one of the {{element}} signs.",
+      "stretch": "Since {{start}} you have been in a {{sub}} stretch inside your {{maha}} chapter. It runs until {{end}}.",
+      "stretchLinked": "{{planet}} is tied to {{area}} in your chart.",
+      "transit": "{{planet}} is now {{in}} ({{sign}}), until {{date}}.",
+      "transitOpen": "{{planet}} is now {{in}} ({{sign}}).",
+      "sade": "Saturn is in its seven-and-a-half-year pass over your Moon sign ({{phase}}), until {{date}}.",
+      "sadePhase": {
+        "rising": "first phase",
+        "peak": "peak",
+        "setting": "last phase"
+      },
+      "element": {
+        "fire": "fire",
+        "earth": "earth",
+        "air": "air",
+        "water": "water"
+      },
+      "timingBody": "Life chapters (Vimshottari dasha) come from the Moon’s place at birth, {{nak}}. Planet moves are Jupiter, Saturn and Rahu changing sign, counted from your {{basis}}.",
+      "basis": {
+        "rising": "rising sign",
+        "moon": "Moon sign"
+      },
+      "ofHouse": {
+        "1": "1st house (self)",
+        "2": "2nd house (money)",
+        "3": "3rd house (effort)",
+        "4": "4th house (home)",
+        "5": "5th house (romance, study)",
+        "6": "6th house (daily work)",
+        "7": "7th house (partner)",
+        "8": "8th house (change)",
+        "9": "9th house (luck)",
+        "10": "10th house (career)",
+        "11": "11th house (gains)",
+        "12": "12th house (rest, abroad)"
+      },
+      "inHouse": {
+        "1": "in the 1st house (self)",
+        "2": "in the 2nd house (money)",
+        "3": "in the 3rd house (effort)",
+        "4": "in the 4th house (home)",
+        "5": "in the 5th house (romance, study)",
+        "6": "in the 6th house (daily work)",
+        "7": "in the 7th house (partner)",
+        "8": "in the 8th house (change)",
+        "9": "in the 9th house (luck)",
+        "10": "in the 10th house (career)",
+        "11": "in the 11th house (gains)",
+        "12": "in the 12th house (rest, abroad)"
+      }
+    },
+    "gift": {
+      "Sun": "Taking charge and being trusted with the whole job",
+      "Moon": "Reading people and making them feel looked after",
+      "Mars": "Energy to start things and push them through",
+      "Mercury": "Quick thinking, and explaining things so people get them",
+      "Jupiter": "Good judgement, and helping others grow",
+      "Venus": "Tact, taste and keeping things pleasant",
+      "Saturn": "Patience, and finishing what you start",
+      "Rahu": "Courage to try new and unusual things",
+      "Ketu": "Deep focus when you work on your own"
+    },
+    "giftShort": {
+      "Sun": "Leading, anything people can see",
+      "Moon": "Caring work, close to people",
+      "Mars": "Fast, hands-on, competitive work",
+      "Mercury": "Talking, writing, trading, tech",
+      "Jupiter": "Teaching, advising, guiding",
+      "Venus": "Creative and people-facing work",
+      "Saturn": "Steady, long-term, structured work",
+      "Rahu": "New fields, tech, work far from home",
+      "Ketu": "Research and quiet expert work"
+    },
+    "watch": {
+      "Sun": "Pride: finding it hard to ask for help or drop a plan that isn’t working",
+      "Moon": "Moods that rise and fall with the people around you",
+      "Mars": "Rushing, or snapping when you’re under pressure",
+      "Mercury": "Overthinking, and too many things at once",
+      "Jupiter": "Over-promising, or taking on more than you can carry",
+      "Venus": "Choosing comfort over the harder, better option",
+      "Saturn": "Worry, and being too hard on yourself",
+      "Rahu": "Restlessness: wanting a new role or a new place every few months",
+      "Ketu": "Losing interest halfway and pulling away"
+    },
+    "lineNow": {
+      "life": {
+        "1": "Life is steady right now: a good time to build.",
+        "2": "This is an active time: some changes are worth making.",
+        "3": "A lot is moving in your life now: take it one step at a time."
+      },
+      "career": {
+        "1": "Work is quiet right now: a good time to build skills.",
+        "2": "There is movement around work now: point your energy at one goal.",
+        "3": "These months are busy for work: pick one goal and let the rest wait."
+      },
+      "love": {
+        "1": "Love is quiet for now; small, steady gestures count.",
+        "2": "Love is active now: say what you want, kindly.",
+        "3": "A lot is moving in love: go slowly and talk often."
+      },
+      "health": {
+        "1": "Your energy is fairly steady now; keep sleep regular.",
+        "2": "Your energy needs a little more care now: protect your rest.",
+        "3": "Several things pull on your energy now: rest before you need it."
+      },
+      "study": {
+        "1": "A calm time for study: good for a short course.",
+        "2": "Study is in focus now: make a plan and keep to it.",
+        "3": "A lot is moving around study: pick one course and finish it."
+      },
+      "family": {
+        "1": "Home is fairly calm now.",
+        "2": "Home and family need some of your time now.",
+        "3": "Family matters are busy now: patience goes a long way."
+      }
+    },
+    "glance": {
+      "now": "Right now",
+      "life": {
+        "k1": "Your nature",
+        "k2": "Inside"
+      },
+      "career": {
+        "k1": "Works best",
+        "k2": "Money style"
+      },
+      "love": {
+        "k1": "You need",
+        "k2": "You give"
+      },
+      "health": {
+        "k1": "Energy",
+        "k2": "Rest that works"
+      },
+      "study": {
+        "k1": "You learn by",
+        "k2": "Suits you"
+      },
+      "family": {
+        "k1": "Home life",
+        "k2": "Your role"
+      }
+    },
+    "short": {
+      "nature": {
+        "fire": "Warm, direct, quick to act",
+        "earth": "Steady, practical, reliable",
+        "air": "Curious, social, full of ideas",
+        "water": "Feeling, caring, intuitive"
+      },
+      "inside": {
+        "fire": "Quick feelings that pass fast",
+        "earth": "Calm, needs time, hates rushing",
+        "air": "Thinks first, feels second",
+        "water": "Deep, private, sensitive"
+      },
+      "money": {
+        "Sun": "Earns through position; spends on image and family",
+        "Moon": "Income rises and falls; spends on home and food",
+        "Mars": "Earns by effort; watch impulse buys",
+        "Mercury": "Earns through skill and trade",
+        "Jupiter": "Grows slowly; generous with others",
+        "Venus": "Earns through people; likes nice things",
+        "Saturn": "Slow, careful saver",
+        "Rahu": "Money in jumps; keep a cushion",
+        "Ketu": "Cares less about money; save automatically"
+      },
+      "need": {
+        "Sun": "Respect and loyalty",
+        "Moon": "Safety and warmth",
+        "Mars": "Energy and spark",
+        "Mercury": "Talk and friendship",
+        "Jupiter": "Shared values",
+        "Venus": "Affection and harmony",
+        "Saturn": "Commitment and steadiness",
+        "Rahu": "Someone different from you",
+        "Ketu": "Space and calm"
+      },
+      "give": {
+        "fire": "Warmth, surprises, big gestures",
+        "earth": "Steady, practical care",
+        "air": "Talk, ideas and laughter",
+        "water": "Quiet, deep care"
+      },
+      "energy": {
+        "Sun": "Strong when you have a purpose",
+        "Moon": "Follows your feelings and sleep",
+        "Mars": "Quick and strong; needs an outlet",
+        "Mercury": "Busy mind, easily scattered",
+        "Jupiter": "Steady; watch overdoing it",
+        "Venus": "Best with comfort and good sleep",
+        "Saturn": "Slow to start, but lasts",
+        "Rahu": "Comes in surges and dips",
+        "Ketu": "Quiet; recharges alone"
+      },
+      "rest": {
+        "fire": "Active rest, then a proper wind-down",
+        "earth": "Routine, warm meals, nature",
+        "air": "Quiet for the mind, less screen",
+        "water": "Calm evenings, safe people"
+      },
+      "learn": {
+        "fire": "Doing, and a challenge",
+        "earth": "Step-by-step practice",
+        "air": "Talk, questions, variety",
+        "water": "A teacher you like, stories"
+      },
+      "course": {
+        "Sun": "Management, government, medicine",
+        "Moon": "Care, psychology, food, teaching",
+        "Mars": "Engineering, sport, technical work",
+        "Mercury": "Languages, commerce, computing",
+        "Jupiter": "Law, teaching, finance",
+        "Venus": "Design, arts, music, hospitality",
+        "Saturn": "Science, administration, research",
+        "Rahu": "Technology, foreign languages, abroad",
+        "Ketu": "Research, maths, coding, healing"
+      },
+      "home": {
+        "Sun": "You often take charge at home",
+        "Moon": "Home is your safe place",
+        "Mars": "Lively, with strong opinions",
+        "Mercury": "Busy and full of talk",
+        "Jupiter": "Supportive, with good values",
+        "Venus": "Comfortable and peaceful",
+        "Saturn": "Duty first; settles with time",
+        "Rahu": "Unusual, may move around",
+        "Ketu": "You need a quiet corner"
+      },
+      "role": {
+        "fire": "The one who gets things moving",
+        "earth": "The one everyone relies on",
+        "air": "The one who keeps everyone talking",
+        "water": "The one who keeps everyone close"
+      }
+    },
+    "life": {
+      "chips": {
+        "who": "Who you are",
+        "strong": "Strengths",
+        "watch": "Watch-outs",
+        "chapters": "Life chapters",
+        "helps": "What helps"
+      },
+      "titles": {
+        "who": "Who you are",
+        "strong": "Strengths",
+        "watch": "Watch-outs",
+        "chapters": "Your life chapters",
+        "helps": "What helps"
+      },
+      "nature": {
+        "fire": "You meet the world warmly and directly, and people notice when you walk in.",
+        "earth": "You meet the world steadily and practically, and people trust you to get things done.",
+        "air": "You meet the world with curiosity and talk, and you make friends easily.",
+        "water": "You meet the world with feeling, and you sense moods before anyone says a word."
+      },
+      "mind": {
+        "0": "Inside, your feelings are quick and fiery: they flare up and pass.",
+        "1": "Inside, you are calm and steady, and you don’t like being rushed.",
+        "2": "Inside, your mind is restless and curious, always on to the next thing.",
+        "3": "Inside, you feel deeply and care hard for the people you love.",
+        "4": "Inside, you have a proud, warm heart that needs to be appreciated.",
+        "5": "Inside, you are careful and thoughtful, and you can worry too much.",
+        "6": "Inside, you need harmony; arguments unsettle you more than most.",
+        "7": "Inside, your feelings are intense and private.",
+        "8": "Inside, you are hopeful and free-spirited, and you need room to roam.",
+        "9": "Inside, you are serious and controlled, and you keep worries to yourself.",
+        "10": "Inside, you are independent and a little detached: you think before you feel.",
+        "11": "Inside, you are soft, dreamy and sensitive to everything around you."
+      },
+      "focus": "Much of your life turns around {{place}}.",
+      "strongIntro": "What comes naturally to you:",
+      "watchIntro": "Things that tend to trip you up:",
+      "chaptersBody": "Your life moves in long chapters. The one you are in now runs until {{end}}: {{meaning}} Inside it, the current stretch lasts until {{subEnd}}: {{subMeaning}}"
+    },
+    "career": {
+      "chips": {
+        "you": "You at work",
+        "strong": "Strengths",
+        "watch": "Watch-outs",
+        "money": "Money",
+        "timing": "Timing",
+        "helps": "What helps"
+      },
+      "titles": {
+        "you": "You at work",
+        "strong": "Strengths",
+        "watch": "Watch-outs",
+        "money": "Money",
+        "timing": "Timing: key periods",
+        "helps": "What helps"
+      },
+      "p": {
+        "Sun": {
+          "lead": "You do your best work <em>out front</em>, trusted with something that matters.",
+          "more": "Work that keeps you hidden or feels pointless tires you faster than hard work does. You stay loyal to places that treat you fairly."
+        },
+        "Moon": {
+          "lead": "You do your best work <em>close to people</em>, in work that feels useful to them.",
+          "more": "The mood of a workplace matters to you more than you admit. Your career may change shape a few times, and that is fine."
+        },
+        "Mars": {
+          "lead": "You do your best work with <em>a clear target</em> and room to act fast.",
+          "more": "Slow meetings and red tape wear you down. Technical, physical or competitive work brings out your best."
+        },
+        "Mercury": {
+          "lead": "You do your best work where <em>your mind and your words</em> are the tools.",
+          "more": "You pick things up quickly and like variety. Writing, trading, teaching or tech suit you better than repeating one task."
+        },
+        "Jupiter": {
+          "lead": "You do your best work when you can <em>guide, teach or advise</em>.",
+          "more": "People come to you for judgement. You grow fastest under a good mentor, and later you become one."
+        },
+        "Venus": {
+          "lead": "You do your best work where things are <em>pleasant, fair and well made</em>.",
+          "more": "Creative, people-facing or design work suits you. A good team and a nice place to work keep you going."
+        },
+        "Saturn": {
+          "lead": "Your career <em>builds slowly and lasts</em>.",
+          "more": "You earn trust through steady effort, not quick wins. Rewards come later than for others, but they stay."
+        },
+        "Rahu": {
+          "lead": "You are drawn to <em>unusual work</em>: new fields, tech or work far from home.",
+          "more": "Big ambitions push you forward. You can rise fast if you stay grounded and finish what you begin."
+        },
+        "Ketu": {
+          "lead": "You do your best work <em>alone</em>, on something you can go deep into.",
+          "more": "Titles and praise matter less to you than doing it well. Research or expert work suits you."
+        }
+      },
+      "link": "Your work is closely tied to {{place}}.",
+      "strongIntro": "What other people count on you for:",
+      "watchIntro": "Things that tend to trip you up at work:",
+      "watchIntroBusy": "Things that tend to trip you up, more so in these months:",
+      "money": {
+        "Sun": "Money comes through your position and your good name. You spend on looking good and on the people who depend on you.",
+        "Moon": "Your income can rise and fall, but you rarely go without. You spend on home, food and the people you love.",
+        "Mars": "You earn through effort and quick decisions. Watch impulse buys and lending to friends.",
+        "Mercury": "Money comes best through skill, trade and talk, less through quick bets.",
+        "Jupiter": "Money grows slowly and steadily, often through advice, teaching or family support. You are generous, sometimes too generous.",
+        "Venus": "Money comes through comfort, creativity and good relations. You like nice things, so a saving rule helps.",
+        "Saturn": "Money comes slowly, through long, steady work. You are careful with it, and savings grow over time.",
+        "Rahu": "Money can come in sudden jumps, from new or far-off sources. Keep a cushion: what comes fast can go fast.",
+        "Ketu": "Money matters less to you than meaning, which can leave gaps. Simple, automatic saving works better than big plans."
+      },
+      "gains": "Gains come most through {{via}}.",
+      "via": {
+        "Sun": "people in charge and public work",
+        "Moon": "the public and caring work",
+        "Mars": "property, technical or competitive work",
+        "Mercury": "trade, writing and skills",
+        "Jupiter": "teaching, advice and good mentors",
+        "Venus": "creative work, comforts and partners",
+        "Saturn": "slow, steady jobs and long service",
+        "Rahu": "tech, foreign links and new fields",
+        "Ketu": "research and behind-the-scenes work"
+      },
+      "rule": "One simple rule suits you: decide what you save first, then spend what is left."
+    },
+    "love": {
+      "chips": {
+        "need": "What you need",
+        "give": "What you give",
+        "watch": "Watch-outs",
+        "timing": "Timing",
+        "helps": "What helps"
+      },
+      "titles": {
+        "need": "What you need",
+        "give": "What you give",
+        "watch": "Watch-outs",
+        "timing": "Timing: key periods",
+        "helps": "What helps"
+      },
+      "p": {
+        "Sun": {
+          "lead": "You need a partner you can <em>respect and be proud of</em>.",
+          "more": "You give loyalty and expect it back. Clashes come when both of you want the last word."
+        },
+        "Moon": {
+          "lead": "You need a partner who makes you feel <em>safe and cared for</em>.",
+          "more": "Feelings run deep in your close ties. A warm, steady home life matters more than grand gestures."
+        },
+        "Mars": {
+          "lead": "You need a partner with <em>energy and spirit</em>, someone who stands up to you.",
+          "more": "Attraction runs strong. Arguments can flare fast, so cooling down before talking helps."
+        },
+        "Mercury": {
+          "lead": "You need a partner you can <em>talk to about anything</em>.",
+          "more": "Friendship and laughter are the glue for you. Long silences worry you more than arguments."
+        },
+        "Jupiter": {
+          "lead": "You need a partner who <em>shares your values</em> and helps you grow.",
+          "more": "Respect, trust and a shared sense of right matter most. You often learn a lot from the people you love."
+        },
+        "Venus": {
+          "lead": "You need <em>warmth and affection</em>, and a little beauty, in love.",
+          "more": "You give a lot of care and want it noticed. Harmony matters, sometimes so much that you avoid talks you need to have."
+        },
+        "Saturn": {
+          "lead": "You take commitment seriously and need a partner who is <em>steady and reliable</em>.",
+          "more": "Love may come later or grow slowly, but it is built to last. Duty and care keep it going."
+        },
+        "Rahu": {
+          "lead": "You are drawn to partners who are <em>different from you</em>, in background, culture or way of life.",
+          "more": "That spark is real. Clear, honest talk about plans keeps it from turning into confusion."
+        },
+        "Ketu": {
+          "lead": "You need <em>space</em>, and a partner who doesn’t crowd you.",
+          "more": "You can seem distant even when you care. Saying what you feel out loud helps a lot."
+        }
+      },
+      "link": "Love is closely tied to {{place}}.",
+      "give": {
+        "fire": "You love openly and generously. You plan the surprises and say the warm words first.",
+        "earth": "You show love through steady, practical care: being there, keeping promises, making life easier.",
+        "air": "You show love through talk, ideas and fun. You keep things light and make your partner laugh.",
+        "water": "You love deeply and quietly. You remember the small things and notice when something is wrong."
+      },
+      "giveStrong": "Your capacity for affection is a real strength in your chart.",
+      "giveWeak": "You may doubt yourself in love. You are easier to love than you think.",
+      "watchIntro": "Patterns to notice in close relationships:",
+      "watch": {
+        "Sun": "Needing to be right in an argument",
+        "Moon": "Taking a partner’s bad mood as your fault",
+        "Mars": "Saying sharp things in the heat of the moment",
+        "Mercury": "Talking things through instead of feeling them",
+        "Jupiter": "Advising when your partner wants to be heard",
+        "Venus": "Avoiding hard talks to keep the peace",
+        "Saturn": "Holding back affection until you feel sure",
+        "Rahu": "Rushing in, then doubting",
+        "Ketu": "Going quiet and pulling away when hurt"
+      }
+    },
+    "health": {
+      "chips": {
+        "energy": "Your energy",
+        "stress": "Stress signs",
+        "rest": "Rest that works",
+        "timing": "Timing",
+        "helps": "What helps"
+      },
+      "titles": {
+        "energy": "Your energy",
+        "stress": "Stress signs",
+        "rest": "Rest that works",
+        "timing": "Timing: key periods",
+        "helps": "What helps"
+      },
+      "top": "About energy and rest, not illness. For anything about your health, please see a doctor.",
+      "p": {
+        "Sun": {
+          "lead": "Your energy is strong when you have <em>a purpose</em>, and daylight.",
+          "more": "Days without a goal leave you flat. Morning light and an early start suit you."
+        },
+        "Moon": {
+          "lead": "Your energy follows <em>your feelings and your sleep</em>.",
+          "more": "A calm evening and regular meals keep you steady. Crowded weeks drain you more than hard work does."
+        },
+        "Mars": {
+          "lead": "You have quick, strong energy that <em>needs an outlet</em>.",
+          "more": "Moving every day keeps your head clear. Without it, the energy turns into irritation."
+        },
+        "Mercury": {
+          "lead": "Your energy lives in <em>your mind</em>: busy, quick and easily scattered.",
+          "more": "Screens and noise wear you out. Short breaks and a walk clear your head."
+        },
+        "Jupiter": {
+          "lead": "Your energy is <em>generally steady</em> and hopeful.",
+          "more": "You recover well when you rest, but you tend to overdo food, work or plans."
+        },
+        "Venus": {
+          "lead": "Your energy does best with <em>comfort and enough sleep</em>.",
+          "more": "Pleasant surroundings recharge you. Very rich food and late nights pull you down."
+        },
+        "Saturn": {
+          "lead": "Your energy is <em>slow to start, but it lasts</em>.",
+          "more": "Fixed routines suit you better than bursts. Warmth, sleep and gentle stretching help."
+        },
+        "Rahu": {
+          "lead": "Your energy comes in <em>surges and dips</em>.",
+          "more": "Excitement can keep you going past your limit. Regular sleep matters more for you than for most."
+        },
+        "Ketu": {
+          "lead": "Your energy is <em>quiet and inward</em>.",
+          "more": "Time alone recharges you. Notice when you skip meals or forget your body while lost in thought."
+        }
+      },
+      "stressIntro": "Signs that you are running low:",
+      "stress": {
+        "fire": [
+          "A short temper, and rushing",
+          "Skipping meals when you are busy",
+          "Restless sleep after a full day"
+        ],
+        "earth": [
+          "Tension in your neck and back",
+          "Working long past tiredness",
+          "Worrying about money or plans"
+        ],
+        "air": [
+          "A racing mind at night",
+          "Too much screen time",
+          "Feeling scattered and forgetting small things"
+        ],
+        "water": [
+          "Taking on other people’s moods",
+          "Comfort eating, or withdrawing",
+          "Feeling drained after crowds"
+        ]
+      },
+      "rest": {
+        "fire": "Rest for you is active: a walk, a game, time outdoors. Then a proper wind-down before bed.",
+        "earth": "You rest best with routine: the same sleep time, a warm meal, time in nature or working with your hands.",
+        "air": "You rest best when your mind can stop: music, a slow walk without your phone, writing things down before bed.",
+        "water": "You rest best with quiet and with people who feel safe: water, a bath, a calm evening at home."
+      },
+      "restSade": "These years ask for a little more rest than usual. Plan it in, rather than waiting until you are tired."
+    },
+    "study": {
+      "chips": {
+        "learn": "How you learn",
+        "focus": "Focus",
+        "course": "Choosing a course",
+        "timing": "Timing",
+        "helps": "What helps"
+      },
+      "titles": {
+        "learn": "How you learn",
+        "focus": "Focus",
+        "course": "Choosing a course",
+        "timing": "Timing: key periods",
+        "helps": "What helps"
+      },
+      "learn": {
+        "fire": {
+          "lead": "You learn fastest by <em>doing</em>, and by being challenged.",
+          "more": "Short, intense sessions work better than long, slow ones. A goal or a contest keeps you going."
+        },
+        "earth": {
+          "lead": "You learn <em>step by step</em>, and you remember what you can use.",
+          "more": "Notes, practice and repetition work for you. Once you learn something, it stays."
+        },
+        "air": {
+          "lead": "You learn through <em>talk, questions and ideas</em>.",
+          "more": "Study groups, explaining things out loud and variety help. Learning by heart alone bores you."
+        },
+        "water": {
+          "lead": "You learn best when you <em>care about the subject</em>, or the teacher.",
+          "more": "A calm place and a good teacher make a big difference. Pictures and stories help things stick."
+        }
+      },
+      "mindStrong": "A clear, quick mind is one of the strengths in your chart.",
+      "mindWeak": "Facts may take a little longer to hold. Repetition and good notes fix that.",
+      "focus": {
+        "fire": "Your focus is strong but short. Work in short bursts with breaks, and start with the hardest task.",
+        "earth": "Your focus is steady once you settle in. Protect a fixed study time and a tidy place to work.",
+        "air": "Your mind jumps to new ideas. Put the phone in another room and give yourself one task at a time.",
+        "water": "Your focus follows your mood. Sort out worries first, or write them down, then study."
+      },
+      "course": {
+        "Sun": "Subjects with leadership and public life suit you: management, government, politics or medicine.",
+        "Moon": "Subjects that care for people suit you: nursing, psychology, hospitality, food or teaching young children.",
+        "Mars": "Practical, technical subjects suit you: engineering, sport, defence, surgery or property.",
+        "Mercury": "Subjects of words, numbers and machines suit you: languages, commerce, accounts, computing or media.",
+        "Jupiter": "Subjects of knowledge and guidance suit you: law, teaching, finance, philosophy or counselling.",
+        "Venus": "Creative and people subjects suit you: design, arts, fashion, music, hospitality or diplomacy.",
+        "Saturn": "Long, solid courses suit you: science, engineering, administration, history or research.",
+        "Rahu": "New and unusual fields suit you: technology, foreign languages, aviation or study abroad.",
+        "Ketu": "Deep, specialist subjects suit you: research, mathematics, coding, healing or philosophy."
+      },
+      "courseEnd": "Choose something you would still enjoy after the first year, not only what pays."
+    },
+    "family": {
+      "chips": {
+        "home": "Home life",
+        "parents": "Parents",
+        "children": "Children",
+        "timing": "Timing",
+        "helps": "What helps"
+      },
+      "titles": {
+        "home": "Home life",
+        "parents": "Parents",
+        "children": "Children",
+        "timing": "Timing: key periods",
+        "helps": "What helps"
+      },
+      "p": {
+        "Sun": {
+          "lead": "You want a home you are <em>proud of</em>, and you often take charge there.",
+          "more": "Respect inside the family matters to you. Let others lead sometimes."
+        },
+        "Moon": {
+          "lead": "Home is <em>your safe place</em>, and you put a lot of feeling into it.",
+          "more": "Family moods affect you deeply. Small rituals together keep the peace."
+        },
+        "Mars": {
+          "lead": "Home life is <em>lively</em>, with strong opinions and quick tempers.",
+          "more": "You protect your family hard. The home itself may need effort, repairs or a move."
+        },
+        "Mercury": {
+          "lead": "Home is <em>busy and full of talk</em>.",
+          "more": "You keep the family connected. Plans and paperwork at home often land with you."
+        },
+        "Jupiter": {
+          "lead": "Home tends to be a place of <em>support and good values</em>.",
+          "more": "Elders and tradition matter in your family. You may host a lot."
+        },
+        "Venus": {
+          "lead": "You want a <em>comfortable, peaceful</em> home.",
+          "more": "You bring harmony to the family, and you spend happily on your home."
+        },
+        "Saturn": {
+          "lead": "Home life asks for <em>patience and duty</em>.",
+          "more": "You may carry responsibility early. A settled home often comes later, and it lasts."
+        },
+        "Rahu": {
+          "lead": "Your home life may be <em>unusual</em>, or move around a lot.",
+          "more": "You may live far from where you grew up. Make your own small traditions."
+        },
+        "Ketu": {
+          "lead": "You can feel <em>a little apart</em>, even at home.",
+          "more": "You need a quiet corner of your own. Peace comes from simple, uncluttered living."
+        }
+      },
+      "link": "Home is closely tied to {{place}}.",
+      "mother": {
+        "strong": "Your mother, or whoever raised you, is a real source of strength in your chart.",
+        "mid": "Your bond with your mother is close and ordinary: care, with some friction.",
+        "weak": "Your bond with your mother may have had distance or strain. Patience on both sides helps."
+      },
+      "father": {
+        "strong": "Your father, or a father figure, gives you backing and good values.",
+        "mid": "Your father’s role in your life is steady, with times of disagreement.",
+        "weak": "Your father may have been away, busy or hard to reach. Mentors can fill some of that space."
+      },
+      "children": {
+        "Sun": "With children you lead by example and expect a lot. Praise works better than pressure.",
+        "Moon": "You are a warm, protective figure for children, your own or other people’s.",
+        "Mars": "You are the active, playful one with children. Patience is the skill to grow.",
+        "Mercury": "You connect with children through talk, games and curiosity.",
+        "Jupiter": "Children are a traditional blessing in your chart, and you guide them well.",
+        "Venus": "You bring fun, affection and creativity to children’s lives.",
+        "Saturn": "Children may come later or bring responsibility; your care is steady and lasting.",
+        "Rahu": "Children around you may take unusual paths. Give them room and they shine.",
+        "Ketu": "You give children space and calm. Make time to show affection openly."
+      }
+    },
+    "timing": {
+      "body": "The next three years for {{area}}, from your life chapters and the slow-moving planets.",
+      "bodyLife": "Your life chapters and the big planet moves of the next three years.",
+      "tag": {
+        "chapter": "Life chapter",
+        "move": "Planet move"
+      },
+      "nowTo": "Now → {{date}}",
+      "range": "{{from}} → {{to}}",
+      "sub": {
+        "Sun": "A stretch of being seen",
+        "Moon": "A stretch led by feelings and home",
+        "Mars": "A stretch of energy and action",
+        "Mercury": "A quick, busy stretch",
+        "Jupiter": "A stretch of growth and support",
+        "Venus": "A warm, comfortable stretch",
+        "Saturn": "A slow, steady stretch",
+        "Rahu": "A restless, ambitious stretch",
+        "Ketu": "A quiet, letting-go stretch"
+      },
+      "linked": {
+        "life": "",
+        "career": "It touches work and money directly.",
+        "love": "It touches love and partnership directly.",
+        "health": "It touches your energy and routines directly.",
+        "study": "It touches learning directly.",
+        "family": "It touches home and family directly."
+      },
+      "chapter": "A new {{years}}-year chapter",
+      "in": {
+        "Jupiter": {
+          "title": "A more open, supported time",
+          "life": "Jupiter starts a year-long pass over you. People see you more clearly.",
+          "career": "Jupiter starts a year-long pass over your work life. A good time to ask for more responsibility.",
+          "love": "Jupiter starts a year-long pass over love. Good for meeting people and for commitment.",
+          "health": "Jupiter starts a year-long pass over your energy. Good for starting habits that last.",
+          "study": "Jupiter starts a year-long pass over learning. Good for starting a course or an exam push.",
+          "family": "Jupiter starts a year-long pass over home and family. Good for family plans and gatherings."
+        },
+        "Saturn": {
+          "title": "A time for steady effort",
+          "life": "Saturn starts a slow pass over you, about two and a half years. Slow down, simplify and build.",
+          "career": "Saturn starts a slow pass over work. Progress takes patience, but what you build now lasts.",
+          "love": "Saturn starts a slow pass over love. Commitment gets serious; take things step by step.",
+          "health": "Saturn starts a slow pass over your energy. Fixed routines and sleep matter more now.",
+          "study": "Saturn starts a slow pass over learning. Steady daily study beats last-minute pushes.",
+          "family": "Saturn starts a slow pass over home. Duties at home grow, so share them."
+        },
+        "Rahu": {
+          "title": "A restless new pull",
+          "life": "Rahu moves over you for about a year and a half. Big wants and fresh starts; stay grounded.",
+          "career": "Rahu moves into your work life for about a year and a half. New fields and offers pull at you; check them before you jump.",
+          "love": "Rahu moves into love for about a year and a half. Unusual attractions and quick feelings; give them time.",
+          "health": "Rahu moves through your energy for about a year and a half. Keep sleep and screen time in check.",
+          "study": "Rahu moves into learning for about a year and a half. New subjects excite you; finish one before the next.",
+          "family": "Rahu moves into home life for about a year and a half. Moves or changes at home are possible; keep talking."
+        }
+      },
+      "out": {
+        "Jupiter": {
+          "title": "Support moves elsewhere",
+          "sub": "Jupiter moves on. Keep the habits you built while things were easy."
+        },
+        "Saturn": {
+          "title": "A slow test eases",
+          "sub": "Saturn moves on, and the pressure here lifts."
+        },
+        "Rahu": {
+          "title": "Restlessness settles",
+          "sub": "Rahu moves on, and things here feel calmer."
+        }
+      },
+      "sadeEnd": {
+        "title": "A long test ends",
+        "sub": "Saturn’s seven-and-a-half-year pass over your Moon finishes. Pressure starts to lift."
+      },
+      "sadeStart": {
+        "title": "A long, slow test begins",
+        "sub": "Saturn starts its seven-and-a-half-year pass over your Moon. Slow down, simplify and keep routines steady. It is a building time, not a bad time."
+      }
+    },
+    "helps": {
+      "title": "What helps",
+      "day": {
+        "t": "Keep {{weekday}} for one small habit",
+        "s": "{{habit}} It suits your current stretch."
+      },
+      "habit": {
+        "Sun": "Get morning light and set one clear goal for the week.",
+        "Moon": "Call someone close, and eat a proper home meal.",
+        "Mars": "Move your body hard for half an hour.",
+        "Mercury": "Learn something small, or clear your messages and lists.",
+        "Jupiter": "Read, teach, or help someone with advice.",
+        "Venus": "Make something beautiful, or tidy and brighten your space.",
+        "Saturn": "Finish one pending task.",
+        "Rahu": "Take a few hours away from screens.",
+        "Ketu": "Spend an hour in quiet, on your own."
+      },
+      "life": {
+        "oneThing": {
+          "t": "Do one thing at a time",
+          "s": "Pick the one change that matters most this year and give it your best hours."
+        },
+        "journal": {
+          "t": "Keep a short journal",
+          "s": "Two lines a day. Within a month your own patterns become clear."
+        },
+        "people": {
+          "t": "Spend time with people who lift you",
+          "s": "Your energy follows the company you keep."
+        },
+        "body": {
+          "t": "Look after sleep and movement",
+          "s": "Every other plan runs on them."
+        }
+      },
+      "career": {
+        "oneGoal": {
+          "t": "Pick one goal for the next 18 months",
+          "s": "Write it down. Say no to things that don’t serve it."
+        },
+        "waitMonth": {
+          "t": "Wait a month before a big move",
+          "s": "If you still want the new job after 30 days, go."
+        },
+        "wins": {
+          "t": "Keep a wins list",
+          "s": "Note what you finished each week. Use it when you ask for a raise."
+        },
+        "saveFirst": {
+          "t": "Save before you spend",
+          "s": "Move a fixed amount to savings the day you are paid."
+        },
+        "skill": {
+          "t": "Learn one skill properly this year",
+          "s": "A course or certificate pays off more than a new title right now."
+        },
+        "mentor": {
+          "t": "Find a mentor",
+          "s": "Someone a few steps ahead of you can save you years."
+        }
+      },
+      "love": {
+        "talk": {
+          "t": "Set a weekly talk",
+          "s": "Twenty minutes, phones away: what went well, what didn’t."
+        },
+        "sayIt": {
+          "t": "Say the kind thing out loud",
+          "s": "Appreciation said is worth far more than appreciation felt."
+        },
+        "coolDown": {
+          "t": "Cool down before you talk",
+          "s": "Agree on a pause word for heated moments."
+        },
+        "slow": {
+          "t": "Go slowly with new feelings",
+          "s": "Give a new attraction three months before big decisions."
+        },
+        "ownLife": {
+          "t": "Keep your own friends and interests",
+          "s": "A full life of your own makes you a better partner."
+        }
+      },
+      "health": {
+        "sleep": {
+          "t": "The same sleep time every night",
+          "s": "Even at weekends. It is the biggest single lever for your energy."
+        },
+        "move": {
+          "t": "Move every day",
+          "s": "A brisk walk counts. Twenty minutes is enough."
+        },
+        "light": {
+          "t": "Get morning light",
+          "s": "Ten minutes outdoors early in the day sets your body clock."
+        },
+        "screens": {
+          "t": "An hour without screens before bed",
+          "s": "Read, stretch or talk instead."
+        },
+        "checkup": {
+          "t": "Keep up routine check-ups",
+          "s": "See a doctor about anything that worries you. This report is about energy, not illness."
+        }
+      },
+      "study": {
+        "plan": {
+          "t": "Make a weekly plan",
+          "s": "Three study blocks a day, with breaks, at the same times."
+        },
+        "teach": {
+          "t": "Teach what you learn",
+          "s": "Explaining a topic out loud shows you what you don’t know yet."
+        },
+        "phone": {
+          "t": "Study with the phone in another room",
+          "s": "Forty-five minutes of real focus beats three distracted hours."
+        },
+        "review": {
+          "t": "Review within a day",
+          "s": "A quick look at today’s notes tomorrow morning helps you remember far more."
+        },
+        "ask": {
+          "t": "Ask for help early",
+          "s": "A teacher or a friend can save you a week of being stuck."
+        }
+      },
+      "family": {
+        "meal": {
+          "t": "One shared meal a week",
+          "s": "No phones. It is where small problems get solved early."
+        },
+        "call": {
+          "t": "Call your parents or elders regularly",
+          "s": "A short, regular call beats a long, rare one."
+        },
+        "share": {
+          "t": "Share the load at home",
+          "s": "Write down who does what. Fairness keeps the peace."
+        },
+        "corner": {
+          "t": "Keep a quiet corner for yourself",
+          "s": "Even a chair by a window. Calm at home starts with you."
+        },
+        "listen": {
+          "t": "Listen before you fix",
+          "s": "Most family tension eases when people feel heard."
+        }
+      }
+    },
+    "footer": {
+      "base": "Written on this phone from {{name}}’s birth chart on {{date}}. Astrology shows tendencies, not certainties.",
+      "life": "",
+      "career": "For big money or job decisions, also talk to someone you trust who knows the field.",
+      "love": "A chart can’t decide a relationship; two people do.",
+      "health": "This is not medical advice. For anything about your health, please see a doctor.",
+      "study": "Choose with your teachers and family too.",
+      "family": "",
+      "compat": "Two charts can show where things come easily and where to talk more. They can’t decide a relationship for you.",
+      "compatBase": "Written on this phone from {{a}}’s and {{b}}’s birth charts on {{date}}. Astrology shows tendencies, not certainties."
+    },
+    "ask": {
+      "life": {
+        "you": {
+          "q1": "What should I focus on until {{date}}?",
+          "q2": "What are my biggest strengths?"
+        },
+        "other": {
+          "q1": "What should {{name}} focus on until {{date}}?",
+          "q2": "What are {{name}}’s biggest strengths?"
+        }
+      },
+      "career": {
+        "you": {
+          "q1": "Should I change jobs before {{date}}?",
+          "q2": "When is a good time to ask for a raise?"
+        },
+        "other": {
+          "q1": "Should {{name}} change jobs before {{date}}?",
+          "q2": "When is a good time for {{name}} to ask for a raise?"
+        }
+      },
+      "love": {
+        "you": {
+          "q1": "What kind of partner suits me?",
+          "q2": "When is a good time for commitment in the next two years?"
+        },
+        "other": {
+          "q1": "What kind of partner suits {{name}}?",
+          "q2": "When is a good time for {{name}} to commit in the next two years?"
+        }
+      },
+      "health": {
+        "you": {
+          "q1": "How can I keep my energy steady until {{date}}?",
+          "q2": "What kind of rest suits me best?"
+        },
+        "other": {
+          "q1": "How can {{name}} keep their energy steady until {{date}}?",
+          "q2": "What kind of rest suits {{name}} best?"
+        }
+      },
+      "study": {
+        "you": {
+          "q1": "Which subjects suit me best?",
+          "q2": "How can I focus better before exams?"
+        },
+        "other": {
+          "q1": "Which subjects suit {{name}} best?",
+          "q2": "How can {{name}} focus better before exams?"
+        }
+      },
+      "family": {
+        "you": {
+          "q1": "How can I bring more peace at home?",
+          "q2": "How can I support my parents better this year?"
+        },
+        "other": {
+          "q1": "How can {{name}} bring more peace at home?",
+          "q2": "How can {{name}} support their parents better this year?"
+        }
+      },
+      "compat": {
+        "partner": {
+          "q1": "How can {{a}} and {{b}} handle differences better?",
+          "q2": "What are good times ahead for {{a}} and {{b}}?"
+        },
+        "friend": {
+          "q1": "What makes the friendship of {{a}} and {{b}} work?",
+          "q2": "Where might {{a}} and {{b}} clash, and how can they avoid it?"
+        },
+        "family": {
+          "q1": "How can {{a}} and {{b}} understand each other better?",
+          "q2": "What are calmer times ahead for {{a}} and {{b}} at home?"
+        }
+      }
+    },
+    "compat": {
+      "title": "Compatibility",
+      "eyebrow": "{{a}} + {{b}}",
+      "band": {
+        "excellent": "EXCELLENT MATCH",
+        "good": "GOOD MATCH",
+        "average": "AVERAGE MATCH",
+        "low": "LOW MATCH"
+      },
+      "koota": {
+        "varna": {
+          "name": "Work & values",
+          "trad": "VARNA"
+        },
+        "vashya": {
+          "name": "Influence",
+          "trad": "VASHYA"
+        },
+        "tara": {
+          "name": "Luck together",
+          "trad": "TARA"
+        },
+        "yoni": {
+          "name": "Attraction",
+          "trad": "YONI"
+        },
+        "maitri": {
+          "name": "Mental bond",
+          "trad": "GRAHA MAITRI"
+        },
+        "gana": {
+          "name": "Temperament",
+          "trad": "GANA"
+        },
+        "bhakoot": {
+          "name": "Emotional rhythm",
+          "trad": "BHAKOOT"
+        },
+        "nadi": {
+          "name": "Health & children",
+          "trad": "NADI"
+        }
+      },
+      "mars": {
+        "none": "nothing to worry about for either of you. We show this plainly and never sell a fix.",
+        "exempt": "Mars sits in a sensitive place for one of you, but a traditional exception cancels it. Nothing to worry about.",
+        "cancelled": "both of you have Mars in a sensitive place, which tradition counts as balancing out.",
+        "one": "{{name}} has Mars in a traditionally sensitive place. Many families look at the full charts; it is a note, not a verdict, and needs no paid fix."
+      },
+      "chips": {
+        "partner": {
+          "connect": "How you connect",
+          "differ": "Where you differ",
+          "home": "Home & family life",
+          "timing": "Good times ahead",
+          "helps": "What helps"
+        },
+        "friend": {
+          "connect": "How you click",
+          "differ": "Where you clash",
+          "timing": "Good times ahead",
+          "helps": "What helps"
+        },
+        "family": {
+          "connect": "How you care",
+          "differ": "Where it gets hard",
+          "timing": "Good times ahead",
+          "helps": "What helps"
+        }
+      },
+      "chipSub": {
+        "partner": {
+          "connect": "Where it feels easy between you",
+          "differ": "Money, pace, and how you rest",
+          "home": "Living together, families on both sides",
+          "timing": "Warmer stretches, with dates",
+          "helps": "Small habits for you two. All free"
+        },
+        "friend": {
+          "connect": "What you bring out in each other",
+          "differ": "Plans, pace and pride",
+          "timing": "When plans together go well",
+          "helps": "Small habits. All free"
+        },
+        "family": {
+          "connect": "What each of you needs to feel loved",
+          "differ": "Old patterns and how to soften them",
+          "timing": "Calmer stretches at home, with dates",
+          "helps": "Small habits. All free"
+        }
+      },
+      "line": {
+        "sameElement": "You see the world in a similar way, which makes everyday life easy.",
+        "fireAir": "One of you sparks ideas and the other fans them; you energise each other.",
+        "earthWater": "One of you builds and the other nurtures; together you make a safe base.",
+        "fireWater": "One of you acts fast and the other feels deeply; patience turns that into balance.",
+        "fireEarth": "One of you jumps and the other plans; that mix works when you both say what you need.",
+        "airWater": "One of you thinks it through and the other feels it through; listening bridges the gap.",
+        "airEarth": "One of you dreams up the plan and the other makes it real.",
+        "partnerTail": {
+          "high": "The traditional count is kind to you two.",
+          "mid": "Talk early about money and plans, and it goes a long way.",
+          "low": "The traditional count is low, which mostly means: talk more, assume less."
+        },
+        "friendTail": "Say what you need from each other and the friendship holds.",
+        "familyTail": "Small, regular time together matters more than big gestures."
+      },
+      "element": {
+        "fire": "warm and quick to act",
+        "earth": "steady and practical",
+        "air": "curious and talkative",
+        "water": "feeling and caring"
+      },
+      "connectBody": "{{a}} is {{ea}} at heart; {{b}} is {{eb}}. {{line}}",
+      "connectItemsIntro": "Where it feels easy:",
+      "good": {
+        "varna": "You see work and duty in a similar way",
+        "vashya": "A natural pull towards each other",
+        "tara": "Your birth stars favour each other",
+        "yoni": "Easy closeness and instinct",
+        "maitri": "You understand each other’s minds easily",
+        "gana": "Your temperaments match",
+        "bhakoot": "Your emotional rhythms sit well together",
+        "nadi": "Your constitutions complement each other"
+      },
+      "weak": {
+        "varna": "You see work and duty differently; respect each other’s way",
+        "vashya": "Neither of you naturally gives way; take turns leading",
+        "tara": "Timing between you can feel off; plan big things together",
+        "yoni": "Different instincts about closeness; talk about it",
+        "maitri": "Your minds work differently; ask before you assume",
+        "gana": "Different temperaments; one needs calm, the other action",
+        "bhakoot": "Your moods move to different rhythms; give each other room",
+        "nadi": "Similar constitutions; look after each other’s rest"
+      },
+      "differIntro": "Where to take more care:",
+      "differNone": "No big friction points stand out. The usual work of any close tie applies: listen, and say what you need.",
+      "homeBody": "At home, {{a}} wants {{ha}} and {{b}} wants {{hb}}. Agree early on how you share chores, money and time with both families.",
+      "homeWant": {
+        "fire": "a lively home with room to do things",
+        "earth": "a steady, well-kept home",
+        "air": "a sociable home full of talk",
+        "water": "a warm, private, close home"
+      },
+      "friend": {
+        "connect": "{{a}} is {{ea}}; {{b}} is {{eb}}. {{line}}",
+        "clash": {
+          "gana": "One of you wants calm and the other wants action. Take turns choosing the plan.",
+          "bhakoot": "Your moods run on different clocks. Give each other a day before settling an argument.",
+          "nadi": "You can drain each other when you are both tired. Plan easy time together, not only busy time.",
+          "none": "Little friction stands out. Pride is the usual trap: be the first to call after a quarrel."
+        },
+        "connectSame": "Both of you are {{e}}. {{line}}"
+      },
+      "family": {
+        "connect": "{{a}} shows care by being {{ea}}; {{b}} shows it by being {{eb}}. {{line}}",
+        "hard": {
+          "gana": "Old patterns flare when one of you pushes and the other withdraws. Name it, gently.",
+          "bhakoot": "You feel things at different times. A short cooling-off period helps more than talking in the heat of it.",
+          "nadi": "When one of you is low, the other often is too. Lean on others in the family as well.",
+          "none": "There are few sharp edges. Most tension will come from busy lives, not from who you are."
+        },
+        "connectSame": "Both of you show care by being {{e}}. {{line}}"
+      },
+      "timingBody": "Warmer stretches ahead for the two of you, from both your life chapters and Jupiter’s moves.",
+      "timingNone": "No standout windows in the next two years. Steady, ordinary time together is the good time.",
+      "warm": {
+        "sub": "{{name}}’s {{planet}} stretch",
+        "subSub": {
+          "Venus": "Warmth and affection come easily.",
+          "Jupiter": "Support and good decisions.",
+          "Moon": "Closeness and time at home.",
+          "Mercury": "Easy talk and plans together."
+        },
+        "jupiter": "Jupiter supports {{name}}",
+        "jupiterSub": "A year when {{name}} is more open and generous."
+      },
+      "helps": {
+        "partner": [
+          {
+            "t": "A weekly check-in",
+            "s": "Twenty minutes, no phones: what felt good, what didn’t."
+          },
+          {
+            "t": "Talk about money early",
+            "s": "Who pays what, what you save, what you dream of."
+          },
+          {
+            "t": "Keep one ritual that’s yours",
+            "s": "A walk, a meal, a show: the same time each week."
+          },
+          {
+            "t": "Meet each other’s families halfway",
+            "s": "Agree in advance how much time goes to each."
+          }
+        ],
+        "friend": [
+          {
+            "t": "Make plans you both enjoy",
+            "s": "Take turns choosing."
+          },
+          {
+            "t": "Call first after a quarrel",
+            "s": "Pride costs friendships more than arguments do."
+          },
+          {
+            "t": "Celebrate each other’s wins",
+            "s": "Say it, and mean it."
+          }
+        ],
+        "family": [
+          {
+            "t": "Small, regular time together",
+            "s": "A meal or a call each week beats a big visit once a year."
+          },
+          {
+            "t": "Listen before advising",
+            "s": "Ask: do you want help, or do you want me to listen?"
+          },
+          {
+            "t": "Let old arguments rest",
+            "s": "Talk about today, not about who was right years ago."
+          }
+        ]
+      },
+      "whyMoon": "{{name}}’s Moon is in {{sign}}, one of the {{element}} signs.",
+      "whyParts": "The traditional parts: {{list}}.",
+      "whyTiming": {
+        "partner": "Warmer stretches are each person’s Venus, Jupiter or Moon life-chapter stretches, and Jupiter moving into a supportive sign from their Moon (2nd, 5th, 7th, 9th or 11th).",
+        "friend": "Good stretches are each person’s Mercury, Jupiter or Venus life-chapter stretches, and Jupiter moving into a supportive sign from their Moon (2nd, 5th, 7th, 9th or 11th).",
+        "family": "Calmer stretches are each person’s Moon, Jupiter or Venus life-chapter stretches, and Jupiter moving into a supportive sign from their Moon (2nd, 5th, 7th, 9th or 11th)."
+      },
+      "whyChart": "From your two charts:",
+      "connectSame": "Both of you are {{e}} at heart. {{line}}",
+      "homeSame": "At home, you both want {{h}}. Agree early on how you share chores, money and time with both families."
+    },
+    "planetOf": {
+      "Jupiter": "Jupiter’s",
+      "Saturn": "Saturn’s",
+      "Rahu": "Rahu’s"
+    }
+  }
+}

@@ -148,5 +148,319 @@
       "air": ["I listen to the room and to myself.", "Curiosity is my compass.", "Clear words, clear day."],
       "water": ["I feel, and I keep going.", "Tender is also strong.", "My depth is a gift."]
     }
-  }
+  },
+  "tabs": {
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "a11y": "Horoscope period"
+  },
+  "goodDays": "Good days",
+  "goGently": "Go gently",
+  "mantraTitle": "Mantra",
+  "luckyA11y": "Lucky today: colour {{color}}, number {{number}}, time {{time}}",
+  "ask": {
+    "love": "Ask Love guru",
+    "career": "Ask Career & money",
+    "wellness": "Ask Wellbeing guide"
+  },
+  "question": {
+    "today": {
+      "you": {
+        "love": "How does love look for me today?",
+        "career": "How do work and money look for me today?",
+        "wellness": "How can I look after my energy today?"
+      },
+      "other": {
+        "love": "How does love look for {{name}} today?",
+        "career": "How do work and money look for {{name}} today?",
+        "wellness": "How can {{name}} look after their energy today?"
+      }
+    },
+    "week": {
+      "you": {
+        "love": "How does love look for me this week?",
+        "career": "How do work and money look for me this week?",
+        "wellness": "How can I look after my energy this week?"
+      },
+      "other": {
+        "love": "How does love look for {{name}} this week?",
+        "career": "How do work and money look for {{name}} this week?",
+        "wellness": "How can {{name}} look after their energy this week?"
+      }
+    },
+    "month": {
+      "you": {
+        "love": "How does love look for me this month?",
+        "career": "How do work and money look for me this month?",
+        "wellness": "How can I look after my energy this month?"
+      },
+      "other": {
+        "love": "How does love look for {{name}} this month?",
+        "career": "How do work and money look for {{name}} this month?",
+        "wellness": "How can {{name}} look after their energy this month?"
+      }
+    }
+  },
+  "sectionTitle": {
+    "energy": "Energy",
+    "love": "Love",
+    "career": "Work & money",
+    "wellness": "Wellbeing",
+    "guidance": "Guidance"
+  },
+  "period": {
+    "and": "{{a}} and {{b}}",
+    "weekLabel": "Week of {{start}} – {{end}}",
+    "area": {
+      "1": "you, your energy and how you come across",
+      "2": "money, family and the way you speak",
+      "3": "courage, calls, writing and short trips",
+      "4": "home, mother and peace of mind",
+      "5": "children, studies, romance and fun",
+      "6": "daily work, health habits and clearing problems",
+      "7": "partners, marriage and close deals",
+      "8": "sudden changes, shared money and inner work",
+      "9": "luck, teachers, faith and long journeys",
+      "10": "career, reputation and responsibility",
+      "11": "gains, friends and hopes coming true",
+      "12": "rest, spending, faraway places and letting go"
+    },
+    "moonToday": {
+      "1": [
+        "The Moon is close to your own today. Feelings are near the surface; go with what feels right, but don't rush big calls.",
+        "A personal day: your mood sets the tone. Do one thing just for yourself."
+      ],
+      "2": [
+        "Steady, practical energy. Good for budgets, bills and family talk; better for finishing than starting.",
+        "Today favours money matters and kind words. Say the honest thing, gently."
+      ],
+      "3": [
+        "A brave, chatty day. Make the call, send the message, take the short trip.",
+        "Energy is up and words come easily. Good for asking for what you need."
+      ],
+      "4": [
+        "You may want home and quiet today. Keep plans light and look after your peace of mind.",
+        "Feelings run toward home and family. A slower day is a better day."
+      ],
+      "5": [
+        "A bright, creative day. Good for study, play and time with children or someone you love.",
+        "Your mind is quick and warm today. Learn something, or make something."
+      ],
+      "6": [
+        "A good day to clear the pile: tasks, small problems, health routines. You'll get through more than you expect.",
+        "Practical energy for chores and fixing things. Small wins add up."
+      ],
+      "7": [
+        "People come first today. Good for meetings, partnership and an honest talk with someone close.",
+        "A sociable day. Agreements and shared plans go well."
+      ],
+      "8": [
+        "Energy may feel low or unsettled today. Keep things simple, avoid big risks and rest early.",
+        "A day to go gently. Don't sign or start anything big; tidy, rest and reflect."
+      ],
+      "9": [
+        "A lucky, hopeful day. Good for learning, prayer and advice from elders.",
+        "Faith and good advice come easily today. Ask a teacher or an older friend."
+      ],
+      "10": [
+        "A strong day for work. You're noticed; put your best effort where it counts.",
+        "Good for career moves, presentations and taking charge."
+      ],
+      "11": [
+        "Things go your way more easily today. Good for friends, gains and finishing something you've waited on.",
+        "A rewarding day: what you've worked for may arrive."
+      ],
+      "12": [
+        "A quiet, inward day. Spend less, rest more, and let go of what you can't control.",
+        "Low on outward push today. Good for rest, prayer and planning."
+      ]
+    },
+    "mantra": {
+      "Sun": "Om Suryaya Namah",
+      "Moon": "Om Chandraya Namah",
+      "Mars": "Om Mangalaya Namah",
+      "Mercury": "Om Budhaya Namah",
+      "Jupiter": "Om Gurave Namah",
+      "Venus": "Om Shukraya Namah",
+      "Saturn": "Om Shanaishcharaya Namah",
+      "Rahu": "Om Rahave Namah",
+      "Ketu": "Om Ketave Namah",
+      "Shiva": "Om Namah Shivaya"
+    },
+    "mantraNote": {
+      "weekday": "{{weekday}} is {{planet}}'s day. Say it 11 times, slowly.",
+      "newMoon": "For a calm mind through the new moon on {{day}}.",
+      "saturn": "For patience while Saturn's slow stretch runs.",
+      "jupiter": "To welcome the support Jupiter brings this month.",
+      "stretch": "For the {{planet}} stretch you're in now."
+    },
+    "guidance": {
+      "Sun": [
+        "Step forward on one thing that matters. Let your work be seen.",
+        "Lead in a small way: offer to organise, decide or speak first."
+      ],
+      "Moon": [
+        "Look after the people closest to you, and let them look after you.",
+        "Make time for home and rest; your feelings are good guides now."
+      ],
+      "Mars": [
+        "Use the drive you have, but count to ten before you react.",
+        "Start the hard task first. Energy is there; aim it."
+      ],
+      "Mercury": [
+        "Write it down, learn one new thing, reply to that message.",
+        "Good time to sort paperwork and talk things through."
+      ],
+      "Jupiter": [
+        "Ask for advice from someone wiser, and say yes to a good opening.",
+        "Learn, teach or give; growth comes through sharing."
+      ],
+      "Venus": [
+        "Make room for beauty and people you love; enjoy what you've built.",
+        "A small treat or kind gesture goes a long way now."
+      ],
+      "Saturn": [
+        "Finish one thing you've been putting off. Slow and steady wins now.",
+        "Keep your routine, even on hard days. Effort now lasts."
+      ],
+      "Rahu": [
+        "Aim your restlessness at one clear goal instead of five.",
+        "Try the new thing, but keep your feet on the ground."
+      ],
+      "Ketu": [
+        "Let go of one thing that no longer fits. Quiet time helps.",
+        "Less doing, more noticing. Clear space, inside and out."
+      ]
+    },
+    "week": {
+      "love": [
+        "{{day}} is the warmest day this week for time together or a heart-to-heart.",
+        "Plan something together for {{day}}; it's the easiest day for closeness."
+      ],
+      "loveGentle": [
+        "Keep {{day}} quiet and close to home.",
+        "On {{day}}, listen more than you talk."
+      ],
+      "career": [
+        "{{days}} suit meetings, applications and sending things out.",
+        "Put the important work on {{days}}; things move more easily then."
+      ],
+      "careerQuiet": [
+        "A steady week for work: finish and tidy rather than start.",
+        "Keep work simple this week; follow up on what's already moving."
+      ],
+      "careerNewMoon": "Avoid lending money or big purchases around the new moon on {{day}}.",
+      "careerFullMoon": "Around the full moon on {{day}}, wrap things up rather than start new ones.",
+      "wellnessLow": [
+        "Energy may dip on {{day}}; keep that day light, eat on time and sleep early.",
+        "Go easy on {{day}}: fewer plans, more rest."
+      ],
+      "wellnessNewMoon": [
+        "Sleep may be lighter around the new moon on {{day}}. Short evening walks and an early dinner help.",
+        "The new moon on {{day}} can feel low. Rest a little more that day."
+      ],
+      "wellnessFullMoon": [
+        "Feelings may run high around the full moon on {{day}}. Breathe slowly, keep the evening calm.",
+        "Around the full moon on {{day}}, drink water and go to bed on time."
+      ],
+      "wellness": [
+        "Keep a simple routine: regular meals, a walk, enough sleep.",
+        "Move a little every day this week; it lifts your mood more than you think."
+      ],
+      "festivalNote": "{{festival}} on {{day}} is a good moment for a fresh start.",
+      "quoteFestival": [
+        "A festive week: {{festival}} arrives on {{day}}.",
+        "Clear the decks before {{festival}} on {{day}}."
+      ],
+      "quoteGood": [
+        "A helpful week. Good days are on your side; use them.",
+        "Things move more easily this week. Take the step you've been planning."
+      ],
+      "quoteMixed": [
+        "A mixed week: some easy days, some slow ones. Pace yourself.",
+        "Pick your moments this week, and you'll get a lot done."
+      ],
+      "quoteGentle": [
+        "A slower week. Rest, finish things and keep it simple.",
+        "Go gently this week. Small steps are enough."
+      ]
+    },
+    "month": {
+      "fullMoon": "Full moon",
+      "fullMoonSub": "Feelings run high; good for finishing, giving thanks and time with elders.",
+      "newMoon": "New moon",
+      "newMoonSub": "A quiet reset: rest, plan and avoid big purchases.",
+      "sunMoves": "The Sun moves on",
+      "sunMovesSub": "For the next month its light falls on {{area}}.",
+      "planetMoves": "{{planet}} changes sign",
+      "jupiterGood": "A more supportive year begins for {{area}}.",
+      "jupiterSlow": "For about a year, growth in {{area}} takes more effort, and it's worth it.",
+      "saturnSadeBegins": "Saturn's slow seven-and-a-half-year stretch begins. Steady effort is the key.",
+      "saturnSadeEnds": "Saturn's long, slow stretch ends. Old weight starts to lift.",
+      "saturnGood": "Saturn now backs steady work in {{area}}.",
+      "saturnSteady": "Saturn asks for patience with {{area}} for the next two years or so.",
+      "rahu": "Restless energy shifts toward {{area}} for about a year and a half.",
+      "stretch": "A new stretch begins: {{planet}}",
+      "quoteJupiterGood": "Doors open wider from {{date}}, when Jupiter moves on.",
+      "quoteJupiterSlow": "Jupiter moves on {{date}}: grow slowly and deliberately this year.",
+      "quoteSaturn": "Saturn changes sign on {{date}}, a turning point for the next few years.",
+      "quoteStretch": "A new {{planet}} stretch begins on {{date}}.",
+      "quoteSade": [
+        "Slow and steady this month. What you build now lasts.",
+        "Patience pays this month. Keep going, one step at a time."
+      ],
+      "quoteFestival": [
+        "A festive month, with {{festival}} on {{date}}.",
+        "Use {{festival}} on {{date}} as a fresh start."
+      ],
+      "quoteGood": [
+        "A helpful month. Say yes to good openings.",
+        "Things move your way more often this month."
+      ],
+      "quoteMixed": [
+        "A month of ups and downs. Pick your moments.",
+        "Steady effort beats big pushes this month."
+      ],
+      "loveFirst": [
+        "The first half is warmer for love; plan the important talks early.",
+        "Make time for love early in the month; later weeks get busier."
+      ],
+      "loveSecond": [
+        "The first half is for listening; the second half is warmer and better for talks about the future.",
+        "Love warms up in the second half of the month."
+      ],
+      "loveSteady": [
+        "A steady month for love: small, regular gestures count more than one big one.",
+        "Keep showing up for the people you love; consistency matters most now."
+      ],
+      "careerSade": [
+        "Keep your head down and finish what you've started; results are slower but they last.",
+        "Work feels heavy at times. Routine and follow-through carry you."
+      ],
+      "careerSaturnHelps": [
+        "Saturn backs steady work this month; effort brings visible results.",
+        "Patient work pays off now. Keep a steady pace."
+      ],
+      "careerSteady": [
+        "A month for follow-ups, paperwork and finishing what's open.",
+        "Keep work organised; clear the backlog before new plans."
+      ],
+      "careerFrom": "From {{date}} on, you're more visible; ask for what you want.",
+      "careerEarly": "Push the important things early in the month.",
+      "wellnessRoutine": [
+        "Routine beats intensity this month: sleep on time and keep meals regular.",
+        "Look after your energy: rest is part of the work right now."
+      ],
+      "wellness": [
+        "A good month to start a gentle habit: a walk, earlier nights, less screen time.",
+        "Move a little every day and drink more water."
+      ],
+      "festivalReset": "Use {{festival}} as a reset: one small habit, kept every day."
+    }
+  },
+  "screenTitle": "Horoscope",
+  "risingPart": "{{sign}} rising",
+  "moonPart": "{{sign}} Moon",
+  "luckyTime": "Best time"
 }

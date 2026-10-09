@@ -365,6 +365,44 @@ export function cannedQuestion(question: string): 'childSex' | 'partnerName' | n
   return null;
 }
 
+// ─── Crisis (self-harm / suicide) ─────────────────────────────────────────────
+//
+// A message about wanting to die or hurt oneself never goes to the model: the
+// chat answers with a fixed, kind reply carrying Indian helplines
+// (chat:safety.crisis: Tele-MANAS 14416, emergency 112). English, Hindi,
+// Bengali and the Latin-script Hinglish / Banglish people actually type.
+// Deliberately broad: a false positive costs one gentle helpline message.
+
+const CRISIS_EN = [
+  'suicid(?:e|al)', 'kill(?:ing)? my ?self', 'end(?:ing)? (?:my|it) (?:life|all)', 'end it all',
+  'take my (?:own )?life', 'taking my (?:own )?life', "(?<!(?:don'?t|do not|never) )(?:want(?:na)? to|wanna) die", 'wish i (?:was|were) dead',
+  "(?:don'?t|do not|dont) want to (?:live|be alive|exist)", 'no reason to live', 'better off dead',
+  'self[- ]?harm', '(?:hurt|harm|cut)(?:ting)? my ?self', 'overdose',
+  // Hinglish
+  'khud ?kushi', 'aatma ?hatya', 'atma ?hatya', 'marna chaht[aie]', 'mar ?ja(?:a)?na chaht[aie]',
+  'jee?na nahi(?:n)? chaht[aie]', 'zind[ae]gi khatam', 'jaan de d[ou]o?n?',
+  // Banglish
+  'atm[ao] ?hott?(?:y)?a', 'more jete chai', 'morte chai', 'bachte chai ?na', 'banchte chai ?na',
+];
+const CRISIS_HI = [
+  'आत्महत्या', 'ख़ुदकुशी', 'खुदकुशी', 'मरना चाहत', 'मर जाना चाहत', 'मर जाऊं', 'मर जाऊँ',
+  'जीना नहीं चाहत', 'जीने का मन नहीं', 'जान दे दूं', 'जान दे दूँ', 'अपनी जान ले',
+  'ज़िंदगी ख़त्म', 'जिंदगी खत्म', 'ज़िन्दगी ख़त्म', 'जिन्दगी खत्म', 'खुद को नुकसान', 'ख़ुद को नुक़सान', 'खुद को चोट',
+];
+const CRISIS_BN = [
+  'আত্মহত্যা', 'মরে যেতে চাই', 'মরতে চাই', 'বাঁচতে চাই না', 'বাঁচতে ইচ্ছে করে না', 'বাঁচার ইচ্ছে নেই',
+  'নিজেকে শেষ করে', 'নিজেকে আঘাত', 'নিজের ক্ষতি করতে', 'জীবন শেষ করে দি', 'সুইসাইড',
+];
+const CRISIS = new RegExp(nfc([
+  `\\b(?:${CRISIS_EN.join('|')})`,
+  ...CRISIS_HI, ...CRISIS_BN,
+].join('|')), 'i');
+
+/** True when a message talks about suicide or self-harm (en / hi / bn / Hinglish / Banglish). */
+export function isCrisisMessage(message: string): boolean {
+  return CRISIS.test(nfc(message).toLowerCase().replace(/[’`]/g, "'"));
+}
+
 // ─── Countdown phrases ────────────────────────────────────────────────────────
 //
 // v2.1 adds "meaning within about N months" after a month-year (bn 19/35

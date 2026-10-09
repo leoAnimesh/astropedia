@@ -100,7 +100,11 @@
       "Saturn": "{{planet}} enters {{sign}} tomorrow — a slow, steady reshaping starts.",
       "other": "{{planet}} enters {{sign}} tomorrow."
     },
-    "phaseTitle": "{{title}} next week"
+    "phaseTitle": "{{title}} next week",
+    "rahuTitle": "Rahu Kaal in 15 minutes",
+    "rahuBody": "Today's Rahu Kaal is {{start}} – {{end}}. Better for routine than new starts.",
+    "goneTitle": "That profile is gone",
+    "goneMessage": "The profile this reminder was for has been removed, so we've brought you home."
   },
   "question": {
     "chapter": "My {{planet}} life chapter starts on {{date}}. What does it mean for me?",

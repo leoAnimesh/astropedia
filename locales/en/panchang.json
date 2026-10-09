@@ -80,5 +80,93 @@
     "Chatushpada": "Chatushpada",
     "Naga": "Naga",
     "Kimstughna": "Kimstughna"
-  }
+  },
+  "pickDate": "Pick another date",
+  "backToToday": "Back to today",
+  "headerSub": "{{date}} · {{city}}",
+  "rightNow": "Right now · {{time}}",
+  "choghadiyaWord": "choghadiya",
+  "nowDesc": {
+    "good": "One of the better windows today, until {{end}}. Good for starting work, signing, or a first conversation.",
+    "okay": "A neutral window until {{end}}. Fine for travel and routine work.",
+    "avoid": "Better for routine than for new starts, until {{end}}. Next: {{next}} from {{nextStart}}."
+  },
+  "rahu": {
+    "in": "Rahu Kaal in {{time}}",
+    "now": "Rahu Kaal now",
+    "over": "Rahu Kaal is over for today",
+    "inNote": "Finish what you start before then.",
+    "nowNote": "Keep to routine work until {{end}}.",
+    "overNote": "Nothing to avoid for the rest of the day."
+  },
+  "duration": {
+    "min": "{{m}} min",
+    "hm": "{{h}} h {{m}} min"
+  },
+  "luckyFor": "Lucky for {{name}} today",
+  "luckyToday": "Lucky today",
+  "lucky": {
+    "color": "Colour",
+    "number": "Number",
+    "time": "Time"
+  },
+  "luckyNote": {
+    "weekday": "From {{weekday}}'s ruler ({{planet}}) and your Moon sign. A gentle nudge, not a rule.",
+    "moonSign": "From your Moon sign's ruler ({{planet}}), which suits you better than {{weekday}}'s. A gentle nudge, not a rule."
+  },
+  "choghadiya": {
+    "title": "Choghadiya",
+    "day": "Day",
+    "night": "Night",
+    "halfA11y": "Day or night",
+    "now": "NOW",
+    "note": "Good windows suit new starts; Avoid windows are better for routine work.",
+    "name": {
+      "Amrit": "Amrit",
+      "Shubh": "Shubh",
+      "Labh": "Labh",
+      "Chal": "Chal",
+      "Rog": "Rog",
+      "Kaal": "Kaal",
+      "Udveg": "Udveg"
+    },
+    "quality": {
+      "good": "Good",
+      "okay": "Okay",
+      "avoid": "Avoid"
+    }
+  },
+  "timesToday": "Times today",
+  "times": {
+    "sun": "Sunrise · Sunset",
+    "rahu": "Rahu Kaal",
+    "rahuSub": "Avoid starting new things",
+    "yamaganda": "Yamaganda",
+    "yamagandaSub": "Also best kept for routine",
+    "gulika": "Gulika Kaal",
+    "gulikaSub": "Fine for routine, not for beginnings",
+    "abhijit": "Abhijit muhurat",
+    "abhijitSub": "Strong midday window",
+    "moonrise": "Moonrise",
+    "moonriseNone": "No moonrise today"
+  },
+  "limbsTitle": "Panchang · five limbs",
+  "limb": {
+    "tithi": "Tithi",
+    "nakshatra": "Nakshatra",
+    "yoga": "Yoga",
+    "karana": "Karana",
+    "vara": "Vara",
+    "paksha": "Paksha"
+  },
+  "limbSub": {
+    "until": "until {{time}}, then {{next}}",
+    "untilTomorrow": "until {{time}} tomorrow, then {{next}}",
+    "moonIn": "Moon in {{sign}}",
+    "vara": "{{weekday}} · {{planet}}",
+    "shukla": "waxing Moon",
+    "krishna": "waning Moon"
+  },
+  "atSunrise": "At sunrise",
+  "placeNote": "Times for {{city}}, from the profile's birth place. Shown in your phone's time zone."
 }

@@ -7,7 +7,7 @@
  *   - nakshatra
  *   - yoga
  *   - karana
- *   - sunrise / sunset (NOAA approximation)
+ *   - sunrise / sunset (NOAA, utils/sun.ts)
  *   - rahu kaal     (inauspicious window)
  *   - abhijit muhurat (auspicious window around solar noon)
  *
@@ -17,9 +17,8 @@
 import { NAKSHATRAS } from '@/constants/astrology';
 import { getMoonLongitudeExact, getSunLongitudeExact } from './astrology';
 import i18n, { intlLocale, localizeTime } from './i18n';
+import { getSunTimesIso } from './sun';
 
-const RAD = Math.PI / 180;
-const DEG = 180 / Math.PI;
 
 function norm(deg: number): number {
   return ((deg % 360) + 360) % 360;
@@ -145,45 +144,20 @@ export type DaylightTimes = {
 const DEFAULT_LAT = 28.6139; // Delhi
 const DEFAULT_LNG = 77.2090;
 
-function dayOfYear(dateIso: string): number {
-  const d = new Date(dateIso + 'T00:00:00');
-  const start = new Date(d.getFullYear(), 0, 0);
-  return Math.floor((d.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 export function getDaylightTimes(
   dateIso: string,
   lat?: number | null,
   lng?: number | null,
 ): DaylightTimes {
-  const L  = lat ?? DEFAULT_LAT;
-  const G  = lng ?? DEFAULT_LNG;
-  const N  = dayOfYear(dateIso);
-
-  // Solar declination (Spencer's approximation, deg)
-  const decl = 23.45 * Math.sin(((360 / 365) * (N - 81)) * RAD);
-
-  const arg = -Math.tan(L * RAD) * Math.tan(decl * RAD);
-  if (arg < -1 || arg > 1) {
-    return { sunriseHour: 6, sunsetHour: 18, hasDaylight: false };
-  }
-  const H = Math.acos(arg) * DEG; // hour angle in degrees
-
-  // Local solar mean times in hours.
-  const solarNoon = 12;
-  const sunriseLST = solarNoon - H / 15;
-  const sunsetLST  = solarNoon + H / 15;
-
-  // Convert from local solar time to local clock time using the timezone the
-  // device is in. The simple correction: device offset minutes - longitude/15.
-  const tzOffsetMin = -new Date(dateIso + 'T00:00:00').getTimezoneOffset();
-  const tzHours     = tzOffsetMin / 60;
-  const correction  = tzHours - G / 15;
-
-  const sunriseHour = (sunriseLST + correction + 24) % 24;
-  const sunsetHour  = (sunsetLST  + correction + 24) % 24;
-
-  return { sunriseHour, sunsetHour, hasDaylight: true };
+  // NOAA sunrise/sunset (utils/sun.ts): equation of time and refraction
+  // included, so these agree with the Choghadiya / Rahu Kaal on the Panchang
+  // screen (and Drik Panchang) to about a minute. Returned as decimal hours
+  // in the device's local time, as before.
+  const s = getSunTimesIso(dateIso, lat ?? DEFAULT_LAT, lng ?? DEFAULT_LNG);
+  const [y, m, d] = dateIso.split('-').map(Number);
+  const midnight = new Date(y, m - 1, d).getTime();
+  const hours = (t: Date) => (t.getTime() - midnight) / 3600000;
+  return { sunriseHour: hours(s.sunrise), sunsetHour: hours(s.sunset), hasDaylight: s.hasDaylight };
 }
 
 // ─── Rahu Kaal (inauspicious window) ─────────────────────────────────────────

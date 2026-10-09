@@ -32,7 +32,27 @@ export type IconName =
   | 'book'
   | 'people'
   | 'clock'
-  | 'moon';
+  | 'moon'
+  | 'home'
+  | 'heart'
+  | 'briefcase'
+  | 'sprout'
+  | 'house'
+  | 'study'
+  | 'history'
+  | 'more'
+  | 'restart'
+  | 'phone'
+  | 'kundli'
+  | 'sun'
+  | 'match'
+  | 'diya'
+  | 'saturn'
+  | 'report'
+  | 'money'
+  | 'timeline'
+  | 'lock'
+  | 'pdf';
 
 type IOSMap = Record<IconName, SymbolViewProps['name']>;
 type AndroidMap = Record<IconName, string>;
@@ -68,6 +88,26 @@ const IOS_MAP: IOSMap = {
   people:            'person.2',
   clock:             'clock',
   moon:              'moon',
+  home:              'house',
+  heart:             'heart',
+  briefcase:         'briefcase',
+  sprout:            'leaf',
+  house:             'house.lodge',
+  study:             'book.pages',
+  history:           'clock.arrow.circlepath',
+  more:              'ellipsis',
+  restart:           'arrow.counterclockwise',
+  phone:             'phone',
+  kundli:            'square.grid.3x3',
+  sun:               'sun.max',
+  match:             'circle.circle',
+  diya:              'flame',
+  saturn:            'circle.dashed',
+  report:            'doc.text',
+  money:             'indianrupeesign.circle',
+  timeline:          'chart.bar.xaxis',
+  lock:              'lock',
+  pdf:               'doc.richtext',
 };
 
 const ANDROID_MAP: AndroidMap = {
@@ -101,6 +141,26 @@ const ANDROID_MAP: AndroidMap = {
   people:            'group',
   clock:             'schedule',
   moon:              'dark-mode',
+  home:              'home',
+  heart:             'favorite-border',
+  briefcase:         'work-outline',
+  sprout:            'eco',
+  house:             'cottage',
+  study:             'auto-stories',
+  history:           'history',
+  more:              'more-horiz',
+  restart:           'restart-alt',
+  phone:             'phone',
+  kundli:            'grid-view',
+  sun:               'wb-sunny',
+  match:             'join-inner',
+  diya:              'local-fire-department',
+  saturn:            'public',
+  report:            'description',
+  money:             'savings',
+  timeline:          'timeline',
+  lock:              'lock-outline',
+  pdf:               'picture-as-pdf',
 };
 
 type Props = {

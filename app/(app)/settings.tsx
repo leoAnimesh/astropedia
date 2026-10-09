@@ -1,8 +1,9 @@
 'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
 
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
@@ -10,28 +11,58 @@ import { useSettingsStore } from '@/stores/settings-store';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { Toggle } from '@/components/atoms/Toggle';
-import { Icon } from '@/components/atoms/Icon';
+import { Avatar } from '@/components/atoms/Avatar';
+import { Icon, type IconName } from '@/components/atoms/Icon';
 import { showDialog } from '@/components/overlays';
 import { overlayPalette } from '@/components/overlays/palette';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
-import { FONTS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
-import { clearAllData } from '@/utils/database';
+import { FONTS, LIGHT_TOKENS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
+import { clearAllData, type Profile } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
 import { useOnboardingStore } from '@/stores/onboarding-store';
 import { todayIso } from '@/utils/format';
-import { intlLocale, localizeDigits } from '@/utils/i18n';
+import { intlLocale, localizeDigits, tSign } from '@/utils/i18n';
+import { getBigThree } from '@/utils/astrology';
 import { parseBackup, type ParsedBackup } from '@/utils/backup';
 import { deleteBackupFiles, exportBackup, pickBackupText, restoreBackup } from '@/utils/backup-io';
+import { getModelInfo, redownloadModel, useModelSetup } from '@/utils/model-download';
 import {
   ensureNotificationPermission,
   scheduleDailyHoroscope,
   cancelDailyHoroscope,
   scheduleTransitAlerts,
   cancelTransitAlerts,
+  scheduleFestivalReminders,
+  cancelFestivalReminders,
+  scheduleRahuKaalHeadsUp,
+  cancelRahuKaalHeadsUp,
 } from '@/utils/notifications';
 
 const ACCENT_KEYS: AccentKey[] = ['amber', 'sage', 'lilac', 'blush', 'ink'];
+const READY_DOT = ACCENT_THEMES.sage.accent;
+
+type NotifyKey = 'daily' | 'transit' | 'festival' | 'rahu';
+
+const NOTIFY: Record<NotifyKey, {
+  get: () => boolean;
+  set: (v: boolean) => void;
+  schedule: () => Promise<void>;
+  cancel: () => Promise<void>;
+  isNew?: boolean;
+}> = {
+  daily:    { get: Storage.getDailyHoroscopePush, set: Storage.setDailyHoroscopePush, schedule: () => scheduleDailyHoroscope(), cancel: cancelDailyHoroscope },
+  transit:  { get: Storage.getTransitAlerts, set: Storage.setTransitAlerts, schedule: () => scheduleTransitAlerts(null), cancel: cancelTransitAlerts },
+  festival: { get: Storage.getFestivalReminders, set: Storage.setFestivalReminders, schedule: scheduleFestivalReminders, cancel: cancelFestivalReminders, isNew: true },
+  rahu:     { get: Storage.getRahuKaalPush, set: Storage.setRahuKaalPush, schedule: scheduleRahuKaalHeadsUp, cancel: cancelRahuKaalHeadsUp, isNew: true },
+};
+const NOTIFY_KEYS: NotifyKey[] = ['daily', 'transit', 'festival', 'rahu'];
+
+/** "astro-gemma-v21" → "v2.1". */
+function modelVersionLabel(version: string | null): string {
+  const m = /v(\d)(\d*)$/.exec(version ?? '');
+  return m ? `v${m[1]}${m[2] ? '.' + m[2] : ''}` : version ?? '';
+}
 
 export default function SettingsScreen() {
   const { theme, accentKey, setAccentKey, isDark } = useAccent();
@@ -41,41 +72,31 @@ export default function SettingsScreen() {
   const { profiles } = useProfiles();
   const setDark = useSettingsStore((s) => s.setDarkModeOverride);
   const darkOverride = useSettingsStore((s) => s.darkModeOverride);
-  const [dailyHoroscope,  setDailyHoroscope]  = useState<boolean>(Storage.getDailyHoroscopePush());
-  const [transitAlerts,   setTransitAlerts]   = useState<boolean>(Storage.getTransitAlerts());
+  const [notify, setNotify] = useState<Record<NotifyKey, boolean>>(() => ({
+    daily: NOTIFY.daily.get(), transit: NOTIFY.transit.get(), festival: NOTIFY.festival.get(), rahu: NOTIFY.rahu.get(),
+  }));
   const [busy, setBusy] = useState<'export' | 'restore' | null>(null);
 
-  const handleToggleDailyHoroscope = async (next: boolean) => {
-    if (next) {
-      const ok = await ensureNotificationPermission();
-      if (!ok) {
-        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offDaily') });
-        return;
-      }
-      Storage.setDailyHoroscopePush(true);
-      setDailyHoroscope(true);
-      scheduleDailyHoroscope();
-    } else {
-      Storage.setDailyHoroscopePush(false);
-      setDailyHoroscope(false);
-      cancelDailyHoroscope();
-    }
-  };
+  const modelPhase    = useModelSetup((s) => s.phase);
+  const modelReceived = useModelSetup((s) => s.received);
+  const modelTotal    = useModelSetup((s) => s.total);
+  const modelInfo     = getModelInfo();
 
-  const handleToggleTransitAlerts = async (next: boolean) => {
+  const toggleNotify = async (key: NotifyKey, next: boolean) => {
+    const n = NOTIFY[key];
     if (next) {
       const ok = await ensureNotificationPermission();
       if (!ok) {
-        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offTransit') });
+        showDialog({ title: t('notifications.offTitle'), message: t('notifications.offMessage') });
         return;
       }
-      Storage.setTransitAlerts(true);
-      setTransitAlerts(true);
-      scheduleTransitAlerts(null);
+      n.set(true);
+      setNotify((s) => ({ ...s, [key]: true }));
+      n.schedule().catch(() => {});
     } else {
-      Storage.setTransitAlerts(false);
-      setTransitAlerts(false);
-      cancelTransitAlerts();
+      n.set(false);
+      setNotify((s) => ({ ...s, [key]: false }));
+      n.cancel().catch(() => {});
     }
   };
 
@@ -85,8 +106,6 @@ export default function SettingsScreen() {
       Storage.deleteHoroscopeCache(p.id, today);
       Storage.deleteChartReading(p.id);
     });
-    // Also wipe semantic Q&A cache so chat replies regenerate with the
-    // current system prompt instead of returning stale entries.
     Cache.clear();
     showDialog({ title: t('dev.clearedTitle'), message: t('dev.clearedMessage') });
   };
@@ -106,8 +125,7 @@ export default function SettingsScreen() {
             await clearAllData();
             Storage.clear();
             deleteBackupFiles();
-            // Flipping the store causes the root layout's <Stack.Protected>
-            // guards to swap to the onboarding stack — no router.replace needed.
+            // Flipping the store swaps the root layout's <Stack.Protected> guards to onboarding.
             setOnboardingDone(false);
           },
         },
@@ -137,7 +155,7 @@ export default function SettingsScreen() {
       showDialog({ title: t('restore.errorTitle'), message: t('restore.errors.readFailed') });
       return;
     }
-    if (text === null) return; // picker cancelled
+    if (text === null) return;
 
     const parsed = parseBackup(text);
     if (!parsed.ok) {
@@ -152,11 +170,7 @@ export default function SettingsScreen() {
             date: localizeDigits(made.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short', year: 'numeric' })),
           })
         : null,
-      t('restore.counts', {
-        profiles: backup.counts.profiles,
-        chats:    backup.counts.chats,
-        journal:  backup.counts.journal,
-      }),
+      t('restore.counts', { profiles: backup.counts.profiles, chats: backup.counts.chats, journal: backup.counts.journal }),
       t('restore.replaceWarning'),
     ].filter(Boolean);
 
@@ -174,8 +188,9 @@ export default function SettingsScreen() {
     setBusy('restore');
     try {
       const outcome = await restoreBackup(backup);
-      setDailyHoroscope(Storage.getDailyHoroscopePush());
-      setTransitAlerts(Storage.getTransitAlerts());
+      setNotify({
+        daily: NOTIFY.daily.get(), transit: NOTIFY.transit.get(), festival: NOTIFY.festival.get(), rahu: NOTIFY.rahu.get(),
+      });
       setBusy(null);
       await showDialog({
         title:   t('restore.doneTitle'),
@@ -183,11 +198,22 @@ export default function SettingsScreen() {
           ? `${t('restore.doneMessage')}\n\n${t('restore.notificationsBlocked')}`
           : t('restore.doneMessage'),
       });
-      router.dismissTo('/');
+      router.navigate('/');
     } catch {
       setBusy(null);
       showDialog({ title: t('restore.errorTitle'), message: t('restore.errors.failed') });
     }
+  };
+
+  const handleRedownload = () => {
+    showDialog({
+      title:   t('model.redownloadTitle'),
+      message: t('model.redownloadMessage'),
+      actions: [
+        { label: t('model.cancel'), style: 'cancel' },
+        { label: t('model.redownload'), onPress: () => { redownloadModel().catch(() => {}); } },
+      ],
+    });
   };
 
   const busyOrChevron = (which: 'export' | 'restore') =>
@@ -195,23 +221,95 @@ export default function SettingsScreen() {
       ? <ActivityIndicator size="small" color={theme.muted} />
       : <Icon name="chevron" size={14} color={theme.faint} />;
 
+  // ─── People ────────────────────────────────────────────────────────────────
+  const people = [...profiles].sort((a, b) => Number(b.isYou) - Number(a.isYou));
+  const personSub = (p: Profile): string => {
+    const who = p.isYou ? t('people.you') : p.relationship?.trim() || '';
+    let signs = '';
+    if (p.birthDate) {
+      try {
+        const { moon, rising } = getBigThree(p);
+        signs = rising
+          ? t('people.rising', { sign: tSign(rising.name) })
+          : moon ? t('people.moon', { sign: tSign(moon.name) }) : '';
+        if (rising && moon) signs = `${signs} · ${t('people.moon', { sign: tSign(moon.name) })}`;
+      } catch { /* incomplete birth details */ }
+    }
+    return [who, signs].filter(Boolean).join(' · ');
+  };
+
+  // ─── Model ─────────────────────────────────────────────────────────────────
+  const modelReady = modelPhase === 'ready';
+  const modelStatus =
+    modelReady ? t('model.ready') :
+    modelPhase === 'downloading' ? t('model.downloading', { pct: modelTotal ? Math.floor((modelReceived / modelTotal) * 100) : 0 }) :
+    modelPhase === 'offline' ? t('model.offline') :
+    modelPhase === 'no-space' ? t('model.noSpace') :
+    modelPhase === 'error' ? t('model.error') :
+    t('model.checking');
+  const modelMb = Math.round(modelInfo.bytes / 1_000_000);
+  const appVersion = Constants.expoConfig?.version ?? '';
+
+  const navRow = (icon: IconName, label: string, onPress: () => void, sub?: string) => (
+    <TouchableOpacity style={styles.cardRow} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} accessibilityHint={sub}>
+      <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
+        <Icon name={icon} size={16} color={theme.ink2} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={[styles.rowLabel, { color: theme.ink }]}>{label}</Text>
+        {sub ? <Text style={[styles.rowSub, { color: theme.muted }]}>{sub}</Text> : null}
+      </View>
+      <Icon name="chevron" size={14} color={theme.faint} />
+    </TouchableOpacity>
+  );
+
+  const divider = <View style={[styles.divider, { backgroundColor: theme.hairline }]} />;
+
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
-      <View style={[styles.header, { borderBottomColor: theme.hairline }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityLabel={t('back')}>
-          <Icon name="back" size={22} color={theme.ink} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.ink }]}>
-          <Text style={styles.titleItalic}>{t('title')}</Text>
-        </Text>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.ink }]} accessibilityRole="header">{t('title')}</Text>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* People */}
+        <EyebrowLabel style={styles.sectionLabel}>{t('people.section')}</EyebrowLabel>
+        <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          {people.map((p) => (
+            <TouchableOpacity
+              key={p.id}
+              style={[styles.personRow, { borderBottomColor: theme.hairline }]}
+              onPress={() => router.push(`/profile/edit/${p.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`${p.name}, ${personSub(p)}`}
+              accessibilityHint={t('people.editHint')}
+            >
+              <Avatar name={p.name} size={36} />
+              <View style={styles.flex}>
+                <Text style={[styles.rowLabel, { color: theme.ink }]} numberOfLines={1}>{p.name}</Text>
+                <Text style={[styles.rowSub, { color: theme.muted }]} numberOfLines={1}>{personSub(p)}</Text>
+              </View>
+              <Icon name="chevron" size={14} color={theme.faint} />
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={styles.addRow}
+            onPress={() => router.push('/profile/new')}
+            accessibilityRole="button"
+            accessibilityLabel={t('people.add')}
+          >
+            <View style={[styles.addIcon, { borderColor: theme.hairline2 }]}>
+              <Icon name="plus" size={16} color={theme.ink2} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('people.add')}</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Appearance */}
-        <EyebrowLabel style={styles.sectionLabel}>{t('appearance.section')}</EyebrowLabel>
+        <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('appearance.section')}</EyebrowLabel>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <Text style={[styles.cardLabel, { color: theme.ink2 }]}>{t('appearance.accentColor')}</Text>
-          <View style={styles.swatchRow}>
+          <View style={styles.swatchRow} accessibilityRole="radiogroup">
             {ACCENT_KEYS.map((key) => {
               const isActive = key === accentKey;
               return (
@@ -226,25 +324,21 @@ export default function SettingsScreen() {
                     },
                   ]}
                   onPress={() => setAccentKey(key)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isActive }}
                   accessibilityLabel={t(`accent.${key}`)}
                 >
-                  {isActive && (
-                    <Text style={styles.swatchCheck}>✓</Text>
-                  )}
+                  {isActive && <Text style={styles.swatchCheck}>✓</Text>}
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
+          {divider}
 
-          <View style={styles.cardRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('appearance.theme')}</Text>
-              <Text style={[styles.rowSub, { color: theme.muted }]}>{t('appearance.themeSub')}</Text>
-            </View>
-          </View>
-          <View style={styles.langOptions} accessibilityRole="radiogroup">
+          <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('appearance.theme')}</Text>
+          <Text style={[styles.rowSub, { color: theme.muted }]}>{t('appearance.themeSub')}</Text>
+          <View style={styles.pillRow} accessibilityRole="radiogroup">
             {(['light', 'dark', 'system'] as const).map((m) => {
               const on = m === darkOverride;
               return (
@@ -252,7 +346,7 @@ export default function SettingsScreen() {
                   key={m}
                   onPress={() => setDark(m)}
                   style={[
-                    styles.langPill,
+                    styles.pill,
                     on
                       ? { backgroundColor: theme.ink, borderColor: theme.ink }
                       : { backgroundColor: theme.surface, borderColor: theme.hairline2 },
@@ -261,7 +355,7 @@ export default function SettingsScreen() {
                   accessibilityState={{ selected: on }}
                   accessibilityLabel={t(`appearance.${m}`)}
                 >
-                  <Text style={[styles.langPillText, { color: on ? theme.bg : theme.ink }]}>{t(`appearance.${m}`)}</Text>
+                  <Text style={[styles.pillText, { color: on ? theme.bg : theme.ink }]}>{t(`appearance.${m}`)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -269,54 +363,79 @@ export default function SettingsScreen() {
         </View>
 
         {/* Notifications */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('notifications.section')}</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          <Toggle
-            value={dailyHoroscope}
-            onValueChange={handleToggleDailyHoroscope}
-            label={t('notifications.daily')}
-            sublabel={t('notifications.dailySub')}
-          />
-          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
-          <Toggle
-            value={transitAlerts}
-            onValueChange={handleToggleTransitAlerts}
-            label={t('notifications.transit')}
-            sublabel={t('notifications.transitSub')}
-          />
+        <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('notifications.section')}</EyebrowLabel>
+        <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          {NOTIFY_KEYS.map((key, i) => (
+            <View
+              key={key}
+              style={[styles.toggleRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline }]}
+            >
+              <View style={styles.flex}>
+                <View style={styles.toggleLabelRow}>
+                  <Text style={[styles.toggleLabel, { color: theme.ink }]}>{t(`notifications.${key}`)}</Text>
+                  {NOTIFY[key].isNew && (
+                    <Text style={[styles.newBadge, { backgroundColor: theme.accentMuted, color: LIGHT_TOKENS.ink2 }]}>{t('notifications.new')}</Text>
+                  )}
+                </View>
+                <Text style={[styles.toggleSub, { color: theme.muted }]}>{t(`notifications.${key}Sub`)}</Text>
+              </View>
+              <Toggle
+                value={notify[key]}
+                onValueChange={(v) => toggleNotify(key, v)}
+                accessibilityLabel={t(`notifications.${key}`)}
+              />
+            </View>
+          ))}
         </View>
 
         {/* Conversations */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('conversations.section')}</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-          <TouchableOpacity
-            style={styles.cardRow}
-            onPress={() => router.push('/archived')}
-          >
-            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
-              <Icon name="archive" size={16} color={theme.ink2} />
+        <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('conversations.section')}</EyebrowLabel>
+        <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          {navRow('bookmark', t('conversations.saved'), () => router.push('/saved'))}
+          {divider}
+          {navRow('history', t('conversations.past'), () => router.push('/archived'))}
+        </View>
+
+        {/* On-device model */}
+        <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('model.section')}</EyebrowLabel>
+        <View style={[styles.card, styles.modelCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          <View style={styles.cardRow}>
+            <View style={[styles.rowIcon, { backgroundColor: 'rgba(180,130,0,0.10)' }]}>
+              <Icon name="sparkle" size={16} color={theme.accent} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('conversations.archived')}</Text>
-            <Icon name="chevron" size={14} color={theme.faint} />
-          </TouchableOpacity>
-          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
-          <TouchableOpacity
-            style={styles.cardRow}
-            onPress={() => router.push('/saved')}
-          >
-            <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
-              <Icon name="bookmark" size={16} color={theme.ink2} />
+            <View style={styles.flex}>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>
+                {t('model.name', { version: modelVersionLabel(modelInfo.version) })}
+              </Text>
+              <Text style={[styles.rowSub, { color: theme.muted }]}>
+                {t('model.sub', { mb: localizeDigits(String(modelMb)) })}
+              </Text>
             </View>
-            <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('conversations.saved')}</Text>
-            <Icon name="chevron" size={14} color={theme.faint} />
-          </TouchableOpacity>
+            <View style={styles.status} accessibilityLabel={modelStatus}>
+              <View style={[styles.statusDot, { backgroundColor: modelReady ? READY_DOT : theme.faint }]} />
+              <Text style={[styles.statusText, { color: theme.ink2 }]}>{modelStatus}</Text>
+            </View>
+          </View>
+          {Platform.OS !== 'web' && (
+            <View style={styles.pillRow}>
+              <TouchableOpacity
+                onPress={handleRedownload}
+                disabled={!modelReady && modelPhase !== 'error' && modelPhase !== 'offline' && modelPhase !== 'no-space'}
+                style={[styles.pill, { borderColor: theme.hairline2 }]}
+                accessibilityRole="button"
+                accessibilityHint={t('model.redownloadMessage')}
+              >
+                <Text style={[styles.pillText, { color: theme.ink }]}>{t('model.redownload')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Your data — backup, restore, reset */}
-        <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('data.section')}</EyebrowLabel>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+        <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('data.section')}</EyebrowLabel>
+        <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           <TouchableOpacity
-            style={[styles.cardRow, busy !== null && styles.rowDisabled]}
+            style={[styles.cardRow, styles.tallRow, busy !== null && styles.rowDisabled]}
             onPress={handleExport}
             disabled={busy !== null}
             accessibilityRole="button"
@@ -327,15 +446,15 @@ export default function SettingsScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
               <Icon name="share" size={16} color={theme.ink2} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.flex}>
               <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('data.export')}</Text>
               <Text style={[styles.rowSub, { color: theme.muted }]}>{t('data.exportSub')}</Text>
             </View>
             {busyOrChevron('export')}
           </TouchableOpacity>
-          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
+          {divider}
           <TouchableOpacity
-            style={[styles.cardRow, busy !== null && styles.rowDisabled]}
+            style={[styles.cardRow, styles.tallRow, busy !== null && styles.rowDisabled]}
             onPress={handleRestore}
             disabled={busy !== null}
             accessibilityRole="button"
@@ -346,15 +465,15 @@ export default function SettingsScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
               <Icon name="download" size={16} color={theme.ink2} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.flex}>
               <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('data.restore')}</Text>
               <Text style={[styles.rowSub, { color: theme.muted }]}>{t('data.restoreSub')}</Text>
             </View>
             {busyOrChevron('restore')}
           </TouchableOpacity>
-          <View style={[styles.divider, { backgroundColor: theme.hairline }]} />
+          {divider}
           <TouchableOpacity
-            style={[styles.cardRow, busy !== null && styles.rowDisabled]}
+            style={[styles.cardRow, styles.tallRow, busy !== null && styles.rowDisabled]}
             onPress={handleReset}
             disabled={busy !== null}
             accessibilityRole="button"
@@ -364,28 +483,40 @@ export default function SettingsScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
               <Icon name="trash" size={16} color={danger} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.flex}>
               <Text style={[styles.rowLabel, { color: danger }]}>{t('data.reset')}</Text>
               <Text style={[styles.rowSub, { color: theme.muted }]}>{t('data.resetSub')}</Text>
             </View>
-            <Icon name="chevron" size={14} color={theme.faint} />
           </TouchableOpacity>
         </View>
 
-        {/* Dev tools — only visible in development builds */}
+        {/* About */}
+        <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('about.section')}</EyebrowLabel>
+        <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          {([
+            ['methods', t('about.methods'), t('about.methodsSub')],
+            ['privacy', t('about.privacy'), t('about.privacySub')],
+            ['version', t('about.version'), localizeDigits(appVersion)],
+          ] as const).map(([key, label, sub], i) => (
+            <View key={key}>
+              {i > 0 && divider}
+              <View style={[styles.cardRow, styles.infoRow]} accessible accessibilityLabel={`${label}, ${sub}`}>
+                <View style={styles.flex}>
+                  <Text style={[styles.rowLabel, { color: theme.ink }]}>{label}</Text>
+                  <Text style={[styles.rowSub, { color: theme.muted }]}>{sub}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+        <Text style={[styles.disclaimer, { color: theme.muted }]}>{t('about.disclaimer')}</Text>
+
+        {/* Dev tools — development builds only */}
         {__DEV__ && (
           <>
-            <EyebrowLabel style={[styles.sectionLabel, { marginTop: 24 }]}>{t('dev.section')}</EyebrowLabel>
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-              <TouchableOpacity style={styles.cardRow} onPress={handleClearAICache}>
-                <View style={[styles.rowIcon, { backgroundColor: theme.surface2 }]}>
-                  <Icon name="refresh" size={16} color={theme.ink2} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('dev.clearCache')}</Text>
-                  <Text style={[styles.rowSub, { color: theme.muted }]}>{t('dev.clearCacheSub')}</Text>
-                </View>
-              </TouchableOpacity>
+            <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('dev.section')}</EyebrowLabel>
+            <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+              {navRow('refresh', t('dev.clearCache'), handleClearAICache, t('dev.clearCacheSub'))}
             </View>
           </>
         )}
@@ -397,35 +528,38 @@ export default function SettingsScreen() {
 }
 
 const baseStyles = StyleSheet.create({
+  flex: { flex: 1 },
   header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               10,
-    paddingHorizontal: 20,
-    paddingVertical:   16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 22,
+    paddingTop:        16,
+    paddingBottom:     4,
   },
-  back:  { padding: 4 },
   title: {
-    fontFamily: FONTS.serifRegular,
-    fontSize:   36,
-  },
-  titleItalic: {
     fontFamily: FONTS.serifItalic,
+    fontSize:   36,
+    lineHeight: 40,
   },
   scroll: { flex: 1 },
   content: {
-    padding: 26,
+    paddingHorizontal: 22,
+    paddingTop:        18,
   },
-  sectionLabel: {
-    marginBottom: 10,
-  },
+  sectionLabel: { marginBottom: 10 },
+  sectionGap: { marginTop: 24 },
   card: {
     borderRadius: RADIUS.card,
     borderWidth:  StyleSheet.hairlineWidth,
     padding:      18,
     overflow:     'hidden',
   },
+  listCard: {
+    borderRadius:      RADIUS.card,
+    borderWidth:       StyleSheet.hairlineWidth,
+    paddingHorizontal: 18,
+    paddingVertical:   6,
+    overflow:          'hidden',
+  },
+  modelCard: { gap: 14 },
   cardLabel: {
     fontFamily:   FONTS.sansRegular,
     fontSize:     14,
@@ -434,30 +568,52 @@ const baseStyles = StyleSheet.create({
   swatchRow: {
     flexDirection: 'row',
     gap:           10,
-    marginBottom:  22,
   },
   swatch: {
-    flex:         1,
-    aspectRatio:  1,
-    borderRadius: 12,
-    alignItems:   'center',
+    flex:           1,
+    aspectRatio:    1,
+    borderRadius:   12,
+    alignItems:     'center',
     justifyContent: 'center',
   },
   swatchCheck: {
-    color:     '#ffffff',
-    fontSize:  14,
+    color:      '#ffffff',
+    fontSize:   14,
     fontWeight: '700',
   },
   divider: {
-    height:         StyleSheet.hairlineWidth,
-    marginVertical: 16,
-    alignSelf:      'stretch',
+    height:    StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
   },
   cardRow: {
-    flexDirection:  'row',
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           12,
+    minHeight:     52,
+  },
+  tallRow: { minHeight: 60 },
+  infoRow: { minHeight: 56 },
+  personRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               12,
+    minHeight:         58,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  addRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           12,
+    minHeight:     52,
+  },
+  addIcon: {
+    width:          36,
+    height:         36,
+    borderRadius:   18,
+    borderWidth:    1,
+    borderStyle:    'dashed',
     alignItems:     'center',
-    gap:            12,
-    paddingVertical: 4,
+    justifyContent: 'center',
   },
   rowIcon: {
     width:          32,
@@ -467,34 +623,70 @@ const baseStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowLabel: {
-    flex:          1,
     fontFamily:    FONTS.sansRegular,
     fontSize:      14.5,
     letterSpacing: -0.1,
-  },
-  langOptions: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           8,
-    marginTop:     14,
-  },
-  langPill: {
-    minHeight:         40,
-    paddingHorizontal: 16,
-    borderRadius:      RADIUS.pill,
-    borderWidth:       StyleSheet.hairlineWidth,
-    justifyContent:    'center',
-  },
-  langPillText: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   14.5,
   },
   rowSub: {
     fontFamily: FONTS.sansRegular,
     fontSize:   12,
     marginTop:  1,
   },
-  rowDisabled: {
-    opacity: 0.5,
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           8,
+    marginTop:     14,
   },
+  pill: {
+    minHeight:         40,
+    paddingHorizontal: 16,
+    borderRadius:      RADIUS.pill,
+    borderWidth:       StyleSheet.hairlineWidth,
+    justifyContent:    'center',
+  },
+  pillText: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   14.5,
+  },
+  toggleRow: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    gap:             12,
+    paddingVertical: 14,
+  },
+  toggleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  toggleLabel: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   14,
+  },
+  toggleSub: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   12.5,
+    lineHeight: 17,
+    marginTop:  2,
+  },
+  newBadge: {
+    fontFamily:        FONTS.monoRegular,
+    fontSize:          9.5,
+    letterSpacing:     0.9,
+    paddingHorizontal: 6,
+    paddingVertical:   2,
+    borderRadius:      RADIUS.pill,
+    overflow:          'hidden',
+  },
+  status: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusText: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   12,
+  },
+  disclaimer: {
+    marginTop:        14,
+    marginHorizontal: 4,
+    fontFamily:       FONTS.sansRegular,
+    fontSize:         12,
+    lineHeight:       17,
+  },
+  rowDisabled: { opacity: 0.5 },
 });

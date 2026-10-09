@@ -686,13 +686,14 @@ function lifeAreaLines(planets: PlanetPosition[], firstSign: number): string[] {
   ];
 }
 
-type SignChange = { from: number; to: number; date: Date };
+export type SignChange = { from: number; to: number; date: Date };
 
 /**
  * Sidereal sign changes of a slow body from `from` over `days`, each dated to
  * within an hour (2-day scan, then bisection). Includes retrograde re-entries.
+ * (Also used by utils/sade-sati.ts for whole-life Saturn ingresses.)
  */
-function signChanges(body: Body, from: Date, days: number): SignChange[] {
+export function signChanges(body: Body, from: Date, days: number): SignChange[] {
   const jd0 = from.getTime() / 86400000 + 2440587.5;
   const signAt = (jd: number) => Math.floor(siderealLongitudeAt(body, jd) / 30) % 12;
   const out: SignChange[] = [];

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useChatStore } from '@/stores/chat-store';
 import { useThreadStore } from '@/stores/thread-store';
 import {
@@ -15,6 +15,7 @@ import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
 import { isModelReady, waitForModelReady } from '@/utils/model-download';
 import { GITA_QUOTE_START } from '@/utils/gita';
 import i18n from '@/utils/i18n';
+import type { AgentId } from '@/constants/gurus';
 
 const THINK_OPEN  = '<think>';
 const THINK_CLOSE = '</think>';
@@ -128,6 +129,8 @@ export function useChat(
   isNew:     boolean = false,
   mode:      AIMode  = 'saga',
   userName?: string,
+  /** Guru of this chat; stored on the thread and picks the app-side rules. */
+  agent:     AgentId = mode,
 ) {
   const threadId = thread?.id ?? '';
 
@@ -143,11 +146,23 @@ export function useChat(
   const storeClearStreaming = useChatStore((s) => s.clearStreaming);
   const status     = useChatStore((s) => s.status[threadId]  ?? 'idle');
 
+  // Which thread's saved messages have been read from SQLite. Until then a
+  // send would race the load (and the load would drop the new bubble).
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   useEffect(() => {
     if (!threadId) return;
-    getMessagesByThread(threadId).then((loaded) => {
-      storeSetMessages(threadId, loaded);
-    });
+    let alive = true;
+    getMessagesByThread(threadId)
+      .then((loaded) => {
+        if (!alive) return;
+        // A thread not saved yet has nothing in SQLite: keep any bubble sent
+        // while this read was in flight instead of wiping it.
+        const current = useChatStore.getState().messages[threadId] ?? [];
+        storeSetMessages(threadId, loaded.length > 0 || current.length === 0 ? loaded : current);
+      })
+      .catch(() => {})
+      .finally(() => { if (alive) setLoadedId(threadId); });
+    return () => { alive = false; };
   }, [threadId]);
 
   const sendMessage = useCallback(async (text: string): Promise<void> => {
@@ -160,6 +175,7 @@ export function useChat(
       const persisted = await insertThread({
         id:                 thread.id,
         profileId:          thread.profileId,
+        agent,
         title:              null,
         archived:           false,
         archivedAt:         null,
@@ -238,7 +254,7 @@ export function useChat(
         role: m.role as 'user' | 'assistant',
         content: toEnglish[m.content] ?? m.content,
       }));
-      const request = { profile, history: recentHistory, userMessage: text.trim(), mode, userName };
+      const request = { profile, history: recentHistory, userMessage: text.trim(), mode, userName, agent };
       let { stream, tier } = await streamAI(request);
 
       // The model is still downloading (utils/model-download.ts): wait for
@@ -406,7 +422,10 @@ export function useChat(
 
         const preview = finalText.slice(0, 80).trim() + (finalText.length > 80 ? '…' : '');
         await updateThread(threadId, { lastMessagePreview: preview });
-        useThreadStore.getState().updateThread(threadId, thread.profileId, { lastMessagePreview: preview });
+        // updated_at moves in SQLite too; the Chat tab shows it as "2h".
+        useThreadStore.getState().updateThread(threadId, thread.profileId, {
+          lastMessagePreview: preview, updatedAt: new Date().toISOString(),
+        });
 
         if (isFirstMessage) {
           generateThreadTitle(threadId, thread.profileId, profile, text.trim(), finalText);
@@ -425,9 +444,9 @@ export function useChat(
       storeSetStatus(threadId, 'idle');
       storeSetTyping(threadId, false);
     }
-  }, [thread, profile, messages, threadId, isNew, mode, userName, status]);
+  }, [thread, profile, messages, threadId, isNew, mode, userName, status, agent]);
 
-  return { messages, isTyping, status, streamText, sendMessage };
+  return { messages, isTyping, status, streamText, sendMessage, loaded: !!threadId && loadedId === threadId };
 }
 
 function buildAiMsgBase(threadId: string): Message {

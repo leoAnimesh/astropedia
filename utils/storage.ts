@@ -108,6 +108,27 @@ export const Storage = {
   setDailyHoroscopePush: (v: boolean): void => getStorage().set('push_daily_horoscope', v),
   getTransitAlerts:      (): boolean => getStorage().getBoolean('push_transit_alerts')  ?? false,
   setTransitAlerts:      (v: boolean): void => getStorage().set('push_transit_alerts',  v),
+  // Evening-before reminders for Ekadashi, Purnima, festivals (utils/notifications.ts
+  // scheduleFestivalReminders) and a heads-up before today's Rahu Kaal.
+  getFestivalReminders:  (): boolean => getStorage().getBoolean('push_festival_reminders') ?? false,
+  setFestivalReminders:  (v: boolean): void => getStorage().set('push_festival_reminders', v),
+  getRahuKaalPush:       (): boolean => getStorage().getBoolean('push_rahu_kaal') ?? false,
+  setRahuKaalPush:       (v: boolean): void => getStorage().set('push_rahu_kaal', v),
+  // Per-festival "Remind me" on the Festivals screen, by FestivalEvent.id
+  // (e.g. "diwali-2026-11-08"). true / false override the global toggle above;
+  // undefined = follow it.
+  getFestivalRemind:     (id: string): boolean | undefined => getStorage().getBoolean(`festival_remind_v1_${id}`),
+  setFestivalRemind:     (id: string, v: boolean): void => getStorage().set(`festival_remind_v1_${id}`, v),
+
+  // Guru chats. The one-time "Chats are now organised by guru" sheet is owed
+  // after an upgrade that moved existing chats (never on fresh installs).
+  getGuruNoticePending:  (): boolean => getStorage().getBoolean('guru_notice_pending') ?? false,
+  setGuruNoticePending:  (v: boolean): void => getStorage().set('guru_notice_pending', v),
+  getGuruNoticeSeen:     (): boolean => getStorage().getBoolean('guru_notice_seen') ?? false,
+  setGuruNoticeSeen:     (v: boolean): void => getStorage().set('guru_notice_seen', v),
+  // Last reply preview the user has seen per thread (the Chat tab's unread dot).
+  getChatSeen:           (threadId: string): string | null => getStorage().getString(`chat_seen_v1_${threadId}`) ?? null,
+  setChatSeen:           (threadId: string, preview: string): void => getStorage().set(`chat_seen_v1_${threadId}`, preview),
 
   // Onboarding-flow draft. The user's in-flight onboarding data, persisted as
   // one JSON blob so closing the app mid-flow doesn't lose progress.
@@ -195,5 +216,7 @@ export const Storage = {
     s.delete('dark_mode');
     s.delete('theme_mode');
     s.delete('active_profile_id');
+    s.delete('guru_notice_pending');
+    for (const key of s.keys()) if (key.startsWith('chat_seen_')) s.delete(key);
   },
 };

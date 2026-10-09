@@ -1,0 +1,24 @@
+{
+  "title": "Verse of the day",
+  "subtitle": "Bhagavad Gita · {{date}}",
+  "back": "Go back",
+  "ref": "Chapter {{chapter}} · Verse {{verse}}",
+  "transliterationA11y": "Transliteration",
+  "forYourDay": "For your day",
+  "note": {
+    "duty": "Do today's work well and let the result take its own time.",
+    "anxiety": "When the mind races today, come back to the task in front of you and one slow breath.",
+    "failure": "If something doesn't go your way today, treat it as a step, not a verdict.",
+    "purpose": "Ask today what is yours to do, and do that part fully.",
+    "anger": "If anger rises today, pause before you speak. Calm is a strength.",
+    "relationships": "Meet the people around you today without keeping score.",
+    "loss": "Be gentle with what you're carrying today. What is true in you isn't lost.",
+    "gratitude": "Notice one thing today that you're thankful for, and say it out loud."
+  },
+  "slowPrefix": "Things may feel slow for you right now.",
+  "talk": "Talk it through with Krishna",
+  "earlier": "Earlier this week",
+  "earlierA11y": "Verse {{ref}}, {{when}}",
+  "question": "Today's verse is Bhagavad Gita {{ref}}: \"{{text}}\" How can I live this today?",
+  "reflectNote": "A verse for reflection, not a prediction."
+}

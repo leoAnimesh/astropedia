@@ -3600,6 +3600,11 @@ expo-notifications@~57.0.21:
     expo-application "~57.0.3"
     expo-constants "~57.0.19"
 
+expo-print@~57.0.2:
+  version "57.0.2"
+  resolved "https://registry.yarnpkg.com/expo-print/-/expo-print-57.0.2.tgz#95c4453249bed1bb751803226abe508c939ec08d"
+  integrity sha512-jEbUqtH59xT42dCrmVVrg9Ct1ofD5GAHdQmUiu0EkHdzvqop7G6dt7rCXpq0iUYbu8ow6HH8yLRPbd3VMdTUug==
+
 expo-router@~57.0.24:
   version "57.0.24"
   resolved "https://registry.yarnpkg.com/expo-router/-/expo-router-57.0.24.tgz#169b8b0c92c6381bc13b3ce360d7528845cf7294"

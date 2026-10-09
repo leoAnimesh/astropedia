@@ -1,289 +1,390 @@
 'use no memo'; // renders call language helpers (tPlanet, intlLocale, ...) that the React Compiler would otherwise cache across language switches
 
-import { useRef } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useHoroscope } from '@/hooks/use-horoscope';
-import { useAstrology } from '@/hooks/use-astrology';
+import { useIndicStyles } from '@/hooks/use-indic-styles';
 import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
+import { FeatureHeader } from '@/components/molecules/FeatureHeader';
+import { SegmentedControl } from '@/components/molecules/SegmentedControl';
 import { ShareableHoroscopeCard } from '@/components/molecules/ShareableHoroscopeCard';
-import { useTranslation } from 'react-i18next';
 import { todayIso } from '@/utils/format';
-import { intlLocale, tNakshatra, tPlanet, tSign } from '@/utils/i18n';
-import { getLunarPhase } from '@/utils/astrology';
+import { askLanguage, intlLocale, localizeDigits, tAsk, tSign, useAppLanguage } from '@/utils/i18n';
+import { getBigThree } from '@/utils/astrology';
+import { getLuckyForDay } from '@/utils/lucky';
+import {
+  generateMonthHoroscope,
+  generateWeekHoroscope,
+  getTodayExtras,
+  type PeriodHoroscope,
+} from '@/utils/horoscope-period';
+import { openGuruChat } from '@/utils/guru-nav';
+import type { AgentId } from '@/constants/gurus';
 import { captureAndShare } from '@/utils/share';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { useIndicStyles } from '@/hooks/use-indic-styles';
 
-type Section = { key: keyof import('@/hooks/use-horoscope').HoroscopeSections; icon: string };
+type Period = 'today' | 'week' | 'month';
+type SectionKey = 'energy' | 'love' | 'career' | 'wellness' | 'guidance';
 
-// Labels come from horoscope:sections.<key>.
-const SECTIONS: Section[] = [
-  { key: 'energy',   icon: '✦' },
-  { key: 'love',     icon: '♡' },
-  { key: 'career',   icon: '◈' },
-  { key: 'wellness', icon: '◎' },
-  { key: 'guidance', icon: '✧' },
-];
+/** Sections with an "Ask …" link, and the guru each one opens. */
+const ASK_AGENT: Partial<Record<SectionKey, AgentId>> = { love: 'love', career: 'career', wellness: 'health' };
 
-// getLunarPhase() returns English names; these are their horoscope:phase keys.
-const PHASE_KEY: Record<string, string> = {
-  'New Moon':        'newMoon',
-  'Waxing Crescent': 'waxingCrescent',
-  'First Quarter':   'firstQuarter',
-  'Waxing Gibbous':  'waxingGibbous',
-  'Full Moon':       'fullMoon',
-  'Waning Gibbous':  'waningGibbous',
-  'Last Quarter':    'lastQuarter',
-  'Waning Crescent': 'waningCrescent',
-};
+function ageOf(birthDate: string, now: Date): number {
+  const [y, m, d] = birthDate.split('-').map(Number);
+  return now.getFullYear() - y - ((now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) ? 1 : 0);
+}
 
 export default function HoroscopeDetailScreen() {
   const styles = useIndicStyles(baseStyles);
-  const { theme }       = useAccent();
-  const { t }           = useTranslation('horoscope');
-  const { profileId }   = useLocalSearchParams<{ profileId: string }>();
-  const { profiles }    = useProfiles();
-  const profile         = profiles.find(p => p.id === profileId);
-  const { sections, loading } = useHoroscope(profile ?? null);
-  const { sunSign, nakshatra, dasha } = useAstrology(
-    profile ?? { birthDate: '', birthTime: null, birthLat: null, birthLng: null, birthTz: null },
-  );
-
-  const lunarPhaseEn = getLunarPhase(todayIso());
-  const lunarPhase   = PHASE_KEY[lunarPhaseEn] ? t(`phase.${PHASE_KEY[lunarPhaseEn]}`) : lunarPhaseEn;
-  const now          = new Date();
-  const shortDate    = now.toLocaleDateString(intlLocale(), { month: 'short', day: 'numeric' });
-  const fullDate     = now.toLocaleDateString(intlLocale(), { month: 'long', day: 'numeric', year: 'numeric' });
-  const firstName  = (profile?.name ?? '').split(' ')[0];
-
+  const { theme } = useAccent();
+  const { t } = useTranslation('horoscope');
+  const lang = useAppLanguage();
+  const { profileId } = useLocalSearchParams<{ profileId: string }>();
+  const { profiles } = useProfiles();
+  const profile = profiles.find((p) => p.id === profileId);
+  const { sections: daily, loading } = useHoroscope(profile ?? null);
+  const [period, setPeriod] = useState<Period>('today');
   const shareCardRef = useRef<View>(null);
 
-  const handleShare = () => {
-    captureAndShare(shareCardRef.current, `astropedia-daily-${todayIso()}.png`);
-  };
+  const now = new Date();
+  const dayKey = todayIso();
+  const isWeek = period === 'week';
+  const isMonth = period === 'month';
+  const pKey = profile ? `${profile.id}|${profile.birthDate}|${profile.birthTime}|${profile.birthLat}|${profile.birthLng}|${profile.birthTz}` : '';
+
+  const big = useMemo(
+    () => (profile?.birthDate ? getBigThree(profile) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pKey],
+  );
+  const today = useMemo(
+    () => (profile ? getTodayExtras(profile, new Date()) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pKey, dayKey, lang],
+  );
+  const lucky = useMemo(
+    () => (profile ? getLuckyForDay(profile, new Date()) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pKey, dayKey, lang],
+  );
+  const week = useMemo<PeriodHoroscope | null>(
+    () => (profile && isWeek ? generateWeekHoroscope(profile, new Date()) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pKey, dayKey, lang, isWeek],
+  );
+  const month = useMemo<PeriodHoroscope | null>(
+    () => (profile && isMonth ? generateMonthHoroscope(profile, new Date()) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pKey, dayKey, lang, isMonth],
+  );
 
   if (!profile) {
     router.back();
     return null;
   }
 
+  const firstName = profile.name.split(' ')[0];
+  const isMinor = !!profile.birthDate && ageOf(profile.birthDate, now) < 18;
+  const subtitle = [
+    firstName,
+    big?.rising ? t('risingPart', { sign: tSign(big.rising.name) }) : null,
+    big?.moon ? t('moonPart', { sign: tSign(big.moon.name) }) : null,
+  ].filter(Boolean).join(' · ');
+
+  // What the selected tab shows.
+  let label = '';
+  let quote = '';
+  let sections: { key: SectionKey; text: string }[] = [];
+  let mantra: { text: string; note: string } | null = null;
+  if (period === 'today') {
+    label = localizeDigits(now.toLocaleDateString(intlLocale(), { weekday: 'long', month: 'short', day: 'numeric' }));
+    if (daily) {
+      quote = daily.energy;
+      sections = [
+        ...(today ? [{ key: 'energy' as const, text: today.energy }] : []),
+        { key: 'love', text: daily.love },
+        { key: 'career', text: daily.career },
+        { key: 'wellness', text: daily.wellness },
+        { key: 'guidance', text: daily.guidance },
+      ];
+    }
+    mantra = today?.mantra ?? null;
+  } else {
+    const h = period === 'week' ? week : month;
+    if (h) {
+      label = h.label;
+      quote = h.quote;
+      sections = (['love', 'career', 'wellness', 'guidance'] as const).map((key) => ({ key, text: h.sections[key] }));
+      mantra = h.mantra;
+    }
+  }
+
+  const ask = (key: SectionKey) => {
+    const agent = ASK_AGENT[key];
+    if (!agent) return;
+    const who = profile.isYou ? 'you' : 'other';
+    const q = tAsk(`horoscope:question.${period}.${who}.${key}`, { name: firstName, lng: askLanguage() });
+    openGuruChat(agent, profile.id, q);
+  };
+
+  const handleShare = () => captureAndShare(shareCardRef.current, `astropedia-daily-${todayIso()}.png`);
+  const notReady = !profile.birthDate || (period === 'today' ? !daily && !loading : period === 'week' ? !week : !month);
+
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back} hitSlop={8} accessibilityLabel={t('backA11y')}>
-          <Icon name="back" size={22} color={theme.ink} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <EyebrowLabel style={{ marginBottom: 0 }}>
-            {t('eyebrow', { date: shortDate, name: firstName })}
-          </EyebrowLabel>
-        </View>
-        {sections?.energy && (
-          <TouchableOpacity onPress={handleShare} hitSlop={8} style={styles.shareBtn} accessibilityLabel={t('shareA11y')}>
-            <Icon name="send" size={18} color={theme.muted} />
-          </TouchableOpacity>
-        )}
-      </View>
+      <FeatureHeader
+        title={t('screenTitle')}
+        subtitle={subtitle}
+        backLabel={t('backA11y')}
+        right={period === 'today' && daily?.energy ? { icon: 'share', onPress: handleShare, label: t('shareA11y') } : undefined}
+      />
 
-      {/* Offscreen shareable card — kept in tree so view-shot can capture it. */}
-      {sections && (
+      {/* Offscreen shareable card, kept in the tree so view-shot can capture it. */}
+      {daily && (
         <View pointerEvents="none" style={styles.offscreen}>
           <ShareableHoroscopeCard
             ref={shareCardRef}
             name={profile.name}
             dateIso={todayIso()}
-            message={sections.energy}
-            mantra={sections.mantra || undefined}
+            message={daily.energy}
+            mantra={daily.mantra || undefined}
           />
         </View>
       )}
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero heading */}
-        <Text style={[styles.display, { color: theme.ink }]}>
-          {fullDate}
-        </Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <SegmentedControl<Period>
+          accessibilityLabel={t('tabs.a11y')}
+          value={period}
+          onChange={setPeriod}
+          options={[
+            { key: 'today', label: t('tabs.today') },
+            { key: 'week', label: t('tabs.week') },
+            { key: 'month', label: t('tabs.month') },
+          ]}
+        />
 
-        {/* Cosmic context row */}
-        <View style={styles.contextRow}>
-          {sunSign && (
-            <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
-              <Text style={[styles.contextChipText, { color: theme.ink2 }]}>
-                {sunSign.glyph} {tSign(sunSign.name)}
-              </Text>
-            </View>
-          )}
-          <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
-            <Text style={[styles.contextChipText, { color: theme.ink2 }]}>{lunarPhase}</Text>
+        {notReady ? (
+          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+            <Text style={[styles.body, { color: theme.ink }]}>{t('notReady')}</Text>
           </View>
-          {dasha && (
-            <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
-              <Text style={[styles.contextChipText, { color: theme.ink2 }]}>
-                {t('dashaChip', { lord: tPlanet(dasha.lord) })}
-              </Text>
-            </View>
-          )}
-          {nakshatra && (
-            <View style={[styles.contextChip, { backgroundColor: theme.surface2 }]}>
-              <Text style={[styles.contextChipText, { color: theme.ink2 }]}>{tNakshatra(nakshatra.name)}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Loading state */}
-        {loading && !sections && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.accent} />
-            <Text style={[styles.loadingText, { color: theme.muted }]}>
-              {t('loading', { name: firstName })}
-            </Text>
-          </View>
-        )}
-
-        {/* Horoscope sections */}
-        {sections && SECTIONS.map(({ key, icon }) => {
-          const text = sections[key];
-          if (!text) return null;
-          return (
-            <View key={key} style={[styles.sectionCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionIcon, { color: theme.accent }]}>{icon}</Text>
-                <EyebrowLabel size={10}>{t(`sections.${key}`)}</EyebrowLabel>
+        ) : (
+          <>
+            {quote ? (
+              <View style={styles.hero}>
+                <EyebrowLabel size={11}>{label}</EyebrowLabel>
+                <Text style={[styles.quote, { color: theme.ink }]}>“{quote}”</Text>
               </View>
-              <Text style={[styles.sectionText, { color: theme.ink }]}>{text}</Text>
+            ) : null}
+
+            {period === 'today' && lucky && (
+              <Pressable
+                onPress={() => router.push('/panchang')}
+                accessibilityRole="button"
+                accessibilityLabel={t('luckyA11y', {
+                  color: t(`common:lucky.color.${lucky.color}`),
+                  number: localizeDigits(String(lucky.number)),
+                  time: lucky.time ?? '',
+                })}
+                style={({ pressed }) => [styles.lucky, { backgroundColor: theme.surface, borderColor: theme.hairline, opacity: pressed ? 0.8 : 1 }]}
+              >
+                <View style={[styles.luckyCell, { borderRightColor: theme.hairline, borderRightWidth: StyleSheet.hairlineWidth }]}>
+                  <Text style={[styles.luckyLabel, { color: theme.muted }]}>{t('panchang:lucky.color')}</Text>
+                  <View style={styles.luckyValueRow}>
+                    <View style={[styles.swatch, { backgroundColor: lucky.colorHex, borderColor: theme.hairline2 }]} />
+                    <Text style={[styles.luckyValue, { color: theme.ink }]} numberOfLines={1}>{t(`common:lucky.color.${lucky.color}`)}</Text>
+                  </View>
+                </View>
+                <View style={[styles.luckyCell, { borderRightColor: theme.hairline, borderRightWidth: StyleSheet.hairlineWidth }]}>
+                  <Text style={[styles.luckyLabel, { color: theme.muted }]}>{t('panchang:lucky.number')}</Text>
+                  <Text style={[styles.luckyValue, { color: theme.ink }]}>{localizeDigits(String(lucky.number))}</Text>
+                </View>
+                <View style={styles.luckyCell}>
+                  <Text style={[styles.luckyLabel, { color: theme.muted }]}>{t('luckyTime')}</Text>
+                  <Text style={[styles.luckyValue, { color: theme.ink }]} numberOfLines={1}>{lucky.time ?? '—'}</Text>
+                </View>
+              </Pressable>
+            )}
+
+            {period === 'week' && week?.days && (
+              <View style={[styles.card, styles.weekCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+                <View style={styles.weekRow}>
+                  {week.days.map((d) => (
+                    <View
+                      key={d.date.toISOString()}
+                      accessible
+                      accessibilityLabel={`${d.weekday} ${d.day}${d.tone === 'good' ? ', ' + t('goodDays') : d.tone === 'gentle' ? ', ' + t('goGently') : ''}`}
+                      style={[
+                        styles.weekDay,
+                        d.isToday && { backgroundColor: theme.surface2, borderColor: theme.hairline2 },
+                      ]}
+                    >
+                      <Text style={[styles.weekDayName, { color: theme.muted }]} numberOfLines={1}>{d.weekday}</Text>
+                      <Text style={[styles.weekDayNum, { color: theme.ink }]}>{d.day}</Text>
+                      <View
+                        style={[
+                          styles.dot,
+                          d.tone === 'good' && { backgroundColor: theme.accent },
+                          d.tone === 'gentle' && { borderWidth: 1.5, borderColor: theme.ink2 },
+                        ]}
+                      />
+                    </View>
+                  ))}
+                </View>
+                <View style={styles.legend}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.dot, { backgroundColor: theme.accent }]} />
+                    <Text style={[styles.legendText, { color: theme.ink2 }]}>{t('goodDays')}</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.dot, { borderWidth: 1.5, borderColor: theme.ink2 }]} />
+                    <Text style={[styles.legendText, { color: theme.ink2 }]}>{t('goGently')}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {period === 'month' && month?.keyDates && month.keyDates.length > 0 && (
+              <View style={[styles.keyCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+                {month.keyDates.map((k, i) => (
+                  <View
+                    key={`${k.date.toISOString()}-${i}`}
+                    style={[styles.keyRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline }]}
+                  >
+                    <View style={styles.keyDate}>
+                      <EyebrowLabel size={10.5}>{k.month}</EyebrowLabel>
+                      <Text style={[styles.keyDay, { color: theme.ink }]}>{k.day}</Text>
+                    </View>
+                    <View style={styles.keyText}>
+                      <Text style={[styles.keyTitle, { color: theme.ink }]}>{k.title}</Text>
+                      {k.sub ? <Text style={[styles.keySub, { color: theme.ink2 }]}>{k.sub}</Text> : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.sections}>
+              {sections.map(({ key, text }) => {
+                const agent = ASK_AGENT[key];
+                const showAsk = !!agent && !(agent === 'love' && isMinor);
+                return (
+                  <View key={key} style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+                    <EyebrowLabel size={10.5}>{t(`sectionTitle.${key}`)}</EyebrowLabel>
+                    <Text style={[styles.body, { color: theme.ink }]}>{text}</Text>
+                    {showAsk && (
+                      <Pressable
+                        onPress={() => ask(key)}
+                        accessibilityRole="button"
+                        style={({ pressed }) => [styles.askPill, { borderColor: theme.hairline2, opacity: pressed ? 0.7 : 1 }]}
+                      >
+                        <Text style={[styles.askText, { color: theme.ink2 }]}>{t(`ask.${key}`)}</Text>
+                        <Icon name="chevron" size={14} color={theme.ink2} />
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-          );
-        })}
 
-        {/* Mantra */}
-        {sections?.mantra ? (
-          <View style={[styles.mantraCard, { backgroundColor: theme.accent }]}>
-            <EyebrowLabel size={9} style={{ marginBottom: 10, color: theme.accentFg, opacity: 0.7 }}>
-              {t('mantraEyebrow')}
-            </EyebrowLabel>
-            <Text style={[styles.mantraText, { color: theme.accentFg }]}>
-              “{sections.mantra}”
-            </Text>
-          </View>
-        ) : null}
-
-        {/* Reading couldn't be built (e.g. missing birth details) */}
-        {!loading && !sections && (
-          <View style={[styles.sectionCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
-            <Text style={[styles.sectionText, { color: theme.ink }]}>
-              {t('notReady')}
-            </Text>
-          </View>
+            {mantra && (
+              <View style={[styles.mantra, { backgroundColor: theme.surface2 }]}>
+                <EyebrowLabel size={10.5}>{t('mantraTitle')}</EyebrowLabel>
+                <Text style={[styles.mantraText, { color: theme.ink }]}>{mantra.text}</Text>
+                <Text style={[styles.mantraNote, { color: theme.ink2 }]}>{mantra.note}</Text>
+              </View>
+            )}
+          </>
         )}
-
-        <View style={{ height: 48 }} />
       </ScrollView>
     </ScreenLayout>
   );
 }
 
 const baseStyles = StyleSheet.create({
-  header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               10,
-    paddingHorizontal: 20,
-    paddingTop:        16,
-    paddingBottom:     8,
-  },
-  back: { padding: 4 },
-  shareBtn: { padding: 6 },
-  offscreen: {
-    position: 'absolute',
-    top:      -10000,
-    left:     -10000,
-    opacity:   0,
-  },
-  scroll:     { flex: 1 },
-  content:    { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 24 },
+  offscreen: { position: 'absolute', top: -10000, left: -10000, opacity: 0 },
+  scroll:    { flex: 1 },
+  content:   { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 48, gap: 18 },
 
-  display: {
-    fontFamily:   FONTS.serifItalic,
-    fontSize:     34,
-    lineHeight:   40,
-    marginTop:    8,
-    marginBottom: 16,
+  hero:  { gap: 8 },
+  quote: {
+    fontFamily:    FONTS.serifRegular,
+    fontSize:      27,
+    lineHeight:    32,
+    letterSpacing: -0.2,
   },
 
-  contextRow: {
-    flexDirection:  'row',
-    flexWrap:       'wrap',
-    gap:            6,
-    marginBottom:   24,
+  card: {
+    borderRadius: RADIUS.card,
+    borderWidth:  StyleSheet.hairlineWidth,
+    paddingVertical:   16,
+    paddingHorizontal: 18,
+    gap: 6,
   },
-  contextChip: {
-    paddingHorizontal: 10,
-    paddingVertical:   4,
-    borderRadius:      RADIUS.pill,
-  },
-  contextChipText: {
-    fontFamily:    FONTS.monoRegular,
-    fontSize:      10,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-
-  loadingContainer: {
-    alignItems:   'center',
-    paddingTop:   48,
-    paddingBottom: 32,
-    gap:          16,
-  },
-  loadingText: {
+  body: {
     fontFamily: FONTS.sansRegular,
     fontSize:   15,
-    textAlign:  'center',
     lineHeight: 22,
   },
+  sections: { gap: 10 },
+  askPill: {
+    alignSelf:      'flex-start',
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            6,
+    minHeight:      36,
+    marginTop:      2,
+    paddingHorizontal: 12,
+    borderRadius:   RADIUS.pill,
+    borderWidth:    1,
+  },
+  askText: { fontFamily: FONTS.sansRegular, fontSize: 13, lineHeight: 17 },
 
-  sectionCard: {
+  lucky: {
+    flexDirection: 'row',
     borderRadius:  RADIUS.card,
     borderWidth:   StyleSheet.hairlineWidth,
-    padding:       20,
-    marginBottom:  14,
+    overflow:      'hidden',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           8,
-    marginBottom:  10,
-  },
-  sectionIcon: {
-    fontSize:   16,
-    lineHeight: 18,
-  },
-  sectionText: {
-    fontFamily: FONTS.sansRegular,
-    fontSize:   16,
-    lineHeight: 26,
-  },
+  luckyCell: { flex: 1, gap: 4, paddingVertical: 12, paddingHorizontal: 14 },
+  luckyLabel: { fontFamily: FONTS.sansRegular, fontSize: 11, lineHeight: 14 },
+  luckyValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  luckyValue: { fontFamily: FONTS.sansMedium, fontSize: 14, lineHeight: 18, flexShrink: 1 },
+  swatch: { width: 12, height: 12, borderRadius: 6, borderWidth: 1 },
 
-  mantraCard: {
-    borderRadius:  RADIUS.card,
-    padding:       24,
-    alignItems:    'center',
-    marginBottom:  14,
-    marginTop:     6,
+  weekCard: { padding: 14, gap: 10 },
+  weekRow: { flexDirection: 'row', gap: 4 },
+  weekDay: {
+    flex:           1,
+    alignItems:     'center',
+    gap:            4,
+    paddingVertical: 8,
+    borderRadius:   12,
+    borderWidth:    1,
+    borderColor:    'transparent',
   },
-  mantraText: {
-    fontFamily: FONTS.serifItalic,
-    fontSize:   24,
-    lineHeight: 32,
-    textAlign:  'center',
-  },
+  weekDayName: { fontFamily: FONTS.monoRegular, fontSize: 10, lineHeight: 13, letterSpacing: 0.6, textTransform: 'uppercase' },
+  weekDayNum:  { fontFamily: FONTS.sansMedium, fontSize: 15, lineHeight: 19 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  legend: { flexDirection: 'row', gap: 14 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendText: { fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 16 },
+
+  keyCard: { borderRadius: RADIUS.card, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  keyRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start', paddingVertical: 12, paddingHorizontal: 16 },
+  keyDate: { width: 44, alignItems: 'center' },
+  keyDay: { fontFamily: FONTS.serifRegular, fontSize: 24, lineHeight: 26 },
+  keyText: { flex: 1, gap: 2, paddingTop: 2 },
+  keyTitle: { fontFamily: FONTS.sansMedium, fontSize: 14, lineHeight: 19 },
+  keySub: { fontFamily: FONTS.sansRegular, fontSize: 12.5, lineHeight: 17 },
+
+  mantra: { gap: 6, paddingVertical: 16, paddingHorizontal: 18, borderRadius: RADIUS.card },
+  mantraText: { fontFamily: FONTS.serifItalic, fontSize: 22, lineHeight: 27 },
+  mantraNote: { fontFamily: FONTS.sansRegular, fontSize: 12.5, lineHeight: 17 },
 });
