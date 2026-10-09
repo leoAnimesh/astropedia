@@ -445,7 +445,7 @@ export type TimingResult = {
   now: Date;
   /** Ranked, best first; non-overlapping. Empty only for unusable birth data. */
   windows: TimingWindow[];
-  /** windows[0] is at least `strong`. */
+  /** Some window inside the horizon is `strong` (windows[0] may be a nearer moderate one). */
   strongWithin: boolean;
   /** No strong window within the horizon: the next strong one up to ten years out, if any. */
   nextStrong: TimingWindow | null;
@@ -628,6 +628,14 @@ function findWindows(chart: NatalChart, topic: TimingTopic, months: MonthScore[]
 const ALT_SHARE = 0.65;
 /** A window this close to the best one's score counts as just as good: the earliest such wins. */
 const NEAR_BEST = 0.9;
+/**
+ * A strong window (double transit) this close to the top score also counts as
+ * just as good: an astrologer names the first strong period ("Dec 2027, with
+ * Jupiter and Saturn together") before a slightly higher-scoring but merely
+ * moderate one years later (Stage 3 judging: "soon?" answered with a moderate
+ * 2031 window while a strong mid-2027 one existed).
+ */
+const NEAR_BEST_STRONG = 0.75;
 
 /**
  * Final order: the earliest window scoring within NEAR_BEST of the top one
@@ -641,7 +649,7 @@ function rankWindows(main: TimingWindow[], alts: TimingWindow[], n: number, past
   for (const w of alts) if (!all.some(o => w.start <= o.end && o.start <= w.end)) all.push(w);
   if (all.length === 0) return all;
   const top = Math.max(...all.map(w => w.score));
-  const near = all.filter(w => w.score >= NEAR_BEST * top)
+  const near = all.filter(w => w.score >= NEAR_BEST * top || (w.strength === 'strong' && w.score >= NEAR_BEST_STRONG * top))
     .sort((a, b) => (past ? b.start.getTime() - a.start.getTime() : a.start.getTime() - b.start.getTime()));
   const best = near[0];
   const rest = all.filter(w => w !== best).sort((a, b) => b.score - a.score || a.start.getTime() - b.start.getTime());
@@ -696,7 +704,8 @@ export function timingWindows(
   const span = past ? Math.max(0, (now.getFullYear() - from.getFullYear()) * 12 + now.getMonth() - from.getMonth()) : count;
   const months = scoreMonths(profile, chart, topic, from, span, W);
   const windows = rankWindows(findWindows(chart, topic, months, n), findWindows(chart, topic, months, 6, ALT_SHARE), n, past);
-  const strongWithin = windows[0]?.strength === 'strong';
+  // Any strong window inside the horizon (the best one may be an earlier, merely moderate window).
+  const strongWithin = windows.some(w => w.strength === 'strong');
   let nextStrong: TimingWindow | null = null;
   if (!strongWithin && !past) {
     const later = scoreMonths(profile, chart, topic, addMonths(from, span), 60, W);
@@ -739,4 +748,24 @@ export function yearsAway(w: TimingWindow, now: Date): number {
 /** The house numbers of a topic, main first. */
 export function topicHouses(topic: TimingTopic): number[] {
   return TOPIC_RULES[topic].houses.map(([h]) => h);
+}
+
+
+/**
+ * The strongest three-month stretch before `best` (softer than a ranked window,
+ * but nearer): what an astrologer offers when the best window is years away
+ * ("Before that, a smaller opening comes around …"). Null for past searches or
+ * when nothing before it scores above zero.
+ */
+export function nearerStretch(result: TimingResult, best: TimingWindow): { start: Date; end: Date } | null {
+  if (result.past) return null;
+  const before = result.months.filter(m => m.month < best.start);
+  let bestAt = -1, bestAvg = -Infinity;
+  for (let k = 0; k + 3 <= before.length; k++) {
+    const avg = (before[k].score + before[k + 1].score + before[k + 2].score) / 3;
+    if (avg > bestAvg) { bestAvg = avg; bestAt = k; }
+  }
+  if (bestAt < 0 || bestAvg <= 0) return null;
+  const last = before[bestAt + 2].month;
+  return { start: before[bestAt].month, end: new Date(last.getFullYear(), last.getMonth() + 1, 0) };
 }
