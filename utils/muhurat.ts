@@ -2,8 +2,8 @@
  * Muhurat finder: good windows over the next few days for a chosen activity.
  *
  * Deterministic, built on utils/panchang.ts. This is a deliberately simplified
- * traditional rule set, not a full muhurat calculation (no nakshatra, yoga,
- * lagna, tara-bala, chandra-bala or travel direction rules):
+ * traditional rule set, not a full muhurat calculation (no yoga, lagna or
+ * travel direction rules; tara and chandra bala below, when a birth Moon is given):
  *
  *   1. The candidate window is Abhijit muhurat (1/15th of daylight around
  *      local solar noon).
@@ -29,6 +29,28 @@
  *
  *   The waxing fortnight (Shukla) is noted as a plus for every activity.
  *
+ * Personal strength (when a birth Moon is given, as the chat does for the
+ * person asking): the two classical checks every muhurat text applies on top
+ * of the panchang, computed for each day and left to the caller to rank by.
+ *
+ *   Tara Bala   Count the day's nakshatra from the birth nakshatra (birth star
+ *               = 1) and take the count modulo 9 (9 for 0). The nine taras are
+ *               1 Janma, 2 Sampat, 3 Vipat, 4 Kshema, 5 Pratyari, 6 Sadhaka,
+ *               7 Naidhana (Vadha), 8 Mitra, 9 Parama Mitra. Vipat (3),
+ *               Pratyari (5) and Naidhana (7) are inauspicious and avoided;
+ *               the rest are usable.
+ *   Chandra Bala  The house of the day's (transit) Moon sign counted from the
+ *               natal Moon sign. 1, 3, 6, 7, 10 and 11 are favourable; the
+ *               others are weak (8th, the Moon's own ashtama, is the worst).
+ *
+ *   Sources: Muhurta Chintamani (Daivajna Rama, 1600), shubhashubha prakarana,
+ *   on tara and chandra bala; B. V. Raman, "Muhurtha (Electional Astrology)",
+ *   chapter on Tarabala and Chandrabala, which gives the same 3/5/7 taras to
+ *   avoid and 1/3/6/7/10/11 as the good Moon houses. Both take the Moon at the
+ *   time of the event; we use the Moon at local noon, like the panchang here.
+ *   Tara Bala outranks Chandra Bala in both texts ("when the tara is good, a
+ *   middling Moon is tolerated"), which is the ranking the chat uses.
+ *
  * Day labels and reasons are display text in the app language (namespace
  * `muhurat`). ACTIVITIES and shortDay() stay English: they build the question
  * sent to the on-device model.
@@ -44,6 +66,7 @@ import {
 } from './panchang';
 import { localDateIso } from './format';
 import i18n, { formatDayDate, tTithi } from './i18n';
+import { getMoonLongitudeExact } from './astrology';
 
 export type Activity = 'work' | 'travel' | 'buy' | 'sign';
 
@@ -91,7 +114,45 @@ export type MuhuratDay = {
   favoured:  boolean;
   /** Today's window has already ended. */
   passed:    boolean;
+  /** With a birth Moon: the day's tara (1–9) from the birth star, and the transit Moon's house from the natal Moon. */
+  tara?:     number;
+  chandra?:  number;
+  /** Tara Bala usable (not the 3rd, 5th or 7th tara) / Chandra Bala favourable (1, 3, 6, 7, 10, 11). */
+  taraOk?:   boolean;
+  chandraOk?: boolean;
 };
+
+/** The person's natal Moon (sidereal longitude, degrees), for Tara Bala and Chandra Bala. */
+export type BirthMoon = { moonLon: number };
+
+const NAK = 360 / 27;
+/** Inauspicious taras: Vipat (3), Pratyari (5), Naidhana (7). */
+export const BAD_TARAS = [3, 5, 7];
+/** Favourable houses of the transit Moon from the natal Moon. */
+export const GOOD_CHANDRA = [1, 3, 6, 7, 10, 11];
+
+/** Tara (1–9) of a day whose Moon is at `dayMoonLon`, counted from the birth nakshatra (birth star = 1). */
+export function taraOf(birthMoonLon: number, dayMoonLon: number): number {
+  const b = Math.floor((((birthMoonLon % 360) + 360) % 360) / NAK);
+  const d = Math.floor((((dayMoonLon % 360) + 360) % 360) / NAK);
+  const count = ((d - b + 27) % 27) + 1;
+  return ((count - 1) % 9) + 1;
+}
+
+/** House (1–12) of the transit Moon sign counted from the natal Moon sign. */
+export function chandraHouse(birthMoonLon: number, dayMoonLon: number): number {
+  const b = Math.floor((((birthMoonLon % 360) + 360) % 360) / 30);
+  const d = Math.floor((((dayMoonLon % 360) + 360) % 360) / 30);
+  return ((d - b + 12) % 12) + 1;
+}
+
+/** Tara Bala and Chandra Bala of a date for a natal Moon (the Moon at local noon of that date). */
+export function personalStrength(dateIso: string, birth: BirthMoon): { tara: number; chandra: number; taraOk: boolean; chandraOk: boolean } {
+  const moon = getMoonLongitudeExact(dateIso, '12:00');
+  const tara = taraOf(birth.moonLon, moon);
+  const chandra = chandraHouse(birth.moonLon, moon);
+  return { tara, chandra, taraOk: !BAD_TARAS.includes(tara), chandraOk: GOOD_CHANDRA.includes(chandra) };
+}
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS   = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -182,12 +243,15 @@ export function findMuhurats(
   lng?: number | null,
   days = 7,
   now: Date = new Date(),
+  birth?: BirthMoon | null,
 ): MuhuratDay[] {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   const out: MuhuratDay[] = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i, 12);
-    out.push(evaluateDay(localDateIso(d), activity, lat, lng, now));
+    const iso = localDateIso(d);
+    const day = evaluateDay(iso, activity, lat, lng, now);
+    out.push(birth && Number.isFinite(birth.moonLon) ? { ...day, ...personalStrength(iso, birth) } : day);
   }
   return out;
 }

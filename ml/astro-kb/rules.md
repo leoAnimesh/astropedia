@@ -1823,7 +1823,7 @@ Each category: patterns, chart factors (with app status), what to judge, timing,
 **What to judge**
 
 - Muhurat is chosen from the panchang, not the natal timing engine. App: utils/muhurat.ts (work/travel/buy/sign: tithi favour/avoid, Rahu kaal cut).
-- Personalisation (Tara bala / Chandra bala from the natal Moon) [missing].
+- Personalisation (have, chat route): Tara bala and Chandra bala from the natal Moon (utils/muhurat.ts personalStrength). Tara: count the day's nakshatra from the birth nakshatra (birth star = 1), modulo 9; avoid the 3rd (Vipat), 5th (Pratyari) and 7th (Naidhana). Chandra: house of the transit Moon sign from the natal Moon sign; 1, 3, 6, 7, 10, 11 favourable. Days are ranked tara first, then chandra, then the tithi (Muhurta Chintamani, shubhashubha prakarana; B. V. Raman, *Muhurtha*, Tarabala and Chandrabala), on top of the panchang filters; one plain line says whether the picked days also suit the person's own chart.
 
 **Timing**
 
@@ -1845,9 +1845,9 @@ Each category: patterns, chart factors (with app status), what to judge, timing,
 - Exam date fixed → no muhurat; prep advice.
 - Wedding muhurat → partial support; suggest priest.
 
-**App today:** have: utils/muhurat.ts; panchang, choghadiya. Missing: chat route; personalised tara/chandra bala; more activities (griha pravesh, naming).
+**App today:** have: utils/muhurat.ts; panchang, choghadiya; chat route (routes.ts muhuratRoute); personalised tara/chandra bala. Missing: more activities (griha pravesh, naming).
 
-**Sources:** Muhurta Chintamani [std]; utils/muhurat.ts.
+**Sources:** Muhurta Chintamani [std]; B. V. Raman, Muhurtha (Electional Astrology) [std]; utils/muhurat.ts.
 
 ### 5.31 General luck / good times ahead / year ahead (`general_luck`)
 
