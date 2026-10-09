@@ -154,7 +154,10 @@
       "retrying": "Connection lost, retrying…",
       "verifying": "Checking the download…",
       "installing": "Installing…",
-      "clearing": "Clearing chats…"
+      "clearing": "Clearing chats…",
+      "btnDownloading": "Downloading · {{pct}}% · {{done}} / {{total}} MB",
+      "btnVerifying": "Verifying…",
+      "btnDone": "Done"
     },
     "progressNote": "Your current model keeps working until the new one is ready.",
     "cancelDownload": "Cancel download",
@@ -178,7 +181,8 @@
       "qwen3_0_6b": "A general-purpose model from the Qwen team. Good English; Hindi and Bengali replies are simpler than Saga's. Dates and safety checks still come from the app.",
       "llama3_2_1b": "Meta's compact general model (SpinQuant). Clear English and decent Hindi; Bengali is weak. Dates and safety checks still come from the app.",
       "qwen3_1_7b": "The larger Qwen model: fuller answers and better Hindi and Bengali than the 0.6B, but slower and only for phones with plenty of memory."
-    }
+    },
+    "retry": "Retry"
   },
   "about": {
     "section": "About",

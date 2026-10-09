@@ -8,7 +8,7 @@ import { useAccent } from '@/hooks/use-accent';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FeatureHeader } from '@/components/molecules/FeatureHeader';
-import { Button } from '@/components/atoms/Button';
+import { ProgressButton } from '@/components/molecules/ProgressButton';
 import { showDialog } from '@/components/overlays';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { localizeDigits } from '@/utils/i18n';
@@ -46,6 +46,7 @@ export default function ModelPickerScreen() {
   const { t, i18n } = useTranslation('settings');
   const lang = (LANGS.includes(i18n.language as CatalogLang) ? i18n.language : 'en') as CatalogLang;
   const [data, setData] = useState<Loaded | null>(null);
+  const [err, setErr] = useState<{ id: string; failure: string } | null>(null);
   const mounted = useRef(true);
 
   const phase    = useModelSwitch((s) => s.phase);
@@ -77,14 +78,14 @@ export default function ModelPickerScreen() {
   const mb = (bytes: number) => localizeDigits(String(displayMB(bytes)));
 
   const runSwitch = async (entry: CatalogEntry) => {
+    setErr(null);
     const res = await switchModel(entry);
     if (res.ok) {
+      await new Promise((r) => setTimeout(r, 700)); // let "Done" show on the button
       if (mounted.current) router.back();
       await showDialog({ title: t('modelPicker.doneTitle'), message: t('modelPicker.doneMessage', { name: entry.name }) });
-    } else if (res.failure === 'cancelled') {
-      await showDialog({ title: t('modelPicker.cancelledTitle'), message: t('modelPicker.cancelledMessage', { current: currentName }) });
-    } else {
-      await showDialog({ title: t('modelPicker.failedTitle'), message: t(`modelPicker.failed.${res.failure}`) });
+    } else if (res.failure !== 'cancelled' && mounted.current) {
+      setErr({ id: entry.id, failure: res.failure });
     }
     resetModelSwitch();
     if (!res.ok && mounted.current) load().then((d) => { if (mounted.current) setData(d); }).catch(() => {});
@@ -113,17 +114,19 @@ export default function ModelPickerScreen() {
     });
   };
 
-  const progressLabel = (() => {
-    const name = nameOf(targetId) ?? '';
+  const pct = switchPercent({ phase, received, total });
+  const busyPhase = active || phase === 'done';
+  const buttonLabel = (() => {
     if (phase === 'downloading') {
-      return retrying ? t('modelPicker.progress.retrying') : t('modelPicker.progress.downloading', {
-        name, pct: localizeDigits(String(switchPercent({ phase, received, total }))),
+      return retrying ? t('modelPicker.progress.retrying') : t('modelPicker.progress.btnDownloading', {
+        pct, done: Math.min(displayMB(received), displayMB(total)), total: displayMB(total),
       });
     }
-    if (phase === 'verifying' || phase === 'installing' || phase === 'clearing') return t(`modelPicker.progress.${phase}`);
+    if (phase === 'verifying') return t('modelPicker.progress.btnVerifying');
+    if (phase === 'installing' || phase === 'clearing') return t(`modelPicker.progress.${phase}`);
+    if (phase === 'done') return t('modelPicker.progress.btnDone');
     return '';
   })();
-  const pct = switchPercent({ phase, received, total });
 
   const ramUnknown = data?.device.totalMemoryBytes == null;
 
@@ -133,24 +136,6 @@ export default function ModelPickerScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.intro, { color: theme.ink2 }]}>{t('modelPicker.intro')}</Text>
 
-        {active && (
-          <View
-            style={[styles.progressCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}
-            accessibilityLiveRegion="polite"
-            accessible
-            accessibilityLabel={progressLabel}
-          >
-            <Text style={[styles.progressText, { color: theme.ink }]}>{progressLabel}</Text>
-            <View style={[styles.track, { backgroundColor: theme.surface2 }]}>
-              <View style={[styles.fill, { backgroundColor: theme.accent, width: `${pct}%` }]} />
-            </View>
-            <Text style={[styles.note, { color: theme.muted }]}>{t('modelPicker.progressNote')}</Text>
-            {canCancelSwitch({ phase }) && (
-              <Button label={t('modelPicker.cancelDownload')} variant="ghost" onPress={cancelModelSwitch} style={styles.cancelBtn} />
-            )}
-          </View>
-        )}
-
         {!data ? (
           <View style={styles.loading}>
             <ActivityIndicator color={theme.muted} />
@@ -159,7 +144,8 @@ export default function ModelPickerScreen() {
         ) : (
           data.entries.map((e) => {
             const isCurrent = e.id === data.currentId;
-            const isTarget = active && e.id === targetId;
+            const isTarget = busyPhase && e.id === targetId;
+            const failure = err && err.id === e.id && !busyPhase ? err.failure : null;
             return (
               <View
                 key={e.id}
@@ -206,14 +192,32 @@ export default function ModelPickerScreen() {
                 {e.license.notice ? <Text style={[styles.notice, { color: theme.muted }]}>{e.license.notice}</Text> : null}
 
                 {!isCurrent && Platform.OS !== 'web' && (
-                  <Button
-                    label={t('modelPicker.select')}
-                    variant={e.recommended ? 'primary' : 'ghost'}
-                    onPress={() => confirm(e)}
-                    disabled={active || setupBusy}
-                    loading={isTarget}
-                    style={styles.selectBtn}
-                  />
+                  <>
+                    <ProgressButton
+                      label={failure ? t('modelPicker.retry') : t('modelPicker.select')}
+                      variant={e.recommended ? 'primary' : 'ghost'}
+                      onPress={() => (failure ? runSwitch(e) : confirm(e))}
+                      disabled={busyPhase || setupBusy}
+                      progress={isTarget ? pct : null}
+                      progressLabel={buttonLabel}
+                      style={styles.selectBtn}
+                    />
+                    {failure ? (
+                      <Text style={[styles.errorText, { color: theme.ink }]} accessibilityLiveRegion="polite" accessibilityRole="alert">
+                        {t(`modelPicker.failed.${failure}`)}
+                      </Text>
+                    ) : null}
+                    {isTarget && (
+                      <View style={styles.progressFoot}>
+                        <Text style={[styles.note, styles.footNote, { color: theme.muted }]}>{t('modelPicker.progressNote')}</Text>
+                        {canCancelSwitch({ phase }) && (
+                          <TouchableOpacity onPress={cancelModelSwitch} accessibilityRole="button" style={styles.cancelLink}>
+                            <Text style={[styles.cancelText, { color: theme.accent }]}>{t('modelPicker.cancel')}</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </>
                 )}
               </View>
             );
@@ -240,16 +244,11 @@ const baseStyles = StyleSheet.create({
   content: { paddingHorizontal: 22, paddingTop: 16, gap: 14 },
   intro: { fontFamily: FONTS.sansRegular, fontSize: 14, lineHeight: 20 },
   loading: { alignItems: 'center', gap: 8, paddingVertical: 32 },
-  progressCard: {
-    borderRadius: RADIUS.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 18,
-    gap: 10,
-  },
-  progressText: { fontFamily: FONTS.sansMedium, fontSize: 14.5 },
-  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  fill: { height: 6, borderRadius: 3 },
-  cancelBtn: { alignSelf: 'flex-start', marginTop: 4 },
+  errorText: { fontFamily: FONTS.sansRegular, fontSize: 12.5, lineHeight: 18 },
+  progressFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  footNote: { flex: 1 },
+  cancelLink: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
+  cancelText: { fontFamily: FONTS.sansMedium, fontSize: 13.5 },
   card: {
     borderRadius: RADIUS.card,
     borderWidth: StyleSheet.hairlineWidth,
