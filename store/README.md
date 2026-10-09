@@ -24,6 +24,6 @@ Everything here is a **draft** for the developer to review. Nothing in this fold
 1. Apple Developer Program and Google Play Console accounts (Play: a new personal account must run a closed test with 12+ testers for 14 days before production access).
 2. Upload key / signing: let EAS manage credentials (`eas credentials`) or create an upload keystore and enrol in Play App Signing. The local Android release build is signed with the debug key and must not be uploaded.
 3. Host `docs/privacy.md` and `docs/terms.md`, then set `FULL_TEXT_URL` in `app/legal/[doc].tsx` and the privacy policy URL in both consoles.
-4. Fill the placeholders (legal name, address, support email) in the policy and terms; legal review.
+4. Fill the placeholders (legal name, address, support email) in the policy and terms, and set `SUPPORT_EMAIL` in `constants/support.ts` (where "Report this answer" drafts go; until then reports open the share sheet); legal review.
 5. Screenshots per `screenshots.md`, Play feature graphic, 512 px Play icon.
-6. Resolve the launch blockers listed in the release PR description (licensing of `country-state-city`, Gita translation text, iCloud backup exclusion for model files, Play AI-content reporting).
+6. Resolve the launch blockers still open in the release PR description (Gita translation text). Done: birth places now use GeoNames data (CC BY 4.0, attributed under Licences and About) instead of the GPL `country-state-city` package; models live in Application Support excluded from backup on iOS; chat answers have "Report this answer".

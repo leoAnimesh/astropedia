@@ -24,11 +24,9 @@ Answers in the chat and written readings are produced by an AI model that runs e
 
 The model file is downloaded once (about 200 MB, or more for optional larger models) from **Hugging Face** (huggingface.co), and the app checks Hugging Face for model updates. Like any website, Hugging Face receives the technical information needed to deliver a file, such as your IP address and the app's request headers. No personal data, birth details or chat content is included in these requests. Hugging Face's own privacy policy applies to that service: https://huggingface.co/privacy
 
-## 3. Place look-up
+## 3. Birth places
 
-Birth places are normally chosen from a list built into the app, with their coordinates, so no look-up is needed. In the rare case that a place has no built-in coordinates, the app sends **only the place name** (for example "Howrah, West Bengal, India") to the **OpenStreetMap Nominatim** service to find its coordinates. No name, date or other detail is sent with it. OpenStreetMap's privacy policy: https://osmfoundation.org/wiki/Privacy_Policy
-
-> Developer note: if `utils/geocoding.ts` is removed before release, delete this section and the matching sentence in the in-app summary.
+Birth places are chosen from a list built into the app (place data from GeoNames, geonames.org), with their coordinates and time zone. A place typed in by hand is looked up in the same built-in list on your phone. No place name or other detail is sent anywhere for this.
 
 ## 4. Notifications
 
@@ -43,6 +41,10 @@ Your phone's own system backup (iCloud Backup on iPhone) may include the app's d
 ## 6. Errors and diagnostics
 
 The app has no crash reporting or analytics service. If something goes wrong, the app can show you the error details and let you share them yourself through the share sheet. Nothing is sent automatically.
+
+## 7. Reporting an answer
+
+You can report an AI-written answer you find offensive or harmful ("Report this answer" on a chat reply). The app then opens your email app (or the share sheet) with a draft to our support address containing that question and answer, the app and model version, the app language and the date. You can edit it, and nothing is sent unless you send it yourself. The app does not add your name, birth details or other chats. The answer is then hidden on your phone; this mark stays on the device.
 
 ## 7. Data we collect
 

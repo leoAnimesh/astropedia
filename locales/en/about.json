@@ -46,7 +46,8 @@
   "legal": {
     "terms": "Terms of use",
     "licences": "Open-source licences",
-    "licencesSub": "Libraries, fonts and models this app is built with"
+    "licencesSub": "Libraries, fonts, place data and models this app is built with",
+    "placesCredit": "Birth places: GeoNames (geonames.org), licensed under CC BY 4.0."
   },
   "data": {
     "delete": "Delete all my data",
@@ -76,11 +77,15 @@
       },
       {
         "h": "What uses the internet",
-        "p": "Downloading the on-device AI model and checking for model updates, both from Hugging Face. Hugging Face sees the request, as any website sees your IP address; nothing about you or your charts is sent. If a birth place has no built-in map coordinates, only the place name is looked up on OpenStreetMap. Links you open go to those websites."
+        "p": "Downloading the on-device AI model and checking for model updates, both from Hugging Face. Hugging Face sees the request, as any website sees your IP address; nothing about you or your charts is sent. Links you open go to those websites."
       },
       {
         "h": "No analytics or ads",
         "p": "The app contains no analytics, crash reporting, advertising or tracking code. If the app hits an error, the details stay on the phone unless you choose to share them."
+      },
+      {
+        "h": "Reporting an answer",
+        "p": "\"Report this answer\" opens your email app (or the share sheet) with a draft containing that question and answer and the app and model version. Nothing is sent unless you send it. The answer is then hidden on this phone."
       },
       {
         "h": "Notifications",
