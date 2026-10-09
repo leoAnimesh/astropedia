@@ -5,7 +5,7 @@
  * address. While it is a placeholder (no "@"), reports open the share sheet
  * instead of an email draft.
  */
-export const SUPPORT_EMAIL = '[support email]';
+export const SUPPORT_EMAIL = 'mondalarup808@gmail.com';
 
 /** True once SUPPORT_EMAIL is a real address. */
 export const hasSupportEmail = (): boolean => /^[^\s@[\]]+@[^\s@[\]]+\.[^\s@[\]]+$/.test(SUPPORT_EMAIL);

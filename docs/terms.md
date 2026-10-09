@@ -4,7 +4,7 @@
 
 **Effective date:** [date of first public release]
 **Provider:** [legal name of the developer or company] ("we", "us")
-**Contact:** [support email]
+**Contact:** mondalarup808@gmail.com
 
 By downloading or using Astropedia (the "App") you agree to these terms. If you do not agree, please do not use the App.
 
@@ -72,4 +72,4 @@ We may update these terms. Continued use after an update means you accept the ne
 
 ## 14. Contact
 
-[legal name], [postal address], [support email]
+[legal name], [postal address], mondalarup808@gmail.com

@@ -4,7 +4,7 @@
 
 **Effective date:** [date of first public release]
 **Developer:** [legal name of the developer or company], [postal address]
-**Contact:** [support email]
+**Contact:** mondalarup808@gmail.com
 
 ## The short version
 
@@ -62,7 +62,7 @@ Astropedia is not directed at children under 13 (or the minimum age in your coun
 
 ## 10. Your rights
 
-Data protection laws such as India's Digital Personal Data Protection Act 2023 and the EU/UK GDPR give you rights to access, correct and erase personal data held about you. Because all your data is on your device and in your control, you can exercise these rights directly in the app (edit or delete profiles, delete all data). If you have a question, contact us at [support email].
+Data protection laws such as India's Digital Personal Data Protection Act 2023 and the EU/UK GDPR give you rights to access, correct and erase personal data held about you. Because all your data is on your device and in your control, you can exercise these rights directly in the app (edit or delete profiles, delete all data). If you have a question, contact us at mondalarup808@gmail.com.
 
 ## 11. Security
 
@@ -74,6 +74,6 @@ If we change how the app handles data, we will update this policy and its effect
 
 ## 13. Contact
 
-[legal name], [postal address], [support email]
+[legal name], [postal address], mondalarup808@gmail.com
 
 [Grievance officer for India, if required: name, email]
