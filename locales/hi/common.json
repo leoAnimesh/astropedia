@@ -85,7 +85,7 @@
     "pickStateTitle": "राज्य / प्रांत चुनें",
     "pickCityTitle": "शहर चुनें",
     "useQuery": "\"{{query}}\" इस्तेमाल करें",
-    "geocodedNote": "इसकी लोकेशन अपने-आप ढूँढ ली जाएगी"
+    "geocodedNote": "इसकी लोकेशन ऐप की अपनी जगहों की सूची से ली जाएगी"
   },
   "overlay": {
     "dismiss": "बंद करें",

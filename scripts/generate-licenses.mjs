@@ -41,6 +41,8 @@ const EXTRA = [
   { name: 'SQLite', version: '', license: 'blessing', copyright: ['The SQLite source code is in the public domain.'], url: 'https://sqlite.org/copyright.html', via: 'expo-sqlite' },
   { name: 'Geist and Geist Mono fonts', version: '', license: 'OFL-1.1', copyright: ['Copyright 2024 The Geist Project Authors'], url: 'https://github.com/vercel/geist-font', via: '@expo-google-fonts/geist' },
   { name: 'Instrument Serif font', version: '', license: 'OFL-1.1', copyright: ['Copyright 2022 The Instrument Serif Project Authors'], url: 'https://github.com/Instrument/instrument-serif', via: '@expo-google-fonts/instrument-serif' },
+  // Birth places (assets/places, scripts/build-places.mjs). CC BY 4.0 asks for credit and a note of changes.
+  { name: 'GeoNames place data', version: '', license: 'CC-BY-4.0', copyright: ['Place names, coordinates and time zones: GeoNames (geonames.org).', 'Changed: places of 1,000+ people only, coordinates rounded, reformatted for the app.'], url: 'https://www.geonames.org', via: 'assets/places' },
 ];
 
 const LICENSE_FILES = /^(licen[cs]e|copying)(\.(md|txt|markdown))?$/i;
@@ -147,6 +149,7 @@ const BSD3 = `Redistribution and use in source and binary forms, with or without
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.`;
 texts['BSD-3-Clause'] ??= BSD3;
 texts['OFL-1.1'] ??= 'This Font Software is licensed under the SIL Open Font License, Version 1.1. The full licence is available at https://openfontlicense.org/open-font-license-official-text/';
+texts['CC-BY-4.0'] ??= 'Creative Commons Attribution 4.0 International. You are free to share and adapt the material for any purpose, even commercially, as long as you give appropriate credit, provide a link to the licence and indicate if changes were made. No warranties are given. Full licence: https://creativecommons.org/licenses/by/4.0/legalcode';
 texts.blessing ??= 'The author disclaims copyright to this source code. In place of a legal notice, here is a blessing: May you do good and not evil. May you find forgiveness for yourself and forgive others. May you share freely, never taking more than you give.';
 
 // Only keep texts something refers to (compound ids like "MIT AND OFL-1.1" keep both parts).

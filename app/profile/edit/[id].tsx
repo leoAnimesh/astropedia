@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Country, State, City } from 'country-state-city';
 import { localCityName, localCountryName, localizePlace, localStateName } from '@/utils/place-names';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
@@ -11,7 +10,10 @@ import { Input } from '@/components/atoms/Input';
 import { Icon } from '@/components/atoms/Icon';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
-import { LocationPickerModal, type PickerItem } from '@/components/molecules/LocationPickerModal';
+import {
+  LocationPickerModal, cityPickerItems, countryPickerItems, statePickerItems, type PickerItem,
+} from '@/components/molecules/LocationPickerModal';
+import { placeCountryName } from '@/utils/places';
 import { DatePicker } from '@/components/molecules/DatePicker';
 import { TimePicker } from '@/components/molecules/TimePicker';
 import { PickerSheet } from '@/components/molecules/PickerSheet';
@@ -65,6 +67,7 @@ export default function EditProfileScreen() {
   const [cityName,    setCityName]    = useState('');
   const [cityLat,     setCityLat]     = useState<number | null>(null);
   const [cityLng,     setCityLng]     = useState<number | null>(null);
+  const [cityTz,      setCityTz]       = useState<string | null>(null);
   const [activePicker, setActivePicker] = useState<Picker>(null);
 
   const newLocation = [cityName, stateName, countryName].filter(Boolean).join(', ');
@@ -77,34 +80,12 @@ export default function EditProfileScreen() {
 
   // ── Picker items ───────────────────────────────────────────────────────────
 
-  const countryItems = useMemo<PickerItem[]>(() =>
-    Country.getAllCountries().map(c => ({
-      label:    `${c.flag} ${c.name}`,
-      value:    c.isoCode,
-      sublabel: c.isoCode,
-    })),
-  []);
+  const countryItems = useMemo<PickerItem[]>(() => countryPickerItems(), []);
 
-  const stateItems = useMemo<PickerItem[]>(() => {
-    if (!countryCode) return [];
-    return State.getStatesOfCountry(countryCode).map(s => ({
-      label: s.name,
-      value: s.isoCode,
-    }));
-  }, [countryCode]);
+  const stateItems = useMemo<PickerItem[]>(() => statePickerItems(countryCode), [countryCode]);
 
-  const cityItems = useMemo<PickerItem[]>(() => {
-    if (!countryCode) return [];
-    const cities = stateCode
-      ? City.getCitiesOfState(countryCode, stateCode)
-      : City.getCitiesOfCountry(countryCode) ?? [];
-    return cities.map(c => ({
-      label: c.name,
-      value: c.name,
-      lat:   c.latitude  ? parseFloat(c.latitude)  : undefined,
-      lng:   c.longitude ? parseFloat(c.longitude) : undefined,
-    }));
-  }, [countryCode, stateCode]);
+  // States are keyed by their English name (stateCode holds it too).
+  const cityItems = useMemo<PickerItem[]>(() => cityPickerItems(countryCode, stateCode || null), [countryCode, stateCode]);
 
   const hasStates = stateItems.length > 0;
 
@@ -112,20 +93,21 @@ export default function EditProfileScreen() {
 
   const handleSelectCountry = (item: PickerItem) => {
     setCountryCode(item.value);
-    setCountryName(Country.getCountryByCode(item.value)?.name ?? item.label.replace(/^\S+\s/, ''));
+    setCountryName(placeCountryName(item.value) ?? item.label.replace(/^\S+\s/, ''));
     setStateCode(''); setStateName('');
-    setCityName(''); setCityLat(null); setCityLng(null);
+    setCityName(''); setCityLat(null); setCityLng(null); setCityTz(null);
     setActivePicker(null);
   };
   const handleSelectState = (item: PickerItem) => {
     setStateCode(item.value); setStateName(item.label);
-    setCityName(''); setCityLat(null); setCityLng(null);
+    setCityName(''); setCityLat(null); setCityLng(null); setCityTz(null);
     setActivePicker(null);
   };
   const handleSelectCity = (item: PickerItem) => {
     setCityName(item.label);
     setCityLat(item.lat ?? null);
     setCityLng(item.lng ?? null);
+    setCityTz(item.tz ?? null);
     setActivePicker(null);
   };
 
@@ -151,6 +133,7 @@ export default function EditProfileScreen() {
         patch.birthCity = locationToSave;
         patch.birthLat  = cityLat;
         patch.birthLng  = cityLng;
+        if (cityTz) patch.birthTz = cityTz;
       }
       await editProfile(profile.id, patch);
       router.back();

@@ -15,6 +15,7 @@ import {
 import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
 import { geocodeCity } from '@/utils/geocoding';
+import { isKnownZone } from '@/utils/timezone';
 import { todayIso } from '@/utils/format';
 
 type CreateProfileInput = {
@@ -24,9 +25,11 @@ type CreateProfileInput = {
   birthDate: string;
   birthTime?: string | null;
   birthCity?: string | null;
-  // Pre-geocoded coordinates; if provided, Nominatim is skipped
+  // Coordinates from the place picker; without them the bundled place data is searched by name
   birthLat?: number | null;
   birthLng?: number | null;
+  /** IANA zone from the place picker; otherwise derived from the place. */
+  birthTz?: string | null;
   isYou?: boolean;
 };
 
@@ -67,13 +70,14 @@ export function useProfiles() {
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
 
   const createProfile = useCallback(async (input: CreateProfileInput): Promise<Profile> => {
-    // Use pre-geocoded coordinates if provided; otherwise geocode the city string.
-    // The city string already contains country/state context so Nominatim is very accurate.
+    // Coordinates from the picker; a typed-in city is looked up in the
+    // bundled place data ("City, State, Country" — on this phone, no network).
     let lat: number | null = input.birthLat ?? null;
     let lng: number | null = input.birthLng ?? null;
-    if (!lat && !lng && input.birthCity) {
-      const geo = await geocodeCity(input.birthCity);
-      if (geo) { lat = geo.lat; lng = geo.lng; }
+    let tz: string | null = input.birthTz ?? null;
+    if (lat == null && lng == null && input.birthCity) {
+      const geo = geocodeCity(input.birthCity);
+      if (geo) { lat = geo.lat; lng = geo.lng; tz ??= geo.tz; }
     }
 
     const profile = await insertProfile({
@@ -88,7 +92,7 @@ export function useProfiles() {
       birthLng:     lng,
       // IANA zone of the birth place, so the birth time is read as that
       // place's civil time (historical offsets, DST) rather than mean solar time.
-      birthTz:      birthTzFor({ birthCity: input.birthCity ?? null, birthLat: lat, birthLng: lng }),
+      birthTz:      isKnownZone(tz) ? tz : birthTzFor({ birthCity: input.birthCity ?? null, birthLat: lat, birthLng: lng }),
       isYou:        input.isYou ?? false,
     });
     storeUpsert(profile);
@@ -96,12 +100,16 @@ export function useProfiles() {
   }, [storeUpsert]);
 
   const editProfile = useCallback(async (id: string, patch: Partial<Profile>): Promise<void> => {
-    // Re-geocode if the birth city changed AND no explicit lat/lng was supplied.
-    // The edit screen passes pre-resolved lat/lng from country-state-city, so
-    // skip the geocoder call in that case to avoid clobbering correct coords.
-    if (patch.birthCity !== undefined && patch.birthLat === undefined && patch.birthLng === undefined) {
-      const geo = patch.birthCity ? await geocodeCity(patch.birthCity) : null;
+    // The birth city changed without coordinates (typed in by hand): look it
+    // up in the bundled place data. Picked places come with lat/lng (and zone).
+    if (patch.birthCity !== undefined && patch.birthLat == null && patch.birthLng == null) {
+      const geo = patch.birthCity ? geocodeCity(patch.birthCity) : null;
       patch = { ...patch, birthLat: geo?.lat ?? null, birthLng: geo?.lng ?? null };
+      if (geo && patch.birthTz === undefined) patch = { ...patch, birthTz: geo.tz };
+    }
+    if (patch.birthTz != null && !isKnownZone(patch.birthTz)) {
+      const { birthTz: _drop, ...rest } = patch;
+      patch = rest;
     }
     // The birth place changed: re-derive its time zone from the merged values.
     if (patch.birthTz === undefined

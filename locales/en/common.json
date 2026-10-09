@@ -85,7 +85,7 @@
     "pickStateTitle": "Select State / Province",
     "pickCityTitle": "Select City",
     "useQuery": "Use \"{{query}}\"",
-    "geocodedNote": "Will be geocoded automatically"
+    "geocodedNote": "Located using the app's built-in place list"
   },
   "overlay": {
     "dismiss": "Dismiss",
