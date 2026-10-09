@@ -61,6 +61,23 @@
  *    the best weaker window is returned and the next strong one up to ten years
  *    out is named when there is one.
  *
+ * Stage 2 refinements (rules.md §3, §4, §9; each behind a weight in
+ * TIMING_WEIGHTS, measured so windows still vary and stay plausible):
+ *    - link scores scale with composite planet strength (utils/chart-analysis.ts:
+ *      dignity incl. moolatrikona and compound friendship, house, directional
+ *      strength, combustion, vargottama, aspects received) instead of the
+ *      dignity-only ×1.15 / ×0.85;
+ *    - divisional confirmation, only with a birth time: a planet ruling the
+ *      topic's varga house (D9 7th for marriage, D10 10th for work, D7 5th for
+ *      children, D4 4th for property, D24 4th/5th for studies) gets a small
+ *      link when that varga's lagna is stable at ±5 minutes, and the main
+ *      house lord's dignity in that varga nudges its score;
+ *    - gochara vedha: a good Jupiter / Saturn transit from the Moon is
+ *      cancelled while another planet (not the Moon: too brief for a month)
+ *      sits in its vedha house (Sun-Saturn exempt);
+ *    - ashtakavarga: Jupiter / Saturn transiting a sign with SAV ≥ 28 add,
+ *      ≤ 25 subtract, refined by their own BAV bindus (utils/ashtakavarga.ts).
+ *
  * 5. Confidence. Strong → high, moderate → medium, weak → low; one step lower
  *    without a birth time (houses from the Moon, dasha balance uncertain) or
  *    place, and "low" when the Moon could be in another nakshatra on the
@@ -80,6 +97,11 @@ import {
   type DashaPeriod,
   type PlanetPosition,
 } from './astrology';
+import { analyzeChart, aspects, strengthFactor, type ChartAnalysis, type Planet } from './chart-analysis';
+import { vargaUsable, vargaPlanetUsable, type Varga } from './vargas';
+import { ashtakavarga, transitBindus, vedhaBlocked, type Ashtakavarga, type AvPlanet } from './ashtakavarga';
+
+export { aspects, type Planet };
 
 // ─── Topics ───────────────────────────────────────────────────────────────────
 
@@ -88,8 +110,6 @@ export const TIMING_TOPICS = [
   'foreign', 'health', 'legal', 'general',
 ] as const;
 export type TimingTopic = (typeof TIMING_TOPICS)[number];
-
-export type Planet = 'Sun' | 'Moon' | 'Mars' | 'Mercury' | 'Jupiter' | 'Venus' | 'Saturn' | 'Rahu' | 'Ketu';
 
 export type TopicRule = {
   /** [house, weight]; the first is the main house (double transit target). */
@@ -148,19 +168,6 @@ const DASHA_ORDER: Planet[] = ['Ketu', 'Venus', 'Sun', 'Moon', 'Mars', 'Rahu', '
 const DAY_MS = 86400000;
 const YEAR_MS = 365.25 * DAY_MS;
 
-/** Graha drishti in whole signs: the houses counted from the planet that it aspects (BPHS). */
-const ASPECTS: Record<Planet, number[]> = {
-  Sun: [7], Moon: [7], Mercury: [7], Venus: [7], Mars: [4, 7, 8], Jupiter: [5, 7, 9], Saturn: [3, 7, 10],
-  // The nodes' 5th/9th aspects are disputed between texts; only the 7th is used.
-  Rahu: [7], Ketu: [7],
-};
-
-/** Does a planet in sign `from` aspect sign `to`? */
-export function aspects(planet: Planet, from: number, to: number): boolean {
-  const n = ((to - from + 12) % 12) + 1;
-  return ASPECTS[planet].includes(n);
-}
-
 const houseSign = (first: number, h: number) => (first + h - 1) % 12;
 const houseOfSign = (first: number, sign: number) => ((sign - first + 12) % 12) + 1;
 
@@ -180,6 +187,8 @@ export type NatalChart = {
   hasPlace: boolean;
   /** The Moon's nakshatra could differ on the birth day (no time / no zone). */
   nakshatraUncertain: boolean;
+  /** Composite strength, vargas and yogas (utils/chart-analysis.ts); absent for unusable birth data. */
+  analysis?: ChartAnalysis;
 };
 
 export function natalChart(raw: TimingProfile): NatalChart {
@@ -204,8 +213,10 @@ export function natalChart(raw: TimingProfile): NatalChart {
     }
     nakshatraUncertain = alts.some(a => a !== nak);
   }
+  let analysis: ChartAnalysis | undefined;
+  try { analysis = Number.isFinite(moonLon) ? analyzeChart(p) : undefined; } catch { analysis = undefined; }
   return {
-    planets, moonSign, moonLon,
+    planets, moonSign, moonLon, analysis,
     first: asc == null ? moonSign : Math.floor(asc / 30) % 12,
     basis: asc == null ? 'moon' : 'rising',
     hasTime: !!birthTime,
@@ -221,11 +232,35 @@ export function lordOfHouse(first: number, h: number): Planet {
 
 // ─── 1. Promise: how strongly each planet is tied to a topic ─────────────────
 
-export type LinkKind = 'lord' | 'occupant' | 'aspect' | 'withLord' | 'karaka' | 'node' | 'against';
-export type Link = { kind: LinkKind; house?: number; via?: Planet };
+export type LinkKind = 'lord' | 'occupant' | 'aspect' | 'withLord' | 'karaka' | 'node' | 'against' | 'varga';
+export type Link = { kind: LinkKind; house?: number; via?: Planet; varga?: Varga };
 export type PlanetLink = { planet: Planet; score: number; links: Link[] };
 
-function rawLink(chart: NatalChart, rule: TopicRule, planet: Planet): PlanetLink {
+/**
+ * Weights of the Stage 2 refinements (see the header). `strength`: link
+ * multiplier per composite-strength point (0 = the old dignity ×1.15/×0.85);
+ * `varga`: link for ruling / occupying the topic's varga house (× the main
+ * house weight); `vargaDignity`: ± share for the main lord's dignity in that
+ * varga; `vedha`: share of a good gochara bonus an obstruction removes;
+ * `sav`: points per ashtakavarga transit step of Jupiter and Saturn.
+ */
+export type TimingWeights = { strength: number; varga: number; vargaDignity: number; vedha: number; sav: number };
+export const TIMING_WEIGHTS: TimingWeights = { strength: 0.03, varga: 0.15, vargaDignity: 0.06, vedha: 1, sav: 0.2 };
+/** The engine before Stage 2 (for measurement). */
+export const LEGACY_WEIGHTS: TimingWeights = { strength: 0, varga: 0, vargaDignity: 0, vedha: 0, sav: 0 };
+
+/** The varga that confirms a topic, and the varga houses whose lords / occupants link to it (rules.md §3.7). */
+export const TOPIC_VARGA: Partial<Record<TimingTopic, { varga: Varga; houses: number[] }>> = {
+  marriage: { varga: 'D9', houses: [7, 1] }, love: { varga: 'D9', houses: [7] },
+  job: { varga: 'D10', houses: [10] }, promotion: { varga: 'D10', houses: [10] }, business: { varga: 'D10', houses: [10, 7] },
+  children: { varga: 'D7', houses: [5] }, property: { varga: 'D4', houses: [4] }, education: { varga: 'D24', houses: [4, 5] },
+};
+
+const VSIGN_RULER = SIGN_RULER;
+const EXALT: Partial<Record<Planet, number>> = { Sun: 0, Moon: 1, Mars: 9, Mercury: 5, Jupiter: 3, Venus: 11, Saturn: 6 };
+const DEBIL: Partial<Record<Planet, number>> = { Sun: 6, Moon: 7, Mars: 3, Mercury: 11, Jupiter: 9, Venus: 5, Saturn: 0 };
+
+function rawLink(chart: NatalChart, rule: TopicRule, topic: TimingTopic, planet: Planet, W: TimingWeights): PlanetLink {
   const at = chart.planets[planet].sign;
   const links: Link[] = [];
   let score = 0;
@@ -239,22 +274,46 @@ function rawLink(chart: NatalChart, rule: TopicRule, planet: Planet): PlanetLink
     if (lord !== planet && chart.planets[lord].sign === at) { score += 0.4 * w; links.push({ kind: 'withLord', house: h }); }
   }
   for (const [k, w] of rule.karakas) if (k === planet) { score += w; links.push({ kind: 'karaka' }); }
+  // Divisional confirmation (birth time only; the varga lagna stable at ±5 minutes).
+  const a = chart.analysis;
+  const tv = TOPIC_VARGA[topic];
+  if (a && tv && W.varga > 0 && vargaUsable(a.vargas, tv.varga)) {
+    const vc = a.vargas.charts[tv.varga];
+    const mainW = rule.houses[0][1];
+    for (const vh of tv.houses) {
+      const vs = (vc.asc! + vh - 1) % 12;
+      if (VSIGN_RULER[vs] === planet) { score += W.varga * mainW; links.push({ kind: 'varga', house: vh, varga: tv.varga }); }
+      else if (vc.planets[planet] === vs && vc.planetStable[planet]) { score += 0.5 * W.varga * mainW; links.push({ kind: 'varga', house: vh, varga: tv.varga }); }
+    }
+  }
   for (const h of rule.against) {
     if (topicHouses.has(h)) continue;
     const sign = houseSign(chart.first, h);
     if (SIGN_RULER[sign] === planet) { score -= 1; links.push({ kind: 'against', house: h }); }
     else if (at === sign && planet !== 'Rahu' && planet !== 'Ketu') { score -= 0.5; links.push({ kind: 'against', house: h }); }
   }
-  const dig = chart.planets[planet].dignity;
-  if (score > 0) score *= dig === 'own' || dig === 'exalted' ? 1.15 : dig === 'debilitated' ? 0.85 : 1;
+  if (score > 0) {
+    if (a && W.strength > 0) score *= strengthFactor(a, planet, W.strength, 0.82, 1.2);
+    else {
+      const dig = chart.planets[planet].dignity;
+      score *= dig === 'own' || dig === 'exalted' ? 1.15 : dig === 'debilitated' ? 0.85 : 1;
+    }
+    // The main house lord's dignity in the topic's varga.
+    if (a && tv && W.vargaDignity > 0 && SIGN_RULER[houseSign(chart.first, rule.houses[0][0])] === planet
+      && a.hasTime && vargaPlanetUsable(a.vargas, tv.varga, planet)) {
+      const vs = a.vargas.charts[tv.varga].planets[planet];
+      if (EXALT[planet] === vs || VSIGN_RULER[vs] === planet) score *= 1 + W.vargaDignity;
+      else if (DEBIL[planet] === vs) score *= 1 - W.vargaDignity;
+    }
+  }
   return { planet, score, links };
 }
 
 /** Link scores of all nine planets for a topic (nodes include their dispositor's share). */
-export function topicLinks(chart: NatalChart, topic: TimingTopic): Record<Planet, PlanetLink> {
+export function topicLinks(chart: NatalChart, topic: TimingTopic, weights: TimingWeights = TIMING_WEIGHTS): Record<Planet, PlanetLink> {
   const rule = TOPIC_RULES[topic];
   const out = {} as Record<Planet, PlanetLink>;
-  for (const p of DASHA_ORDER) out[p] = rawLink(chart, rule, p);
+  for (const p of DASHA_ORDER) out[p] = rawLink(chart, rule, topic, p, weights);
   for (const node of ['Rahu', 'Ketu'] as const) {
     const disp = SIGN_RULER[chart.planets[node].sign];
     const share = 0.7 * Math.max(0, out[disp].score);
@@ -306,8 +365,11 @@ function dashaLookup(profile: TimingProfile, from: Date, to: Date) {
 
 type TransitMark = { kind: 'double' | 'jupiter'; target: 'house' | 'lord' | 'moon' };
 
+/** Other transiting planets' houses from the natal Moon (vedha) and the natal ashtakavarga. */
+type TransitCtx = { others: Partial<Record<AvPlanet, number>> | null; av: Ashtakavarga | null; avWeight: number; W: TimingWeights };
+
 function transitScore(
-  chart: NatalChart, topic: TimingTopic, jup: number, sat: number,
+  chart: NatalChart, topic: TimingTopic, jup: number, sat: number, ctx?: TransitCtx,
 ): { score: number; marks: TransitMark[] } {
   const rule = TOPIC_RULES[topic];
   const main = rule.houses[0][0];
@@ -328,10 +390,18 @@ function transitScore(
     else if (t) score += w / 8;
   }
   const fromMoon = (s: number) => houseOfSign(chart.moonSign, s);
-  if ([2, 5, 7, 9, 11].includes(fromMoon(jup))) score += 0.5;
+  const jh = fromMoon(jup);
   const sh = fromMoon(sat);
-  if ([3, 6, 11].includes(sh)) score += 0.3;
+  // Good gochara from the Moon, cancelled (by the vedha weight) while another planet sits in its vedha house.
+  const others = ctx?.others ? { ...ctx.others, Jupiter: jh, Saturn: sh } : null;
+  const vedha = (pl: AvPlanet, h: number) => (others && ctx!.W.vedha > 0 && vedhaBlocked(pl, h, others) ? ctx!.W.vedha : 0);
+  if ([2, 5, 7, 9, 11].includes(jh)) score += 0.5 * (1 - vedha('Jupiter', jh));
+  if ([3, 6, 11].includes(sh)) score += 0.3 * (1 - vedha('Saturn', sh));
   if (rule.saturnHard && [12, 1, 2, 8].includes(sh)) score -= 0.6;
+  // Ashtakavarga: the transited signs' bindus.
+  if (ctx?.av && ctx.avWeight > 0) {
+    score += ctx.avWeight * (transitBindus(ctx.av, 'Jupiter', jup).score + transitBindus(ctx.av, 'Saturn', sat).score);
+  }
   return { score, marks };
 }
 
@@ -408,12 +478,21 @@ const monthEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0, 23,
 const addMonths = (d: Date, n: number) => monthStart(d.getFullYear(), d.getMonth() + n);
 
 function scoreMonths(
-  profile: TimingProfile, chart: NatalChart, topic: TimingTopic, from: Date, count: number,
+  profile: TimingProfile, chart: NatalChart, topic: TimingTopic, from: Date, count: number, W: TimingWeights = TIMING_WEIGHTS,
 ): MonthScore[] {
-  const links = topicLinks(chart, topic);
+  const links = topicLinks(chart, topic, W);
   const A = (p: string) => links[p as Planet]?.score ?? 0;
   const first = monthStart(from.getFullYear(), from.getMonth());
   const dashaAt = dashaLookup(profile, first, addMonths(first, count + 1));
+  const a = chart.analysis;
+  let av: Ashtakavarga | null = null;
+  if (a && W.sav > 0) {
+    const signs = {} as Record<AvPlanet, number>;
+    for (const pl of ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'] as AvPlanet[]) signs[pl] = a.planets[pl].sign;
+    av = ashtakavarga(signs, chart.first);
+  }
+  // Without a birth time the Moon's sign stands in for the ascendant: half weight.
+  const avWeight = W.sav * (chart.basis === 'rising' ? 1 : 0.5);
   const out: MonthScore[] = [];
   for (let i = 0; i < count; i++) {
     const m = addMonths(first, i);
@@ -429,9 +508,15 @@ function scoreMonths(
     const marks: TransitMark[] = [];
     for (const day of [5, 15, 25]) {
       const jd = new Date(m.getFullYear(), m.getMonth(), day, 12).getTime() / DAY_MS + 2440587.5;
-      const jup = Math.floor(siderealLongitudeAt('Jupiter', jd) / 30) % 12;
-      const sat = Math.floor(siderealLongitudeAt('Saturn', jd) / 30) % 12;
-      const t = transitScore(chart, topic, jup, sat);
+      const signAt = (b: 'Sun' | 'Mars' | 'Mercury' | 'Venus' | 'Jupiter' | 'Saturn') => Math.floor(siderealLongitudeAt(b, jd) / 30) % 12;
+      const jup = signAt('Jupiter');
+      const sat = signAt('Saturn');
+      let others: Partial<Record<AvPlanet, number>> | null = null;
+      if (W.vedha > 0) {
+        others = {};
+        for (const b of ['Sun', 'Mars', 'Mercury', 'Venus'] as const) others[b] = houseOfSign(chart.moonSign, signAt(b));
+      }
+      const t = transitScore(chart, topic, jup, sat, { others, av, avWeight, W });
       transit += t.score / 3;
       for (const k of t.marks) if (!marks.some(x => x.kind === k.kind && x.target === k.target)) marks.push(k);
     }
@@ -570,6 +655,8 @@ export type TimingOptions = {
   past?: boolean;
   /** How many windows to return (default 3). */
   count?: number;
+  /** Stage 2 refinement weights (default TIMING_WEIGHTS; LEGACY_WEIGHTS = the engine before them). */
+  weights?: TimingWeights;
 };
 
 const resultCache = new Map<string, TimingResult>();
@@ -586,8 +673,9 @@ export function timingWindows(
   const count = opts.months ?? HORIZON_MONTHS;
   const past = !!opts.past;
   const n = opts.count ?? 3;
+  const W = opts.weights ?? TIMING_WEIGHTS;
   const key = [profile.birthDate, profile.birthTime ?? '', profile.birthLat ?? '', profile.birthLng ?? '',
-    profile.birthTz ?? '', topic, now.getFullYear(), now.getMonth(), count, past, n].join('|');
+    profile.birthTz ?? '', topic, now.getFullYear(), now.getMonth(), count, past, n, JSON.stringify(W)].join('|');
   const hit = resultCache.get(key);
   if (hit) return hit;
 
@@ -606,12 +694,12 @@ export function timingWindows(
   const birth = new Date(profile.birthDate + 'T00:00:00');
   const from = start < birth ? monthStart(birth.getFullYear(), birth.getMonth() + 1) : start;
   const span = past ? Math.max(0, (now.getFullYear() - from.getFullYear()) * 12 + now.getMonth() - from.getMonth()) : count;
-  const months = scoreMonths(profile, chart, topic, from, span);
+  const months = scoreMonths(profile, chart, topic, from, span, W);
   const windows = rankWindows(findWindows(chart, topic, months, n), findWindows(chart, topic, months, 6, ALT_SHARE), n, past);
   const strongWithin = windows[0]?.strength === 'strong';
   let nextStrong: TimingWindow | null = null;
   if (!strongWithin && !past) {
-    const later = scoreMonths(profile, chart, topic, addMonths(from, span), 60);
+    const later = scoreMonths(profile, chart, topic, addMonths(from, span), 60, W);
     const strong = findWindows(chart, topic, later, 6).filter(w => w.strength === 'strong');
     nextStrong = strong.sort((a, b) => a.start.getTime() - b.start.getTime())[0] ?? null;
   }
