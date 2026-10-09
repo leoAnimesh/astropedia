@@ -10,6 +10,7 @@ import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FeatureHeader } from '@/components/molecules/FeatureHeader';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { FONTS, RADIUS } from '@/constants/themes';
+import { LEGAL_URLS } from '@/constants/support';
 import { localizeDigits } from '@/utils/i18n';
 import { getInstallMarker } from '@/utils/model-download';
 import { FALLBACK_CATALOG, currentEntryId } from '@/utils/model-catalog';
@@ -19,14 +20,6 @@ type Pkg = { name: string; version: string; license: string; copyright: string[]
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const LICENSES: { packages: Pkg[]; texts: Record<string, string> } = require('@/assets/legal/licenses.json');
 
-/**
- * Hosted copies of docs/privacy.md and docs/terms.md. Set these once the
- * pages are published; the screens then link to the full text.
- */
-const FULL_TEXT_URL: Record<'privacy' | 'terms', string | null> = {
-  privacy: 'https://ash-larch-a05.notion.site/Astropedia-Privacy-Policy-3f4a0161464a814984a9e0f6c63f8ab4',
-  terms: 'https://ash-larch-a05.notion.site/Astropedia-Terms-of-Use-3f4a0161464a81c8a359c572ccd455e5',
-};
 
 /** /legal/privacy, /legal/terms, /legal/licenses. */
 export default function LegalScreen() {
@@ -41,7 +34,7 @@ function Doc({ kind }: { kind: 'privacy' | 'terms' }) {
   const { t } = useTranslation('about');
   const ns = kind === 'privacy' ? 'privacyDoc' : 'termsDoc';
   const sections = t(`${ns}.sections`, { returnObjects: true }) as { h: string; p: string }[];
-  const url = FULL_TEXT_URL[kind];
+  const url = LEGAL_URLS[kind];
   return (
     <ScreenLayout edges={['top', 'left', 'right']}>
       <FeatureHeader title={t(`${ns}.title`)} subtitle={t(`${ns}.status`)} />

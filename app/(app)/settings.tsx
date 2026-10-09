@@ -40,6 +40,8 @@ import {
   scheduleRahuKaalHeadsUp,
   cancelRahuKaalHeadsUp,
 } from '@/utils/notifications';
+import * as WebBrowser from 'expo-web-browser';
+import { LEGAL_URLS } from '@/constants/support';
 
 const ACCENT_KEYS: AccentKey[] = ['amber', 'sage', 'lilac', 'blush', 'ink'];
 const READY_DOT = ACCENT_THEMES.sage.accent;
@@ -261,6 +263,11 @@ export default function SettingsScreen() {
     t('model.checking');
   const modelMb = Math.round(modelInfo.bytes / 1_000_000);
   const appVersion = Constants.expoConfig?.version ?? '';
+
+  // Published policy pages; the in-app summary is the fallback when no browser opens.
+  const openLegal = (kind: keyof typeof LEGAL_URLS) => {
+    WebBrowser.openBrowserAsync(LEGAL_URLS[kind]).catch(() => router.push(`/legal/${kind}`));
+  };
 
   const navRow = (icon: IconName, label: string, onPress: () => void, sub?: string) => (
     <TouchableOpacity style={styles.cardRow} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} accessibilityHint={sub}>
@@ -510,7 +517,9 @@ export default function SettingsScreen() {
         <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
           {navRow('sparkle', tAbout('settingsRow'), () => router.push('/about'), tAbout('settingsRowSub'))}
           {divider}
-          {navRow('lock', t('about.privacy'), () => router.push('/legal/privacy'), t('about.privacySub'))}
+          {navRow('lock', t('about.privacy'), () => openLegal('privacy'), t('about.privacySub'))}
+          {divider}
+          {navRow('report', t('about.terms'), () => openLegal('terms'), t('about.termsSub'))}
           {divider}
           {navRow('book', tAbout('legal.licences'), () => router.push('/legal/licenses'))}
           {([
