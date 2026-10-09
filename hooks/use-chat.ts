@@ -254,7 +254,9 @@ export function useChat(
         [i18n.t('chat:errors.modelLoad')]: i18n.t('chat:errors.modelLoad', { lng: 'en' }),
         [i18n.t('chat:errors.generic')]:   i18n.t('chat:errors.generic', { lng: 'en' }),
       };
-      const recentHistory = messages.slice(-6).map((m) => ({
+      // 12 messages: the prompts still keep only what fits (gemma: the last 4), but the verify
+      // layer checks a new reply against every earlier answer in this tail (no repeats).
+      const recentHistory = messages.slice(-12).map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: toEnglish[m.content] ?? m.content,
       }));

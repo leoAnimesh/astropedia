@@ -29,6 +29,8 @@
  */
 import type { AnswerPlan } from '../plan';
 import { AREA, HELPS, monthLabel, type Lang } from '../strings';
+import { ASK_QUESTION, TIP } from '../ask-strings';
+import { planGuard } from '../verify';
 import { getAstrologyContext, getFullKundli } from '../../astrology';
 import { pickGitaVerse, formatGitaQuote } from '../../gita';
 import { parseModelFollowUps, followUpTurns, FOLLOWUPS_MAX_TOKENS } from '../../follow-ups';
@@ -153,7 +155,20 @@ export function instructSystemPrompt(plan: AnswerPlan): string {
     `The question is about ${plan.subject.isYou === false ? `${plan.subject.name} (the user's ${plan.subject.relationship ?? 'family member'})` : 'the user'}.`,
   ];
   const t = plan.timing;
-  if (t) {
+  const c = plan.content && !plan.intent.timing ? plan.content : null;
+  if (c) {
+    // A "which / what kind / how / why" question: the plan's items are the answer.
+    if (plan.intent.clarifies) lines.push(`The user is clarifying their previous question. They mean: "${ASK_QUESTION[c.ask].en}" Answer that, not the earlier question.`);
+    lines.push(`Answer type: ${plan.intent.kind}. Answer the question directly, naming these from the chart (most important first):`);
+    for (const i of c.items) {
+      lines.push(`- ${i.text.label.en}${i.text.examples ? ` (e.g. ${i.text.examples.en})` : ''}${i.why ? `; because ${i.why.en}` : ''}`);
+    }
+    for (const e of c.extra) lines.push(`- Also say: ${e.text.en}`);
+    lines.push(`Practical advice to include: ${TIP[c.ask].en}`);
+    if (c.window) lines.push(`Only if you mention timing: ${ml(c.window.best.start)} to ${ml(c.window.best.end)}; give no other dates.`);
+    else lines.push('Give no dates.');
+    lines.push('Do not repeat earlier answers in this conversation; say something new.');
+  } else if (t) {
     const w = t.best;
     lines.push(`Topic: ${AREA.en[t.topic]}.`);
     lines.push(`${t.result.past ? 'Strongest past window' : 'Strongest window'}: ${ml(w.start)} to ${ml(w.end)}, peak ${ml(w.peak)}. Use only these dates.`);
@@ -356,7 +371,11 @@ export function createInstructAdapter(runtime: LLMRuntime | null, options: Instr
         ...fitHistory(r, system, req.history, question, maxTokens),
         { role: 'user', content: question },
       ];
-      const guard = instructGuard(plan.lang, [plan.subject.name, req.userName], req.history);
+      const base = instructGuard(plan.lang, [plan.subject.name, req.userName], req.history);
+      const extra = planGuard(plan, req.history);
+      const guard = base || Object.keys(extra).length
+        ? { lang: plan.lang, ignore: [plan.subject.name, req.userName].flatMap(n => (n ? [n.split(' ')[0]] : [])), ...base, ...extra }
+        : null;
       return guard
         ? streamGuarded(r, messages, { maxNewTokens: maxTokens, temperature }, guard)
         : streamRuntime(r, messages, { maxNewTokens: maxTokens, temperature });

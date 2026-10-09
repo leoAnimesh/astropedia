@@ -14,14 +14,25 @@
  *  - a reply that ends without any date gets the window sentence appended.
  * This supersedes the old copied-transit-date retry (no extra model run).
  *
+ * Non-timing answers (a plan with `content`, or no "when"): sentences with
+ * dates nobody asked for are dropped (and an "Until then…" leaning on them),
+ * sentences already said in any earlier reply are dropped, and a reply that
+ * names none of the plan's items gets them; model adapters also hold such a
+ * reply until it is checked whole (planGuard / acceptable) and show the
+ * template answer when the retry fails too.
+ *
  * Dates are read in Western and Devanagari / Bengali digits alike
  * (findDates), so the hi/bn repair sentence (native digits) and a model reply
  * (usually Western digits) are judged the same way.
  */
-import { createSentenceFilter, findDates, nativeDigits, type FoundDate } from '../reply-guards';
+import {
+  createSentenceFilter, findDates, nativeDigits, replyOverlap, westernDigits, words,
+  type FoundDate, type ReplyGuard,
+} from '../reply-guards';
 import type { TimingWindow } from '../timing-engine';
 import type { AnswerPlan } from './plan';
-import { repairSentence } from './adapters/template';
+import { contentLead, renderTemplate, repairSentence } from './adapters/template';
+import { relevanceHits, relevanceTerms } from './astrologer';
 import { S, type Lang } from './strings';
 
 const key = (y: number, m: number) => y * 12 + m - 1;
@@ -146,6 +157,142 @@ export function repairTiming(text: string, plan: AnswerPlan): string {
   return (body + r.finish(body)).replace(/[ \t]{2,}/g, ' ');
 }
 
+// ─── Non-timing answers: unsolicited dates, repeats, relevance ───────────────
+
+const PLANET_WORD = /\b(?:sun|moon|mars|mercury|jupiter|venus|saturn|rahu|ketu|sade ?sati|dasha|transit)\b|सूर्य|चंद्र|मंगल|बुध|गुरु|बृहस्पति|शुक्र|शनि|राहु|केतु|साढ़े|दशा|গোচর|সূর্য|চন্দ্র|মঙ্গল|বুধ|বৃহস্পতি|শুক্র|শনি|রাহু|কেতু|সাড়ে|দশা/i;
+
+/**
+ * The windows a non-timing reply's dates may fall in: the topic's engine
+ * windows, the content's optional window and its allowed dates (±1 month).
+ * Null when dates aren't policed: a "when" question (createTimingRepair
+ * handles it), a chart / planet question (its dates come from the context),
+ * or a plan that isn't a written answer.
+ */
+export function allowedDateWindows(plan: AnswerPlan): TimingWindow[] | null {
+  if (plan.route !== 'answer' || plan.mode !== 'saga') return null;
+  if (plan.intent.timing || plan.intent.topic === 'chart' || PLANET_WORD.test(plan.question)) return null;
+  const out: TimingWindow[] = [...(plan.timing?.result.windows ?? [])];
+  if (plan.content?.window) out.push(plan.content.window.best);
+  for (const d of plan.content?.allowedDates ?? []) {
+    out.push({ start: d, end: d, peak: d } as TimingWindow);
+  }
+  return out;
+}
+
+/**
+ * Sentence filter for a non-timing answer: a sentence whose future dates are
+ * all outside the allowed windows (the v2.1 habit of answering "which field?"
+ * with "by October 2026", the month every chart's transit line shares) is
+ * dropped. Past dates and in-window dates stay.
+ */
+export function createDateFilter(plan: AnswerPlan): { transform: (chunk: string) => string; changes: () => number } {
+  const windows = allowedDateWindows(plan);
+  let changes = 0;
+  if (!windows) return { transform: s => s, changes: () => 0 };
+  let dropped = false;
+  return {
+    transform: (chunk: string) => {
+      const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(chunk)!;
+      if (!m[2]) return chunk;
+      if (judgeSentence(m[2], windows, plan.now) === 'bad') { changes++; dropped = true; return ''; }
+      // "Until then, …" leans on the sentence just dropped.
+      if (dropped && DANGLING.test(m[2])) { changes++; return ''; }
+      dropped = false;
+      return chunk;
+    },
+    changes: () => changes,
+  };
+}
+
+const DANGLING = /^(?:\*\*)?(?:until then|by then|till then|before then|after that|from then|in the meantime|meanwhile|तब तक|उससे पहले|उसके बाद|इस बीच|ততদিন|তার আগে|তার পরে|এর মধ্যে|ততক্ষণ)/i;
+
+/** Previous assistant replies of a thread (Western digits, like a model reply). */
+export const previousReplies = (history: { role: string; content: string }[] = []): string[] =>
+  history.filter(m => m.role === 'assistant' && m.content.trim()).map(m => westernDigits(m.content));
+
+/** A sentence counts as repeated when this share of it already appeared in an earlier reply. */
+export const SENTENCE_REPEAT_MAX = 0.6;
+
+/**
+ * Sentence filter that drops a sentence (6+ words) already said in any earlier
+ * reply of the thread: the safety net behind the whole-reply repeat check,
+ * for a reply that starts fresh and then copies.
+ */
+export function createRepeatFilter(
+  previous: string[], { keepDated = false } = {},
+): { transform: (chunk: string) => string; changes: () => number } {
+  let changes = 0;
+  if (!previous.length) return { transform: s => s, changes: () => 0 };
+  return {
+    transform: (chunk: string) => {
+      const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(chunk)!;
+      if (words(m[2]).length < 6) return chunk;
+      // A "when" answer's window sentence may restate the earlier window (the timing repair owns those).
+      if (keepDated && findDates(m[2]).length) return chunk;
+      const o = previous.reduce((x, p) => Math.max(x, replyOverlap(westernDigits(m[2]), p)), 0);
+      if (o >= SENTENCE_REPEAT_MAX) { changes++; return ''; }
+      return chunk;
+    },
+    changes: () => changes,
+  };
+}
+
+/** The reply names one of the plan's key items (true when the plan has none). */
+export function isRelevant(plan: AnswerPlan, reply: string): boolean {
+  const c = plan.content;
+  if (!c || plan.intent.timing) return true;
+  return relevanceTerms(c).test(westernDigits(reply));
+}
+
+/** Words / sentences a non-timing answer must keep after the date and repeat filters. */
+const MIN_KEPT_WORDS = 18;
+/**
+ * Distinct plan-item words a model reply must use to be shown (one alone is
+ * often incidental: "keep in touch" is not an answer about communication work).
+ */
+const MIN_ITEM_HITS = 2;
+
+/**
+ * A whole model reply for a non-timing plan is acceptable when, after the
+ * verify layer would take out unasked dates and sentences repeated from
+ * `previous`, at least two sentences / MIN_KEPT_WORDS words are left and they
+ * use at least MIN_ITEM_HITS distinct words of the plan's items. Otherwise
+ * the reply is retried (then the template answer is shown): the user never
+ * sees a stub like "Until then, keep applying." left over from a dropped
+ * date sentence.
+ */
+export function acceptable(plan: AnswerPlan, previous: string[], text: string): boolean {
+  const dates = createDateFilter(plan);
+  const repeats = createRepeatFilter(previous);
+  const kept = splitSentences(westernDigits(text)).map(s => repeats.transform(dates.transform(s))).join('');
+  const sentences = splitSentences(kept).filter(s => words(s).length >= 3).length;
+  const c = plan.content;
+  const hits = c && !plan.intent.timing ? relevanceHits(c, kept) : MIN_ITEM_HITS;
+  return sentences >= 2 && words(kept).length >= MIN_KEPT_WORDS && hits >= MIN_ITEM_HITS;
+}
+
+/**
+ * What a model adapter adds to its ReplyGuard for this plan: every earlier
+ * reply for the repeat check, the plan's items as `mustMention` for choice /
+ * nature questions, and the template answer as the fallback when both tries
+ * fail (so a repeat is never shown).
+ */
+export function planGuard(plan: AnswerPlan, history: { role: string; content: string }[] = []): Partial<ReplyGuard> {
+  const previous = previousReplies(history);
+  const out: Partial<ReplyGuard> = {};
+  if (previous.length) out.previous = previous;
+  if (plan.route === 'answer' && plan.mode === 'saga') {
+    if (plan.content && !plan.intent.timing) {
+      out.mustMention = relevanceTerms(plan.content);
+      out.holdAll = true;
+      out.accept = (text: string) => acceptable(plan, previous, text);
+    }
+    const tpl = renderTemplate(plan, previous);
+    if (tpl) out.fallback = westernDigits(tpl);
+  }
+  return out;
+}
+
 /**
  * Verify a rendered stream against its plan: the timing repair one whole
  * sentence at a time (createSentenceFilter, so no text is shown and then
@@ -156,19 +303,41 @@ export async function* verifyStream(
   source: AsyncIterable<string>,
   plan: AnswerPlan,
   advice: (reply: string) => string = () => '',
+  history: { role: string; content: string }[] = [],
 ): AsyncGenerator<string> {
   const repair = createTimingRepair(plan);
+  const previous = plan.route === 'answer' && plan.mode === 'saga' ? previousReplies(history) : [];
+  const dates = createDateFilter(plan);
+  const repeats = createRepeatFilter(previous, { keepDated: !!plan.timing?.asked });
   const out: string[] = [];
   let reply = '';
-  const filter = createSentenceFilter(repair.transform, (s) => { out.push(s); reply += s; });
+  const transform = (chunk: string) => repeats.transform(dates.transform(repair.transform(chunk)));
+  const filter = createSentenceFilter(transform, (s) => { out.push(s); reply += s; });
+  let raw = '';
   for await (const token of source) {
+    raw += token;
     filter.push(token);
     while (out.length) yield out.shift()!;
   }
   filter.flush();
   while (out.length) yield out.shift()!;
-  if (!reply.trim()) return;
-  const tail = repair.finish(reply) + advice(reply);
+  if (!raw.trim()) return;
+  // Everything was dropped (all repeats / wrong dates): answer from the plan.
+  if (dates.changes() + repeats.changes() > 0 && words(reply).length < 6) {
+    const tpl = renderTemplate(plan, previous);
+    if (tpl) {
+      const lead = reply.trim() ? ' ' : '';
+      yield lead + tpl + advice(tpl);
+      return;
+    }
+  }
+  let tail = repair.finish(reply);
+  // A "which field?" answer that names none of the plan's items gets them.
+  if (plan.content && !isRelevant(plan, reply)) {
+    const add = contentLead(plan.content, plan.lang, previous.length % 2);
+    tail += ` ${add}`;
+  }
+  tail += advice(reply);
   if (tail) yield tail;
 }
 

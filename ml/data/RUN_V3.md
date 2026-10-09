@@ -238,3 +238,41 @@ Guru set by language (v4): en 87.5 → 90.0, hi 85.0 → 72.5, bn 77.5 → 65.0.
 script_latin_word 2 → 8, date_event_mismatch 3 → 8, date_misattributed 0 → 3. Per guru (v4): love 100 → 87.5,
 health 54.2 → 41.7, family 91.7 → 79.2, career and study unchanged. Decision: OFF (all 189: 84.1% → 79.9% v4);
 the small timing gain doesn't matter after the verify layer, which already puts every shown date in a window.
+
+## Saga v2.3: answer types (app side, 2026-10-09)
+
+Bug from a phone (Career guru, en): "Which roles I should apply for?" and then "Like I'm asking which domain?"
+got the same reply twice ("…the shift toward a new role begins by October 2026…"). Causes, checked in code:
+the intent had no topic for "roles / domain" and no notion of a which / what-kind question, so the plan was
+empty and v2.1 copied the shared Jupiter ingress date ("From around Oct 2026") from the context; and the
+repeat guard decided on the first 16 words (overlap 0.00 for a fresh opener, 0.76 for the whole reply).
+
+App changes (utils/agent): answer kinds + asks + clarification re-reading (intent.ts); a deterministic
+astrologer per ask (astrologer.ts: career field from the 10th, its lord and dispositor, occupants, aspects
+and the Jaimini Amatyakaraka; partner from the 7th + Venus; money 2nd/11th; study 4th/5th/9th; strengths;
+health habits; abroad vs home; business vs job; why-now from the running dasha and Saturn's transit over the
+Moon; no D9/D10); the items on the matching Life areas line (gemma21 `line`) or as instructions (instruct);
+templates for every ask in en/hi/bn that never repeat the thread; verify: unasked dates dropped, sentences
+already said in any earlier reply dropped, a model reply must keep 2+ sentences and use 2+ item words after
+that, else one retry, then the template.
+
+Eval (scratchpad agent/at: eval.ts, score.ts, validate.py; v2.1 .pte, greedy, retry T=0.6): 11
+conversations (the report's two turns + 10 three-turn conversations; career domain / roles, clarifications,
+business vs job, abroad, partner, money, study, strengths, health habits, why-now) x en/hi/bn on 8 profiles
+= 96 turns, run through the real pipeline modules. Baseline = HEAD before this change.
+
+| | baseline | new (line, history kept) |
+|---|---|---|
+| names a plan item (final reply) | 35.4% | 100% |
+| model's first try names one | 36.5% | 52.1% |
+| unasked date (outside engine windows / the current month) | 70.8% | 1.0% |
+| repeats an earlier reply (overlap >= 0.5, turns 2+) | 77.8% | 0% |
+| hi/bn in native script | 100% | 100% |
+| template answer shown | 0% | 81.3% |
+| v5 validator | 30.2% | 64.6% (85.4% counting engine-window dates as known) |
+
+Prompt variants (model's first try names an item): nodate 38.5%, line + clarification sent alone 44.8%,
+line + history kept 52.1% (chosen), line + every which/what question rewritten to the training seed
+phrasing 41.7%. Timing questions: prompts byte-identical (276/276), repaired timing answers identical.
+v2.1 rarely writes a usable domain / trait answer on its own, hence the high template share: the next data
+pass should add answer-type SFT rows built from these plans (the `best fits:` line as input).

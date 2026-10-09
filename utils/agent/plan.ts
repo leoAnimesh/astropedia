@@ -16,7 +16,9 @@ import {
   lordOfHouse, natalChart, timingWindows, topicLinks, TOPIC_RULES, yearsAway,
   type TimingResult, type TimingTopic, type TimingWindow, type Planet,
 } from '../timing-engine';
-import { classifyIntent, relationMatches, type Intent, type Relation } from './intent';
+import { classifyIntent, relationMatches, type Ask, type Intent, type Relation } from './intent';
+import { planAsk, type AnswerContent } from './astrologer';
+import { ASK_QUESTION } from './ask-strings';
 import type { Lang } from './strings';
 
 export type PlanProfile = ContextProfile & { id?: string };
@@ -79,6 +81,18 @@ export type AnswerPlan = {
    * (Saga, Krishna). Model adapters use it only when GURU_CONTEXT_FOCUS is on.
    */
   focus: ContextFocus | null;
+  /**
+   * What a non-timing answer must say (career fields, partner traits, money
+   * sources …), from astrologer.ts; null for timing questions and chat
+   * without an ask. Timing lines are optional in such answers.
+   */
+  content: AnswerContent | null;
+  /**
+   * The question as the model should read it when the user clarified the
+   * previous one ("Like I'm asking which domain?" → "Which field or domain of
+   * work suits me best…?"), in the user's language; null = the question as typed.
+   */
+  rewrite: string | null;
 };
 
 export type PlanInput = {
@@ -98,6 +112,15 @@ export type PlanInput = {
 const ADULT_TOPICS = new Set<string>(['marriage', 'love', 'children']);
 /** From this age, childbirth timing is not given. */
 export const ELDER_AGE = 50;
+
+/**
+ * The guru's ask for a "which / what kind" question that names no topic
+ * ("Which roles should I apply for?" in Career, "What will they be like?" in
+ * Love). Saga reads "what are my strengths"-type questions.
+ */
+export const GURU_DEFAULT_ASK: Partial<Record<AgentId, Ask>> = {
+  career: 'careerField', love: 'partner', study: 'studyField', health: 'wellbeing', saga: 'strengths',
+};
 
 /** The guru's topic for a "when?" that names none (Love guru: marriage, …). */
 export const GURU_DEFAULT_TOPIC: Partial<Record<AgentId, TimingTopic>> = {
@@ -177,6 +200,7 @@ export function buildPlan(input: PlanInput): AnswerPlan {
     subjectSwitched: switched, missingRelation: missing, age,
     route: 'answer', decline: null, canned: null, timing: null, notes: [], facts: [], advice: intent.advice,
     focus: planFocus(agent, intent.topic && intent.topic !== 'chart' ? intent.topic : null),
+    content: null, rewrite: null,
   };
 
   if (intent.safety === 'crisis' && GURUS[agent]?.crisisGuard !== false) return { ...plan, route: 'crisis' };
@@ -196,8 +220,31 @@ export function buildPlan(input: PlanInput): AnswerPlan {
   if (topic === 'children' && age != null && age >= ELDER_AGE) {
     return { ...plan, route: 'decline', decline: 'elderChildren' };
   }
-  if (!topic) return plan;
-  return withTiming(plan, topic, intent.timing);
+  const withContent = (p: AnswerPlan): AnswerPlan => {
+    const ask = askFor(intent, agent);
+    if (!ask || intent.topic === 'chart') return p;
+    const content = planAsk(ask, intent.kind, p.subject, now, topic);
+    if (!content) return p;
+    return { ...p, content, rewrite: intent.clarifies ? ASK_QUESTION[ask][input.lang] : null };
+  };
+  if (!topic) return withContent(plan);
+  return withContent(withTiming(plan, topic, intent.timing));
+}
+
+/**
+ * The ask a question gets: its own (intent.ask), else the guru's default for
+ * a "which / what kind / how can I" question without a topic of its own, or
+ * whose topic is the guru's own ("which job" in Career).
+ */
+export function askFor(intent: Intent, agent: AgentId): Ask | null {
+  if (intent.kind === 'timing') return null;
+  if (intent.ask) return intent.ask;
+  const def = GURU_DEFAULT_ASK[agent];
+  if (!def) return null;
+  const own = !intent.topic || intent.topic === GURU_DEFAULT_TOPIC[agent] || (agent === 'saga' && intent.topic === 'general');
+  if (!own) return null;
+  if (agent === 'saga') return intent.kind === 'nature' && !intent.topic ? def : null;
+  return intent.kind === 'choice' || intent.kind === 'nature' || (intent.kind === 'advice' && def !== 'partner') ? def : null;
 }
 
 function withTiming(plan: AnswerPlan, topic: TimingTopic, asked: boolean): AnswerPlan {

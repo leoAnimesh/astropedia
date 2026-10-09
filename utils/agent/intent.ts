@@ -20,7 +20,12 @@
  *  - "exact date / which day / কোন তারিখ / किस दिन" → exactDate;
  *  - planet, transit and dasha questions ("when does my sade sati end") are
  *    topic 'chart': their dates come from the chart context, not the engine;
- *  - follow-ups without a topic ("When exactly?") inherit the last topic.
+ *  - follow-ups without a topic ("When exactly?") inherit the last topic;
+ *  - answer kind (timing / choice / nature / advice / yes-no / why) and the
+ *    ask a planner exists for ("which roles should I apply for" → careerField);
+ *  - clarifications ("Like I'm asking which domain?", "No, I mean…", "what
+ *    about…", "मतलब…", "মানে…") re-read the previous question: its topic, kind
+ *    and ask fill in what the clarification leaves out.
  */
 import type { TimingTopic } from '../timing-engine';
 import { cannedQuestion, isCrisisMessage, isTimingQuestion, adviceNeeded, words } from '../reply-guards';
@@ -55,7 +60,40 @@ export type Intent = {
   safety: SafetyClass;
   /** Health / legal questions: the answer must point to a doctor / lawyer. */
   advice: ('doctor' | 'lawyer')[];
+  /** What kind of answer the question wants (timing, a choice, a description, advice, yes/no, why). */
+  kind: AnswerKind;
+  /**
+   * The concrete thing a non-timing question asks for, when the plan has an
+   * astrologer's method for it ("which field suits me" → careerField). Null
+   * when there is none (or the guru's default is used: plan.ts).
+   */
+  ask: Ask | null;
+  /**
+   * The message clarifies the previous question ("Like I'm asking which
+   * domain?", "No, I mean…", "what about…"): topic / kind / ask were
+   * re-read with the previous question, not answered as a new generic one.
+   */
+  clarifies: boolean;
 };
+
+/**
+ * - timing  "when…", "this year?", "kab", "কবে"
+ * - choice  "which field / role / course / city", "business or job", "kaun sa", "কোন"
+ * - nature  "what kind of partner", "how will my wife be", "my strengths", "कैसी", "কেমন"
+ * - advice  "how can I improve…", "what should I do", "कैसे", "কীভাবে"
+ * - yesno   "will I…?", "should I…?", "क्या…", "…হবে কি"
+ * - why     "why is this happening", "क्यों", "কেন"
+ */
+export type AnswerKind = 'timing' | 'choice' | 'nature' | 'advice' | 'yesno' | 'why' | 'general';
+
+/** Non-timing questions plan.ts has a deterministic astrologer's method for. */
+export type Ask =
+  | 'careerField' | 'businessVsJob' | 'partner' | 'moneySources' | 'studyField' | 'relocation'
+  | 'strengths' | 'wellbeing' | 'whyNow';
+
+export const ASKS: readonly Ask[] = [
+  'careerField', 'businessVsJob', 'partner', 'moneySources', 'studyField', 'relocation', 'strengths', 'wellbeing', 'whyNow',
+];
 
 const nfc = (s: string) => s.normalize('NFC').toLowerCase().replace(/[’`]/g, "'");
 
@@ -74,7 +112,11 @@ const LATIN: Record<IntentTopic, Lex> = {
     ['pyaa?r', 3], ['prem\\b', 3], ['premik', 3], ['mohabb?at', 3], ['bhalob[ae]sh?a', 3], ['partner', 1]],
   job: [['jobs?\\b', 3], ['employ', 2.5], ['hired', 2.5], ['hiring', 2], ['offer letter', 3], ['interview', 2.5], ['placement', 2.5],
     ['naukri', 3], ['naukari', 3], ['nokri', 3], ['chakri', 3], ['chakori', 3], ['sarkari', 2], ['government post', 3],
-    ['career', 1.5], ['work\\b', 0.8], ['kaam\\b', 0.8], ['kaj\\b', 0.8], ['unemploy', 3], ['switch', 1.5], ['resign', 1.5]],
+    ['career', 1.5], ['work\\b', 0.8], ['kaam\\b', 0.8], ['kaj\\b', 0.8], ['unemploy', 3], ['switch', 1.5], ['resign', 1.5],
+    // "Which roles should I apply for / which domain / what profession"
+    ['roles?\\b', 2], ['apply\\b', 1.5], ['applying', 1.5], ['domains?\\b', 2], ['professions?', 2.5], ['occupation', 2.5],
+    ['sectors?\\b', 2], ['industr(?:y|ies)', 2], ['line of work', 3], ['(?:which|what|right|best) fields?\\b', 2], ['fields? of work', 3],
+    ['pesha', 2.5], ['kshetra', 1.5]],
   promotion: [['promot', 4], ['raise\\b', 2.5], ['hike', 3], ['increment', 3], ['appraisal', 3], ['higher post', 3],
     ['senior (?:role|position)', 3], ['career growth', 4], ['growth in (?:my )?(?:career|job|office)', 4], ['taraq?q?ee?', 3],
     ['tarakk?i', 3], ['padonn?ati', 4]],
@@ -93,14 +135,14 @@ const LATIN: Record<IntentTopic, Lex> = {
     ['parenthood', 3], ['bacc?h?a\\b', 3], ['bacc?he\\b', 3], ['santaa?n', 3], ['sontan', 3], ['aulaa?d', 3], ['son\\b', 1],
     ['daughter', 1], ['ivf', 2]],
   education: [['stud(?:y|ies|ying)', 3], ['exams?\\b', 3], ['admission', 3], ['college', 2.5], ['universit', 2.5], ['school', 2],
-    ['degree', 2.5], ['masters', 2.5], ['\\bmba\\b', 2.5], ['phd', 2.5], ['\\bneet\\b', 3], ['\\bjee\\b', 3], ['upsc', 3],
+    ['degree', 2.5], ['masters', 2.5], ['subjects?\\b', 1.5], ['\\bmba\\b', 2.5], ['phd', 2.5], ['\\bneet\\b', 3], ['\\bjee\\b', 3], ['upsc', 3],
     ['\\bgate\\b', 2], ['\\bcat\\b', 1.5], ['board', 1.5], ['results?\\b', 1.5], ['scholarship', 3], ['course', 1.5],
     ['padh?ai', 3], ['pariksha', 3], ['porashona', 3], ['porasona', 3], ['porikkha', 3], ['competitive', 2]],
   foreign: [['abroad', 4], ['foreign', 3], ['overseas', 3], ['visa', 3], ['green card', 3], ['\\bpr\\b', 2], ['immigra', 3],
     ['emigra', 3], ['relocat', 2], ['onsite', 2.5], ['videsh', 4], ['bidesh', 4], ['pardes', 3],
     ['\\b(?:usa|us|america|canada|uk|london|australia|germany|dubai|europe|japan|singapore|new zealand)\\b', 2]],
   health: [['health', 3], ['recover', 3], ['illness', 3], ['sick', 2.5], ['disease', 3], ['surgery', 3], ['\\bheal', 2.5],
-    ['fitness', 2], ['\\bpain', 2], ['sehat', 3], ['tabiy[ae]t', 3], ['bimaa?ri', 3], ['shorir', 2.5], ['sasth?y', 3],
+    ['fitness', 2], ['\\bpain', 2], ['stress', 2], ['tired', 2.5], ['fatigue', 2.5], ['healthy', 3], ['habits?\\b', 1], ['sehat', 3], ['tabiy[ae]t', 3], ['bimaa?ri', 3], ['shorir', 2.5], ['sasth?y', 3],
     ['osukh', 3], ['asukh', 3]],
   legal: [['court', 3], ['case\\b', 2], ['lawsuit', 3], ['legal', 3], ['litigation', 3], ['dispute', 2.5], ['police', 2.5],
     ['divorce', 3], ['custody', 3], ['bail\\b', 3], ['jail', 3], ['mukad?d?a?ma', 3], ['adaa?lat', 3], ['adalot', 3],
@@ -118,7 +160,9 @@ const INDIC: Record<IntentTopic, Lex> = {
   love: [['प्यार', 3], ['प्रेम', 3], ['मोहब्बत', 3], ['गर्लफ्रेंड', 2.5], ['बॉयफ्रेंड', 2.5], ['रिलेशनशिप', 2.5], ['क्रश', 2.5],
     ['প্রেম', 3], ['ভালোবাসা', 3], ['ভালবাসা', 3], ['প্রেমিক', 3], ['সম্পর্ক', 2], ['ক্রাশ', 2.5], ['গার্লফ্রেন্ড', 2.5], ['বয়ফ্রেন্ড', 2.5]],
   job: [['नौकरी', 3], ['नोकरी', 3], ['रोज़गार', 3], ['रोजगार', 3], ['इंटरव्यू', 2.5], ['प्लेसमेंट', 2.5], ['जॉब', 3], ['करियर', 1.5],
-    ['कैरियर', 1.5], ['काम', 0.8], ['চাকরি', 3], ['চাকরী', 3], ['জব', 3], ['ইন্টারভিউ', 2.5], ['ক্যারিয়ার', 1.5], ['কেরিয়ার', 1.5], ['কাজ', 0.8]],
+    ['कैरियर', 1.5], ['काम', 0.8], ['पेशा', 2.5], ['पेशे', 2.5], ['आवेदन', 1.5], ['फील्ड', 2], ['फ़ील्ड', 2], ['क्षेत्र', 1.5], ['डोमेन', 2], ['रोल', 2],
+    ['চাকরি', 3], ['চাকরী', 3], ['জব', 3], ['ইন্টারভিউ', 2.5], ['ক্যারিয়ার', 1.5], ['কেরিয়ার', 1.5], ['কাজ', 0.8],
+    ['পেশা', 2.5], ['আবেদন', 1.5], ['ফিল্ড', 2], ['ক্ষেত্র', 1.5], ['ডোমেন', 2], ['রোল', 2], ['লাইন', 1]],
   promotion: [['प्रमोशन', 4], ['पदोन्नति', 4], ['तरक्की', 3], ['तरक़्क़ी', 3], ['इंक्रीमेंट', 3], ['वेतन वृद्धि', 3],
     ['প্রমোশন', 4], ['পদোন্নতি', 4], ['ইনক্রিমেন্ট', 3], ['বেতন বৃদ্ধি', 3]],
   business: [['व्यापार', 3], ['व्यवसाय', 3], ['बिज़नेस', 3], ['बिजनेस', 3], ['धंधा', 3], ['दुकान', 2], ['स्टार्टअप', 3],
@@ -134,13 +178,13 @@ const INDIC: Record<IntentTopic, Lex> = {
   children: [['बच्चा', 3], ['बच्चे', 3], ['संतान', 3], ['सन्तान', 3], ['औलाद', 3], ['गर्भ', 3], ['प्रेग्नेंसी', 3], ['प्रेगनेंसी', 3],
     ['সন্তান', 3], ['বাচ্চা', 3], ['শিশু', 2], ['গর্ভ', 3], ['প্রেগন্যান্ট', 3]],
   education: [['पढ़ाई', 3], ['पढ़ाई', 3], ['परीक्षा', 3], ['एग्जाम', 3], ['एग्ज़ाम', 3], ['एडमिशन', 3], ['दाखिला', 3], ['कॉलेज', 2.5],
-    ['स्कूल', 2], ['डिग्री', 2.5], ['रिजल्ट', 2], ['पढ़ाई', 3],
+    ['स्कूल', 2], ['डिग्री', 2.5], ['रिजल्ट', 2], ['पढ़ाई', 3], ['विषय', 1.5], ['पढ़ना', 2], ['पढ़ूँ', 2], ['कोर्स', 2.5],
     ['পড়াশোনা', 3], ['পড়াশোনা', 3], ['পড়াশুনা', 3], ['পড়াশুনা', 3], ['পরীক্ষা', 3], ['ভর্তি', 3], ['কলেজ', 2.5], ['স্কুল', 2],
-    ['ডিগ্রি', 2.5], ['রেজাল্ট', 2]],
+    ['ডিগ্রি', 2.5], ['রেজাল্ট', 2], ['বিষয়', 1.5], ['বিষয়', 1.5], ['পড়া উচিত', 2], ['কোর্স', 2.5]],
   foreign: [['विदेश', 4], ['परदेस', 3], ['वीज़ा', 3], ['वीजा', 3], ['अमेरिका', 2], ['कनाडा', 2], ['लंदन', 2],
     ['বিদেশ', 4], ['প্রবাস', 3], ['ভিসা', 3], ['আমেরিকা', 2], ['কানাডা', 2], ['লন্ডন', 2]],
-  health: [['सेहत', 3], ['स्वास्थ्य', 3], ['तबीयत', 3], ['तबियत', 3], ['बीमारी', 3], ['ठीक हो', 2],
-    ['স্বাস্থ্য', 3], ['শরীর', 2.5], ['অসুখ', 3], ['সুস্থ', 2.5], ['রোগ', 2.5]],
+  health: [['सेहत', 3], ['स्वास्थ्य', 3], ['तबीयत', 3], ['तबियत', 3], ['बीमारी', 3], ['ठीक हो', 2], ['स्वस्थ', 3], ['तनाव', 2], ['थकान', 2.5], ['आदत', 1],
+    ['স্বাস্থ্য', 3], ['শরীর', 2.5], ['অসুখ', 3], ['সুস্থ', 2.5], ['রোগ', 2.5], ['ক্লান্ত', 2.5], ['মানসিক চাপ', 2], ['অভ্যাস', 1]],
   legal: [['कोर्ट', 3], ['अदालत', 3], ['मुकदमा', 3], ['मुक़दमा', 3], ['केस', 2], ['कानूनी', 3], ['क़ानूनी', 3], ['तलाक', 3], ['पुलिस', 2.5],
     ['আদালত', 3], ['কোর্ট', 3], ['মামলা', 3], ['কেস', 2], ['আইনি', 3], ['ডিভোর্স', 3], ['পুলিশ', 2.5]],
   general: [['किस्मत', 3], ['क़िस्मत', 3], ['भाग्य', 3], ['अच्छा समय', 2], ['अच्छे दिन', 3], ['बुरा समय', 2.5],
@@ -302,6 +346,152 @@ const DEATH = new RegExp([
   'मौत कब', 'मृत्यु कब', 'कब मरूंगा', 'कब मरूँगा', 'कब मरूंगी', 'आयु कितनी', 'कितने साल जीऊंगा', 'মৃত্যু কবে', 'কবে মারা', 'কবে মরব', 'আয়ু কত', 'আয়ু কত',
 ].join('|'), 'i');
 
+// ─── Answer kind, ask, clarification ─────────────────────────────────────────
+
+const rx = (parts: string[]) => new RegExp(parts.join('|'), 'i');
+
+const WHY = rx(['\\bwhy\\b', '\\bkyu?o?n\\b', '\\bkyun\\b', '\\bkeno\\b', '\\bkeno\\b', 'क्यों', 'क्यूं', 'क्यूँ', 'কেন']);
+
+const CHOICE = rx([
+  '\\bwhich\\b', '\\bwhat (?:fields?|domains?|lines?|sectors?|industr(?:y|ies)|careers?|jobs?|roles?|professions?|course|subjects?|stream|branch|city|country|place)\\b',
+  '\\bwhat (?:kind|type|sort) of (?:work|jobs?|careers?|roles?|business|course|studies|degree)\\b',
+  '\\bwhat should i (?:study|choose|pick|take|become|apply|do (?:as|for) (?:a )?(?:career|job|living))\\b',
+  '\\b(?:best|right|suitable|ideal) (?:fields?|domains?|careers?|roles?|lines?|professions?|course|subjects?|stream|city|country|place)\\b',
+  '\\bwhere (?:will|would|should|can|do|am|is)\\b', '\\bsuits? me\\b', '\\bsuited (?:to|for) me\\b', '\\bgood fit\\b', '\\bright fit\\b',
+  '\\b(?:should|shall|can) i\\b.*\\bor\\b', '\\b(?:business|job|naukri|chakri) (?:or|ya|naki|vs\\.?) (?:business|job|naukri|chakri|vyapar|byabsa)\\b',
+  '\\b(?:kaun ?sa|kaun ?si|kaun ?se|konsa|konsi|kon ?sa|kis (?:field|line|kshetra|tarah k[ae]|type k[ae]))\\b', '\\bkon (?:line|field|chakri|kaj|bishoy|subject|dik)\\b', '\\bkin (?:roles?|fields?|jobs?|companies)\\b',
+  'किन ', 'किस ', 'कौन सा', 'कौन सी', 'कौन से', 'कौनसा', 'कौनसी', 'कौन-सा', 'कौन-सी', 'किस क्षेत्र', 'किस फील्ड', 'किस फ़ील्ड', 'किस लाइन', 'किस तरह का काम',
+  'कोन सा', 'किस तरह', 'किस प्रकार', 'कहाँ', 'कहां', 'चाहिए या ', 'या नौकरी', 'या व्यापार', 'या बिज़नेस', 'या बिजनेस',
+  'কোন ', 'কোনটা', 'কোনটি', 'কী ধরনের', 'কি ধরনের', 'কোন ধরনের', 'কোথায়', 'কোথা থেকে', 'কী নিয়ে', 'কি নিয়ে', 'কী নিয়ে', 'কি নিয়ে', 'নাকি',
+]);
+
+const NATURE = rx([
+  '\\bwhat (?:kind|type|sort) of\\b', '\\bhow (?:will|would) (?:my|be)\\b', '\\bhow is my\\b', '\\bwhat (?:will|would) my \\w+(?: \\w+)? be like\\b',
+  '\\bdescribe\\b', '\\b(?:nature|personality|character|temperament|strengths?|weakness(?:es)?|talents?|qualities|good at|gifts?)\\b',
+  '\\bwhat am i\\b', '\\bwho am i\\b', '\\bwhat (?:is|are) my\\b',
+  '\\bkaisa\\b', '\\bkaisi\\b', '\\bkaise (?:hog|hon)', '\\bswabhav\\b', '\\bkemon\\b', '\\bshobhab\\b',
+  'कैसा', 'कैसी', 'कैसे होंगे', 'कैसे होगें', 'स्वभाव', 'खूबी', 'खूबियाँ', 'खूबियां', 'ख़ूबी', 'खूबियाँ', 'खूबियां', 'कमज़ोरी', 'कमजोरी', 'ताकत', 'ताक़त', 'प्रतिभा',
+  'কেমন', 'স্বভাব', 'গুণ', 'দুর্বলতা', 'প্রতিভা', 'শক্তির দিক',
+]);
+
+const ADVICE = rx([
+  '\\bhow (?:can|do|should|could|to|would) (?:i|we)\\b', '\\bhow to\\b', '\\bwhat (?:should|can|could|must) (?:i|we) do\\b', '\\bwhat to do\\b',
+  '\\btips?\\b', '\\badvice\\b', '\\bremed(?:y|ies)\\b', '\\bimprove\\b', '\\bincrease\\b', '\\bboost\\b', '\\bgrow my\\b', '\\bget better\\b',
+  '\\bkaise\\b', '\\bkya kar(?:u|un|oon|na chahiye)\\b', '\\bupay\\b', '\\bupaay\\b', '\\bkivabe\\b', '\\bki ?bhabe\\b', '\\bki korbo\\b', '\\bki kora uchit\\b',
+  'कैसे', 'उपाय', 'क्या करूँ', 'क्या करूं', 'क्या करना चाहिए', 'सुधार', 'बढ़ा',
+  'কীভাবে', 'কিভাবে', 'কী ভাবে', 'কি ভাবে', 'কেমন করে', 'উপায়', 'উপায়', 'কী করা উচিত', 'কি করা উচিত', 'কী করব', 'কি করব', 'বাড়া',
+]);
+
+const YESNO = rx([
+  '^\\s*(?:will|would|can|could|should|shall|is|are|am|do|does|have|has)\\b', '\\b(?:will|can|should|shall) i\\b', '\\bam i\\b', '\\bis (?:it|there)\\b',
+  '\\bkya (?:mujhe|meri|mera|mere|main|mai|hum)\\b', '\\b(?:hoga|hogi|milega|milegi) (?:kya|ki nahi)\\b', '\\b(?:hobe|pabo|parbo) (?:ki|kina)\\b',
+  '^\\s*क्या ', 'क्या मुझे', 'क्या मैं', 'क्या मेरी', 'क्या मेरा', 'होगा या नहीं', 'होगी या नहीं', 'मिलेगी या नहीं',
+  'আমার কি ', 'আমি কি ', 'হবে কি', 'পাব কি', 'পাবো কি', 'পারব কি', 'পারবো কি', 'হবে কিনা', 'কি\\s*[?？]\\s*$',
+]);
+
+/** "Like I'm asking which domain?", "No, I mean…", "what about…", "मेरा मतलब…", "মানে…". */
+const CLARIFY = rx([
+  "^\\s*(?:like|i mean|i meant|no+|nope|not that|not when|i'?m asking|i am asking|i was asking|i asked|my question (?:is|was)|what about|and what about|how about|i want to know|i wanted to know|actually|rather|instead)\\b",
+  "\\b(?:i'?m|i am|i was) asking\\b", '\\bi mean\\b', '\\bnot (?:the )?(?:timing|time|when|date)\\b', "\\bi didn'?t ask (?:when|about)\\b",
+  '^\\s*(?:matlab|mera matlab|mtlb|mane|mani|ami bolchi|ami jante chai(?:chi)?|nahi|na)\\b', '\\bpuch (?:raha|rahi) (?:hu|hoon|hun)\\b',
+  '^\\s*(?:मतलब|मेरा मतलब|नहीं|ना)', '^\\s*और [^?]*के बारे में', 'मेरा सवाल', 'मैं पूछ रहा', 'मैं पूछ रही', 'समय नहीं',
+  '^\\s*(?:মানে|না[,।\\s])', '^\\s*আর [^?]*[?]', 'আমি জানতে চাইছি', 'আমি জানতে চাই', 'আমি বলছি', 'আমার প্রশ্ন', 'আমি জিজ্ঞেস করছি', 'সময় না',
+]);
+
+const ASK_WORDS: [Ask, RegExp][] = [
+  ['businessVsJob', rx([
+    '\\b(?:business|vyapar|byabsa|startup)\\b.*\\b(?:or|ya|naki|vs\\.?|versus)\\b.*\\b(?:job|naukri|chakri|service)\\b',
+    '\\b(?:job|naukri|chakri|service)\\b.*\\b(?:or|ya|naki|vs\\.?|versus)\\b.*\\b(?:business|vyapar|byabsa|startup)\\b',
+    '(?:व्यापार|बिज़नेस|बिजनेस|धंधा).*(?:या|अथवा).*(?:नौकरी|जॉब)', '(?:नौकरी|जॉब).*(?:या|अथवा).*(?:व्यापार|बिज़नेस|बिजनेस|धंधा)',
+    '(?:ব্যবসা).*(?:নাকি|না|বা|অথবা).*(?:চাকরি)', '(?:চাকরি).*(?:নাকি|না|বা|অথবা).*(?:ব্যবসা)',
+    '\\bsuited for business\\b', '\\bgood (?:for|at) business\\b', '\\bshould i (?:start|do) (?:a |my own )?business\\b',
+  ])],
+  ['strengths', rx([
+    '\\b(?:strengths?|weakness(?:es)?|talents?|good at|gifts?|personality|nature|temperament|character)\\b', '\\bwho am i\\b',
+    '\\bswabhav\\b', '\\bshobhab\\b', 'स्वभाव', 'खूबी', 'खूबियाँ', 'खूबियां', 'ख़ूबी', 'कमज़ोरी', 'कमजोरी', 'ताकत', 'ताक़त', 'प्रतिभा', 'স্বভাব', 'গুণ', 'দুর্বলতা', 'প্রতিভা',
+  ])],
+  ['careerField', rx([
+    '\\b(?:fields?|domains?|roles?|sectors?|industr(?:y|ies)|lines? of work|professions?|occupation|careers?|kind of (?:work|job)|type of (?:work|job))\\b',
+    '\\bwhich (?:job|company|companies)\\b', '\\bwhat (?:job|work)\\b', '\\bapply (?:for|to)\\b', '\\bsuits? me\\b', '\\bpesha\\b',
+    'पेशा', 'पेशे', 'फील्ड', 'फ़ील्ड', 'क्षेत्र', 'डोमेन', 'रोल', 'लाइन', 'करियर', 'कैरियर', 'किस तरह का काम', 'कौन सी नौकरी', 'कौन सा काम',
+    'পেশা', 'ফিল্ড', 'ক্ষেত্র', 'ডোমেন', 'রোল', 'লাইন', 'ক্যারিয়ার', 'কেরিয়ার', 'কোন চাকরি', 'কোন কাজ', 'কী কাজ', 'কি কাজ',
+  ])],
+  ['partner', rx([
+    '\\b(?:partner|spouse|wife|husband|life ?partner|soul ?mate|bride|groom|jeevan ?sathi|patni|pati|bou|bor)\\b', '\\bwho will i marry\\b',
+    '\\b(?:love|arranged) (?:or|vs\\.?) (?:love|arranged)\\b',
+    'जीवनसाथी', 'जीवन साथी', 'पत्नी', 'पति', 'साथी', 'জীবনসঙ্গী', 'স্ত্রী', 'স্বামী', 'বউ', 'বর', 'সঙ্গী',
+  ])],
+  ['moneySources', rx([
+    '\\b(?:earn|earning|income|source of (?:money|income)|side income|money|wealth|rich|invest\\w*|savings?|kamai|paisa|taka)\\b',
+    'कमाई', 'आमदनी', 'पैसा', 'पैसे', 'धन', 'निवेश', 'আয়', 'আয়', 'টাকা', 'রোজগার', 'বিনিয়োগ', 'বিনিয়োগ', 'অর্থ',
+  ])],
+  ['studyField', rx([
+    '\\b(?:study|studies|course|subjects?|stream|branch|degree|masters|mba|phd|major|specializ\\w+|specialis\\w+|science|commerce|arts|engineering|medical)\\b',
+    'पढ़ाई', 'पढ़ाई', 'विषय', 'कोर्स', 'डिग्री', 'स्ट्रीम', 'পড়াশোনা', 'পড়াশোনা', 'বিষয়', 'বিষয়', 'কোর্স', 'ডিগ্রি', 'স্ট্রিম',
+  ])],
+  ['relocation', rx([
+    '\\b(?:abroad|foreign|overseas|settle|relocat\\w*|move|moving|shift|city|country|place to live|where should i live|videsh|bidesh)\\b',
+    'विदेश', 'शहर', 'देश', 'बसना', 'बस जा', 'शिफ्ट', 'বিদেশ', 'শহর', 'দেশ', 'থিতু', 'শিফট',
+  ])],
+  ['wellbeing', rx([
+    '\\b(?:health|healthy|fitness|fit|energy|sleep|stress|diet|body|habits?|sehat|swasthya)\\b',
+    'सेहत', 'स्वास्थ्य', 'तबीयत', 'नींद', 'तनाव', 'স্বাস্থ্য', 'শরীর', 'ঘুম', 'মানসিক চাপ',
+  ])],
+];
+
+/** Kind of answer a message wants (`timing` comes from the timing cues). */
+export function answerKind(question: string, timing: boolean): AnswerKind {
+  const q = nfc(question);
+  if (timing) return 'timing';
+  if (WHY.test(q)) return 'why';
+  if (CHOICE.test(q)) return 'choice';
+  if (NATURE.test(q)) return 'nature';
+  if (ADVICE.test(q)) return 'advice';
+  if (YESNO.test(q)) return 'yesno';
+  return 'general';
+}
+
+/** A message that clarifies the previous question rather than asking a new one. */
+export function isClarification(question: string): boolean {
+  return CLARIFY.test(nfc(question));
+}
+
+/** Topics whose non-timing questions map to an ask without a keyword (topic → ask). */
+const TOPIC_ASK: Partial<Record<IntentTopic, Ask>> = {
+  job: 'careerField', promotion: 'careerField', business: 'businessVsJob', marriage: 'partner', love: 'partner',
+  money: 'moneySources', education: 'studyField', foreign: 'relocation', health: 'wellbeing',
+};
+
+/**
+ * The ask for a non-timing question: why-questions explain the current phase;
+ * otherwise the first ask whose words the question uses (business-vs-job and
+ * strengths before the broad career words), then the topic's own ask. Yes/no
+ * questions only get an ask from explicit words ("should I do business or a
+ * job?"); "will I get a job?" stays a topic question with its window.
+ */
+export function askOf(question: string, kind: AnswerKind, topic: IntentTopic | null): Ask | null {
+  if (kind === 'timing') return null;
+  if (kind === 'why') return 'whyNow';
+  const q = nfc(question);
+  const words = ASK_WORDS.filter(([, re]) => re.test(q)).map(([a]) => a);
+  if (words.includes('businessVsJob')) return 'businessVsJob';
+  if (kind === 'yesno') {
+    if (words.includes('relocation') && (topic === 'foreign' || /\bsettle|बस|থিতু/.test(q))) return 'relocation';
+    return null;
+  }
+  if (kind === 'general') return null;
+  // "What will their nature be like?" in a partner thread describes the partner.
+  if ((topic === 'marriage' || topic === 'love') && (kind === 'nature' || kind === 'choice')) return 'partner';
+  if (words.includes('strengths') && (!topic || topic === 'general' || kind === 'nature')) return 'strengths';
+  // The topic decides between overlapping words ("which course for my career" → study).
+  const own = topic ? TOPIC_ASK[topic] : undefined;
+  if (own && words.includes(own)) return own;
+  if (words.length) return words[0];
+  // "How can I improve my love life?" is advice, not a partner description.
+  if (kind === 'advice' && own === 'partner') return null;
+  return own ?? null;
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 /**
@@ -349,6 +539,19 @@ export function classifyIntent(question: string, previousQuestions: string[] = [
     }
   }
   const timing = isTimingQuestion(question) || EXTRA_TIMING.test(q) || EXACT.test(q);
+  let kind = answerKind(question, timing);
+  let ask = askOf(question, kind, topic);
+  // "Like I'm asking which domain?": re-read the previous question with the
+  // clarification (its topic / kind / ask fill what this message leaves out).
+  const prevQ = previousQuestions[previousQuestions.length - 1];
+  const clarifies = !!prevQ && isClarification(question);
+  if (clarifies) {
+    const prev = classifyIntent(prevQ, previousQuestions.slice(0, -1));
+    if ((!topic || inherited) && prev.topic) { topic = prev.topic; inherited = true; }
+    if ((kind === 'general' || kind === 'yesno') && prev.kind !== 'timing') kind = prev.kind;
+    ask = askOf(question, kind, topic) ?? (kind === prev.kind || kind === 'general' ? prev.ask : null)
+      ?? askOf(`${prevQ} ${question}`, kind, topic);
+  }
   const canned = cannedQuestion(question);
   const safety: SafetyClass = isCrisisMessage(question) ? 'crisis' : canned ?? (DEATH.test(q) ? 'death' : null);
   return {
@@ -363,6 +566,9 @@ export function classifyIntent(question: string, previousQuestions: string[] = [
     inherited,
     safety,
     advice: adviceNeeded(question),
+    kind,
+    ask,
+    clarifies,
   };
 }
 

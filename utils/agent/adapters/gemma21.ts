@@ -27,8 +27,9 @@ import { GURU_CONTEXT_FOCUS } from '../../../constants/gurus';
 import type { AnswerPlan } from '../plan';
 import type { Lang } from '../strings';
 import {
-  krishnaSystem, readingSystem, sagaSystem, titlePrompt, isoDay, READING_USER, type TimingPromptMode,
+  krishnaSystem, readingSystem, sagaChatParts, titlePrompt, isoDay, READING_USER, type ContentPromptMode, type TimingPromptMode,
 } from './gemma21-prompt';
+import { planGuard } from '../verify';
 import type {
   AdapterTask, ChatTurn, FollowUpsRequest, ModelAdapter, ReadingRequest, ReadingResult, RenderRequest, TitleRequest,
 } from './types';
@@ -42,6 +43,16 @@ import type {
  * 100% land in an engine window. See ml/data/RUN_V3.md "Saga v2.2: timing windows".
  */
 export const TIMING_PROMPT_MODE: TimingPromptMode = 'line-bottom';
+
+/**
+ * How a non-timing answer's plan is shaped into the prompt (gemma21-prompt.ts
+ * ContentPromptMode), and whether a clarification ("Like I'm asking which
+ * domain?") is sent as the plan's standalone question without the earlier
+ * turns. Chosen by the answer-type eval (scratchpad agent/at, v2.1 .pte); see
+ * the numbers in ml/data/RUN_V3.md "Saga v2.3: answer types".
+ */
+export const CONTENT_PROMPT_MODE: ContentPromptMode = 'line';
+export const CLARIFY_DROPS_HISTORY = false;
 
 // Saga chats carry the last couple of turns; the model was trained on up to two.
 const SAGA_HISTORY_MESSAGES = 4;
@@ -272,22 +283,24 @@ export const gemma21Adapter: ModelAdapter = {
       return streamLocal(messages, REPLY_MAX_TOKENS, { suffix: `\n\n${formatGitaQuote(verse, plan.lang)}`, guard });
     }
     const t = plan.timing;
-    const system = sagaSystem({
-      profile: plan.subject,
-      lang: plan.lang,
-      now: plan.now,
+    const { system, question, dropHistory } = sagaChatParts(plan, {
+      timingMode: CONTEXT_VERSION === 2 ? TIMING_PROMPT_MODE : 'baseline',
+      contentMode: CONTEXT_VERSION === 2 ? CONTENT_PROMPT_MODE : 'baseline',
       focus: GURU_CONTEXT_FOCUS ? plan.focus : null,
-      timing: t && t.asked && plan.route === 'answer' && CONTEXT_VERSION === 2
-        ? { topic: t.topic, windows: t.result.windows, mode: TIMING_PROMPT_MODE } : null,
+      clarifyDropsHistory: CLARIFY_DROPS_HISTORY,
     });
     const history = modelTurns(req.history);
-    const question = westernDigits(plan.question);
     const messages: ChatMessage[] = [
       { role: 'system', content: system },
-      ...sagaHistory(system, history, question),
+      ...(dropHistory ? [] : sagaHistory(system, history, question)),
       { role: 'user', content: question },
     ];
-    const guard = replyGuard(plan.lang, [plan.subject.name, req.userName], history, question, !!t?.asked);
+    const names = [plan.subject.name, req.userName];
+    const base = replyGuard(plan.lang, names, history, westernDigits(plan.question), !!t?.asked);
+    const extra = CONTEXT_VERSION === 2 ? planGuard(plan, req.history) : {};
+    const guard = base || Object.keys(extra).length
+      ? { lang: plan.lang, ignore: names.flatMap(n => (n ? [n.split(' ')[0]] : [])), ...base, ...extra }
+      : null;
     if (CONTEXT_VERSION !== 2) return streamLocal(messages, REPLY_MAX_TOKENS, { guard });
     // v2.1's "about N months from now" countdowns are wrong almost every
     // time: they are cut sentence by sentence before display.

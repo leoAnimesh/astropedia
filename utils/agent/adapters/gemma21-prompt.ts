@@ -21,6 +21,12 @@ import {
 } from '../../astrology';
 import { dateInWindows, type TimingTopic, type TimingWindow } from '../../timing-engine';
 import { focusContext, type ContextFocus } from '../../guru-context';
+import type { AnswerContent } from '../astrologer';
+import { ASK_QUESTION } from '../ask-strings';
+import type { AnswerPlan } from '../plan';
+import { allowedDateWindows } from '../verify';
+import { westernDigits } from '../../reply-guards';
+import type { LifeArea } from '../../../constants/gurus';
 
 export type GemmaLang = 'en' | 'hi' | 'bn';
 
@@ -49,7 +55,61 @@ export type SagaPromptInput = {
   /** Chart lines to keep (AnswerPlan.focus, GURU_CONTEXT_FOCUS); null = full context. */
   focus?: ContextFocus | null;
   timing?: { topic: TimingTopic; windows: TimingWindow[]; mode: TimingPromptMode } | null;
+  /**
+   * A non-timing answer's plan (AnswerPlan.content): its key items are put on
+   * the matching Life areas line, and dated transit sentences outside
+   * `allowed` are cut so the model can't copy a date nobody asked for.
+   */
+  content?: { content: AnswerContent | null; allowed: TimingWindow[]; mode: ContentPromptMode } | null;
 };
+
+/**
+ * How a non-timing answer's plan reaches the v2.1 prompt (chosen by the
+ * answer-type eval, scratchpad agent/at):
+ *  - baseline: nothing (the shipped behaviour before answer types);
+ *  - nodate:   dated "From around …" transit sentences outside the allowed
+ *              windows are cut;
+ *  - line:     nodate + the plan's items appended to the matching Life areas
+ *              line ("…; best fits: technology and data, …"), which is moved
+ *              to the top of the block;
+ *  - line-q:   line + every planned "which / what kind" question sent as the
+ *              plan's standalone question (ASK_QUESTION), not only clarifications.
+ */
+export type ContentPromptMode = 'baseline' | 'nodate' | 'line' | 'line-q';
+
+/** The Life areas line an ask's items belong on. */
+const ASK_AREA: Record<string, LifeArea | null> = {
+  careerField: 'Career', businessVsJob: 'Career', partner: 'Love/marriage', moneySources: 'Money',
+  studyField: 'Romance/children/study', strengths: 'Self/health', wellbeing: 'Self/health',
+  relocation: 'Abroad/spending/spiritual', whyNow: 'Mind',
+};
+const ASK_CUE: Record<string, string> = {
+  careerField: 'best fits', businessVsJob: 'better path', partner: 'partner likely', moneySources: 'money from',
+  studyField: 'best subjects', strengths: 'strengths', wellbeing: 'habits to keep', relocation: 'leans to', whyNow: 'right now',
+};
+
+/** Puts the content's items on its Life areas line (moved first) in the context's own grammar. */
+export function contentLine(context: string, content: AnswerContent): string {
+  const area = ASK_AREA[content.ask];
+  const cue = ASK_CUE[content.ask];
+  const items = content.items.map(i => (i.text.short ?? i.text.label).en);
+  const extra = content.extra.filter(e => e.kind === 'meet' || e.kind === 'place' || e.kind === 'field').map(e => e.text.en);
+  const add = `; ${cue}: ${[...items, ...extra].join(', ')}`;
+  const lines = context.split('\n');
+  const start = lines.findIndex(l => /^Life areas\b/.test(l));
+  if (start < 0) return context;
+  let end = start + 1;
+  while (end < lines.length && lines[end].startsWith('- ')) end++;
+  const block = lines.slice(start + 1, end);
+  const at = area ? block.findIndex(l => l.startsWith(`- ${area}:`)) : -1;
+  if (at < 0) {
+    block.unshift(`- ${area ?? 'Now'}: ${add.slice(2)}`);
+  } else {
+    const [line] = block.splice(at, 1);
+    block.unshift(line + add);
+  }
+  return [...lines.slice(0, start + 1), ...block, ...lines.slice(end)].join('\n');
+}
 
 const CTX_MONTH_YEAR = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4})\b/g;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -83,9 +143,13 @@ export function windowLine(topic: TimingTopic, w: TimingWindow): string {
 }
 
 /** The [saga] system prompt for one question. */
-export function sagaSystem({ profile, lang, now, focus, timing }: SagaPromptInput): string {
+export function sagaSystem({ profile, lang, now, focus, timing, content }: SagaPromptInput): string {
   let context = getAstrologyContext(profile, { version: 2, date: now });
   if (focus) context = focusContext(context, focus);
+  if (content && content.mode !== 'baseline') {
+    context = filterTransitDates(context, content.allowed);
+    if ((content.mode === 'line' || content.mode === 'line-q') && content.content) context = contentLine(context, content.content);
+  }
   const timeNote = profile.birthTime ? '' : '\nBirth time unknown.';
   let block = getTimingContext(profile, now, 2);
   if (timing && timing.mode !== 'baseline' && timing.windows.length) {
@@ -131,4 +195,39 @@ export const READING_USER = 'Read my chart.';
 /** [title] system prompt and user turn (build_sft.student_title). */
 export function titlePrompt(question: string, reply: string, lang: GemmaLang): { system: string; user: string } {
   return { system: `[title]${langLine(lang)}`, user: `User: ${question}\nAssistant: ${reply}` };
+}
+
+/**
+ * The [saga] chat prompt parts for a plan: the system prompt (timing line or
+ * content line, see sagaSystem), the user turn the model reads (the plan's
+ * re-read question for a clarification, Western digits) and whether earlier
+ * turns are left out (a clarification is sent as the standalone question, so
+ * the model can't continue its earlier answer). `focus` is AnswerPlan.focus
+ * when GURU_CONTEXT_FOCUS is on.
+ */
+export function sagaChatParts(
+  plan: AnswerPlan,
+  { timingMode, contentMode, focus = null, clarifyDropsHistory }: {
+    timingMode: TimingPromptMode; contentMode: ContentPromptMode; focus?: ContextFocus | null; clarifyDropsHistory: boolean;
+  },
+): { system: string; question: string; dropHistory: boolean } {
+  const t = plan.timing;
+  const allowed = allowedDateWindows(plan);
+  const system = sagaSystem({
+    profile: plan.subject,
+    lang: plan.lang,
+    now: plan.now,
+    focus,
+    timing: t && t.asked && plan.route === 'answer' ? { topic: t.topic, windows: t.result.windows, mode: timingMode } : null,
+    content: allowed ? { content: plan.content, allowed, mode: contentMode } : null,
+  });
+  const c = plan.content;
+  const rewrite = contentMode === 'baseline' ? null
+    : contentMode === 'line-q' && c && !plan.intent.timing && (plan.intent.kind === 'choice' || plan.intent.kind === 'nature')
+      ? ASK_QUESTION[c.ask][plan.lang] : plan.rewrite;
+  return {
+    system,
+    question: westernDigits(rewrite ?? plan.question),
+    dropHistory: !!rewrite && plan.intent.clarifies && clarifyDropsHistory,
+  };
 }

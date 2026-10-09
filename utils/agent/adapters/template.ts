@@ -9,8 +9,14 @@
  */
 import type { AnswerPlan } from '../plan';
 import { AREA, AREA_GEN_BN, HELPS, S, fill, localText, monthLabel, relationWord, type Lang } from '../strings';
-import type { TimingTopic, TimingWindow } from '../../timing-engine';
+import { dateInWindows, type TimingTopic, type TimingWindow } from '../../timing-engine';
 import { formatGitaQuote, pickGitaVerse } from '../../gita';
+import { findDates, replyOverlap } from '../../reply-guards';
+import type { AnswerContent } from '../astrologer';
+import {
+  AND, ASK_MORE, BECAUSE, COMMA, DOCTOR_LINE, EXAMPLES, EXAMPLES_MORE, FIELD_LINE, FOLLOW_LEAD, FOLLOW_LEAD_NEXT, LEAD, MEET_LINE, NEXT_ITEM, PLACE_LINE, TIP, TIP2,
+  WEAK_LINE, WINDOW_LINE,
+} from '../ask-strings';
 
 const firstName = (name: string) => name.split(' ')[0];
 
@@ -64,7 +70,7 @@ export function timingSentences(plan: AnswerPlan, { withHelps = true } = {}): st
  * 'canned' use the app's i18n strings and are rendered by the pipeline; for
  * those, and for an answer with no topic, this returns null.
  */
-export function renderTemplate(plan: AnswerPlan): string | null {
+export function renderTemplate(plan: AnswerPlan, previous: string[] = []): string | null {
   const lang = plan.lang;
   if (plan.route === 'decline') {
     switch (plan.decline) {
@@ -83,13 +89,120 @@ export function renderTemplate(plan: AnswerPlan): string | null {
       default: return null;
     }
   }
-  if (plan.route !== 'answer' || !plan.timing) return null;
+  if (plan.route !== 'answer') return null;
+  if (plan.content && !plan.intent.timing) return renderContent(plan, previous);
+  if (!plan.timing) return null;
   const t = plan.timing;
   const parts: string[] = [];
   const fact = plan.facts[0];
   if (fact && !t.result.past) parts.push(fill(S[fact.code][lang], vars(lang, t.topic)));
   parts.push(...timingSentences(plan));
   return localText(parts.join(' '), lang);
+}
+
+/** "a, b and c" in `lang`. */
+const AND_ALSO: Record<Lang, string> = { en: ', and also ', hi: ', और साथ ही ', bn: ', সঙ্গে ' };
+function joinList(parts: string[], lang: Lang): string {
+  if (parts.length <= 1) return parts[0] ?? '';
+  // Labels with their own commas ("caring, emotional and family-minded") are joined with "and also".
+  if (parts.some(p => p.includes(','))) return parts.join(AND_ALSO[lang]);
+  return parts.slice(0, -1).join(COMMA[lang]) + AND[lang] + parts[parts.length - 1];
+}
+
+const capFirst = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/**
+ * The key-items sentence of a content plan ("Your chart points most clearly
+ * to A, B and C."): the verify layer appends it when a model reply names none
+ * of the items. `variant` picks the wording.
+ */
+export function contentLead(content: AnswerContent, lang: Lang, variant = 0): string {
+  const leads = LEAD[content.ask];
+  const lead = leads[variant % leads.length];
+  // Career names its top three fields; other asks their top two (the third is kept for follow-ups).
+  const n = content.ask === 'careerField' ? 3 : 2;
+  return localText(fill(lead[lang], { items: joinList(content.items.slice(0, n).map(i => (i.text.short ?? i.text.label)[lang]), lang) }), lang);
+}
+
+/** Sentences of an earlier reply count as said when they overlap a candidate this much. */
+const SAID_MAX = 0.35;
+/** Soft length cap of a template answer (the v5 answers stay under 90 words). */
+const MAX_WORDS: Record<Lang, number> = { en: 72, hi: 70, bn: 60 };
+
+/**
+ * A complete answer for a non-timing question from its AnswerContent: the
+ * items, why (plain), concrete examples, the ask's extra line, a practical
+ * tip and, for choice questions, one optional "good time to move" line from
+ * the engine. With earlier replies in the thread (`previous`), anything
+ * already said is left out: a follow-up on the same ask points back in one
+ * line and adds what is new (the second item's examples, another tip), so
+ * the template never repeats the thread either.
+ */
+export function renderContent(plan: AnswerPlan, previous: string[] = []): string {
+  const c = plan.content!;
+  const lang = plan.lang;
+  const said = (t: string) => previous.some(p => replyOverlap(t, p) >= SAID_MAX);
+  // A follow-up on the same items (an earlier reply already named them).
+  const re = new RegExp(c.items.map(i => `(?:${i.text.terms})`).join('|'), 'iu');
+  // A clarification ("I mean which domain?") gets the full answer again, in other words.
+  const followUp = !plan.intent.clarifies && c.items.length > 0 && previous.some(p => re.test(p));
+  const label = (i: number) => (c.items[i] ? (c.items[i].text.short ?? c.items[i].text.label)[lang] : '');
+
+  const leads = [0, 1, 2, 3].map(v => {
+    const items = v % 2 === 1 && c.items.length > 1 ? [...c.items.slice(1), c.items[0]] : c.items;
+    return contentLead({ ...c, items }, lang, v);
+  });
+  const followLeads = [fill(FOLLOW_LEAD[lang], { item: label(0) }), ...(label(1) ? [fill(FOLLOW_LEAD_NEXT[lang], { item: label(1) })] : [])];
+  const lead = followUp
+    ? followLeads.find(l => !said(l)) ?? followLeads[followLeads.length - 1]
+    : leads.find(l => !said(l)) ?? (plan.intent.clarifies ? leads[1] : leads[0]);
+  const parts: string[] = [lead];
+  const optional: string[] = [];
+  const whys = c.items.flatMap(i => (i.why ? [i.why[lang]] : []));
+  if (whys.length && !followUp) optional.push(fill(BECAUSE[lang], { reasons: whys[0] }));
+  if (followUp) {
+    // Items the thread hasn't named yet come first in a follow-up.
+    for (const it of c.items.slice(1)) {
+      const named = previous.some(p => new RegExp(it.text.terms, 'iu').test(p));
+      if (!named && it.why) optional.unshift(fill(NEXT_ITEM[lang], { item: (it.text.short ?? it.text.label)[lang], why: it.why[lang] }));
+    }
+  }
+  const exampleList = (i: number, n: number) => c.items[i]?.text.examples?.[lang].split(/,\s*/).slice(0, n).join(COMMA[lang]);
+  if (c.ask === 'careerField') {
+    const ex0 = exampleList(0, 3);
+    const ex1 = exampleList(1, 3);
+    if (ex0) optional.push(fill(EXAMPLES[lang], { examples: ex0 }));
+    if (ex1) optional.push(fill(EXAMPLES_MORE[lang], { examples: ex1 }));
+  }
+  for (const e of c.extra) {
+    const t = e.text[lang];
+    if (e.kind === 'meet') optional.push(fill(MEET_LINE[lang], { meet: t }));
+    else if (e.kind === 'weak') optional.push(fill(WEAK_LINE[lang], { weak: t }));
+    else if (e.kind === 'place') optional.push(fill(PLACE_LINE[lang], { place: t }));
+    else if (e.kind === 'field') optional.push(fill(FIELD_LINE[lang], { field: t }));
+    else optional.push(t);
+  }
+  const tips = plan.intent.kind === 'advice' || followUp ? [TIP2[c.ask][lang], TIP[c.ask][lang]] : [TIP[c.ask][lang], TIP2[c.ask][lang]];
+  optional.push(...tips);
+  const w = c.window?.best;
+  const gaveWindow = w && previous.some(p => findDates(p).some(d => d.year != null && dateInWindows({ year: d.year, month: d.month }, [w], 0)));
+  if (w && !gaveWindow) optional.push(fill(WINDOW_LINE[lang], { start: monthLabel(w.start, lang), end: monthLabel(w.end, lang) }));
+
+  const count = (t: string) => t.split(/\s+/).filter(Boolean).length;
+  let n = count(lead);
+  let tipped = false;
+  for (const o of optional) {
+    if (said(o)) continue;
+    const isTip = tips.includes(o);
+    if (isTip && tipped) continue;
+    if (n + count(o) > MAX_WORDS[lang] && parts.length >= 3) continue;
+    parts.push(o);
+    n += count(o);
+    if (isTip) tipped = true;
+  }
+  if (parts.length < 3 && !said(ASK_MORE[lang])) parts.push(ASK_MORE[lang]);
+  if (c.ask === 'wellbeing' || plan.intent.topic === 'health') parts.push(DOCTOR_LINE[lang]);
+  return localText(parts.map(capFirst).join(' '), lang);
 }
 
 /** A short pointer used when no model is available and the plan has nothing to say. */

@@ -3,7 +3,8 @@
  *   1. understand  intent.ts   question → topic, timing, subject, safety
  *   2. reason      plan.ts     + chart + timing engine → AnswerPlan (model-free)
  *   3. render      adapters/   plan → text (gemma21 model, or templates)
- *   4. verify      verify.ts   dates against the plan's windows, advice lines
+ *   4. verify      verify.ts   dates against the plan's windows (unasked dates dropped), repeats of
+ *                              any earlier reply, the plan's key items present, advice lines
  *   5. finalize    hi/bn digits, chips (utils/follow-ups.ts + planChipWindows), saving (use-chat)
  * so astrology never depends on which model is installed. utils/ai.ts
  * streamAI is the entry point the chat calls.
@@ -18,13 +19,13 @@
  * stays in Western digits (adapters convert history back).
  */
 import i18n from '../i18n';
-import { findDates, missingAdvice, nativeDigits, nativeDigitsByScript } from '../reply-guards';
+import { findDates, mentionsDoctor, missingAdvice, nativeDigits, nativeDigitsByScript } from '../reply-guards';
 import { classifyDeterministic, deterministicAnswer } from '../deterministic';
 import { dateInWindows } from '../timing-engine';
 import type { Profile } from '../database';
 import type { AgentId } from '../../constants/gurus';
 import { buildPlan, type AnswerPlan } from './plan';
-import { localizeDigitsStream, verifyStream } from './verify';
+import { localizeDigitsStream, previousReplies, verifyStream } from './verify';
 import { krishnaTemplate, renderTemplate } from './adapters/template';
 import { templateReading } from './adapters/template-reading';
 import { activeAdapter, adapterSupports } from './adapters';
@@ -104,27 +105,31 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
   // L0: single-answer lookups (sun sign, nakshatra, current dasha …), English templates.
   // A life-topic "when" question ("which dasha am I in and when will I marry?")
   // belongs to the timing engine, not the lookup.
-  if (plan.mode === 'saga' && lang === 'en' && !plan.timing?.asked) {
+  if (plan.mode === 'saga' && lang === 'en' && !plan.timing?.asked && !plan.content) {
     const topic = classifyDeterministic(req.question);
     const answer = topic ? deterministicAnswer(topic, plan.subject as Profile) : null;
     if (answer) return { stream: once(answer), tier: 'deterministic', plan };
   }
 
-  const advice = (reply: string) => plan.mode === 'saga'
-    ? missingAdvice(req.question, reply).map(kind => `\n\n${i18n.t(`chat:safety.${kind}`, { lng: lang })}`).join('')
-    : '';
-  const template = plan.mode === 'saga' ? renderTemplate(plan) : null;
+  const advice = (reply: string) => {
+    if (plan.mode !== 'saga') return '';
+    const kinds = missingAdvice(req.question, reply);
+    // "Why am I always tired?" / "how do I reduce stress?" are health questions too.
+    if (plan.intent.topic === 'health' && !kinds.includes('doctor') && !mentionsDoctor(reply)) kinds.push('doctor');
+    return kinds.map(kind => `\n\n${i18n.t(`chat:safety.${kind}`, { lng: lang })}`).join('');
+  };
+  const template = plan.mode === 'saga' ? renderTemplate(plan, previousReplies(req.history)) : null;
   const adapter = activeAdapter();
   if (!adapter.caps.model || !(await adapter.ready(req.waitMs))) {
     // No model: a timing / topic question still gets a full answer from the plan.
-    if (template) return { stream: verifyStream(once(template), plan, advice), tier: 'deterministic', plan };
+    if (template) return { stream: verifyStream(once(template), plan, advice, req.history), tier: 'deterministic', plan };
     // No model this build can run (template adapter): Krishna still offers the verse.
     if (plan.mode === 'krishna' && !adapter.caps.model) return { stream: once(krishnaTemplate(req.question, lang)), tier: 'deterministic', plan };
     // Otherwise wait for the model (use-chat waits out a download on 'pending').
     return { stream: once(req.offlineReply), tier: 'pending', plan };
   }
   const rendered = adapter.render(plan, { history: req.history, userName: req.userName });
-  return { stream: verifyStream(withFallback(rendered, template), plan, advice), tier: 'executorch', plan };
+  return { stream: verifyStream(withFallback(rendered, template), plan, advice, req.history), tier: 'executorch', plan };
 }
 
 /**
