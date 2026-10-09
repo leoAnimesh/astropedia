@@ -643,3 +643,64 @@ export const MB = 1024 * 1024;
 export function toMB(bytes: number): number {
   return Math.max(0, Math.ceil(bytes / MB));
 }
+
+// ─── Storage location (one-time move out of Documents) ───────────────────────
+
+/** A folder listing: entry name -> size in bytes, or a nested listing for a folder. */
+export type DirTree = { [name: string]: number | DirTree };
+
+export type MigrationStep =
+  | { op: 'mkdir'; path: string }
+  | { op: 'move'; from: string; to: string }
+  | { op: 'delete'; path: string };
+
+/**
+ * iOS keeps models in Library/Application Support/models (not in the user's
+ * Documents, not purged like Caches; excluded from backup). Builds before
+ * that used Documents/models. Plans moving the old folder's contents over
+ * without copying (same volume renames, so nothing is downloaded again):
+ *
+ *  - a version folder the new place doesn't have moves whole;
+ *  - otherwise file by file; when both places have a file, the bigger one is
+ *    kept (a longer partial download, or the complete file) and the other
+ *    deleted;
+ *  - the old root is deleted last.
+ *
+ * Idempotent: run every launch, it does nothing once the old folder is gone
+ * (and tidies up anything a background download finished there later).
+ */
+export function planModelsMigration(oldRoot: string, newRoot: string, oldTree: DirTree | null, newTree: DirTree | null): MigrationStep[] {
+  if (!oldTree) return [];
+  const steps: MigrationStep[] = [];
+  if (!newTree) steps.push({ op: 'mkdir', path: newRoot });
+  const merge = (from: string, to: string, src: DirTree, dst: DirTree | null) => {
+    for (const name of Object.keys(src).sort()) {
+      const s = src[name];
+      const d = dst?.[name];
+      const f = `${from}/${name}`;
+      const t = `${to}/${name}`;
+      if (d === undefined) {
+        steps.push({ op: 'move', from: f, to: t });
+      } else if (typeof s === 'object' && typeof d === 'object') {
+        merge(f, t, s, d);
+      } else if (typeof s === 'number' && typeof d === 'number') {
+        if (s > d) {
+          steps.push({ op: 'delete', path: t }, { op: 'move', from: f, to: t });
+        } // else the new place's copy wins; the old one goes with the root
+      } else {
+        // A file where the other side has a folder (or the reverse): keep the new place's.
+      }
+    }
+  };
+  merge(oldRoot, newRoot, oldTree, newTree);
+  steps.push({ op: 'delete', path: oldRoot });
+  return steps;
+}
+
+/**
+ * A path as a file:// URL (each segment percent-encoded, so "Application
+ * Support" becomes "Application%20Support").
+ */
+export function fileUrlOfPath(path: string): string {
+  return `file://${path.split('/').map(encodeURIComponent).join('/')}`;
+}

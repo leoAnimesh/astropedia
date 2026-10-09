@@ -10,7 +10,10 @@
  *                      the inline pill (components/molecules/ModelSetupPill.tsx).
  *   getInstalledModelFiles()  paths for utils/local-llm.ts once 'ready'.
  *
- * Files land in Documents/models/<version>/ (excluded from iCloud backup).
+ * Files land in models/<version>/ under Library/Application Support on iOS
+ * (not the user's Documents; flagged excluded from iCloud / device backup;
+ * builds before that used Documents/models and are moved over once, without
+ * a re-download) and under the app's files dir on Android (app backup off).
  * They download as "<name>.part", are checked against the size and SHA-256
  * from the manifest (or the pinned default below), then renamed; an MMKV
  * install marker written after the renames is the commit point. Later
@@ -45,7 +48,8 @@ import {
   INITIAL_SETUP_STATE, adapterOf, adapterRunnable, basename, classifyError, decideAfterError, errorMessage, fileUrl, isFailurePhase,
   markerFor, markerMatchesSpec, markerUsable, parseManifest, parsePendingSwitch, planFileResume, reduceSetup,
   remainingBytes, resolveUrl, selectModel, spaceShortfall, switchKeep, totalBytes, verifyFile,
-  type AppModelCaps, type InstallMarker, type ModelFile, type ModelFileRole,
+  fileUrlOfPath, planModelsMigration,
+  type AppModelCaps, type DirTree, type InstallMarker, type ModelFile, type ModelFileRole,
   type ModelSpec, type ResumePlan, type SavedResume, type Selection, type SetupEvent, type SetupState,
 } from './model-download-logic';
 import { resolveCatalog, selectedEntry, type CatalogEntry } from './model-catalog';
@@ -173,15 +177,31 @@ export function waitForModelReady(): Promise<boolean> {
 
 const { fs } = RNBlobUtil;
 
-/** Plain path (native runner, blob-util) of a Documents-relative path. */
-function docPath(rel: string): string {
-  return `${fs.dirs.DocumentDir}/${rel}`;
+/**
+ * The folder models/ lives in. iOS: Library/Application Support — hidden
+ * from the Files app, never purged by the system (Caches can be), and backed
+ * up unless excluded, so models/ is flagged excluded (excludeFromBackup).
+ * Android: the app's files dir (android:allowBackup is false).
+ */
+function storageBase(): string {
+  if (Platform.OS === 'ios') {
+    const dir = (fs.dirs as { ApplicationSupportDir?: string }).ApplicationSupportDir;
+    if (dir) return dir;
+  }
+  return fs.dirs.DocumentDir;
 }
 
-/** file:// URI (expo-file-system) of a Documents-relative path. */
-function docUri(rel: string): string {
-  const base = Paths.document.uri;
-  return `${base}${base.endsWith('/') ? '' : '/'}${rel.split('/').map(encodeURIComponent).join('/')}`;
+/** Plain path (native runner, blob-util) of a path relative to the storage folder. */
+function storePath(rel: string): string {
+  return `${storageBase()}/${rel}`;
+}
+
+/** file:// URI (expo-file-system) of a path relative to the storage folder. */
+function storeUri(rel: string): string {
+  const base = storageBase();
+  if (base !== fs.dirs.DocumentDir) return fileUrlOfPath(`${base}/${rel}`);
+  const doc = Paths.document.uri;
+  return `${doc}${doc.endsWith('/') ? '' : '/'}${rel.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 const versionDir = (version: string) => `${MODELS_DIR}/${version}`;
@@ -203,17 +223,79 @@ async function unlinkQuiet(path: string) {
 }
 
 async function ensureDir(rel: string) {
+  const base = storageBase();
+  // Application Support does not exist until an app creates it.
+  if (!(await fs.exists(base))) await fs.mkdir(base).catch(() => {});
   const parts = rel.split('/');
   for (let i = 1; i <= parts.length; i++) {
-    const p = docPath(parts.slice(0, i).join('/'));
+    const p = storePath(parts.slice(0, i).join('/'));
     if (!(await fs.exists(p))) await fs.mkdir(p).catch(() => {});
   }
 }
 
-/** Keep the models out of iCloud backups (re-downloadable, ~200 MB). */
+/**
+ * Keep the models out of iCloud / device backups (re-downloadable, 200 MB+).
+ * blob-util prefixes "file://" itself and parses the result as a URL, so it
+ * gets the percent-encoded path (a raw space in "Application Support" would
+ * make the URL nil and the call a silent no-op).
+ */
 async function excludeFromBackup(rel: string) {
   if (Platform.OS !== 'ios') return;
-  try { await RNBlobUtil.ios.excludeFromBackupKey(docUri(rel)); } catch { /* best effort */ }
+  try {
+    await RNBlobUtil.ios.excludeFromBackupKey(fileUrlOfPath(storePath(rel)).slice('file://'.length));
+  } catch (e) {
+    log('exclude from backup failed', errorMessage(e));
+  }
+}
+
+/** Listing of a folder: files with sizes, sub-folders `depth` levels down. */
+async function readTree(path: string, depth: number): Promise<DirTree | null> {
+  try {
+    if (!(await fs.exists(path)) || !(await fs.isDir(path))) return null;
+    const out: DirTree = {};
+    for (const name of await fs.ls(path)) {
+      const p = `${path}/${name}`;
+      out[name] = depth > 1 && (await fs.isDir(p)) ? ((await readTree(p, depth - 1)) ?? {}) : ((await sizeOf(p)) ?? 0);
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+let storageReady: Promise<void> | null = null;
+
+/**
+ * iOS, once per launch before the models folder is used: move models that
+ * earlier builds kept in Documents/models to Application Support (renames,
+ * no re-download; planModelsMigration), then make sure models/ is excluded
+ * from backup. The old folder is only removed when every move succeeded.
+ */
+function ensureModelStorage(): Promise<void> {
+  storageReady ??= (async () => {
+    if (Platform.OS !== 'ios') return;
+    const base = storageBase();
+    const newRoot = `${base}/${MODELS_DIR}`;
+    if (base !== fs.dirs.DocumentDir) {
+      const oldRoot = `${fs.dirs.DocumentDir}/${MODELS_DIR}`;
+      const steps = planModelsMigration(oldRoot, newRoot, await readTree(oldRoot, 2), await readTree(newRoot, 2));
+      if (steps.length) log('moving models out of Documents', steps);
+      let failed = false;
+      for (const step of steps) {
+        try {
+          if (step.op === 'mkdir') await fs.mkdir(step.path);
+          else if (step.op === 'move') await fs.mv(step.from, step.to);
+          else if (step.path === oldRoot && failed) continue; // keep what didn't move
+          else await fs.unlink(step.path);
+        } catch (e) {
+          failed = true;
+          log('model move failed', step.op, errorMessage(e));
+        }
+      }
+    }
+    if (await fs.exists(newRoot)) await excludeFromBackup(MODELS_DIR);
+  })().catch(() => {});
+  return storageReady;
 }
 
 function availableSpace(): number | null {
@@ -227,7 +309,8 @@ function availableSpace(): number | null {
 
 /** Delete every models/ entry except the given versions. */
 async function cleanupVersions(keepVersions: string[]) {
-  const root = docPath(MODELS_DIR);
+  await ensureModelStorage();
+  const root = storePath(MODELS_DIR);
   // An interrupted Settings switch keeps its partial download for the resume.
   const keep = [...keepVersions, ...switchKeep(parsePendingSwitch(Storage.getModelSwitchPending()), readMarker()?.version ?? null)];
   try {
@@ -317,7 +400,8 @@ export async function getInstalledModelFiles(): Promise<InstalledModelFiles | nu
   const tokenizer = byRole('tokenizer');
   const config = byRole('tokenizer_config');
   if (!model || !tokenizer) return null;
-  const dir = docPath(versionDir(marker.version));
+  await ensureModelStorage();
+  const dir = storePath(versionDir(marker.version));
   return {
     model: `${dir}/${model}`,
     tokenizer: `${dir}/${tokenizer}`,
@@ -505,13 +589,14 @@ export async function redownloadModel(): Promise<void> {
 
 async function run(): Promise<void> {
   dispatch({ type: 'check' });
+  await ensureModelStorage();
   const caps = appCaps();
 
   // 1. A verified install (size check only).
   const marker = readMarker();
   if (marker) {
     const sizes: Record<string, number | null> = {};
-    for (const f of marker.files) sizes[f.name] = await sizeOf(docPath(`${versionDir(marker.version)}/${f.name}`));
+    for (const f of marker.files) sizes[f.name] = await sizeOf(storePath(`${versionDir(marker.version)}/${f.name}`));
     if (markerUsable(marker, sizes, caps)) {
       activateInstalledAdapter(marker);
       dispatch({ type: 'ready', version: marker.version });
@@ -615,7 +700,7 @@ async function installWithRetries(initial: Selection, silent: boolean): Promise<
 /** All files of `spec` present at their final names with the right sizes. */
 async function hasCompleteCopy(spec: ModelSpec): Promise<boolean> {
   for (const f of spec.files) {
-    if ((await sizeOf(docPath(`${versionDir(spec.version)}/${basename(f.path)}`))) !== f.size) return false;
+    if ((await sizeOf(storePath(`${versionDir(spec.version)}/${basename(f.path)}`))) !== f.size) return false;
   }
   return true;
 }
@@ -629,7 +714,7 @@ async function seedFromBundle(spec: ModelSpec): Promise<void> {
   const dir = versionDir(spec.version);
   for (const f of spec.files) {
     const name = basename(f.path);
-    const dest = docPath(`${dir}/${name}`);
+    const dest = storePath(`${dir}/${name}`);
     if ((await sizeOf(dest)) === f.size) continue;
     const src = Platform.OS === 'ios' ? `${fs.dirs.MainBundleDir}/${name}` : fs.asset(`models/${name}`);
     try {
@@ -681,6 +766,7 @@ export class DownloadCancelledError extends Error {
 
 /** Plan each file of `spec`: what is already on disk, and how to resume the rest. */
 async function prepareJobs(spec: ModelSpec, store: ResumeStore): Promise<FileJob[]> {
+  await ensureModelStorage();
   const dir = versionDir(spec.version);
   await ensureDir(dir);
   await excludeFromBackup(MODELS_DIR);
@@ -689,8 +775,8 @@ async function prepareJobs(spec: ModelSpec, store: ResumeStore): Promise<FileJob
   // Leftovers in the version folder that aren't ours (old ".tmp" copies).
   const expected = new Set(spec.files.flatMap((f) => [basename(f.path), `${basename(f.path)}.part`]));
   try {
-    for (const name of await fs.ls(docPath(dir))) {
-      if (!expected.has(name)) await unlinkQuiet(docPath(`${dir}/${name}`));
+    for (const name of await fs.ls(storePath(dir))) {
+      if (!expected.has(name)) await unlinkQuiet(storePath(`${dir}/${name}`));
     }
   } catch { /* ignore */ }
 
@@ -700,9 +786,9 @@ async function prepareJobs(spec: ModelSpec, store: ResumeStore): Promise<FileJob
   for (const file of files) {
     const name = basename(file.path);
     const url = fileUrl(HF_BASE, HF_REPO, spec, file);
-    const finalPath = docPath(`${dir}/${name}`);
+    const finalPath = storePath(`${dir}/${name}`);
     const partRel = `${dir}/${name}.part`;
-    const partPath = docPath(partRel);
+    const partPath = storePath(partRel);
     const finalSize = await sizeOf(finalPath);
     if (finalSize === file.size) {
       jobs.push({ file, name, url, finalPath, partRel, partPath, atFinal: true, plan: { kind: 'complete' }, have: file.size, store });
@@ -874,7 +960,8 @@ export async function discardSwitchDownload(version: string): Promise<void> {
   SWITCH_RESUME.clear();
   const installed = readMarker()?.version;
   if (version === installed) return;
-  await unlinkQuiet(docPath(versionDir(version)));
+  await ensureModelStorage();
+  await unlinkQuiet(storePath(versionDir(version)));
 }
 
 /** Free bytes on the data partition, or null when unknown. */
@@ -884,7 +971,7 @@ export function freeDiskBytes(): number | null {
 
 /** One file into its .part path, resuming per job.plan. Resolves when complete. */
 async function downloadOne(version: string, job: FileJob, onBytes: (bytes: number) => void, ctl?: DownloadControl): Promise<void> {
-  const dest = new File(docUri(job.partRel));
+  const dest = new File(storeUri(job.partRel));
   const isIOS = Platform.OS === 'ios';
   let lastCheckpoint = job.plan.kind === 'resume' ? job.plan.from : 0;
   let checkpointing = false;
