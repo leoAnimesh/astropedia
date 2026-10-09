@@ -163,12 +163,19 @@ and the judge scores the safe answer as a full answer to the question:
 
 ### 3.10 Script choice for Hinglish / Banglish
 
-The production template answers Hinglish and Banglish questions in Devanagari
-and Bengali script. Per 3.7 this scores language = 1 and is reported as the
-`hinglish_in_devanagari` / `banglish_in_bengali` tags; it does not fail an
-answer on its own. Transliterating the template output was rejected because
-rule-based romanisation reads machine-like; Latin-script answers are a v2.2
-training-data item (ml/data/RUN_V3.md).
+Since the stream-A polish (2026-10-09) a predominantly Latin-script Hindi or
+Bengali question (≥ 70% Latin letters and more Hindi / Bengali words than
+English ones; a message without letters, like "??", keeps the thread's
+register) gets its template answer in Hinglish / Banglish. This is not
+automatic transliteration: every table sentence and slot value has a
+hand-written romanized form (utils/agent/roman-hi*.ts, roman-bn*.ts), the
+answer is matched back sentence by sentence, months come out in English with
+Latin digits ("September 2029"), and an answer with any sentence lacking a
+romanized form stays entirely in the native script (never mixed). Judge
+Hinglish / Banglish answers on 3.7 like any other: the right register scores 2;
+a native-script fallback is 1 with the `hinglish_in_devanagari` /
+`banglish_in_bengali` tags. Model-written replies still stream in the native
+script (a v2.2 training-data item, ml/data/RUN_V3.md).
 
 ## 4. Using the question-bank codes
 

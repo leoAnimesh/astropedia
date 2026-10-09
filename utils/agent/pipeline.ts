@@ -32,6 +32,7 @@ import { activeAdapter, adapterSupports } from './adapters';
 import { GEMMA21_MODEL_CATEGORIES } from './adapters/gemma21-prompt';
 import type { AdapterTask, ChatTurn, ReadingResult } from './adapters/types';
 import { questionTitle, type Lang } from './strings';
+import { latinRegister, romanize } from './roman';
 import type { ThreadFacts } from './thread-facts';
 
 /** Answer to "how are you?" ahead of the guru's greeting. */
@@ -83,7 +84,21 @@ async function* withFallback(source: AsyncGenerator<string>, fallback: string | 
 
 export async function runPipeline(req: PipelineRequest): Promise<PipelineResult> {
   const r = await route(req);
-  return req.lang === 'en' ? r : { ...r, stream: localizeDigitsStream(r.stream, req.lang) };
+  if (req.lang === 'en') return r;
+  // A Hinglish / Banglish question gets its answer in the same register (roman.ts): the template answer is
+  // matched sentence by sentence to its hand-written Latin form, else it stays in the native script.
+  // Model replies keep streaming in the native script.
+  // A message with no letters ("??", "🙏") keeps the register of the user's previous message.
+  const lastUser = [...req.history].reverse().find(m => m.role === 'user')?.content ?? '';
+  const latin = latinRegister(req.question, req.lang) || (!/\p{L}/u.test(req.question) && !!lastUser && latinRegister(lastUser, req.lang));
+  if (r.tier !== 'executorch' && latin) return { ...r, stream: romanizeStream(r.stream, req.lang) };
+  return { ...r, stream: localizeDigitsStream(r.stream, req.lang) };
+}
+
+async function* romanizeStream(source: AsyncGenerator<string>, lang: Lang): AsyncGenerator<string> {
+  let text = '';
+  for await (const t of source) text += t;
+  yield romanize(text, lang) ?? nativeDigits(text, lang);
 }
 
 async function route(req: PipelineRequest): Promise<PipelineResult> {

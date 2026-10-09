@@ -33,6 +33,7 @@ import type { TimingWindow } from '../timing-engine';
 import { checkView, type AnswerPlan } from './plan';
 import { hasCode } from './checks';
 import { contentLead, renderTemplate, repairSentence } from './adapters/template';
+import { nativeOf } from './roman';
 import { relevanceHits, relevanceTerms } from './astrologer';
 import { S, type Lang } from './strings';
 
@@ -234,7 +235,9 @@ const DANGLING = /^(?:\*\*)?(?:until then|by then|till then|before then|after th
 
 /** Previous assistant replies of a thread (Western digits, like a model reply). */
 export const previousReplies = (history: { role: string; content: string }[] = []): string[] =>
-  history.filter(m => m.role === 'assistant' && m.content.trim()).map(m => westernDigits(m.content));
+  // A Hinglish / Banglish reply is read back into the native sentences it was written from (roman.ts), so a
+  // follow-up's repeat checks still see what was said.
+  history.filter(m => m.role === 'assistant' && m.content.trim()).map(m => westernDigits(nativeOf(m.content)));
 
 /** A sentence counts as repeated when this share of it already appeared in an earlier reply. */
 export const SENTENCE_REPEAT_MAX = 0.6;
