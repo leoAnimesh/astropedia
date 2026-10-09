@@ -25,7 +25,7 @@ const LICENSES: { packages: Pkg[]; texts: Record<string, string> } = require('@/
  */
 const FULL_TEXT_URL: Record<'privacy' | 'terms', string | null> = {
   privacy: 'https://ash-larch-a05.notion.site/Astropedia-Privacy-Policy-3f4a0161464a814984a9e0f6c63f8ab4',
-  terms: null,
+  terms: 'https://ash-larch-a05.notion.site/Astropedia-Terms-of-Use-3f4a0161464a81c8a359c572ccd455e5',
 };
 
 /** /legal/privacy, /legal/terms, /legal/licenses. */

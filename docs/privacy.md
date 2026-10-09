@@ -3,7 +3,7 @@
 > Published at https://ash-larch-a05.notion.site/Astropedia-Privacy-Policy-3f4a0161464a814984a9e0f6c63f8ab4 (Notion). Review with a lawyer before launch. Keep this file in step with the in-app summary (`locales/*/about.json` → `privacyDoc`) and the store answers in `store/privacy-answers.md`.
 
 **Effective date:** 9 October 2026
-**Developer:** Animesh Mondal, West Bengal, India
+**Developer:** Animesh Mondal, Bengaluru, Karnataka, India
 **Contact:** mondalarup808@gmail.com
 
 ## The short version
@@ -74,4 +74,4 @@ If we change how the app handles data, we will update this policy and its effect
 
 ## 14. Contact
 
-Animesh Mondal, West Bengal, India, mondalarup808@gmail.com
+Animesh Mondal, Bengaluru, Karnataka, India, mondalarup808@gmail.com

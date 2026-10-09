@@ -1,9 +1,9 @@
 # Astropedia Terms of Use
 
-> **DRAFT. Review with a lawyer before publishing.** Replace every `[bracketed]` placeholder. Keep the in-app summary (`locales/*/about.json` → `termsDoc`) in step.
+> Published at https://ash-larch-a05.notion.site/Astropedia-Terms-of-Use-3f4a0161464a81c8a359c572ccd455e5 (Notion). Review with a lawyer before launch. Keep the in-app summary (`locales/*/about.json` → `termsDoc`) in step.
 
-**Effective date:** [date of first public release]
-**Provider:** [legal name of the developer or company] ("we", "us")
+**Effective date:** 9 October 2026
+**Provider:** Animesh Mondal ("we", "us")
 **Contact:** mondalarup808@gmail.com
 
 By downloading or using Astropedia (the "App") you agree to these terms. If you do not agree, please do not use the App.
@@ -44,11 +44,11 @@ Do not use the App to break the law, to harass or harm anyone, or to present its
 
 ## 7. Intellectual property
 
-The App, its design and its original text are owned by us or our licensors. Open-source components and AI models remain under their own licences, listed in Settings → About → Open-source licences. Bhagavad Gita verses are shown with the translations credited in the App. [Confirm the source and licence of the Gita translation text before release.]
+The App, its design and its original text are owned by us or our licensors. Open-source components and AI models remain under their own licences, listed in Settings → About → Open-source licences. Bhagavad Gita verses are shown with the translations credited in the App.
 
 ## 8. Availability and changes
 
-The App is free [confirm]. We may update, change or stop offering features or the App. The App works offline once its model is downloaded; downloading a model needs an internet connection and may use mobile data.
+The App is free. We may update, change or stop offering features or the App. The App works offline once its model is downloaded; downloading a model needs an internet connection and may use mobile data.
 
 ## 9. No warranty
 
@@ -64,7 +64,7 @@ If you downloaded the App from the Apple App Store, Apple's Licensed Application
 
 ## 12. Governing law
 
-These terms are governed by the laws of India. Courts at [city], India have jurisdiction, subject to any mandatory rights you have where you live.
+These terms are governed by the laws of India. Courts at Bengaluru, Karnataka, India have jurisdiction, subject to any mandatory rights you have where you live.
 
 ## 13. Changes to these terms
 
@@ -72,4 +72,4 @@ We may update these terms. Continued use after an update means you accept the ne
 
 ## 14. Contact
 
-[legal name], [postal address], mondalarup808@gmail.com
+Animesh Mondal, Bengaluru, Karnataka, India, mondalarup808@gmail.com
