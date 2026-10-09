@@ -19,7 +19,7 @@ import { findMuhurats, type Activity } from '../muhurat';
 import { natalChart, timingWindows, splitPeriod, TOPIC_RULES, type Planet, type TimingTopic, type TimingWindow } from '../timing-engine';
 import { SIGN_RULER } from '../chart-analysis';
 import type { AnswerContent } from './astrologer';
-import { askYogas, govtIndicator, optionLeaning, partnershipGood, OPTION_LABEL, saturnPressure } from './astrologer';
+import { askYogas, govtIndicator, optionLeaning, partnershipGood, planAsk, OPTION_LABEL, saturnPressure } from './astrologer';
 import { AREA_OF_HOUSE, TIP2, type L3 } from './ask-strings';
 import { ACTIVITY, C, COLOUR, GEM_OF, KOOTA_PLAIN, MONTH_SHORT, PLANET_PLAIN, VERDICT, WEEKDAY, YOGA_PLAIN, type CKey } from './category-strings';
 import { isYesNo, relationIn, relationMatches } from './intent';
@@ -58,6 +58,8 @@ const VEHICLE_RE = /\b(?:car|bike|scooter|scooty|vehicle|gaa?di|gari|motorcycle)
 export const YEAR_NEAR_RE = /\bthis (?:year|time|appraisal|cycle)\b|\bis saal\b|\bis baar\b|\bei bochh?or\b|\bebar\b|\bebaar\b|इस साल|इस बार|এই বছর|এবার/i;
 
 /** The likelihood ladder (rules.md §1.9) from the plan's best window. */
+const TREATMENT_RE = /\bivf\b|\biui\b|treatment|trying|आईवीएफ|इलाज|कोशिश|আইভিএফ|চিকিৎসা|চেষ্টা/i;
+
 export function likelihoodLine(plan: AnswerPlan, pos: PlanLine['pos'] = 'lead'): PlanLine | null {
   const t = plan.timing;
   const w = t?.best;
@@ -65,7 +67,9 @@ export function likelihoodLine(plan: AnswerPlan, pos: PlanLine['pos'] = 'lead'):
   const YEAR = 365.25 * 86400000;
   // "This year?", "now?", "soon?": is a window open in the coming twelve months?
   if (t.result.past || plan.category === 'past_event_verification' || plan.say.some(l => l.code === 'explain_policy')) return null;
-  const near = NEAR_RE.test(plan.question);
+  // "IVF, will it work this time?": a "not this year" reads as a prognosis on the treatment, so the general odds instead.
+  const treatment = plan.resolved === 'children_timing' && TREATMENT_RE.test(plan.question);
+  const near = NEAR_RE.test(plan.question) && !treatment;
   let key: CKey;
   if (near) {
     // "This year? Now? This cycle?" gets a direct yes / not-yet before the window (rubric 3.1), and it agrees
@@ -195,7 +199,7 @@ function muhuratRoute(plan: AnswerPlan, activity: string | null | undefined): vo
   const act: Activity = activity === 'sign' || activity === 'buy' || activity === 'travel' ? activity : 'work';
   if (activity === 'ceremony') {
     // Griha pravesh / wedding: the family priest fixes the day; offering "starting work" days would answer a different question.
-    add(plan, line('explain_policy', 'ceremony', 'lead'), line('muhurat_days', 'muhuratMore', 'end'));
+    add(plan, line('explain_policy', 'ceremony', 'lead', {}, { also: ['muhurat_days'] }));
     must(plan, 'muhurat_days');
     return;
   }
@@ -331,7 +335,8 @@ function sadeSatiLines(plan: AnswerPlan, pos: PlanLine['pos'] = 'lead'): void {
   const ss = getSadeSati(plan.subject, plan.now);
   if (ss.currentIndex >= 0 && ss.phase) {
     const p = ss.periods[ss.currentIndex];
-    const end = ss.inReturn ? p.finalEnd : p.end;
+    // The last exit, retrograde returns included: the same end the why-now answer gives (saturnPressure).
+    const end = p.finalEnd ?? p.end;
     add(plan, line('computed_fact', 'sadeIn', pos, { phase: SADE_PHASE[ss.phase], end: ml(end) }, { terms: `${end.getFullYear()}|${String(end.getFullYear()).replace(/\d/g, d => '०१२३४५६७८९'[+d])}` }));
     plan.checks.factDates.push(end);
   } else if (ss.nextIndex >= 0) {
@@ -408,7 +413,7 @@ function yearRoute(plan: AnswerPlan, year: number): void {
   const [h1, h2] = hits;
   const yr = String(year);
   if (h1) {
-    add(plan, line('year_summary', 'year', 'lead', {
+    add(plan, line('year_summary', h2 ? 'year' : 'yearOne', 'lead', {
       year: yr, a1: AREA[plan.lang][h1.topic] ? { en: AREA.en[h1.topic], hi: AREA.hi[h1.topic], bn: AREA_GEN_BN[h1.topic].replace(/র$|ের$/, '') } : '',
       a2: h2 ? { en: ` and ${AREA.en[h2.topic]}`, hi: ` और ${AREA.hi[h2.topic]}`, bn: ` আর ${AREA_GEN_BN[h2.topic].replace(/র$|ের$/, '')}` } : '',
     }, { terms: `${yr}|${yr.replace(/\d/g, d => '०१२३४५६७८९'[+d])}|${yr.replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[+d])}` }));
@@ -546,6 +551,11 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
     const secular = !!p.thread.secular || /not religious|isn'?t a ritual|without (?:a )?ritual|atheist|नास्तिक|নাস্তিক/i.test(p.question);
     const topic = prev?.timing?.topic ?? (i.topic && i.topic !== 'chart' ? i.topic : null);
     p.content = ctx.content(p, 'remedies', i.kind);
+    // "Any remedy for this?" right after a why-now answer led by Saturn: Saturn's practices, not the sub-period lord's.
+    const prevSaturn = prev?.content?.ask === 'whyNow' && prev.content.items.some(x => x.planet === 'Saturn' && !['why:maha', 'why:antar'].includes(x.key));
+    if (prevSaturn && !/\b(?:sun|moon|mars|mercury|jupiter|venus|rahu|ketu)\b|सूर्य|चंद्र|मंगल|बुध|गुरु|शुक्र|राहु|केतु|সূর্য|চাঁদ|মঙ্গল|বুধ|বৃহস্পতি|শুক্র|রাহু|কেতু/i.test(p.question)) {
+      p.content = planAsk('remedies', i.kind, p.subject, p.now, null, { question: 'saturn', secular }) ?? p.content;
+    }
     if (p.content) {
       const pl = p.content.items[0].planet!;
       add(p, line('free_remedies', secular ? 'remedySecular' : 'remedyLead', 'lead', { planet: PLANET_PLAIN[pl], items: p.content.items[0].text.label }));
@@ -633,6 +643,8 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       must(p, 'leaning', 'chart_reason', 'practical_step');
       if (f.partnership) {
         const good = partnershipGood(natalChart(p.subject));
+        // A careful partnership line and a business leaning "because your partnership side is strong" contradict.
+        if (!good && p.content && /:business$/.test(p.content.items[0]?.key ?? '')) p.content = { ...p.content, items: [{ ...p.content.items[0], why: null }, ...p.content.items.slice(1)] };
         add(p, line('likelihood', good ? 'partnershipGood' : 'partnershipCareful', 'lead', {}, { also: ['leaning', 'practical_step'] }));
         must(p, 'likelihood');
       }
@@ -663,7 +675,10 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       else add(p, line('settlement_vs_travel', verdict === 'abroad' ? 'settleAbroad' : verdict === 'home' ? 'settleHome' : 'settleMixed', f.country ? 'body' : 'lead', {}, { also: ['chart_reason'] }));
       if (!p.timing) p = ctx.timing(p, 'foreign', false);
       if (f.documents || /visa|वीज़ा|वीजा|ভিসা/i.test(p.question)) { add(p, line('documents_decide', 'documents', 'end', {}, { required: true })); must(p, 'documents_decide'); }
-      if (yesno) { add(p, likelihoodLine(p)); must(p, 'likelihood'); }
+      // "Will I settle abroad?": the likelihood follows the settle-vs-travel reading, not just the window's strength.
+      const settleQ = /\bsettle|\bpermanent|\bfor good\b|बस |बसना|बस पा|থিতু|স্থায়ী|chirokal/i.test(p.question);
+      if (yesno && settleQ && verdict !== 'abroad') { add(p, line('likelihood', verdict === 'home' ? 'likelyWeak' : 'likelyModerate', 'lead')); must(p, 'likelihood'); }
+      else if (yesno) { add(p, likelihoodLine(p)); must(p, 'likelihood'); }
       // A yes/no answered from the relocation reading still names its window (rubric 3.1).
       if (yesno && !i.timing && p.content?.ask === 'relocation') windowAndReason(p);
       must(p, 'settlement_vs_travel', 'chart_reason');
@@ -681,6 +696,8 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
         p.coreOff = true;
         break;
       }
+      // "I can't save money, what do I do?": the saving habit answers it; sources follow.
+      if (/\bsav(?:e|ing)\b|bachat|bacha|jomate|jomano|jomaa|সঞ্চয়|জমা|बचत|बचा/i.test(p.question)) { add(p, line('money_habit', 'moneyHabit', 'end', {}, { also: ['practical_step'] })); must(p, 'money_habit'); }
       const mc = ctx.content(p, 'moneySources', 'nature');
       if (mc) {
         const items = mc.items.slice(0, 2);
@@ -713,7 +730,8 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       else if (!approval) add(p, line('money_habit', 'debtPlan', 'body', {}, { also: ['practical_step'] }));
       if (!f.owed) { add(p, line('fin_adviser', 'finAdviser', 'body')); must(p, 'fin_adviser'); }
       if (f.documents || /approv|pass|sanction|पास|মঞ্জুর|পাস/i.test(p.question)) { add(p, line('documents_decide', 'documents', 'end', {}, { required: true })); must(p, 'documents_decide'); }
-      if (yesno) { add(p, likelihoodLine(p)); must(p, 'likelihood'); }
+      // "Will I get my money back?" is the other person's choice (rules.md §3.9): the period, not the odds.
+      if (yesno) { add(p, f.owed ? line('likelihood', 'likelyOwed', 'body') : likelihoodLine(p)); must(p, 'likelihood'); }
       must(p, 'window', 'money_habit');
       break;
     }
@@ -1001,8 +1019,15 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       p.timing = null;
       must(p, 'ask_profile', 'respect_choice');
     } else {
-      if (!p.timing) p = ctx.timing(p, 'general', false);
+      // "How will my retirement go?" is not a when-question (rubric 3.3): the long cycle as the chart reason, no window.
+      p.timing = null;
+      p.facts = [];
+      p.coreOff = true;
       add(p, line('respect_choice', 'retirement', 'lead'));
+      const why = ctx.content(p, 'whyNow', 'why');
+      const maha = why?.items.find(x => x.key === 'why:maha');
+      if (maha) add(p, line('chart_reason', { en: 'In your chart, this stretch is {x}.', hi: 'आपके चार्ट में यह दौर है: {x}।', bn: 'আপনার চার্টে এই সময়টা হলো {x}।' }, 'body', { x: maha.text.label }));
+      add(p, line('practical_step', 'retireStep', 'end'));
       must(p, 'respect_choice');
     }
   }
@@ -1022,7 +1047,7 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
     must(p, 'ask_profile');
   }
   if (cat === 'past_event_verification') {
-    add(p, line('invite_confirm', 'inviteConfirm', 'end'));
+    add(p, line('invite_confirm', p.notes.includes('noTime') ? 'inviteConfirmNoTime' : 'inviteConfirm', 'end'));
     if (pastYearLine(p)) p.coreOff = true;
     must(p, 'invite_confirm');
   }
@@ -1040,7 +1065,9 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
   }
   // "This year? / this time?" with a window gets a direct yes or "not this year" first, agreeing with the
   // window that follows (Stage 3: "ebar increment?" answered with a 2031 window and no "not this time").
-  if (YEAR_NEAR_RE.test(p.question) && p.timing && !p.timing.result.past && !p.say.some(l => l.code === 'likelihood')
+  // Not for a treatment in progress ("IVF, will it work this time?"): a "not this year" there reads as a prognosis.
+  const treatment = res === 'children_timing' && (f.trying || TREATMENT_RE.test(p.question));
+  if (YEAR_NEAR_RE.test(p.question) && p.timing && !p.timing.result.past && !p.say.some(l => l.code === 'likelihood') && !treatment
     && !['why_now_current_phase', 'mental_health_distress', 'relationship_problems', 'divorce_separation', 'past_event_verification'].includes(res)) {
     const l = likelihoodLine(p);
     if (l) { add(p, l); must(p, 'likelihood'); }
@@ -1059,7 +1086,8 @@ const OPTION_WORDS: Record<string, RegExp> = {
 };
 
 function leaningLine(p: AnswerPlan, options: [string, string], domain: 'career' | 'study' | 'purpose'): void {
-  let r: { pick: string | null; why: L3 | null } = optionLeaning(p.subject, options, domain);
+  const force = /\b(?:pick|choose|select) (?:one|1)\b|\bjust one\b|\bek (?:chuno|chunen|batao|bataiye)\b|\bekta (?:bolo|bolun|bachho|beche)\b|एक (?:चुन|बता)|একটা (?:বলুন|বলো|বেছে)/i.test(p.question);
+  let r: { pick: string | null; why: L3 | null; slight?: boolean } = optionLeaning(p.subject, options, domain, undefined, force);
   // The answer's own ranked items decide when they name one of the options (Stage 3: "leans to finance"
   // followed by "technology and data" as the strongest field read as a contradiction).
   const items = p.content?.items ?? [];
@@ -1086,7 +1114,7 @@ function leaningLine(p: AnswerPlan, options: [string, string], domain: 'career' 
   }
   const [a, b] = options;
   if (r.pick) {
-    add(p, line('leaning', 'optionLean', 'lead', { a: OPTION_LABEL[a] ?? a, b: OPTION_LABEL[b] ?? b, pick: OPTION_LABEL[r.pick] ?? r.pick, why: r.why ?? '' },
+    add(p, line('leaning', r.slight ? 'optionLeanSlight' : 'optionLean', 'lead', { a: OPTION_LABEL[a] ?? a, b: OPTION_LABEL[b] ?? b, pick: OPTION_LABEL[r.pick] ?? r.pick, why: r.why ?? '' },
       { terms: Object.values(OPTION_LABEL[r.pick] ?? { en: r.pick }).join('|'), also: ['chart_reason'] }));
   } else {
     add(p, line('leaning', 'optionBoth', 'lead', { a: OPTION_LABEL[a] ?? a, b: OPTION_LABEL[b] ?? b }, { terms: 'both|दोनों|দুটোকেই' }));
@@ -1189,7 +1217,10 @@ function followUpRoute(p: AnswerPlan, ctx: RouteCtx, fu: string): AnswerPlan {
         add(p, line('leaning', 'dontQuit', 'body', {}, { terms: "don'?t quit|न छोड़ें|ছাড়বেন না", also: ['practical_step'] }));
         must(p, 'leaning');
       }
-      const tip = TIP2[t.topic === 'job' || t.topic === 'promotion' ? 'careerField' : t.topic === 'money' ? 'moneySources' : 'whyNow'];
+      // "Pick one of these roles" only when an earlier reply named roles (a career-field answer).
+      const career = t.topic === 'job' || t.topic === 'promotion';
+      const namedRoles = !!p.prev && (p.prev.resolved === 'career_field' || p.prev.content?.ask === 'careerField');
+      const tip = career ? (namedRoles ? TIP2.careerField : C.nowCareerStep) : TIP2[t.topic === 'money' ? 'moneySources' : 'whyNow'];
       add(p, line('practical_step', tip, 'body'));
       add(p, line('practical_step', { en: HELPS.en[t.topic], hi: HELPS.hi[t.topic], bn: HELPS.bn[t.topic] }, 'end'));
       p.checks.factDates.push(now.antar.end);

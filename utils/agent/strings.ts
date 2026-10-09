@@ -70,6 +70,18 @@ export const S = {
     hi: 'यह समय आपके जीवन के {P} वाले दौर में आता है, और {link}।',
     bn: 'এই সময়টা পড়ে আপনার জীবনের {P}-এর পর্বে, আর {link}।',
   } as Table,
+  /** The same phase already gave the reason in an earlier reply: say so instead of repeating the sentence. */
+  reasonPlanetAgain: {
+    en: 'Here too it is your {P} phase, and this time {link}.',
+    hi: 'यहाँ भी आपका {P} वाला दौर काम करता है, और इस बार {link}।',
+    bn: 'এখানেও আপনার {P}-এর পর্ব কাজ করে, আর এবার {link}।',
+  } as Table,
+  /** Same phase and same tie as an earlier reply's reason. */
+  reasonPlanetSame: {
+    en: 'This also falls in your {P} phase, for the same reason.',
+    hi: 'यह भी आपके {P} वाले दौर में आता है, उसी वजह से।',
+    bn: 'এটাও পড়ে আপনার {P}-এর পর্বে, একই কারণে।',
+  } as Table,
   /** Same, without a usable link (a node period): just the phase. */
   reasonPlanetOnly: {
     en: 'This window falls in your {P} phase, which is tied to {area} in your chart.',
@@ -126,6 +138,12 @@ export const S = {
     en: 'Not strongly in the coming months; the better window comes later.',
     hi: 'आने वाले महीनों में इसका ज़्यादा ज़ोर नहीं दिखता; बेहतर समय थोड़ा बाद में है।',
     bn: 'সামনের কয়েক মাসে এর জোর কম; ভালো সময় আসে একটু পরে।',
+  } as Table,
+  /** A weak best window in a compact answer: said to be gentle. */
+  weakSoft: {
+    en: "It's a gentle stretch rather than a strong one, so small steady steps count.",
+    hi: 'यह हल्का दौर है, बहुत मज़बूत नहीं, इसलिए छोटे और नियमित कदम मायने रखते हैं।',
+    bn: 'এটা হালকা সময়, খুব জোরালো নয়, তাই ছোট আর নিয়মিত পদক্ষেপই আসল।',
   } as Table,
   /** "This year?" when the best window opens after the coming twelve months: a plain no, then the window. */
   nearNoYear: {

@@ -338,6 +338,33 @@ export const C = {
     hi: 'यह अनुमानित इसलिए है क्योंकि जन्म समय के बिना लग्न और घर तय नहीं होते, और जीवन-चक्र की तारीखें थोड़ी खिसक सकती हैं।',
     bn: 'এটা আনুমানিক, কারণ জন্মসময় ছাড়া লগ্ন আর ঘর ঠিক করা যায় না, আর জীবনচক্রের তারিখগুলো একটু সরে যেতে পারে।',
   },
+  inviteConfirmNoTime: {
+    en: 'Does that match what you went through? If it does, it helps confirm the reading.',
+    hi: 'क्या यह आपके अनुभव से मेल खाता है? अगर हाँ, तो इससे यह पढ़ाई और पक्की होती है।',
+    bn: 'এটা কি আপনার অভিজ্ঞতার সঙ্গে মেলে? মিললে এই বিশ্লেষণটা আরও পোক্ত হয়।',
+  },
+  retireStep: {
+    en: 'Pick one thing you have long wanted to do, and give it a regular slot each week.',
+    hi: 'कोई एक काम चुनें जो आप लंबे समय से करना चाहते थे, और उसे हर हफ़्ते एक तय समय दें।',
+    bn: 'এমন একটা কাজ বেছে নিন যা অনেকদিন ধরে করতে চেয়েছেন, আর প্রতি সপ্তাহে তার জন্য একটা নির্দিষ্ট সময় রাখুন।',
+  },
+  /** "What should I do till then?" when no roles were named yet. */
+  nowCareerStep: {
+    en: 'Pick one skill your target roles ask for, learn it over the next month and show it in a small project.',
+    hi: 'जिस काम की ओर बढ़ना है उसका एक ज़रूरी हुनर चुनें, अगले एक महीने में सीखें और किसी छोटे प्रोजेक्ट में दिखाएँ।',
+    bn: 'যে কাজের দিকে এগোতে চান তার একটা দরকারি দক্ষতা বেছে নিন, সামনের এক মাসে শিখুন আর একটা ছোট প্রজেক্টে দেখান।',
+  },
+  yearOne: {
+    en: '{year} looks strongest for {a1}: its best window falls in that year.',
+    hi: '{year} में सबसे मज़बूत समय {a1} के लिए दिखता है: इसका सबसे अच्छा दौर इसी साल में आता है।',
+    bn: '{year} সবচেয়ে জোরালো দেখায় {a1}-এর জন্য: এর সবচেয়ে ভালো সময় এই বছরেই পড়ে।',
+  },
+  moneyHabitShort: { en: 'Save a fixed share each month and avoid big bets in weaker months.', hi: 'हर महीने तय हिस्सा बचाएँ और कमज़ोर महीनों में बड़े दाँव से बचें।', bn: 'প্রতি মাসে নির্দিষ্ট অংশ জমান আর দুর্বল মাসগুলোয় বড় ঝুঁকি এড়িয়ে চলুন।' },
+  finAdviserShort: { en: 'Talk to a financial adviser before a big money decision.', hi: 'बड़े आर्थिक फ़ैसले से पहले किसी वित्तीय सलाहकार से बात करें।', bn: 'বড় আর্থিক সিদ্ধান্তের আগে একজন আর্থিক পরামর্শদাতার সঙ্গে কথা বলুন।' },
+  noTimeHowShort: { en: 'Without a birth time I count houses from your Moon sign; it still gives a useful picture, only the timing is approximate.', hi: 'जन्म समय के बिना मैं चंद्र राशि से घर गिनता हूँ; फिर भी काम की तस्वीर मिलती है, बस समय अनुमानित है।', bn: 'জন্মসময় ছাড়া আমি চন্দ্ররাশি থেকে ঘর গুনি; তবুও কাজের ছবি পাওয়া যায়, শুধু সময়টা আনুমানিক।' },
+  /** "Will I get my money back?": odds for asking in that period, not for the other person's choice. */
+  likelyOwed: { en: "There's a fair chance if you follow up in that period.", hi: 'उस सहायक समय में बात आगे बढ़ाने से अच्छी उम्मीद है।', bn: 'ওই সহায়ক সময়ে খোঁজ নিলে ভালো আশা আছে।' },
+  addTimeShort: { en: 'If you find your birth time, add it to your profile for sharper answers.', hi: 'जन्म समय मिल जाए तो उसे प्रोफ़ाइल में जोड़ें, जवाब और सटीक होंगे।', bn: 'জন্মের সময় পেলে প্রোফাইলে যোগ করুন, উত্তর আরও নিখুঁত হবে।' },
   inviteConfirm: {
     en: 'Does that match what you went through? If it does, it also tells us your birth time is reliable.',
     hi: 'क्या यह आपके अनुभव से मेल खाता है? अगर हाँ, तो इससे यह भी पता चलता है कि आपका जन्म समय सही है।',
@@ -832,6 +859,12 @@ export const C = {
     en: 'Between {a} and {b}, your chart leans to {pick}: {why}.',
     hi: '{a} और {b} में से आपका चार्ट {pick} की ओर झुकता है: {why}।',
     bn: '{a} আর {b}-এর মধ্যে আপনার চার্ট {pick}-এর দিকে টানে: {why}।',
+  },
+  /** "Pick one" when the two are close: the higher one, said as a small margin. */
+  optionLeanSlight: {
+    en: 'If I have to pick between {a} and {b}, {pick}, by a small margin: {why}.',
+    hi: 'अगर {a} और {b} में से एक चुनना हो, तो थोड़े अंतर से {pick}: {why}।',
+    bn: '{a} আর {b}-এর মধ্যে একটা বাছতে হলে অল্প ব্যবধানে {pick}: {why}।',
   },
   optionBoth: {
     en: 'Between {a} and {b}, your chart supports both about equally, so let your interest and a short trial decide.',

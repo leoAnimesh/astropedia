@@ -331,7 +331,7 @@ const TRYING = rx(['\\btrying (?:for|to conceive)', '\\bivf\\b', '\\biui\\b', '\
 const FEELINGS = rx([
   '\\bunemployed for\\b', '\\bstill single\\b', '\\bpushing me\\b', '\\bpressur', '\\bworried\\b', '\\bscared\\b', '\\bafraid\\b', '\\bfrustrat', '\\bfeel (?:bad|terrible|awful|stuck)\\b', '\\bfeeling (?:bad|low|stuck)\\b',
   '\\b(?:6|six|\\d+) months\\b.*\\b(?:job|unemploy)', '\\bfailed\\b', '\\bbored\\b', '\\bstuck\\b', '\\bpareshan\\b', '\\btry karte karte\\b', '\\bbose achi\\b', '\\bchap dicche\\b', '\\bbura lag\\b', '\\bvery ill\\b', '\\btight rehta\\b',
-  '\\bterrible\\b', '\\bhopeless\\b', 'परेशान', 'चिंता', 'दबाव', 'दुखी', 'বসে আছি', 'চাপ দিচ্ছে', 'চিন্তা', 'কষ্ট', 'খুব খারাপ',
+  '\\bterrible\\b', '\\bhopeless\\b', '\\b(?:keeps?|always) (?:ignoring|ignores|insulting|blaming)\\b', '\\bfinally\\b.*\\?', '\\bnobody (?:values|notices)\\b', '\\bnazarandaz\\b', '\\bignore kar', 'नज़रअंदाज़', 'অবহেলা', 'পাত্তা দেয় না', 'परेशान', 'चिंता', 'दबाव', 'दुखी', 'বসে আছি', 'চাপ দিচ্ছে', 'চিন্তা', 'কষ্ট', 'খুব খারাপ',
 ]);
 const RETIRE = rx(['\\bretire', '\\bafter retirement\\b', 'रिटायरमेंट', 'सेवानिवृत्ति', 'অবসর']);
 const GRANDKIDS = rx(['\\bgrand(?:children|kids|son|daughter|child)\\b', '\\bnaati\\b', '\\bpota\\b', 'पोता', 'नाती', 'নাতি', 'নাতনি']);

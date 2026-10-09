@@ -307,7 +307,9 @@ export function buildPlan(input: PlanInput): AnswerPlan {
   // The thread's facts re-route a topic: "I already have a job" + job → career growth.
   if (topic === 'job' && facts.employed && !/\b(?:switch|change|new job|resign|quit)\b|बदल|বদল/i.test(input.question)) topic = 'promotion';
 
-  if (topic && age != null && age < 18 && ADULT_TOPICS.has(topic)) {
+  // Romance-type questions without a topic word ("will he come back?", "how many gunas do we match?") count too.
+  const romance = ['relationship_problems', 'love_vs_arranged', 'partner_traits_meeting', 'compatibility_other_person'].includes(intent.resolved);
+  if (age != null && age < 18 && ((topic && ADULT_TOPICS.has(topic)) || romance)) {
     // Redirect to studies, with the study window.
     const pressure = FAMILY_RE.test(input.question) && PRESSURE_RE.test(input.question);
     const say = pressure ? [line('safety_resources', 'minorPressure', 'body', {}, { also: ['counsellor'] })] : [];

@@ -105,7 +105,7 @@ const LINK_TEXT: Partial<Record<LinkKind, Record<Lang, string>>> = {
 const LINK_ORDER: LinkKind[] = ['occupant', 'lord', 'aspect', 'withLord', 'karaka'];
 /** House words for a topic's reason ("the Sun guides your schooling side" for exams, not "your home side"). */
 const TOPIC_HOUSE_WORD: Partial<Record<TimingTopic, Record<number, Record<Lang, string>>>> = {
-  education: { 4: { en: 'schooling', hi: 'शिक्षा', bn: 'শিক্ষার' }, 5: { en: 'learning', hi: 'पढ़ाई', bn: 'পড়াশোনার' } },
+  education: { 2: { en: 'learning and speech', hi: 'वाणी और ज्ञान', bn: 'বাণী আর জ্ঞানের' }, 4: { en: 'schooling', hi: 'शिक्षा', bn: 'শিক্ষার' }, 5: { en: 'learning', hi: 'पढ़ाई', bn: 'পড়াশোনার' } },
   love: { 5: { en: 'romance', hi: 'प्रेम', bn: 'প্রেমের' } },
   marriage: { 5: { en: 'romance', hi: 'प्रेम', bn: 'প্রেমের' } },
   children: { 5: { en: 'children', hi: 'संतान', bn: 'সন্তানের' } },
@@ -151,7 +151,7 @@ export function linkClause(plan: AnswerPlan, planet: string, lang: Lang): string
  * The window's chart reason split in two: the sub-period clause and the
  * slow-planet transit support (a separate sentence the word-limit trim may drop).
  */
-export function reasonParts(plan: AnswerPlan): { reason: string | null; transit: string | null } | null {
+export function reasonParts(plan: AnswerPlan, previous: string[] = []): { reason: string | null; transit: string | null } | null {
   const t = plan.timing;
   if (!t) return null;
   const lang = plan.lang;
@@ -175,7 +175,13 @@ export function reasonParts(plan: AnswerPlan): { reason: string | null; transit:
     const clause = fill(LINK_TEXT[link.kind]![lang], {
       p: planetName(planet, lang), area: link.house ? (TOPIC_HOUSE_WORD[t.topic]?.[link.house]?.[lang] ?? AREA_OF_HOUSE[lang][link.house]) : '', topic: AREA[lang][t.topic], topicGen: AREA_GEN_BN[t.topic],
     });
-    text = fill((past ? S.reasonPlanetPast : S.reasonPlanet)[lang], { P, link: clause });
+    // Same phase as an earlier reply's reason (job, then money): "here too … and this time …", not the same sentence again.
+    const head = fill(S.reasonPlanet[lang].split('{link}')[0], { P }).replace(/[,،]?\s*(?:and|और|আর)\s*$/, '').trim();
+    // Only for the user's own chart: an earlier "your … phase" was theirs too.
+    const again = !past && plan.subject.isYou !== false && previous.some(x => westernDigits(x).includes(head));
+    const same = again && previous.some(x => westernDigits(x).includes(clause));
+    text = same ? fill(S.reasonPlanetSame[lang], { P })
+      : fill((past ? S.reasonPlanetPast : again ? S.reasonPlanetAgain : S.reasonPlanet)[lang], { P, link: clause });
   } else {
     text = fill((past ? S.reasonPlanetOnlyPast : S.reasonPlanetOnly)[lang], { P, area: v.area, areaGen: v.areaGen });
   }
@@ -208,6 +214,11 @@ function altSentence(plan: AnswerPlan): string | null {
     const strong = ws.filter(w => w !== best && w.strength === 'strong').sort((a, b) => a.start.getTime() - b.start.getTime())[0];
     if (strong) return fill(S.altStronger[lang], lab(strong));
     if (t.result.nextStrong && yearsAway(t.result.nextStrong, plan.now) < 6) return fill(S.altNextStrong[lang], lab(t.result.nextStrong));
+    // A far, gentle best window: the nearer smaller opening still helps (Stage 3: "2031 for a couple trying").
+    if (yearsAway(best, plan.now) >= 2) {
+      const nearer = ws.filter(w => w !== best && w.start < best.start).sort((a, b) => a.start.getTime() - b.start.getTime())[0];
+      if (nearer) return fill(S.altEarlier[lang], lab(nearer));
+    }
     return plan.say.some(l => l.code === 'likelihood') ? null : S.altSteady[lang];
   }
   if (yearsAway(best, plan.now) >= 2) {
@@ -238,7 +249,7 @@ export function timingSentences(plan: AnswerPlan, opts: { withHelps?: boolean } 
   return timingParts(plan, opts).map(x => x.text);
 }
 
-export function timingParts(plan: AnswerPlan, { withHelps = true } = {}): Part[] {
+export function timingParts(plan: AnswerPlan, { withHelps = true } = {}, previous: string[] = []): Part[] {
   const t = plan.timing;
   if (!t) return [];
   const lang = plan.lang;
@@ -257,12 +268,16 @@ export function timingParts(plan: AnswerPlan, { withHelps = true } = {}): Part[]
   const compact = COMPACT.has(plan.resolved) || plan.say.some(l => l.code === 'likelihood');
   if (plan.decline !== 'minorRomance') {
     // One concrete chart reason, also for a past window (rubric 3.2: "why that time" in one clause).
-    const r = reasonParts(plan);
+    const r = reasonParts(plan, previous);
     if (r?.reason) push(r.reason, 80);
     if (r?.transit) push(r.transit, 20);
-    const alt = compact || t.result.past ? null : altSentence(plan);
+    // A far window still gets its nearer opening in a yes/no answer (Stage 3: a 2031 window "for a couple trying 4 years").
+    const far = plan.notes.includes('far');
+    const alt = (COMPACT.has(plan.resolved) || (compact && !far)) || t.result.past ? null : altSentence(plan);
     // A nearer opening before a far window matters more than "the next one after".
-    if (alt) push(alt, plan.notes.includes('far') ? 45 : 30);
+    if (alt) push(alt, far ? 45 : 30);
+    // A weak window is said to be gentle when no other line softens it (rubric 3.3: weak windows worded softly).
+    else if (t.best.strength === 'weak' && !t.result.past) push(S.weakSoft[lang], 45);
   }
   if (!t.result.past && withHelps && !plan.say.some(l => PRACTICAL.has(l.code))) {
     // Loan approval: a saving/returns tip is beside the point; repayment record and paperwork are what lenders weigh.
@@ -316,7 +331,7 @@ export function renderTemplate(plan: AnswerPlan, previous: string[] = []): strin
   if (!plan.coreOff) {
     if (plan.content && !plan.intent.timing) core = contentParts(plan, previous);
     // The window answers the question, so it comes first; the sub-period behind it is its reason.
-    else if (t) core = timingParts(plan);
+    else if (t) core = timingParts(plan, {}, previous);
   }
   if (!core.length && !plan.say.length) return null;
   return withLines(plan, core, previous);
@@ -336,6 +351,7 @@ const SAME_POINT: [string, RegExp][] = [
   ['doctor', /\b(?:see|talk to|consult) (?:a |your )?doctor\b|डॉक्टर (?:को दिखाएँ|से (?:बात|सलाह|मिलें))|ডাক্তার(?:ের সঙ্গে কথা| দেখান)/i],
   ['counsellor', /\bcounsell?or\b|काउंसलर|কাউন্সেলর/i],
   ['cv', /\bCV\b|बायोडाटा|বায়োডেটা/i],
+  ['privateOption', /private[- ]sector|both doors open|प्राइवेट|দুটো পথই|বেসরকারি/i],
 ];
 const pointOf = (x: string) => SAME_POINT.find(([, re]) => re.test(x))?.[0] ?? null;
 
@@ -385,7 +401,8 @@ function withLines(plan: AnswerPlan, coreIn: Part[] | string, previous: string[]
   // The core (a window, or a "which / what" answer's items) leads unless the category starts with feelings.
   const timingFirst = !plan.coreOff && core.length > 0 && !['mental_health_distress', 'why_now_current_phase', 'family_parents_siblings', 'relationship_problems'].includes(plan.resolved)
     && plan.category !== 'elderly';
-  let head: Part[] = lead.map(leadPart);
+  // Feelings-first categories: the one-line acknowledgement still opens the answer (Stage 3: empathy fourth).
+  let head: Part[] = [...lead.filter(x => OPENER.has(x.l.code)), ...lead.filter(x => !OPENER.has(x.l.code))].map(leadPart);
   let coreRest = core;
   if (timingFirst) {
     // A one-phrase acknowledgement ("Thanks for telling me.", "Sorry…") still opens the answer.
@@ -411,6 +428,12 @@ function withLines(plan: AnswerPlan, coreIn: Part[] | string, previous: string[]
       const y = out[dup];
       const xWins = x.prio > y.prio || (x.prio === y.prio && !!y.core && !x.core);
       const loser = xWins ? y : x;
+      // A loser with a short form that no longer makes the point keeps its short form (the study plan without its private-sector tail).
+      if (loser.short && pointOf(loser.short) !== pt) {
+        const shortened = { ...loser, text: loser.short, short: undefined };
+        if (xWins) { out[dup] = shortened; out.push(x); } else out.push(shortened);
+        continue;
+      }
       // A required line is never dropped (two required lines of the same kind both stay).
       if (!loser.line?.required) {
         if (!xWins) continue;
@@ -418,6 +441,11 @@ function withLines(plan: AnswerPlan, coreIn: Part[] | string, previous: string[]
       }
     }
     out.push(x);
+  }
+  // Dates without the timing paragraph (yes/no short window, strain easing, past years): the birth-time caveat still applies.
+  if (plan.notes.includes('noTime') && !core.length && plan.route === 'answer'
+    && out.some(x => /\b20\d\d\b|२०|২০/.test(westernDigits(x.text))) && !out.some(x => /birth time|जन्म (?:का )?समय|জন্ম ?সময়|জন্মের সময়/i.test(x.text))) {
+    out.push({ text: S.noTimeShort[lang], prio: 95 });
   }
   // A core sentence that is the only carrier of a must code (the timing paragraph's practical step) stays too.
   for (const x of out) {
@@ -605,11 +633,13 @@ const TIP_JOB: Record<Lang, string> = {
   bn: 'আগে চাকরিতে এগোন; পাশে কিছু করতে চাইলে সেটা ছোট আর পার্ট-টাইম রাখুন।',
 };
 
-const WHY_LEAD: Record<'main' | 'satYes' | 'satNo' | 'also', Record<Lang, string>> = {
+const WHY_LEAD: Record<'main' | 'satYes' | 'satNo' | 'also' | 'another', Record<Lang, string>> = {
   main: { en: 'The main reason is {x}.', hi: 'इसकी मुख्य वजह है: {x}।', bn: 'এর মূল কারণ: {x}।' },
   satYes: { en: 'Yes, Saturn is part of it: {x}.', hi: 'हाँ, इसमें शनि की भूमिका है: {x}।', bn: 'হ্যাঁ, এতে শনির ভূমিকা আছে: {x}।' },
   satNo: { en: "Saturn isn't the main pressure right now; the bigger factor is {x}.", hi: 'अभी शनि मुख्य दबाव नहीं है; बड़ी वजह है: {x}।', bn: 'এখন শনি মূল চাপ নয়; বড় কারণ হলো: {x}।' },
   also: { en: 'Alongside it: {x}.', hi: 'इसके साथ: {x}।', bn: 'এর সঙ্গে: {x}।' },
+  /** The main cause was already said (a repeat question): the other cycle opens the answer. */
+  another: { en: 'Another part of it: {x}.', hi: 'इसका एक और हिस्सा: {x}।', bn: 'এর আরেকটা দিক: {x}।' },
 };
 
 const WHY_PRACTICE: Record<Lang, string> = {
@@ -656,7 +686,7 @@ function whyNowParts(plan: AnswerPlan, previous: string[]): Part[] {
   const add = (t: string | undefined, prio: number) => { if (t && !said(t)) parts.push({ text: t, prio, core: true }); };
   const repeat = said(first);
   // A follow-up that already heard the main cause still gets the other running cycle when it is new.
-  if (second) add(fill(WHY_LEAD.also[lang], { x: lab(second) }), 70);
+  if (second) add(fill((repeat ? WHY_LEAD.another : WHY_LEAD.also)[lang], { x: lab(second) }), 70);
   // A follow-up that already heard the cause gets what it means instead (never just a tip).
   if (repeat || !second) add(sat ? WHY_MEANS.saturn[lang] : WHY_MEANS.phase[lang], 60);
   const hope = c.extra.find(e => e.kind === 'line' || e.kind === 'topicLink');

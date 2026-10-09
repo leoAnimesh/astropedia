@@ -44,6 +44,7 @@ import { linked, naturalRelation, strengthFactor, yogasFor, type ChartAnalysis, 
 import { vargaUsable, vargaLord, vargaOccupants, type Varga } from '../vargas';
 import { splitPeriod } from '../timing-engine';
 import { ageOn } from '../guru-context';
+import { getSadeSati } from '../sade-sati';
 import type { AnswerKind, Ask } from './intent';
 import { PLANET_PLAIN } from './category-strings';
 import {
@@ -488,8 +489,8 @@ export const OPTION_LABEL: Record<string, L3> = {
  * A leaning between two named options, from the ask's own planet scores:
  * the option whose planets score higher wins by 15%; otherwise both.
  */
-export function optionLeaning(profile: TimingProfile, options: [string, string], domain: 'career' | 'study' | 'purpose', c = natalChart(profile)):
-  { pick: string | null; why: L3 | null; source: string } {
+export function optionLeaning(profile: TimingProfile, options: [string, string], domain: 'career' | 'study' | 'purpose', c = natalChart(profile), force = false):
+  { pick: string | null; why: L3 | null; source: string; slight?: boolean } {
   const scores = domain === 'career' ? careerScores(profile, c) : domain === 'study' ? studyScores(c)
     : scorePlanets(c, [[9, 1], [5, 0.6], [12, 0.6]], [['Jupiter', 1], ['Ketu', 1]]);
   const [a, b] = options;
@@ -497,13 +498,16 @@ export function optionLeaning(profile: TimingProfile, options: [string, string],
   const own = (o: string, x: string) => { const ps = (OPTION_PLANETS[o] ?? []).filter(p => !(OPTION_PLANETS[x] ?? []).includes(p)); return ps.length ? ps : OPTION_PLANETS[o] ?? []; };
   const of = (o: string) => Math.max(0, ...own(o, o === a ? b : a).map(p => scores.find(s => s.planet === p)?.score ?? 0));
   const sa = of(a), sb = of(b);
-  const pick = sa >= sb * 1.15 ? a : sb >= sa * 1.15 ? b : null;
+  let pick = sa >= sb * 1.15 ? a : sb >= sa * 1.15 ? b : null;
+  // "Pick one": the higher score even when the gap is small (said as a slight lean).
+  const slight = !pick && force && sa !== sb;
+  if (slight) pick = sa > sb ? a : b;
   let why: L3 | null = null;
   if (pick) {
     const best = own(pick, pick === a ? b : a).map(p => scores.find(s => s.planet === p)).filter((x): x is Score => !!x).sort((x, y) => y.score - x.score)[0];
     if (best) why = whyOf(c, best, domain === 'study' ? 'study' : '').why;
   }
-  return { pick, why, source: `${a} ${sa.toFixed(1)} vs ${b} ${sb.toFixed(1)}` };
+  return { pick, why, source: `${a} ${sa.toFixed(1)} vs ${b} ${sb.toFixed(1)}`, slight };
 }
 
 /** Yogas worth naming for an ask, in plain words (never their names). */
@@ -588,7 +592,11 @@ function whyNow(profile: TimingProfile, c: NatalChart, now: Date, topic: TimingT
     if (rel === 6 || rel === 8) extra.push(WHY_NOW.friction);
     else if (rel === 2 || rel === 12) extra.push(WHY_NOW.cost);
   }
-  const sat = saturnPressure(c, now);
+  const sat0 = saturnPressure(c, now);
+  // Sade sati: the same end the sade-sati answer gives (its final exit), not this month-step scan's.
+  const ss = sat0?.kind === 'sadeSati' ? getSadeSati(profile, now) : null;
+  const ssPeriod = ss && ss.currentIndex >= 0 ? ss.periods[ss.currentIndex] : null;
+  const sat = sat0 && ssPeriod ? { ...sat0, end: ssPeriod.finalEnd ?? ssPeriod.end } : sat0;
   if (sat) {
     // A minor hears the phase and what helps, not how many years it lasts.
     const minor = (ageOn(profile.birthDate, now) ?? 30) < 18;
