@@ -108,6 +108,27 @@ export const Storage = {
   setDailyHoroscopePush: (v: boolean): void => getStorage().set('push_daily_horoscope', v),
   getTransitAlerts:      (): boolean => getStorage().getBoolean('push_transit_alerts')  ?? false,
   setTransitAlerts:      (v: boolean): void => getStorage().set('push_transit_alerts',  v),
+  // Evening-before reminders for Ekadashi, Purnima, festivals (utils/notifications.ts
+  // scheduleFestivalReminders) and a heads-up before today's Rahu Kaal.
+  getFestivalReminders:  (): boolean => getStorage().getBoolean('push_festival_reminders') ?? false,
+  setFestivalReminders:  (v: boolean): void => getStorage().set('push_festival_reminders', v),
+  getRahuKaalPush:       (): boolean => getStorage().getBoolean('push_rahu_kaal') ?? false,
+  setRahuKaalPush:       (v: boolean): void => getStorage().set('push_rahu_kaal', v),
+  // Per-festival "Remind me" on the Festivals screen, by FestivalEvent.id
+  // (e.g. "diwali-2026-11-08"). true / false override the global toggle above;
+  // undefined = follow it.
+  getFestivalRemind:     (id: string): boolean | undefined => getStorage().getBoolean(`festival_remind_v1_${id}`),
+  setFestivalRemind:     (id: string, v: boolean): void => getStorage().set(`festival_remind_v1_${id}`, v),
+
+  // Guru chats. The one-time "Chats are now organised by guru" sheet is owed
+  // after an upgrade that moved existing chats (never on fresh installs).
+  getGuruNoticePending:  (): boolean => getStorage().getBoolean('guru_notice_pending') ?? false,
+  setGuruNoticePending:  (v: boolean): void => getStorage().set('guru_notice_pending', v),
+  getGuruNoticeSeen:     (): boolean => getStorage().getBoolean('guru_notice_seen') ?? false,
+  setGuruNoticeSeen:     (v: boolean): void => getStorage().set('guru_notice_seen', v),
+  // Last reply preview the user has seen per thread (the Chat tab's unread dot).
+  getChatSeen:           (threadId: string): string | null => getStorage().getString(`chat_seen_v1_${threadId}`) ?? null,
+  setChatSeen:           (threadId: string, preview: string): void => getStorage().set(`chat_seen_v1_${threadId}`, preview),
 
   // Onboarding-flow draft. The user's in-flight onboarding data, persisted as
   // one JSON blob so closing the app mid-flow doesn't lose progress.
@@ -154,6 +175,13 @@ export const Storage = {
   setFollowUps: (messageId: string, chips: string[]): void =>
     getStorage().set(`followups_v1_${messageId}`, JSON.stringify(chips)),
 
+  // Answers the user reported (Report this answer): ISO time per assistant
+  // message id. Only on this phone; the chat hides them behind a notice.
+  getAnswerReported: (messageId: string): string | null =>
+    getStorage().getString(`reported_v1_${messageId}`) ?? null,
+  setAnswerReported: (messageId: string, at: string): void =>
+    getStorage().set(`reported_v1_${messageId}`, at),
+
   // In-app keyboard: 'custom' (the app's own keyboard) or 'system' (the
   // phone's keyboard, chosen with the 🌐 key). Remembered until changed.
   getKeyboardMode: (): 'custom' | 'system' =>
@@ -169,6 +197,30 @@ export const Storage = {
   getModelResume: (): string | null => getStorage().getString('model_resume_v1') ?? null,
   setModelResume: (json: string): void => getStorage().set('model_resume_v1', json),
   clearModelResume: (): void => getStorage().delete('model_resume_v1'),
+  // The model the user chose in Settings → Change model (a catalog id,
+  // utils/model-catalog.ts); absent = the default Saga track (the manifest's
+  // latest). Launches keep the chosen model installed.
+  getSelectedModel: (): string | null => getStorage().getString('model_selected_v1') ?? null,
+  setSelectedModel: (id: string | null): void => {
+    if (id) getStorage().set('model_selected_v1', id);
+    else getStorage().delete('model_selected_v1');
+  },
+  clearSelectedModel: (): void => getStorage().delete('model_selected_v1'),
+  // A model switch's chat / cache wipe that hasn't finished ({ "to": id }):
+  // written before the new install record, cleared after the wipe.
+  getModelSwitchWipe: (): string | null => getStorage().getString('model_switch_wipe_v1') ?? null,
+  setModelSwitchWipe: (json: string): void => getStorage().set('model_switch_wipe_v1', json),
+  clearModelSwitchWipe: (): void => getStorage().delete('model_switch_wipe_v1'),
+  // A switch whose download hasn't finished ({ entry, startedAt }): kept across
+  // launches so the download resumes (next launch or reopening the picker);
+  // cleared at the commit, on cancel and on a failure that can't resume.
+  getModelSwitchPending: (): string | null => getStorage().getString('model_switch_pending_v1') ?? null,
+  setModelSwitchPending: (json: string): void => getStorage().set('model_switch_pending_v1', json),
+  clearModelSwitchPending: (): void => getStorage().delete('model_switch_pending_v1'),
+  // iOS resume data of that switch download (same shape as model_resume_v1, kept apart from setup's).
+  getModelSwitchResume: (): string | null => getStorage().getString('model_switch_resume_v1') ?? null,
+  setModelSwitchResume: (json: string): void => getStorage().set('model_switch_resume_v1', json),
+  clearModelSwitchResume: (): void => getStorage().delete('model_switch_resume_v1'),
   // The full-screen "Preparing Saga…" overlay owed after onboarding; kept
   // until the model is ready so a relaunch mid-download shows it again.
   getModelOverlayPending: (): boolean => getStorage().getBoolean('model_overlay_pending') ?? false,
@@ -186,6 +238,18 @@ export const Storage = {
     }
   },
 
+  // What a model switch clears from MMKV (utils/model-catalog.ts
+  // MODEL_DERIVED_KEY_PREFIXES): chart readings, follow-up chips, horoscope
+  // caches and the per-thread unread markers of the deleted chats.
+  clearModelDerivedKeys: (isDerived: (key: string) => boolean): number => {
+    const s = getStorage();
+    let n = 0;
+    for (const key of s.keys()) {
+      if (isDerived(key)) { s.delete(key); n++; }
+    }
+    return n;
+  },
+
   // Clear everything (used by reset)
   clear: (): void => {
     const s = getStorage();
@@ -195,5 +259,7 @@ export const Storage = {
     s.delete('dark_mode');
     s.delete('theme_mode');
     s.delete('active_profile_id');
+    s.delete('guru_notice_pending');
+    for (const key of s.keys()) if (key.startsWith('chat_seen_')) s.delete(key);
   },
 };

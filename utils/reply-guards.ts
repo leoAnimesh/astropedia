@@ -9,7 +9,8 @@
  *    readings in Bengali and Hinglish/Banglish questions;
  *  - pure greetings answered with a full chart dump;
  *  - "when" questions answered without any month or year, or (v2.1) with only
- *    the current month;
+ *    the current month (questions the timing engine has no window for; the
+ *    engine's windows are checked and repaired by utils/agent/verify.ts);
  *  - (v2.1) baby's-sex and partner-name questions answered instead of declined;
  *  - (v2.1) invented "about N months from now" countdowns, wrong 21 of 21 times;
  *  - (v2.1) health / legal answers without "see a doctor / lawyer".
@@ -31,6 +32,14 @@ export const RETRY_TEMPERATURE = 0.6;
 export const SCRIPT_DECIDE_LETTERS = 24;
 /** Words needed before the repetition check decides on a partial reply. */
 export const REPEAT_DECIDE_WORDS = 16;
+/**
+ * The repetition check also waits for two whole sentences (or this many
+ * words): a repeat often opens with one fresh sentence ("You're asking about
+ * the right place…") and then copies the earlier answer, which the first 16
+ * words alone can't show (overlap 0.00 at 16 words, 0.76 for the whole reply
+ * in the Career-guru report of 2026-10-09).
+ */
+export const REPEAT_HOLD_WORDS = 40;
 
 // Letters plus combining marks, so Devanagari/Bengali words keep their vowel signs.
 const WORD_RE = /[\p{L}\p{M}\p{N}]+/gu;
@@ -206,6 +215,25 @@ export function westernDigits(text: string): string {
     .replace(/[০-৯]/g, d => String(d.charCodeAt(0) - 0x9e6));
 }
 
+/**
+ * Western digits → Devanagari (hi) / Bengali (bn) digits; English unchanged.
+ * The pure twin of utils/i18n.ts localizeDigits, for user-visible text the
+ * agent layers write (templates, repairs, model replies). Model-bound text
+ * (prompts, history, chip questions) stays in Western digits: westernDigits.
+ */
+export function nativeDigits(text: string, lang: GuardLang): string {
+  if (lang === 'en') return text;
+  const zero = lang === 'bn' ? 0x9e6 : 0x966;
+  return text.replace(/[0-9]/g, d => String.fromCharCode(zero + Number(d)));
+}
+
+/** nativeDigits for text in whatever script it is written in (hi for Devanagari, bn for Bengali). */
+export function nativeDigitsByScript(text: string): string {
+  if (/[ঀ-৿]/.test(text)) return nativeDigits(text, 'bn');
+  if (/[ऀ-ॣ०-ॿ]/.test(text)) return nativeDigits(text, 'hi');
+  return text;
+}
+
 export type FoundDate = { month: number | null; year: number | null; index: number };
 
 /**
@@ -310,7 +338,7 @@ const KIND_EN = '(?<!\\b(?:kaisa|kaisi|kaise|kaun sa|kaun si|kaunsa|kaunsi|wala|
 
 const CHILD_SEX = new RegExp(nfc([
   // English
-  '\\b(?:boy|girl|son|daughter) or (?:a )?(?:boy|girl|son|daughter)\\b',
+  '\\b(?:boy|girl|son|daughter) or (?:a )?(?:boy|girl|son|daughter)\\b', '\\bis there a son in my (?:chart|kundli|horoscope)\\b', '\\bson yog',
   "\\b(?:baby|child|kid|f(?:o)?etus)(?:'s)? (?:gender|sex)\\b",
   '\\b(?:gender|sex) of (?:my|our|the|her) (?:first |next |second |third |unborn )?(?:baby|child|kid)',
   '\\b(?:will|would) (?:it|he or she|my (?:first |next |second |third )?(?:baby|child|kid)|our (?:first |next |second )?(?:baby|child|kid)) be a (?:baby )?(?:boy|girl|son|daughter)\\b',
@@ -363,6 +391,44 @@ export function cannedQuestion(question: string): 'childSex' | 'partnerName' | n
   if (CHILD_SEX.test(q)) return 'childSex';
   if (PARTNER_NAME.test(q)) return 'partnerName';
   return null;
+}
+
+// ─── Crisis (self-harm / suicide) ─────────────────────────────────────────────
+//
+// A message about wanting to die or hurt oneself never goes to the model: the
+// chat answers with a fixed, kind reply carrying Indian helplines
+// (chat:safety.crisis: Tele-MANAS 14416, emergency 112). English, Hindi,
+// Bengali and the Latin-script Hinglish / Banglish people actually type.
+// Deliberately broad: a false positive costs one gentle helpline message.
+
+const CRISIS_EN = [
+  'suicid(?:e|al)', 'kill(?:ing)? my ?self', 'end(?:ing)? (?:my|it) (?:life|all)', 'end it all', '(?:want to|wanna) end everything',
+  'take my (?:own )?life', 'taking my (?:own )?life', "(?<!(?:don'?t|do not|never) )(?:want(?:na)? to|wanna) die", 'wish i (?:was|were) dead',
+  "(?:don'?t|do not|dont) want to (?:live|be alive|exist)", 'no reason to live', 'better off dead',
+  'self[- ]?harm', '(?:hurt|harm|cut)(?:ting)? my ?self', 'overdose',
+  // Hinglish
+  'khud ?kushi', 'aatma ?hatya', 'atma ?hatya', 'marna chaht[aie]', 'mar ?ja(?:a)?na chaht[aie]',
+  'jee?na nahi(?:n)? chaht[aie]', 'zind[ae]gi khatam', 'jaan de d[ou]o?n?',
+  // Banglish
+  'atm[ao] ?hott?(?:y)?a', 'more jete chai', 'more jete ichh?e', 'morte chai', 'morte ichh?e', 'bachte chai ?na', 'banchte chai ?na', 'bachte ichh?e kore na',
+];
+const CRISIS_HI = [
+  'आत्महत्या', 'ख़ुदकुशी', 'खुदकुशी', 'मरना चाहत', 'मर जाना चाहत', 'मर जाऊं', 'मर जाऊँ', 'मरने का मन', 'मरने को जी',
+  'जीना नहीं चाहत', 'जीने का मन नहीं', 'जान दे दूं', 'जान दे दूँ', 'अपनी जान ले',
+  'ज़िंदगी ख़त्म', 'जिंदगी खत्म', 'ज़िन्दगी ख़त्म', 'जिन्दगी खत्म', 'खुद को नुकसान', 'ख़ुद को नुक़सान', 'खुद को चोट',
+];
+const CRISIS_BN = [
+  'আত্মহত্যা', 'মরে যেতে চাই', 'মরে যেতে ইচ্ছে', 'মরতে চাই', 'বাঁচতে চাই না', 'বাঁচতে ইচ্ছে করে না', 'বাঁচার ইচ্ছে নেই',
+  'নিজেকে শেষ করে', 'নিজেকে আঘাত', 'নিজের ক্ষতি করতে', 'জীবন শেষ করে দি', 'সুইসাইড',
+];
+const CRISIS = new RegExp(nfc([
+  `\\b(?:${CRISIS_EN.join('|')})`,
+  ...CRISIS_HI, ...CRISIS_BN,
+].join('|')), 'i');
+
+/** True when a message talks about suicide or self-harm (en / hi / bn / Hinglish / Banglish). */
+export function isCrisisMessage(message: string): boolean {
+  return CRISIS.test(nfc(message).toLowerCase().replace(/[’`]/g, "'"));
 }
 
 // ─── Countdown phrases ────────────────────────────────────────────────────────
@@ -438,7 +504,8 @@ const HEALTH_Q = new RegExp(nfc([
   '\\b(?:health|healthy|ill|illness|sick|sickness|disease|symptoms?|fever|surgery|hospital|hospitali[sz]ed|cancer|tumou?r|diabetes|blood pressure|bp',
   'heart (?:attack|disease|problem|condition|surgery)|(?:chest|back|stomach|body|joint|knee|neck|leg|period|tooth) ?pains?|stomach ?ache|headaches?|backache',
   'pregnan\\w*|conceive|conceiving|miscarriage|infertil\\w*|ivf|depress\\w*|anxiety|panic attacks?|mental health|suicid\\w*|self[- ]harm',
-  'medicines?|medication|treatment|therapy|injur\\w*|infection|thyroid|pcos|pcod|migraine|insomnia|asthma|kidney|liver|stroke|paralysis|diagnos\\w*',
+  // "medicine" alone is also a field of study ("Is medicine the right field for me?"): only medicine taken counts.
+  'medicines|(?:take|taking|took|my|his|her|the) medicine|medicine (?:for|dose)|medication|treatment|therapy|injur\\w*|infection|thyroid|pcos|pcod|migraine|insomnia|asthma|kidney|liver|stroke|paralysis|diagnos\\w*',
   'bimari|bimaari|beemari|bimar|bimaar|beemar|dard|bukhar|bukhaar|sehat|tabiyat|tabiyet|ilaj|ilaaj|dawai|davai',
   'osukh|asukh|osustho|asustho|byatha|betha|shorir kharap|sorir kharap|chikitsa|oshudh|osudh)\\b',
   // Hindi
@@ -450,7 +517,8 @@ const HEALTH_Q = new RegExp(nfc([
 ].join('|')), 'i');
 
 const LEGAL_Q = new RegExp(nfc([
-  '\\b(?:court|courts|lawsuit|legal|divorce|custody|alimony|police|fir|arrest\\w*|jail|prison|bail|litigation|sue|sued|suing|inheritance',
+  // (No bare "fir": in Hinglish it means "then" — "abhi kya karu fir?"; an FIR is matched in capitals in missingAdvice.)
+  '\\b(?:court|courts|lawsuit|legal|divorce|custody|alimony|police|arrest\\w*|jail|prison|bail|litigation|sue|sued|suing|inheritance',
   '(?:property|land|inheritance|family) dispute|case (?:against|filed|hearing)|(?:court|legal|police|criminal|civil|property|land|divorce) case',
   '(?:win|lose|won|lost|winning|losing) (?:the|my|this|our|a) case',
   'mukadma|mukadama|muqadma|muqadama|talaq|talak|thana|zamanat|jamanat|adalat|adalot|kachahri|mamla|mamla[ay])\\b',
@@ -478,12 +546,25 @@ const LAWYER = new RegExp(nfc(
  * whose reply names no lawyer (en/hi/bn and Hinglish/Banglish questions; the
  * reply is checked in all three languages).
  */
+/** The reply already points to a doctor. */
+export function mentionsDoctor(reply: string): boolean {
+  return DOCTOR.test(nfc(reply).toLowerCase());
+}
+
+export function adviceNeeded(question: string): ('doctor' | 'lawyer')[] {
+  const q = nfc(question).toLowerCase();
+  const out: ('doctor' | 'lawyer')[] = [];
+  if (HEALTH_Q.test(q)) out.push('doctor');
+  if (LEGAL_Q.test(q)) out.push('lawyer');
+  return out;
+}
+
 export function missingAdvice(question: string, reply: string): ('doctor' | 'lawyer')[] {
   const q = nfc(question).toLowerCase();
   const r = nfc(reply);
   const out: ('doctor' | 'lawyer')[] = [];
   if (HEALTH_Q.test(q) && !DOCTOR.test(r)) out.push('doctor');
-  if (LEGAL_Q.test(q) && !LAWYER.test(r)) out.push('lawyer');
+  if ((LEGAL_Q.test(q) || /\bFIR\b|police complaint/.test(nfc(question))) && !LAWYER.test(r)) out.push('lawyer');
   return out;
 }
 
@@ -508,14 +589,20 @@ export function createSentenceFilter(transform: (text: string) => string, emit: 
   return {
     push(text: string) {
       pending += text;
-      let cut = -1;
-      for (const m of pending.matchAll(/[.!?।॥](?=\s)|\n/g)) cut = (m.index ?? 0) + m[0].length;
-      if (cut < 0 && pending.length > SENTENCE_HOLD_MAX) {
-        cut = pending.lastIndexOf(' ', pending.length - 80);
+      // Each whole sentence goes through `transform` on its own (a chunk can hold several).
+      let last = 0;
+      for (const m of pending.matchAll(/[.!?।॥](?=\s)|\n/g)) {
+        const cut = (m.index ?? 0) + m[0].length;
+        if (cut > last) out(pending.slice(last, cut));
+        last = cut;
       }
-      if (cut > 0) {
-        out(pending.slice(0, cut));
-        pending = pending.slice(cut);
+      pending = pending.slice(last);
+      if (pending.length > SENTENCE_HOLD_MAX) {
+        const cut = pending.lastIndexOf(' ', pending.length - 80);
+        if (cut > 0) {
+          out(pending.slice(0, cut));
+          pending = pending.slice(cut);
+        }
       }
     },
     flush() {
@@ -543,8 +630,29 @@ export function createSentenceFilter(transform: (text: string) => string, emit: 
 
 export type ReplyGuard = {
   lang: GuardLang;
-  /** The previous assistant reply in the thread (repetition check), if any. */
-  previous?: string;
+  /**
+   * Earlier assistant replies in the thread (repetition check): one, or all
+   * of them; a reply is a repeat when it overlaps any of them.
+   */
+  previous?: string | string[];
+  /**
+   * The reply must name one of these (the plan's key items, e.g. a suggested
+   * career field): held until it does; a reply that never does is retried.
+   */
+  mustMention?: RegExp;
+  /**
+   * Shown instead when both tries still repeat an earlier reply or miss
+   * `mustMention` (the plan's template answer), so a repeat is never shown.
+   */
+  fallback?: string;
+  /**
+   * Whole-reply check (the plan's: after unasked dates and repeated sentences
+   * are taken out, enough answer is left and it names the plan's items).
+   * A reply it rejects is retried, then replaced by `fallback`. Needs `holdAll`.
+   */
+  accept?: (text: string) => boolean;
+  /** Show nothing until the reply is complete and checked (non-timing answers with a plan). */
+  holdAll?: boolean;
   /** Latin-script words a hi/bn reply may contain (names). */
   ignore: string[];
   /** The question asks "when" (isTimingQuestion): the reply should name a month or year. */
@@ -566,31 +674,42 @@ export type GenerateFn = (onToken: (token: string) => boolean | void, temperatur
 
 type Attempt = { text: string; released: boolean; stoppedLatin: boolean };
 
+/** Whole sentences in a partial reply (end mark followed by more text). */
+function completeSentences(text: string): number {
+  return (text.match(/[.!?।॥](?=\s+\S)|\n+(?=\S)/g) ?? []).length;
+}
+
 export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: (text: string) => void): Promise<void> {
   const checkScript = guard.lang !== 'en';
-  const previous = guard.previous;
+  const prevs = (Array.isArray(guard.previous) ? guard.previous : guard.previous ? [guard.previous] : []).filter(p => p.trim());
+  const hasPrev = prevs.length > 0;
+  const must = guard.mustMention;
   const scriptRatio = (t: string) => nativeScriptRatio(t, guard.lang, guard.ignore);
-  const overlap = (t: string) => (previous ? replyOverlap(t, previous) : 0);
+  const overlap = (t: string) => prevs.reduce((m, p) => Math.max(m, replyOverlap(t, p)), 0);
   const scriptBad = (a: Attempt) =>
     checkScript && (a.stoppedLatin || (letterCount(a.text) >= 8 && scriptRatio(a.text) < NATIVE_SCRIPT_MIN));
-  const repeatBad = (a: Attempt) => !!previous && overlap(a.text) >= REPEAT_OVERLAP_MAX;
+  const repeatBad = (a: Attempt) => hasPrev && overlap(a.text) >= REPEAT_OVERLAP_MAX;
+  const mentions = (t: string) => !must || must.test(westernDigits(t));
+  const relevanceBad = (a: Attempt) => !mentions(a.text) || (!!guard.accept && !guard.accept(a.text));
   const dates = (t: string) => dateStatus(t, guard.today);
   // 2 = no date, 1 = only the current month, 0 = fine.
   const dateFail = (a: Attempt) => {
     if (!guard.needsDate) return 0;
     const st = dates(a.text);
-    return st === 'none' ? 2 : st === 'current' ? 1 : 0;
+    if (st === 'none') return 2;
+    return st === 'current' ? 1 : 0;
   };
   const dateBad = (a: Attempt) => dateFail(a) > 0;
-
+  const bad = (a: Attempt) => scriptBad(a) || repeatBad(a) || dateBad(a) || relevanceBad(a);
   // `final`: the last try, which is never stopped early (a Latin reply is held
   // to the end so there is always a whole reply to show).
   const attempt = async (temperature?: number, final = false): Promise<Attempt> => {
     const a: Attempt = { text: '', released: false, stoppedLatin: false };
     let scriptDone = !checkScript;
-    let repeatDone = !previous;
+    let repeatDone = !hasPrev;
     let repeatSuspect = false;
     let dateDone = !guard.needsDate;
+    let mentionDone = !must;
     let hold = false;
     await generate((token) => {
       a.text += token;
@@ -608,12 +727,18 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
         }
         scriptDone = true;
       }
-      if (!repeatDone && !repeatSuspect && words(a.text).length >= REPEAT_DECIDE_WORDS) {
-        if (overlap(a.text) < REPEAT_OVERLAP_MAX) repeatDone = true;
-        else repeatSuspect = true; // hold to the end and judge the whole reply
+      if (!repeatDone && !repeatSuspect) {
+        const n = words(a.text).length;
+        if (n >= REPEAT_DECIDE_WORDS && (completeSentences(a.text) >= 2 || n >= REPEAT_HOLD_WORDS)) {
+          if (overlap(a.text) < REPEAT_OVERLAP_MAX) repeatDone = true;
+          else repeatSuspect = true; // hold to the end and judge the whole reply
+        }
       }
-      if (!dateDone && dates(a.text) === 'ok') dateDone = true;
-      if (scriptDone && repeatDone && dateDone && !hold) {
+      if (!dateDone && dates(a.text) === 'ok') {
+        dateDone = true;
+      }
+      if (!mentionDone && mentions(a.text)) mentionDone = true;
+      if (scriptDone && repeatDone && dateDone && mentionDone && !hold && !guard.holdAll) {
         a.released = true;
         emit(a.text);
       }
@@ -623,7 +748,7 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
 
   const first = await attempt();
   if (first.released) return;
-  if (!scriptBad(first) && !repeatBad(first) && !dateBad(first)) {
+  if (!bad(first)) {
     emit(first.text);
     return;
   }
@@ -633,16 +758,22 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
     second = await attempt(RETRY_TEMPERATURE, true);
   } catch (err) {
     if (first.stoppedLatin) throw err;
-    emit(first.text);
+    emit(guard.fallback && (repeatBad(first) || relevanceBad(first)) ? guard.fallback : first.text);
     return;
   }
   if (second.released) return;
-  if (first.stoppedLatin || (!scriptBad(second) && !repeatBad(second) && !dateBad(second))) {
+  if (!bad(second) || (first.stoppedLatin && !repeatBad(second) && !relevanceBad(second))) {
     emit(second.text);
     return;
   }
   // Both failed: prefer the right script, then one with a date (a later date
   // over only the current month), then the one that repeats less; ties keep the first.
-  const rank = (a: Attempt) => (scriptBad(a) ? 4 : 0) + dateFail(a) + overlap(a.text);
-  emit(rank(second) < rank(first) ? second.text : first.text);
+  const rank = (a: Attempt) => (scriptBad(a) ? 4 : 0) + dateFail(a) + overlap(a.text) + (relevanceBad(a) ? 0.5 : 0);
+  const best = first.stoppedLatin ? second : rank(second) < rank(first) ? second : first;
+  // Never show a repeat or an answer that misses the point when the plan has one ready.
+  if (guard.fallback && (repeatBad(best) || relevanceBad(best))) {
+    emit(guard.fallback);
+    return;
+  }
+  emit(best.text);
 }

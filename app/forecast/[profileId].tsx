@@ -13,6 +13,7 @@ import { askLanguage, formatMonthYear, tAsk, tPlanet } from '@/utils/i18n';
 import { getYearAhead, transitLabel, type ForecastMonth } from '@/utils/forecast';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
+import { openGuruChat } from '@/utils/guru-nav';
 
 export default function ForecastScreen() {
   const styles = useIndicStyles(baseStyles);
@@ -41,8 +42,7 @@ export default function ForecastScreen() {
 
   // Questions go out in the app language when the model speaks it (tAsk), else English.
   const ask = (q: string) => {
-    const tempId = 't_' + Math.random().toString(36).slice(2, 11);
-    router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
+    openGuruChat('saga', profile.id, q);
   };
 
   const askMonth = (m: ForecastMonth) => {

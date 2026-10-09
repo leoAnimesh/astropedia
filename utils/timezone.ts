@@ -9,6 +9,7 @@
  */
 
 import { COUNTRY_CODES, ZONES_BY_COUNTRY, type ZoneRef } from '@/constants/timezones';
+import { PLACE_COUNTRIES } from '@/constants/place-countries';
 
 // ─── UTC offsets via Intl ─────────────────────────────────────────────────────
 
@@ -119,11 +120,17 @@ const COUNTRY_ALIASES: Record<string, string> = {
   tanzania: 'TZ', moldova: 'MD', taiwan: 'TW', 'hong kong': 'HK', macau: 'MO', brunei: 'BN',
 };
 
+/** Country names as the bundled place data spells them (what new profiles store). */
+let placeCodes: Map<string, string> | null = null;
+
 /** ISO country code for a free-text country name or code ("India", "USA", "IN"). */
 export function countryCodeFromName(name: string | null | undefined): string | null {
   if (!name) return null;
   const key = name.trim().toLowerCase().replace(/\s+/g, ' ');
   if (!key) return null;
+  placeCodes ??= new Map(PLACE_COUNTRIES.map(([code, n]) => [n.toLowerCase(), code]));
+  if (placeCodes.has(key)) return placeCodes.get(key)!;
+  // Spellings stored by earlier builds (the old picker data) are kept here.
   if (COUNTRY_CODES[key]) return COUNTRY_CODES[key];
   if (COUNTRY_ALIASES[key]) return COUNTRY_ALIASES[key];
   const upper = key.toUpperCase();

@@ -1,0 +1,157 @@
+{
+  "title": "Sade sati",
+  "subtitle": "{{name}} · Moon in {{sign}}",
+  "back": "Go back",
+  "notReady": "Add a birth date to this profile to see sade sati.",
+  "phaseEyebrow": {
+    "rising": "First phase · 1 of 3",
+    "peak": "Middle phase · 2 of 3",
+    "setting": "Final phase · 3 of 3",
+    "return": "A brief return",
+    "none": "Not in sade sati"
+  },
+  "heading": {
+    "rising": {
+      "before": "Saturn is ",
+      "em": "approaching",
+      "after": " your Moon."
+    },
+    "peak": {
+      "before": "Saturn is ",
+      "em": "over",
+      "after": " your Moon."
+    },
+    "setting": {
+      "before": "Saturn is easing ",
+      "em": "off",
+      "after": " your Moon."
+    },
+    "return": {
+      "before": "Saturn is ",
+      "em": "back",
+      "after": " for a short while."
+    },
+    "none": {
+      "before": "No sade sati ",
+      "em": "right now",
+      "after": "."
+    }
+  },
+  "lead": {
+    "rising": "The slow build-up. Expenses, sleep and old endings ask for attention; effort now pays later.",
+    "peak": "The heaviest part, and the most character-building. Go slowly, keep your routine and be kind to yourself.",
+    "setting": "The heaviest part is behind you. This last stretch is about money, family and words settling down.",
+    "return": "Saturn steps back for a few months while it turns. It's a light echo, not a new start.",
+    "noneNext": "Your next sade sati begins around {{date}}. Until then, Saturn is elsewhere in your chart.",
+    "noneDone": "No more sade sati is due in the span we calculate."
+  },
+  "bar": {
+    "rising": "Rising",
+    "peak": "Peak",
+    "setting": "Setting",
+    "now": "{{phase}} · now"
+  },
+  "ends": "Ends",
+  "began": "Began",
+  "starts": "Starts",
+  "briefReturn": "Brief return",
+  "progressA11y": "{{pct}} percent through this sade sati",
+  "plainEyebrow": "In plain words",
+  "plain": "Sade sati is the seven and a half years when Saturn passes over and around your Moon sign. It isn't a curse. It's a slow stretch that rewards patience and steady effort, and it comes to everyone about every 30 years.",
+  "touchesEyebrow": "What this phase touches",
+  "touchesAllEyebrow": "What sade sati touches",
+  "touches": {
+    "rising": [
+      {
+        "t": "Spending and sleep",
+        "s": "Costs creep up and sleep can be lighter. Budget early and keep a wind-down routine."
+      },
+      {
+        "t": "Endings and distance",
+        "s": "Old chapters close, and travel or moves are common. Let go of what's finished."
+      },
+      {
+        "t": "Patience",
+        "s": "Results lag behind effort for a while. That's the pattern, not a verdict."
+      }
+    ],
+    "peak": [
+      {
+        "t": "Energy",
+        "s": "Tiredness comes in waves. Rest and routine help more than pushing."
+      },
+      {
+        "t": "Self-confidence",
+        "s": "You may doubt yourself more than usual. Small kept promises rebuild it."
+      },
+      {
+        "t": "Responsibility",
+        "s": "More falls on your shoulders. Say no to what isn't yours to carry."
+      }
+    ],
+    "setting": [
+      {
+        "t": "Money and savings",
+        "s": "Spend carefully and build slowly. Avoid big loans until this phase ends."
+      },
+      {
+        "t": "Family and speech",
+        "s": "Say less, mean more. Old family matters may want closure."
+      },
+      {
+        "t": "Energy",
+        "s": "Tiredness comes in waves. Rest and routine help more than pushing."
+      }
+    ]
+  },
+  "helpsEyebrow": "What helps",
+  "helps": [
+    "Keep a simple daily routine, even on bad days.",
+    "Help someone older or someone who works with their hands, especially on Saturdays.",
+    "If it comforts you, the Hanuman Chalisa or a few minutes of quiet prayer on Saturday evenings.",
+    "Finish what you start; Saturn rewards follow-through."
+  ],
+  "helpsNote": "Nothing here needs money. No stone, ritual or payment is required to get through sade sati.",
+  "afterEyebrow": "After this",
+  "after": {
+    "fourth": {
+      "t": "Saturn over your 4th from Moon",
+      "s": "A milder 2½-year check-in on home life"
+    },
+    "eighth": {
+      "t": "Saturn over your 8th from Moon",
+      "s": "A 2½-year stretch to look after health and avoid big risks"
+    },
+    "next": {
+      "t": "Next sade sati",
+      "s": "About 30 years after the last one"
+    },
+    "none": {
+      "t": "No more sade sati",
+      "s": "None due in the span we calculate"
+    }
+  },
+  "lifeEyebrow": "Your sade satis",
+  "life": {
+    "past": "Past",
+    "now": "Now",
+    "next": "Next",
+    "later": "Later",
+    "ages": "Age {{from}} to {{to}}",
+    "agesFromBirth": "From birth to age {{to}}",
+    "returnNote": "brief return {{range}}"
+  },
+  "askSaga": "Ask Saga about this",
+  "seeChapters": "See your life chapters",
+  "question": {
+    "you": "I'm in sade sati ({{phase}} phase) until {{date}}. What does it mean for me, and what can I do?",
+    "other": "{{name}} is in sade sati ({{phase}} phase) until {{date}}. What does it mean for them?",
+    "youNone": "When is my next sade sati, and what should I know about it?",
+    "otherNone": "When is {{name}}'s next sade sati?"
+  },
+  "phaseWord": {
+    "rising": "rising",
+    "peak": "peak",
+    "setting": "setting"
+  }
+}

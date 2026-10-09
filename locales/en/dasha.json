@@ -1,0 +1,30 @@
+{
+  "title": "Life chapters",
+  "subtitle": "{{name}} · Vimshottari dasha",
+  "back": "Go back",
+  "notReady": "Add a birth date to this profile to see the life chapters.",
+  "nowEyebrow": "Now · age {{age}}",
+  "heading": {
+    "chapter": "chapter",
+    "stretch": "stretch",
+    "joiner": ", "
+  },
+  "rowA11y": "{{planet}}: {{range}}, {{pct}} percent through",
+  "timelineEyebrow": "Your whole timeline",
+  "ages": "Age {{from}} to {{to}}",
+  "agesBirth": "Birth to {{to}}",
+  "nowTag": "now",
+  "tag": {
+    "now": "NOW",
+    "next": "NEXT"
+  },
+  "expandA11y": "Show the stretches inside the {{planet}} chapter",
+  "collapseA11y": "Hide the stretches inside the {{planet}} chapter",
+  "birthNote": "This chapter was already running at birth.",
+  "approxNote": "Dates come from the Moon's position at birth. Without an exact birth time they can shift by a few months.",
+  "askSaga": "Ask Saga about this stretch",
+  "question": {
+    "you": "I'm in my {{chapter}} chapter, {{stretch}} stretch until {{date}}. What should I focus on?",
+    "other": "{{name}} is in a {{chapter}} chapter, {{stretch}} stretch until {{date}}. What should they focus on?"
+  }
+}

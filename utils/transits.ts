@@ -77,6 +77,16 @@ export function getUpcomingTransits(
   now: Date = new Date(),
   lookaheadDays: number = TRANSIT_LOOKAHEAD_DAYS,
 ): TransitAlert[] {
+  // Same sky for everyone on a given local day: Home, Alerts, alert details
+  // and the notification scheduler share one scan per day (a copy each).
+  const key = `${localDateIso(now)}|${lookaheadDays}`;
+  if (transitCache?.key !== key) transitCache = { key, value: scanTransits(now, lookaheadDays) };
+  return [...transitCache.value];
+}
+
+let transitCache: { key: string; value: TransitAlert[] } | null = null;
+
+function scanTransits(now: Date, lookaheadDays: number): TransitAlert[] {
   const today     = startOfDay(now);
   const todayPos  = getChartPositions({ birthDate: localDateIso(today), birthTime: '12:00' });
   const startSign: Record<string, number> = {};

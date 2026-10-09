@@ -11,6 +11,39 @@
 
 export type Migration = { version: number; sql: string[] };
 
+/**
+ * Chat agents (gurus). Stored in threads.agent and saved_answers.persona.
+ * Display copy and per-guru rules live in constants/gurus.ts.
+ */
+export const AGENT_IDS = ['saga', 'love', 'career', 'health', 'family', 'study', 'krishna'] as const;
+export type AgentId = (typeof AGENT_IDS)[number];
+
+export function isAgentId(v: unknown): v is AgentId {
+  return typeof v === 'string' && (AGENT_IDS as readonly string[]).includes(v);
+}
+
+/**
+ * Archives every active thread except the newest per (profile_id, agent):
+ * pinned first, then the most recently pinned, then the latest update.
+ * archived_at uses the app's ISO format (hooks/use-threads.ts).
+ */
+const ARCHIVE_EXTRA_ACTIVE_THREADS_SQL = `
+  UPDATE threads
+     SET archived = 1,
+         archived_at = COALESCE(archived_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+   WHERE archived = 0
+     AND id NOT IN (
+       SELECT id FROM (
+         SELECT id, ROW_NUMBER() OVER (
+                  PARTITION BY profile_id, agent
+                  ORDER BY pinned DESC, COALESCE(pinned_at, '') DESC, updated_at DESC,
+                           created_at DESC, rowid DESC
+                ) AS rn
+           FROM threads
+          WHERE archived = 0
+       ) WHERE rn = 1
+     )`;
+
 export const MIGRATIONS: Migration[] = [
   {
     version: 1,
@@ -114,6 +147,52 @@ export const MIGRATIONS: Migration[] = [
       // IANA zone of the birth place. Existing rows are backfilled lazily
       // from city/lat/lng the first time profiles load (backfillBirthTz).
       `ALTER TABLE profiles ADD COLUMN birth_tz TEXT`,
+    ],
+  },
+  {
+    version: 7,
+    sql: [
+      // Guru chats: every thread belongs to one agent (constants/gurus.ts).
+      // Existing chats are general Saga chats; Krishna's hang off __krishna__.
+      `ALTER TABLE threads ADD COLUMN agent TEXT NOT NULL DEFAULT 'saga'`,
+      `UPDATE threads SET agent = 'krishna' WHERE profile_id = '__krishna__'`,
+      // One active (non-archived) chat per (profile, agent): the newest one
+      // stays (a pinned one wins), older active ones go to Past conversations.
+      ARCHIVE_EXTRA_ACTIVE_THREADS_SQL,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_threads_active_agent
+         ON threads(profile_id, agent) WHERE archived = 0`,
+    ],
+  },
+  {
+    version: 8,
+    sql: [
+      // Reports (utils/reports): one row per person and report kind
+      // (id "<profile>:<kind>"; compatibility "<a>:compat:<b>:<mode>").
+      // `payload` is a cache of the generated report (JSON, utils/reports/
+      // types.ts), valid while chart_hash, the report version, the language
+      // and the day match; backups drop it and keep only the reading
+      // progress (0..1) and when the report was last opened.
+      `CREATE TABLE IF NOT EXISTS reports (
+        id           TEXT PRIMARY KEY,
+        profile_id   TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        kind         TEXT NOT NULL,
+        chart_hash   TEXT,
+        generated_at TEXT,
+        payload      TEXT,
+        progress     REAL NOT NULL DEFAULT 0,
+        viewed_at    TEXT
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_reports_viewed ON reports(profile_id, viewed_at)`,
+    ],
+  },
+  {
+    version: 9,
+    sql: [
+      // Per-thread facts memory (utils/agent/thread-facts.ts, JSON): what the
+      // user told the chat about themselves ("I'm already married", "I meant
+      // my sister"), so later turns are planned with it after the message
+      // has left the history window. Null until something is stated.
+      `ALTER TABLE threads ADD COLUMN facts TEXT`,
     ],
   },
 ];

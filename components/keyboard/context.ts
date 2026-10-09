@@ -5,7 +5,7 @@
 import { createContext, useContext } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
 import type { LayoutLang } from './layouts';
-import type { AutoCapitalize } from './text-edit';
+import type { AutoCapitalize, EditState } from './text-edit';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -20,11 +20,24 @@ export type FieldConfig = {
   maxLength?:      number;
   /** keyboardType asked for digits — open on the numbers page. */
   numeric?:        boolean;
+  /** Show the suggestion strip (off for passwords, numbers, autoCorrect={false}). */
+  suggestions?:    boolean;
+  /** Apply the exact English fixes ("i" → "I", "dont" → "don't") on space. */
+  fixes?:          boolean;
 };
+
+export type Selection = { start: number; end: number };
+
+export type TrackpadPhase = 'begin' | 'move' | 'end';
 
 export type FieldController = {
   getValue:      () => string;
-  setValue:      (next: string) => void;
+  /** Sets the text; `caret` (default: end of text) collapses the selection there. */
+  setValue:      (next: string, caret?: number) => void;
+  getSelection:  () => Selection;
+  setSelection:  (sel: Selection) => void;
+  /** Space-bar trackpad: the field maps finger travel to a caret index. */
+  trackpad:      (phase: TrackpadPhase, dx: number, dy: number) => void;
   submit:        () => void;
   config:        () => FieldConfig;
   onFocusChange: (focused: boolean) => void;
@@ -44,12 +57,23 @@ export type KeyboardApi = {
   systemBlur:   (id: string) => void;
   /** Marks the current touch as "inside the keyboard area" (no dismiss). */
   claimTouch:   () => void;
-  // Editing (used by AppKeyboard)
+  // Editing (used by AppKeyboard and the field's edit menu)
   getValue:     () => string;
-  insert:       (text: string) => string | null;
-  backspace:    () => string | null;
+  /** Text + caret of the focused field (caret = selection end). */
+  getState:     () => EditState | null;
+  /** Inserts at the caret (replacing a selection). */
+  insert:       (text: string) => EditState | null;
+  /** Deletes the selection, else one character (or a word with `word`). */
+  backspace:    (word?: boolean) => EditState | null;
+  /** Applies an arbitrary edit to the collapsed caret state. */
+  edit:         (fn: (s: EditState) => EditState | null) => EditState | null;
   /** Return key: newline in multiline fields, else submit. */
-  pressReturn:  () => string | null;
+  pressReturn:  () => EditState | null;
+  trackpad:     (phase: TrackpadPhase, dx: number, dy: number) => void;
+  /** Fields call this when the caret / selection moved without an edit. */
+  selectionChanged: (id: string) => void;
+  /** AppKeyboard listens for text / caret changes (suggestions, auto-shift). */
+  subscribe:    (fn: (s: EditState) => void) => () => void;
   cycleLang:    () => void;
   useSystem:    () => void;
   useCustom:    () => void;

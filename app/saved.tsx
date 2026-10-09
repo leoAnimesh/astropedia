@@ -11,15 +11,14 @@ import { Icon } from '@/components/atoms/Icon';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { getAllThreads, getSavedAnswers, unsaveAnswer, type SavedAnswer } from '@/utils/database';
+import { AGENT_IDS as DB_AGENT_IDS, getAllThreads, getSavedAnswers, unsaveAnswer, type SavedAnswer } from '@/utils/database';
 import { stripMarkdown } from '@/utils/ai';
 import { intlLocale } from '@/utils/i18n';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
 
-type Filter = 'all' | 'saga' | 'krishna';
+import type { AgentId } from '@/constants/gurus';
 
-// Labels come from saved:filters.<id>.
-const FILTERS: Filter[] = ['all', 'saga', 'krishna'];
+type Filter = 'all' | AgentId;
 
 /** SQLite `datetime('now')` is UTC without a zone marker — read it as UTC. */
 function parseDbDate(s: string): Date {
@@ -75,6 +74,13 @@ export default function SavedAnswersScreen() {
     () => (filter === 'all' ? items : items.filter((i) => i.persona === filter)),
     [items, filter],
   );
+  // One chip per guru that has saved answers (plus the selected one, so it
+  // doesn't vanish after removing its last answer).
+  const filters: Filter[] = [
+    'all',
+    ...DB_AGENT_IDS.filter((a) => a === filter || items.some((i) => i.persona === a)),
+  ];
+  const filterLabel = (f: Filter) => (f === 'all' ? t('filters.all') : t(`chat:gurus.${f}.short`));
 
   const nameFor = (a: SavedAnswer): string => {
     const p = profiles.find((x) => x.id === a.profileId);
@@ -92,7 +98,7 @@ export default function SavedAnswersScreen() {
       params: {
         question:    a.question,
         answer:      stripMarkdown(a.answer),
-        persona:     a.persona,
+        persona:     a.persona === 'krishna' ? 'krishna' : 'saga',
         profileName: nameFor(a),
       },
     });
@@ -100,12 +106,13 @@ export default function SavedAnswersScreen() {
 
   const handleOpen = (a: SavedAnswer) => {
     if (!a.threadId || !threadIds.has(a.threadId)) return;
+    // A guru's ongoing chat opens as that chat; a past one read-only.
     router.push(`/chat/${a.threadId}?profileId=${a.profileId}`);
   };
 
   const renderItem = ({ item }: { item: SavedAnswer }) => {
-    const who      = item.persona === 'krishna' ? t('filters.krishna') : t('filters.saga');
-    const name     = item.persona === 'saga' ? nameFor(item) : '';
+    const who      = t(`chat:gurus.${item.persona}.name`);
+    const name     = item.persona !== 'krishna' ? nameFor(item) : '';
     const canOpen  = !!item.threadId && threadIds.has(item.threadId);
     return (
       <TouchableOpacity
@@ -184,7 +191,7 @@ export default function SavedAnswersScreen() {
               <Trans t={t} i18nKey="title" components={{ em: <Text style={styles.titleItalic} /> }} />
             </Text>
             <View style={styles.filters}>
-              {FILTERS.map((f) => {
+              {filters.map((f) => {
                 const on = f === filter;
                 return (
                   <TouchableOpacity
@@ -199,7 +206,7 @@ export default function SavedAnswersScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
                   >
-                    <Text style={[styles.pillText, { color: on ? theme.bg : theme.ink }]}>{t(`filters.${f}`)}</Text>
+                    <Text style={[styles.pillText, { color: on ? theme.bg : theme.ink }]}>{filterLabel(f)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -211,7 +218,11 @@ export default function SavedAnswersScreen() {
             <View style={styles.empty}>
               <Icon name="bookmark" size={22} color={theme.faint} />
               <Text style={[styles.emptyTitle, { color: theme.ink }]}>
-                <Trans t={t} i18nKey={`empty.${filter}`} components={{ em: <Text style={styles.titleItalic} /> }} />
+                {filter === 'all' ? (
+                  <Trans t={t} i18nKey="empty.all" components={{ em: <Text style={styles.titleItalic} /> }} />
+                ) : (
+                  <Trans t={t} i18nKey="empty.guru" values={{ guru: t(`chat:gurus.${filter}.name`) }} components={{ em: <Text style={styles.titleItalic} /> }} />
+                )}
               </Text>
               <Text style={[styles.emptySub, { color: theme.muted }]}>
                 {t('empty.sub')}

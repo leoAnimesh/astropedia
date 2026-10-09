@@ -48,7 +48,7 @@ import { FullWindowOverlay } from 'react-native-screens';
 import { Storage } from '@/utils/storage';
 import { getAppLanguage } from '@/utils/i18n';
 import { LAYOUT_LANGS, type LayoutLang } from './layouts';
-import { insertText, deleteBackward } from './text-edit';
+import { deleteBackward, deleteWordBackward, insertText, replaceRange, type EditState } from './text-edit';
 import {
   ApiContext,
   DEFAULT_CONFIG,
@@ -250,15 +250,41 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
   }, [dismiss]);
 
   // ─── API ───────────────────────────────────────────────────────────────────
+  const listeners = useRef(new Set<(s: EditState) => void>());
+
   const api = useMemo<KeyboardApi>(() => {
-    const edit = (fn: (text: string) => { text: string } | null): string | null => {
+    const stateOf = (): EditState | null => {
       const c = current();
       if (!c) return null;
-      const before = c.getValue();
-      const next = fn(before);
+      return { text: c.getValue(), caret: c.getSelection().end };
+    };
+    const emit = () => {
+      const st = stateOf();
+      if (st) for (const fn of listeners.current) fn(st);
+    };
+    /**
+     * Runs an edit on the focused field. A selection is first replaced by
+     * `replace` (null = leave the selection to `fn` as a collapsed caret at
+     * its end).
+     */
+    const apply = (
+      fn: (s: EditState) => EditState | null,
+      replace: string | null = null,
+    ): EditState | null => {
+      const c = current();
+      if (!c) return null;
+      const text = c.getValue();
+      const sel = c.getSelection();
+      let next: EditState | null;
+      if (replace !== null && sel.start !== sel.end) {
+        next = replaceRange({ text, caret: sel.end }, sel.start, sel.end, replace, c.config().maxLength);
+      } else {
+        next = fn({ text, caret: Math.max(0, Math.min(sel.end, text.length)) });
+      }
       if (!next) return null;
-      if (next.text !== before) c.setValue(next.text);
-      return next.text;
+      if (next.text !== text || next.caret !== sel.end || sel.start !== sel.end) c.setValue(next.text, next.caret);
+      for (const l of listeners.current) l(next);
+      return next;
     };
     return {
       register: (id, ref) => {
@@ -285,20 +311,33 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
       },
       claimTouch: () => { claimed.current = true; },
       getValue: () => current()?.getValue() ?? '',
+      getState: stateOf,
       insert: (text) => {
         const max = current()?.config().maxLength;
-        return edit((v) => insertText({ text: v, caret: v.length }, text, max));
+        return apply((s) => insertText(s, text, max), text);
       },
-      backspace: () => edit((v) => deleteBackward({ text: v, caret: v.length })),
+      backspace: (word) => apply((s) => (word ? deleteWordBackward(s) : deleteBackward(s)), ''),
+      edit: (fn) => apply(fn),
       pressReturn: () => {
         const c = current();
         if (!c) return null;
         const cfg = c.config();
         const newline = cfg.submitBehavior === 'newline' || (cfg.multiline && !cfg.submitBehavior);
-        if (newline) return edit((v) => insertText({ text: v, caret: v.length }, '\n', cfg.maxLength));
+        if (newline) return apply((s) => insertText(s, '\n', cfg.maxLength), '\n');
         c.submit();
         if (cfg.submitBehavior !== 'submit') setFocus(null);
         return null;
+      },
+      trackpad: (phase, dx, dy) => {
+        current()?.trackpad(phase, dx, dy);
+        emit();
+      },
+      selectionChanged: (id) => {
+        if (focusedRef.current === id) emit();
+      },
+      subscribe: (fn) => {
+        listeners.current.add(fn);
+        return () => { listeners.current.delete(fn); };
       },
       cycleLang: () => {
         const id = focusedRef.current;

@@ -85,7 +85,7 @@
     "pickStateTitle": "Select State / Province",
     "pickCityTitle": "Select City",
     "useQuery": "Use \"{{query}}\"",
-    "geocodedNote": "Will be geocoded automatically"
+    "geocodedNote": "Located using the app's built-in place list"
   },
   "overlay": {
     "dismiss": "Dismiss",
@@ -135,5 +135,15 @@
     "pillNoSpaceGeneric": "Saga needs more free space · Retry",
     "pillError": "Saga's setup stopped · Retry",
     "a11yPillRetry": "Retry Saga setup"
+  },
+  "lucky": {
+    "color": {
+      "orange": "Orange",
+      "white": "White",
+      "red": "Red",
+      "green": "Green",
+      "yellow": "Yellow",
+      "blue": "Blue"
+    }
   }
 }

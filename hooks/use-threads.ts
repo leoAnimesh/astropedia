@@ -7,6 +7,7 @@ import {
   insertThread,
   updateThread as dbUpdateThread,
   deleteThread as dbDeleteThread,
+  type AgentId,
   type Thread,
 } from '@/utils/database';
 
@@ -34,11 +35,12 @@ export function useThreads(profileId: string | null) {
   const activeThreads   = threads.filter((t) => !t.archived);
   const archivedThreads = threads.filter((t) => t.archived);
 
-  const createThread = useCallback(async (): Promise<Thread> => {
+  const createThread = useCallback(async (agent: AgentId = 'saga'): Promise<Thread> => {
     if (!profileId) throw new Error('No active profile');
     const thread = await insertThread({
       id:                 generateId(),
       profileId,
+      agent,
       title:              null,
       archived:           false,
       archivedAt:         null,

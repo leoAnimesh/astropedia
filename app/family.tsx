@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
@@ -198,7 +198,7 @@ function PersonCard({ row, todayNak, matchWith, youId }: { row: Row; todayNak: s
 
       {matchWith ? (
         <TouchableOpacity
-          onPress={() => router.push(youId ? `/compatibility?a=${youId}&b=${profile.id}` : `/compatibility?b=${profile.id}`)}
+          onPress={() => router.push((youId ? `/report/pair?a=${youId}&b=${profile.id}` : `/report/pair?b=${profile.id}`) as Href)}
           style={styles.matchLink}
           hitSlop={6}
           accessibilityRole="button"

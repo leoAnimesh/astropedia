@@ -27,6 +27,7 @@ import {
 import { FONTS, RADIUS } from '@/constants/themes';
 import { useAppLanguage } from '@/utils/i18n';
 import { localCityName, localCountryName, localStateName } from '@/utils/place-names';
+import { filterBySearch, placeCities, placeCountries, placeStates, searchKeys, type SearchKeys } from '@/utils/places';
 
 export type PickerItem = {
   label: string;
@@ -34,7 +35,41 @@ export type PickerItem = {
   sublabel?: string;
   lat?: number;
   lng?: number;
+  /** IANA zone of a city (from the place data). */
+  tz?: string;
+  /** Other spellings, matched by search but not shown (Bangalore for Bengaluru). */
+  aka?: string[];
 };
+
+// ─── Items from the bundled place data (utils/places.ts) ─────────────────────
+
+/** Countries: label "<flag> <English name>", value = ISO code. */
+export function countryPickerItems(): PickerItem[] {
+  return placeCountries().map((c) => ({ label: `${c.flag} ${c.name}`, value: c.code, sublabel: c.code }));
+}
+
+/** States of a country: label and value = English name. [] when it has none. */
+export function statePickerItems(countryCode: string): PickerItem[] {
+  if (!countryCode) return [];
+  return placeStates(countryCode).map((name) => ({ label: name, value: name }));
+}
+
+/**
+ * Cities of a state (or of the whole country when it has no states). A name
+ * that repeats within the state shows its district underneath.
+ */
+export function cityPickerItems(countryCode: string, state: string | null): PickerItem[] {
+  if (!countryCode) return [];
+  return placeCities(countryCode, state || null).map((c) => ({
+    label: c.name,
+    value: c.district ? `${c.name} (${c.district})` : c.name,
+    sublabel: c.district,
+    lat: c.lat,
+    lng: c.lng,
+    tz: c.tz,
+    aka: c.aka.length ? c.aka : undefined,
+  }));
+}
 
 type Props = {
   visible: boolean;
@@ -50,9 +85,7 @@ type Props = {
   countryCode?: string;
 };
 
-type Row = { item: PickerItem; main: string; english?: string; haystack: string };
-
-const norm = (s: string) => s.normalize('NFC').toLowerCase();
+type Row = { item: PickerItem; main: string; english?: string; keys: SearchKeys };
 
 export function LocationPickerModal({
   visible, title, items, selectedValue, onSelect, onClose, allowManual, kind, countryCode,
@@ -69,7 +102,7 @@ export function LocationPickerModal({
   const rows = useMemo<Row[]>(() => {
     const localized = lng === 'hi' || lng === 'bn';
     const built = items.map<Row>((item) => {
-      if (!localized || !kind) return { item, main: item.label, haystack: norm(item.label) };
+      if (!localized || !kind) return { item, main: item.label, keys: searchKeys(item.label, item.aka) };
       let flag = '';
       let english = item.label;
       let main = item.label;
@@ -88,7 +121,7 @@ export function LocationPickerModal({
         item,
         main,
         english: shown !== english ? english : undefined,
-        haystack: `${norm(shown)}\n${norm(english)}`,
+        keys: searchKeys(shown, [english, ...(item.aka ?? [])]),
       };
     });
     if (localized && kind) {
@@ -97,11 +130,8 @@ export function LocationPickerModal({
     return built;
   }, [items, kind, countryCode, lng]);
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return rows;
-    const q = norm(query.trim());
-    return rows.filter(r => r.haystack.includes(q));
-  }, [rows, query]);
+  // Plain matches first, then other spellings of the same sounds (utils/places.ts).
+  const filtered = useMemo(() => filterBySearch(rows, query, (r) => r.keys), [rows, query]);
 
   const handleClose = () => {
     setQuery('');
@@ -188,7 +218,7 @@ export function LocationPickerModal({
         {/* List */}
         <FlatList
           data={filtered}
-          keyExtractor={(r) => r.item.value}
+          keyExtractor={(r, i) => `${r.item.value}#${i}`}
           keyboardShouldPersistTaps="always"
           renderItem={({ item: row }) => {
             const item = row.item;

@@ -12,9 +12,11 @@ type Props = {
   onSend:    (text: string) => void;
   disabled?: boolean;
   starters?: StarterChip[];
+  /** Field hint; defaults to "Ask Saga anything…". */
+  placeholder?: string;
 };
 
-export function ChatComposer({ onSend, disabled, starters }: Props) {
+export function ChatComposer({ onSend, disabled, starters, placeholder }: Props) {
   const { theme } = useAccent();
   const { t }     = useTranslation('chat');
   const [text, setText] = useState('');
@@ -49,7 +51,7 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
       <KeyboardTouchZone style={[styles.row, { backgroundColor: theme.surface2 }]}>
         <AppTextInput
           style={[styles.input, { color: theme.ink }]}
-          placeholder={t('composer.placeholder')}
+          placeholder={placeholder ?? t('composer.placeholder')}
           placeholderTextColor={theme.faint}
           value={text}
           onChangeText={setText}
@@ -57,7 +59,7 @@ export function ChatComposer({ onSend, disabled, starters }: Props) {
           returnKeyType="send"
           submitBehavior="submit"
           multiline={false}
-          accessibilityLabel={t('composer.placeholder')}
+          accessibilityLabel={placeholder ?? t('composer.placeholder')}
         />
 
         {!!text.trim() && (

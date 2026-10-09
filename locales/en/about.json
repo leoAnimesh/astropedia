@@ -1,0 +1,143 @@
+{
+  "settingsRow": "About Astropedia",
+  "settingsRowSub": "Version, disclaimer, privacy, licences",
+  "title": "About",
+  "tagline": "Vedic astrology that stays on your phone",
+  "version": "Version {{version}} · build {{build}}",
+  "sections": {
+    "model": "On-device model",
+    "disclaimer": "Please read",
+    "help": "If you are struggling",
+    "privacy": "Privacy",
+    "legal": "Legal",
+    "data": "Your data"
+  },
+  "model": {
+    "name": "Model",
+    "version": "Version",
+    "size": "Size on this phone",
+    "sizeValue": "{{mb}} MB",
+    "licence": "Licence",
+    "notInstalled": "Not downloaded yet",
+    "gemmaNotice": "Saga is a fine-tuned version of Google's Gemma 3 270M. Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms."
+  },
+  "disclaimer": {
+    "body": "Astropedia is for reflection and curiosity. Its readings, timings and remedies follow traditional Vedic astrology; they are not statements of fact and not medical, psychological, legal or financial advice. Please take important decisions with a qualified professional.",
+    "ai": "Answers are written by a small AI model running on this phone. It can be wrong. Dates and chart calculations come from the app's own astronomy, not from the model."
+  },
+  "help": {
+    "body": "If you are in distress or thinking about harming yourself, please talk to someone now. These numbers work across India.",
+    "teleManas": "Tele-MANAS",
+    "teleManasSub": "14416 · free, confidential, 24×7",
+    "emergency": "Emergency",
+    "emergencySub": "112",
+    "callHint": "Opens the phone dialler"
+  },
+  "privacy": {
+    "points": [
+      "No account and no sign-in.",
+      "No analytics, ads or tracking.",
+      "Birth details, charts, chats and your journal are stored only on this phone.",
+      "The internet is used to download the on-device model and for links you open; nothing about you is sent.",
+      "A backup file you export holds birth details and chats. You decide where it goes."
+    ],
+    "policy": "Privacy policy"
+  },
+  "legal": {
+    "terms": "Terms of use",
+    "licences": "Open-source licences",
+    "licencesSub": "Libraries, fonts, place data and models this app is built with",
+    "placesCredit": "Birth places: GeoNames (geonames.org), licensed under CC BY 4.0."
+  },
+  "data": {
+    "delete": "Delete all my data",
+    "deleteSub": "Removes every profile, chat, journal entry and setting from this phone",
+    "title": "Delete all data?",
+    "message": "Every profile, chat, journal entry, saved answer and setting on this phone will be deleted. This can't be undone. Export a backup first if you might want them back.\n\nThe downloaded model stays so you don't have to download it again. Uninstalling the app removes everything.",
+    "cancel": "Cancel",
+    "confirm": "Delete everything"
+  },
+  "licences": {
+    "title": "Licences",
+    "intro": "Astropedia is built with open-source software and openly licensed AI models. Thank you to everyone who makes them.",
+    "models": "AI models",
+    "libraries": "Libraries and fonts",
+    "count": "{{count}} components",
+    "viewLicence": "Read the licence",
+    "installed": "Installed",
+    "fullText": "Licence texts"
+  },
+  "privacyDoc": {
+    "title": "Privacy policy",
+    "status": "Summary of the full policy",
+    "sections": [
+      {
+        "h": "What stays on your phone",
+        "p": "Everything you enter: names, birth dates, times and places, chats, journal entries, saved answers and settings. Astropedia has no servers that receive this data, no account and no sign-in."
+      },
+      {
+        "h": "What uses the internet",
+        "p": "Downloading the on-device AI model and checking for model updates, both from Hugging Face. Hugging Face sees the request, as any website sees your IP address; nothing about you or your charts is sent. Links you open go to those websites."
+      },
+      {
+        "h": "No analytics or ads",
+        "p": "The app contains no analytics, crash reporting, advertising or tracking code. If the app hits an error, the details stay on the phone unless you choose to share them."
+      },
+      {
+        "h": "Reporting an answer",
+        "p": "\"Report this answer\" opens your email app (or the share sheet) with a draft containing that question and answer and the app and model version. Nothing is sent unless you send it. The answer is then hidden on this phone."
+      },
+      {
+        "h": "Notifications",
+        "p": "Reminders are scheduled on the phone itself. No push server is involved."
+      },
+      {
+        "h": "Backups",
+        "p": "An exported backup file contains birth details, chats and your journal. It is saved where you choose; treat it like any private document. Your phone's own backup (iCloud or Google) may also include app data, under your control."
+      },
+      {
+        "h": "Deleting your data",
+        "p": "Settings → About → Delete all my data removes everything from this phone. Uninstalling the app also removes it."
+      },
+      {
+        "h": "Children",
+        "p": "Astropedia is not directed at children under 13."
+      }
+    ]
+  },
+  "termsDoc": {
+    "title": "Terms of use",
+    "status": "Summary of the full terms",
+    "sections": [
+      {
+        "h": "For reflection",
+        "p": "Astropedia offers traditional Vedic astrology for reflection and curiosity. It does not predict the future as fact and is not medical, psychological, legal or financial advice."
+      },
+      {
+        "h": "AI answers",
+        "p": "Answers are generated by an AI model on your phone and can be wrong or incomplete. Use your own judgement and consult a qualified professional for important decisions."
+      },
+      {
+        "h": "Your data",
+        "p": "Your data is yours and stays on your phone. You are responsible for any backup files you export or share."
+      },
+      {
+        "h": "Models",
+        "p": "The AI models are provided under their own licences (Gemma Terms of Use, Llama 3.2 Community License, Apache 2.0). By downloading a model you agree to its licence and its acceptable-use policy."
+      },
+      {
+        "h": "No warranty",
+        "p": "The app is provided as is, without warranties. To the extent the law allows, we are not liable for decisions made using it."
+      }
+    ]
+  },
+  "crash": {
+    "title": "Something went wrong",
+    "body": "Astropedia hit an unexpected problem. Your data is safe on this phone.",
+    "restart": "Restart the app",
+    "retry": "Try again",
+    "share": "Share error details",
+    "shareNote": "Opens the share sheet so you can send the details yourself. Nothing is sent automatically.",
+    "shareTitle": "Astropedia error report"
+  }
+}

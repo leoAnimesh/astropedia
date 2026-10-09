@@ -12,7 +12,6 @@
  */
 import i18n from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
-import { MODEL_LANGUAGES } from './local-llm';
 import { Storage } from './storage';
 
 export const LANGUAGES = [
@@ -27,6 +26,7 @@ export const NAMESPACES = [
   'common', 'onboarding', 'home', 'chat', 'profile', 'horoscope', 'panchang',
   'compatibility', 'settings', 'phase', 'saved', 'muhurat', 'forecast',
   'family', 'journal', 'alerts', 'astro', 'keyboard',
+  'festivals', 'sadesati', 'dasha', 'gita', 'reports', 'about',
 ] as const;
 
 // Metro needs static requires, so each file is listed explicitly.
@@ -50,6 +50,12 @@ const resources = {
     alerts:        require('../locales/en/alerts.json'),
     astro:         require('../locales/en/astro.json'),
     keyboard:      require('../locales/en/keyboard.json'),
+    festivals:     require('../locales/en/festivals.json'),
+    sadesati:      require('../locales/en/sadesati.json'),
+    dasha:         require('../locales/en/dasha.json'),
+    gita:          require('../locales/en/gita.json'),
+    reports:       require('../locales/en/reports.json'),
+    about:         require('../locales/en/about.json'),
   },
   hi: {
     common:        require('../locales/hi/common.json'),
@@ -70,6 +76,12 @@ const resources = {
     alerts:        require('../locales/hi/alerts.json'),
     astro:         require('../locales/hi/astro.json'),
     keyboard:      require('../locales/hi/keyboard.json'),
+    festivals:     require('../locales/hi/festivals.json'),
+    sadesati:      require('../locales/hi/sadesati.json'),
+    dasha:         require('../locales/hi/dasha.json'),
+    gita:          require('../locales/hi/gita.json'),
+    reports:       require('../locales/hi/reports.json'),
+    about:         require('../locales/hi/about.json'),
   },
   bn: {
     common:        require('../locales/bn/common.json'),
@@ -90,6 +102,12 @@ const resources = {
     alerts:        require('../locales/bn/alerts.json'),
     astro:         require('../locales/bn/astro.json'),
     keyboard:      require('../locales/bn/keyboard.json'),
+    festivals:     require('../locales/bn/festivals.json'),
+    sadesati:      require('../locales/bn/sadesati.json'),
+    dasha:         require('../locales/bn/dasha.json'),
+    gita:          require('../locales/bn/gita.json'),
+    reports:       require('../locales/bn/reports.json'),
+    about:         require('../locales/bn/about.json'),
   },
 };
 
@@ -180,9 +198,11 @@ export function localizeTime(s: string, lng: AppLanguage = getAppLanguage()): st
 
 // ─── Questions sent to the model ─────────────────────────────────────────────
 
-/** True when the bundled model reads and answers this language. */
+/** True when the active answer adapter (utils/agent/adapters) reads and answers this language. */
 export function modelSpeaks(lang: AppLanguage = getAppLanguage()): boolean {
-  return MODEL_LANGUAGES.includes(lang);
+  // Required lazily: the adapters import modules that import this one.
+  const { activeAdapter } = require('./agent/adapters') as typeof import('./agent/adapters');
+  return activeAdapter().caps.languages.includes(lang);
 }
 
 /** Language for questions the app sends on the user's behalf. */

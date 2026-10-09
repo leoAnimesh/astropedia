@@ -9,6 +9,27 @@
   "a11y": {
     "textField": "Text field",
     "appKeyboard": "Use the app keyboard",
-    "clear": "Clear"
+    "clear": "Clear",
+    "shift": "Shift",
+    "capsLock": "Caps lock",
+    "delete": "Delete",
+    "space": "Space",
+    "return": "Return",
+    "nextLanguage": "Next keyboard language",
+    "systemKeyboard": "Use the phone keyboard",
+    "digits": "Switch digits",
+    "suggestion": "Word suggestions",
+    "page": {
+      "letters": "Letters",
+      "vowels": "Vowels",
+      "numbers": "Numbers",
+      "symbols": "More symbols"
+    }
+  },
+  "menu": {
+    "selectAll": "Select All",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste"
   }
 }

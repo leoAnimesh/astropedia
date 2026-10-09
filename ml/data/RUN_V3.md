@@ -188,3 +188,153 @@ build_sft as above but WITHOUT answers_v4_en_dates.jsonl in --reuse, then en rea
   - Bengali weather fabrication
   - Hindi date attribution
   - a gender line in the reading prompt
+
+## Saga v2.2: timing windows (app side shipped 2026-10-09; data pass not run yet)
+
+**Problem.** v2.1 gave almost every chart the same date: the first transit ingress in the context ("Jupiter … From around Oct 2026 it moves into …"). Every chart with the same `today` shares that line. The fix moved astrology out of the model. `utils/timing-engine.ts` works out the window the way an astrologer does: Vimshottari maha/antar/pratyantar lords tied to the topic's houses and karakas, plus Jupiter/Saturn double transit from the Lagna and the Moon (sources are in the file header). The app pipeline (`utils/agent/`) then feeds that window to the model and checks the reply against it.
+
+**What the app sends now (gemma21 adapter, `TIMING_PROMPT_MODE = 'line-bottom'`).** This applies to a timing question with a life topic (`utils/agent/intent.ts`):
+- "Now (sky today)" lines whose ingress month is outside the engine windows (±1 month) lose their dated sentence. Where the planet sits now stays.
+- The Timing block gets one more line at the end, in its own grammar: `- Best window for marriage: Mar 2028 to Nov 2028 (peak Jul 2028)`. Topic words come from `gemma21-prompt.ts TOPIC_PHRASE`.
+- The verify layer (`utils/agent/verify.ts`) checks each sentence as it streams. If a sentence's dates are outside the windows, or name the current month, the first such sentence is replaced with "The best window for this is …" in en/hi/bn. Any later ones are dropped. A reply with no date gets that sentence appended. The old copied-transit retry is gone.
+
+**Eval** (`ml/scripts/timing_eval`, profiles `ml/data/eval_timing_profiles.jsonl`): 69 timing questions, en/hi/bn rotating, 10 charts, today ∈ {2026-10-09, 2027-04-15, 2027-11-20, 2028-06-10}, `ml/out/astro_gemma_v21_8da8w.pte`. "1st∈top" = the first future month-year in the answer falls inside the engine's best window. "transit" = the answer copies a context ingress month that is outside the windows.
+
+| greedy | 1st∈top | 1st∈any of 3 | current month | Oct 2026 | transit copy | per-chart same date | v5 pass | v4 pass |
+|---|---|---|---|---|---|---|---|---|
+| baseline (v2.1 as shipped) | 21.7% | 27.5% | 33.3% | 24.6% | 60.9% | 81% | 85.5% | 92.8% |
+| filter only | 36.2% | 47.8% | 4.3% | 1.4% | 8.7% | 69% | 88.4% | 92.8% |
+| + line at top of Timing | 62.3% | 71.0% | 5.8% | 1.4% | 5.8% | 50% | 84.1% | 85.5% |
+| **+ line at bottom (chosen)** | **68.1%** | **75.4%** | 2.9% | 1.4% | 5.8% | 43% | 84.1% | 85.5% |
+| chosen + verify layer | 94.2% | **100%** | 0% | 0% | 0% | 39% | 88.4% | 89.9% |
+| T=0.3: baseline → chosen → chosen + verify | 21.7 → 66.7 → 94.2% | 30.4 → 75.4 → 100% | 36.2 → 4.3 → 0% | | 60.9 → 4.3 → 0% | 77 → 41 → 38% | 94.2 → 85.5 → 89.9% | |
+
+In the chosen mode the verify sentence was needed in 19 of 69 greedy answers (21 of 69 at T=0.3). Most of the validator drop comes from `date_event_mismatch`: the model ties the window date to Jupiter ("from Apr 2031 Jupiter's support …"). `validate_answer.py` doesn't know the window line. Often the window really does come from a Jupiter transit, but the attribution isn't checked. Teach the student to say "that is the best window" instead of naming a planet for it (see below).
+
+**Data pass for v2.2 (the model should learn the line natively):**
+1. Profiles: `gen_profiles.ts … --windows` adds `windows[topic] = {line, context, start, end, peak, strength, confidence, others, nextStrong}` for all 13 engine topics, as of the row's today.
+2. Questions: tag each timing question with its engine topic. Either use `utils/agent/intent.ts classifyIntent` (port it, or run it through `npx tsx` over the question bank), or map `questions.py` categories directly. Questions about planets, transits or dashas stay topic-less (topic `chart`): no line, no filter.
+3. Student prompt (`build_sft.student_saga_system`): for a tagged timing question, use `windows[topic].context` in place of `context`, and append `windows[topic].line` to `timing`. Keep everything else byte-identical. It must match `utils/agent/adapters/gemma21-prompt.ts sagaSystem(..., mode 'line-bottom')`.
+4. Teacher prompt (`teacher_prompts.py`): give the same line and add a rule. When there is a "Best window" line, the timing in the answer is that window (one month-year from it, or "between X and Y"). Say the window is when the life timeline and the slow planets line up for this. Don't credit it to one planet's move. If `strength` is weak, say it's the best of quieter years. If the birth time is unknown, say the dates are approximate. Add the window months to the validator's allowed dates (`parse_context` already reads Timing lines, and `check_date_events` should accept window dates for the topic sentence).
+5. Validator: treat `- Best window for …` as its own event ("window") so sentences that use its dates without a planet pass. A sentence that puts a window date on a named planet's move should fail (`date_misattributed`).
+6. Mix: about 30% of Saga timing turns should get a line, including "when exactly?" follow-ups (answer: the peak month) and past questions ("did I…": no line; the app answers those from the engine's past windows).
+7. Gate before shipping v2.2: re-run `ml/scripts/timing_eval` (first date in the best window ≥ 85% raw, transit copy ≤ 2%, v5 pass ≥ baseline). The app keeps the verify layer either way.
+
+## GURU_CONTEXT_FOCUS eval (2026-10-09): stays off
+
+Focused chart context per guru (AnswerPlan.focus = guru areas + question topic area; `guru` = the
+guru's areas alone, identical prompts for 185/189 items) vs the full v2 context, v2.1 `.pte`, greedy,
+line-bottom timing line. `ml/scripts/timing_eval/focus_gen.ts` → `run_pte.py` → `focus_score.py`;
+validator (`validate_answer.validate`) always against the full context.
+
+| set | variant | n | v5 ok | v4 ok | 1st date in best window | 1st in any window | on-topic |
+|---|---|---|---|---|---|---|---|
+| timing (69, guru by topic) | full | 69 | 84.1% | 85.5% | 68.1% | 75.4% | 89.9% |
+| | focus (plan) | 69 | 87.0% | 87.0% | 73.9% | 79.7% | 91.3% |
+| guru, non-timing (40 Qs x en/hi/bn) | full | 120 | 80.8% | 83.3% | – | – | 93.3% |
+| | focus (plan) | 120 | 72.5% | 75.8% | – | – | 95.8% |
+
+Guru set by language (v4): en 87.5 → 90.0, hi 85.0 → 72.5, bn 77.5 → 65.0. Extra failures with focus:
+script_latin_word 2 → 8, date_event_mismatch 3 → 8, date_misattributed 0 → 3. Per guru (v4): love 100 → 87.5,
+health 54.2 → 41.7, family 91.7 → 79.2, career and study unchanged. Decision: OFF (all 189: 84.1% → 79.9% v4);
+the small timing gain doesn't matter after the verify layer, which already puts every shown date in a window.
+
+## Saga v2.3: answer types (app side, 2026-10-09)
+
+Bug from a phone (Career guru, en): "Which roles I should apply for?" and then "Like I'm asking which domain?"
+got the same reply twice ("…the shift toward a new role begins by October 2026…"). Causes, checked in code:
+the intent had no topic for "roles / domain" and no notion of a which / what-kind question, so the plan was
+empty and v2.1 copied the shared Jupiter ingress date ("From around Oct 2026") from the context; and the
+repeat guard decided on the first 16 words (overlap 0.00 for a fresh opener, 0.76 for the whole reply).
+
+App changes (utils/agent): answer kinds + asks + clarification re-reading (intent.ts); a deterministic
+astrologer per ask (astrologer.ts: career field from the 10th, its lord and dispositor, occupants, aspects
+and the Jaimini Amatyakaraka; partner from the 7th + Venus; money 2nd/11th; study 4th/5th/9th; strengths;
+health habits; abroad vs home; business vs job; why-now from the running dasha and Saturn's transit over the
+Moon; no D9/D10); the items on the matching Life areas line (gemma21 `line`) or as instructions (instruct);
+templates for every ask in en/hi/bn that never repeat the thread; verify: unasked dates dropped, sentences
+already said in any earlier reply dropped, a model reply must keep 2+ sentences and use 2+ item words after
+that, else one retry, then the template.
+
+Eval (scratchpad agent/at: eval.ts, score.ts, validate.py; v2.1 .pte, greedy, retry T=0.6): 11
+conversations (the report's two turns + 10 three-turn conversations; career domain / roles, clarifications,
+business vs job, abroad, partner, money, study, strengths, health habits, why-now) x en/hi/bn on 8 profiles
+= 96 turns, run through the real pipeline modules. Baseline = HEAD before this change.
+
+| | baseline | new (line, history kept) |
+|---|---|---|
+| names a plan item (final reply) | 35.4% | 100% |
+| model's first try names one | 36.5% | 52.1% |
+| unasked date (outside engine windows / the current month) | 70.8% | 1.0% |
+| repeats an earlier reply (overlap >= 0.5, turns 2+) | 77.8% | 0% |
+| hi/bn in native script | 100% | 100% |
+| template answer shown | 0% | 81.3% |
+| v5 validator | 30.2% | 64.6% (85.4% counting engine-window dates as known) |
+
+Prompt variants (model's first try names an item): nodate 38.5%, line + clarification sent alone 44.8%,
+line + history kept 52.1% (chosen), line + every which/what question rewritten to the training seed
+phrasing 41.7%. Timing questions: prompts byte-identical (276/276), repaired timing answers identical.
+v2.1 rarely writes a usable domain / trait answer on its own, hence the high template share: the next data
+pass should add answer-type SFT rows built from these plans (the `best fits:` line as input).
+
+## Saga v2.2 data plan, Stage 3 additions (written 2026-10-09; not run)
+
+**Why.** Stage 3 judged 462 real-pipeline answers (46 categories x en/hi/bn incl. Hinglish/Banglish, 6
+profiles, 62 two-profile threads) with `ml/astro-kb/judge_rubric.md`. The v2.1 model was shown on 10 of
+them and scored 10.4-11.2/16 (model, repaired) against 13.8 for the template; after the Stage 3 template
+fixes the template passes 100% (mean 15.5/16). `GEMMA21_MODEL_CATEGORIES` is now empty: every answer is the
+template. v2.2 is worth shipping only if it matches the template per category, so the data pass teaches
+the template's answer shape from the same plan, and adds what the template cannot do (Latin-script
+Hinglish/Banglish, freer phrasing).
+
+**1. Inputs the student sees (extends steps 1-3 of the v2.2 timing plan above).** The `- Best window …`
+line also carries the reason the template uses, so the model can give a concrete one instead of a generic
+"the planets support you":
+`- Best window for marriage: Mar 2028 to Nov 2028 (peak Jul 2028; Venus sub-period, Venus rules your 7th; Jupiter and Saturn both support)`.
+Add `reason` (sub-period lord + its link to the topic house: occupant / lord / aspect / with-lord /
+karaka, from `timing-engine` `antarLinks`) and `alt` (one alternative: a nearer smaller opening, or the next
+strong stretch, or "steady not strong") to `windows[topic]` in `gen_profiles.ts --windows`, and render the
+same text in `gemma21-prompt.ts` (byte-identical test). Non-timing asks keep the `Life areas` items line.
+
+**2. Rows (≈ 9,200 new Saga turns).**
+
+| Slice | Rows | Notes |
+|---|---|---|
+| Timing categories (marriage, job change, promotion, money, debt, property/vehicle, foreign, children, exams, govt job, legal, health, general luck, education timing, divorce) | 3,600 | 240 per category; 20% "this year / soon?" (plain yes or not-yet first), 15% with feelings shown (one validation line first), 15% no birth time |
+| Choice / description asks (career field, education field, business vs job, love vs arranged, partner traits/meeting, personality, spirituality, remedies, money sources) | 2,400 | 270 per ask; X-or-Y questions get the leaning first and it must agree with the first item |
+| Why-now / distress / family / relationship problems | 1,200 | Saturn transit named first when it runs; counsellor + Tele-MANAS for distress; no doctor line for family tension |
+| Safety forms (death/accident, surgery, ex-back, mind-reading, minors, crisis, sensitive identity, partner name, baby sex) | 900 | 100 each; targets are the Stage 3 decisions (judge_rubric.md 3.9), never a likelihood or date |
+| Follow-ups in threads (which domain, be specific, when exactly, why this time, too far, pick one, permanent or work, corrections) | 1,100 | 3-turn threads; each turn must add something new; the model must not repeat an earlier sentence |
+
+Languages: en 40%, hi 30%, bn 30%. Within hi and bn, 30% of questions are Hinglish / Banglish **and the
+target answer is in Latin script** (new: the template answers these in Devanagari / Bengali script, the
+main remaining language-score loss: 118 of 462 Stage 3 answers). Profiles: the dated v2 mix plus ≥ 15%
+minors, ≥ 10% over 70, ≥ 15% no birth time, ≥ 10% southern-hemisphere / non-IST births.
+
+**3. Teacher prompt changes (`teacher_prompts.py`, Saga system and per-call notes).**
+- Answer first. A timing answer's first sentence is the window ("For marriage, the best window is Mar 2028
+  to Nov 2028, peaking around Jul 2028."); a choice's first sentence is the leaning; a yes/no's is the
+  plain answer. Only a one-line validation may come before it, and only when the user shows feelings.
+- One concrete reason from the line: name the sub-period planet and what it does in this chart, in plain
+  words ("This window falls in your Venus phase, and Venus rules your partnership side"). No house numbers,
+  no "dasha / antardasha", no reason that the line does not give.
+- One alternative at most (the `alt` text). Never two windows in reverse order; never "nothing strong in
+  five years" when a window is listed.
+- One practical step tied to the topic, then stop. One professional pointer when the category needs it
+  (doctor, lawyer, counsellor, adviser), never twice.
+- Length: en 50-90 words, hi 55-105, bn 45-85 (Stage 3 template medians: 56 / 63 / 53).
+- Script: answer Hinglish in Hinglish and Banglish in Banglish (Latin script, planet names in English);
+  Devanagari / Bengali questions in their script. आप / আপনি always.
+- Safety forms follow judge_rubric.md 3.9 exactly (the teacher gets the table as a per-call note for
+  those categories).
+
+**4. Validator (`validate_answer.py`).** Add: `window_first` (first non-validation sentence contains a
+window date for timing asks), `one_alt` (at most two date ranges), `length_band` per language, `latin_ok`
+(Hinglish/Banglish answers ≥ 90% Latin letters), `lean_agrees` (leaning option appears in or matches the
+first item), `pointer_once`. Keep `date_misattributed` from the v2.2 timing plan.
+
+**5. Gate before any category returns to the model.** Re-run the Stage 3 harness (scratchpad
+`stage3/gen.ts` + `summary.py`, or its port into `ml/scripts/`) with the new `.pte`. A category goes back into
+`GEMMA21_MODEL_CATEGORIES` only when its model pass rate is ≥ 95% and its mean is within 0.5/16 of the
+template's on the same sample, and the bank (`agent/bank.test.ts`, 2,628 rows x profiles) still passes
+through the model path with verify on.

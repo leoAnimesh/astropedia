@@ -1,6 +1,7 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useChatStore } from '@/stores/chat-store';
 import { useThreadStore } from '@/stores/thread-store';
+import { useProfileStore } from '@/stores/profile-store';
 import {
   getMessagesByThread,
   insertMessage,
@@ -10,11 +11,15 @@ import {
   type Profile,
   type Thread,
 } from '@/utils/database';
+import { questionTitle } from '@/utils/agent/strings';
+import { parseFacts, serializeFacts } from '@/utils/agent/thread-facts';
 import { streamAI, askThreadTitle, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
 import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
 import { isModelReady, waitForModelReady } from '@/utils/model-download';
 import { GITA_QUOTE_START } from '@/utils/gita';
 import i18n from '@/utils/i18n';
+import type { AgentId } from '@/constants/gurus';
+import { logger } from '@/utils/logger';
 
 const THINK_OPEN  = '<think>';
 const THINK_CLOSE = '</think>';
@@ -82,8 +87,10 @@ async function generateThreadTitle(
 ): Promise<void> {
   try {
     // Leave out Krishna's appended verse; titles describe the exchange itself.
-    const text = await askThreadTitle(userMsg, aiReply.split(GITA_QUOTE_START)[0].trim());
-    if (!text) return;
+    const result = await askThreadTitle(userMsg, aiReply.split(GITA_QUOTE_START)[0].trim());
+    // No model: the placeholder (the first question, cut short) already is the title.
+    if (!result || result.source !== 'model') return;
+    const text = result.text;
 
     // Clean the title against everything models tend to leak:
     //  - <think>...</think> reasoning blocks (Qwen 3)
@@ -122,12 +129,17 @@ export function isChatErrorMessage(m: Pick<Message, 'role' | 'content'>): boolea
   ) || m.content === "I couldn't load the on-device model right now. Try again in a moment.";
 }
 
+/** Latest facts per thread this session (the Thread prop can be a render behind). */
+const threadFactsCache = new Map<string, string>();
+
 export function useChat(
   thread:    Thread | null,
   profile:   Profile | null,
   isNew:     boolean = false,
   mode:      AIMode  = 'saga',
   userName?: string,
+  /** Guru of this chat; stored on the thread and picks the app-side rules. */
+  agent:     AgentId = mode,
 ) {
   const threadId = thread?.id ?? '';
 
@@ -143,11 +155,23 @@ export function useChat(
   const storeClearStreaming = useChatStore((s) => s.clearStreaming);
   const status     = useChatStore((s) => s.status[threadId]  ?? 'idle');
 
+  // Which thread's saved messages have been read from SQLite. Until then a
+  // send would race the load (and the load would drop the new bubble).
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   useEffect(() => {
     if (!threadId) return;
-    getMessagesByThread(threadId).then((loaded) => {
-      storeSetMessages(threadId, loaded);
-    });
+    let alive = true;
+    getMessagesByThread(threadId)
+      .then((loaded) => {
+        if (!alive) return;
+        // A thread not saved yet has nothing in SQLite: keep any bubble sent
+        // while this read was in flight instead of wiping it.
+        const current = useChatStore.getState().messages[threadId] ?? [];
+        storeSetMessages(threadId, loaded.length > 0 || current.length === 0 ? loaded : current);
+      })
+      .catch(() => {})
+      .finally(() => { if (alive) setLoadedId(threadId); });
+    return () => { alive = false; };
   }, [threadId]);
 
   const sendMessage = useCallback(async (text: string): Promise<void> => {
@@ -160,6 +184,7 @@ export function useChat(
       const persisted = await insertThread({
         id:                 thread.id,
         profileId:          thread.profileId,
+        agent,
         title:              null,
         archived:           false,
         archivedAt:         null,
@@ -185,7 +210,7 @@ export function useChat(
 
     // Set a placeholder title immediately so the thread list shows something
     if (isFirstMessage) {
-      const placeholder = text.length > 36 ? text.slice(0, 34).trim() + '…' : text;
+      const placeholder = questionTitle(text);
       await updateThread(threadId, { title: placeholder });
       useThreadStore.getState().updateThread(threadId, thread.profileId, { title: placeholder });
     }
@@ -234,12 +259,23 @@ export function useChat(
         [i18n.t('chat:errors.modelLoad')]: i18n.t('chat:errors.modelLoad', { lng: 'en' }),
         [i18n.t('chat:errors.generic')]:   i18n.t('chat:errors.generic', { lng: 'en' }),
       };
-      const recentHistory = messages.slice(-6).map((m) => ({
+      // 12 messages: the prompts still keep only what fits (gemma: the last 4), but the verify
+      // layer checks a new reply against every earlier answer in this tail (no repeats).
+      const recentHistory = messages.slice(-12).map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: toEnglish[m.content] ?? m.content,
       }));
-      const request = { profile, history: recentHistory, userMessage: text.trim(), mode, userName };
-      let { stream, tier } = await streamAI(request);
+      const people = useProfileStore.getState().profiles;
+      // The thread's facts memory ("I'm already married", "I meant my sister"): stored with the thread.
+      const storedFacts = threadFactsCache.get(threadId) ?? thread.facts ?? null;
+      const request = { profile, people, history: recentHistory, userMessage: text.trim(), mode, userName, agent, facts: parseFacts(storedFacts) };
+      let { stream, tier, facts } = await streamAI(request);
+      const nextFacts = facts ? serializeFacts(facts) : null;
+      if (nextFacts && nextFacts !== storedFacts) {
+        threadFactsCache.set(threadId, nextFacts);
+        updateThread(threadId, { facts: nextFacts }).catch(() => { /* kept in memory for this session */ });
+        useThreadStore.getState().updateThread(threadId, thread.profileId, { facts: nextFacts });
+      }
 
       // The model is still downloading (utils/model-download.ts): wait for
       // it with the "waking" status; the inline pill shows the progress.
@@ -406,17 +442,20 @@ export function useChat(
 
         const preview = finalText.slice(0, 80).trim() + (finalText.length > 80 ? '…' : '');
         await updateThread(threadId, { lastMessagePreview: preview });
-        useThreadStore.getState().updateThread(threadId, thread.profileId, { lastMessagePreview: preview });
+        // updated_at moves in SQLite too; the Chat tab shows it as "2h".
+        useThreadStore.getState().updateThread(threadId, thread.profileId, {
+          lastMessagePreview: preview, updatedAt: new Date().toISOString(),
+        });
 
         if (isFirstMessage) {
           generateThreadTitle(threadId, thread.profileId, profile, text.trim(), finalText);
         }
       } catch (err) {
-        console.error('[useChat] saving reply failed:', err);
+        logger.error('[useChat] saving reply failed:', err);
       }
     } catch (err) {
       activeTyper?.stop();
-      console.error('[useChat] AI error:', err);
+      logger.error('[useChat] AI error:', err);
       // Shown only (not saved), so it can be in the app language. Own id, so
       // it can never collide with a reply bubble.
       const errorMsg = { ...buildAiMsgBase(threadId), content: i18n.t('chat:errors.generic') };
@@ -425,9 +464,9 @@ export function useChat(
       storeSetStatus(threadId, 'idle');
       storeSetTyping(threadId, false);
     }
-  }, [thread, profile, messages, threadId, isNew, mode, userName, status]);
+  }, [thread, profile, messages, threadId, isNew, mode, userName, status, agent]);
 
-  return { messages, isTyping, status, streamText, sendMessage };
+  return { messages, isTyping, status, streamText, sendMessage, loaded: !!threadId && loadedId === threadId };
 }
 
 function buildAiMsgBase(threadId: string): Message {

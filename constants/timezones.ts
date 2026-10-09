@@ -4,8 +4,8 @@
  * ZONES_BY_COUNTRY: ISO 3166 country code → IANA zones, each with the zone's
  * reference city coordinates from tzdb zone.tab and its current standard UTC
  * offset in minutes (fallback only, when Intl cannot resolve the zone).
- * COUNTRY_CODES: lower-case country name (as country-state-city spells it,
- * which is what the location picker stores) → ISO code.
+ * COUNTRY_CODES: lower-case country name → ISO code, as profiles saved by
+ * earlier builds spell it (the picker's current names: constants/place-countries.ts).
  */
 
 export type ZoneRef = [zone: string, lat: number, lng: number, stdOffsetMin: number];

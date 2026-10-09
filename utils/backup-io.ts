@@ -33,13 +33,18 @@ import { Cache } from './cache';
 import { getAppLanguage, setAppLanguage } from './i18n';
 import {
   cancelDailyHoroscope,
+  cancelFestivalReminders,
+  cancelRahuKaalHeadsUp,
   cancelTransitAlerts,
   ensureNotificationPermission,
   scheduleDailyHoroscope,
+  scheduleFestivalReminders,
+  scheduleRahuKaalHeadsUp,
   scheduleTransitAlerts,
 } from './notifications';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
+import { useSeenStore } from '@/stores/seen-store';
 import { useChatStore } from '@/stores/chat-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
@@ -67,6 +72,8 @@ function currentSettings(): BackupSettings {
     accent_key:           Storage.getAccentKey(),
     push_daily_horoscope: Storage.getDailyHoroscopePush(),
     push_transit_alerts:  Storage.getTransitAlerts(),
+    push_festival_reminders: Storage.getFestivalReminders(),
+    push_rahu_kaal:       Storage.getRahuKaalPush(),
     active_profile_id:    Storage.getActiveProfileId() ?? undefined,
     onboarding_done:      Storage.getOnboardingDone(),
     keyboard_mode:        Storage.getKeyboardMode(),
@@ -172,10 +179,12 @@ export async function restoreBackup(backup: ParsedBackup): Promise<RestoreOutcom
     await setAppLanguage(s.language);
   }
 
-  const outcome = await applyNotificationPrefs(
-    s.push_daily_horoscope ?? Storage.getDailyHoroscopePush(),
-    s.push_transit_alerts ?? Storage.getTransitAlerts(),
-  );
+  const outcome = await applyNotificationPrefs({
+    daily:    s.push_daily_horoscope ?? Storage.getDailyHoroscopePush(),
+    transit:  s.push_transit_alerts ?? Storage.getTransitAlerts(),
+    festival: s.push_festival_reminders ?? Storage.getFestivalReminders(),
+    rahu:     s.push_rahu_kaal ?? Storage.getRahuKaalPush(),
+  });
 
   // The backup has profiles (parseBackup rejects empty ones), so the app is
   // set up whatever the backup's own onboarding flag says.
@@ -201,26 +210,31 @@ async function reloadStores(preferredActiveId: string | null): Promise<void> {
 
   useChatStore.setState({ messages: {}, isTyping: {}, status: {}, streaming: {} });
   useThreadStore.setState({ threads: byProfile });
+  // Restored chats aren't new replies: no unread dots on the Chat tab.
+  useSeenStore.getState().markAllSeen(threads);
   useProfileStore.getState().setProfiles(profiles);
   useProfileStore.getState().setActiveProfileId(active?.id ?? null);
   if (active) Storage.setActiveProfileId(active.id);
 }
 
-async function applyNotificationPrefs(daily: boolean, transit: boolean): Promise<RestoreOutcome> {
+async function applyNotificationPrefs(want: { daily: boolean; transit: boolean; festival: boolean; rahu: boolean }): Promise<RestoreOutcome> {
   let blocked = false;
   try {
-    const granted = daily || transit ? await ensureNotificationPermission() : false;
-    if ((daily || transit) && !granted) blocked = true;
+    const any = want.daily || want.transit || want.festival || want.rahu;
+    const granted = any ? await ensureNotificationPermission() : false;
+    if (any && !granted) blocked = true;
 
-    const dailyOn = daily && granted;
-    const transitOn = transit && granted;
-    Storage.setDailyHoroscopePush(dailyOn);
-    Storage.setTransitAlerts(transitOn);
-
-    if (dailyOn) await scheduleDailyHoroscope();
-    else await cancelDailyHoroscope();
-    if (transitOn) await scheduleTransitAlerts(null);
-    else await cancelTransitAlerts();
+    const prefs = [
+      { on: want.daily && granted,    set: Storage.setDailyHoroscopePush, schedule: () => scheduleDailyHoroscope(), cancel: cancelDailyHoroscope },
+      { on: want.transit && granted,  set: Storage.setTransitAlerts,      schedule: () => scheduleTransitAlerts(null), cancel: cancelTransitAlerts },
+      { on: want.festival && granted, set: Storage.setFestivalReminders,  schedule: scheduleFestivalReminders, cancel: cancelFestivalReminders },
+      { on: want.rahu && granted,     set: Storage.setRahuKaalPush,       schedule: scheduleRahuKaalHeadsUp,   cancel: cancelRahuKaalHeadsUp },
+    ];
+    for (const p of prefs) {
+      p.set(p.on);
+      if (p.on) await p.schedule();
+      else await p.cancel();
+    }
   } catch {
     // Scheduling is best-effort; app start re-schedules from the stored prefs.
   }

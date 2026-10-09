@@ -5,9 +5,7 @@
   "count_other": "{{count}} saved",
   "title": "Saved <em>answers.</em>",
   "filters": {
-    "all": "All",
-    "saga": "Saga",
-    "krishna": "Krishna"
+    "all": "All"
   },
   "today": "Today",
   "yesterday": "Yesterday",
@@ -20,8 +18,7 @@
   },
   "empty": {
     "all": "Nothing saved <em>yet.</em>",
-    "saga": "No Saga answers <em>saved.</em>",
-    "krishna": "No Krishna answers <em>saved.</em>",
-    "sub": "Tap Save under any reply in a chat to keep it here."
+    "sub": "Tap Save under any reply in a chat to keep it here.",
+    "guru": "No answers from {{guru}} <em>saved.</em>"
   }
 }

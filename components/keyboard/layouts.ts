@@ -221,31 +221,116 @@ export function isIndicLabel(label: string): boolean {
   return false;
 }
 
+// ─── Long-press alternates ───────────────────────────────────────────────────
+
+/** iOS-style accent / alternate lists (first = selected when the picker opens). */
+const EN_ALTS: Record<string, string> = {
+  a: 'à á â ä æ ã å ā', c: 'ç ć č', e: 'é è ê ë ē ė ę', i: 'í ì î ï ī į', l: 'ł', n: 'ñ ń',
+  o: 'ó ò ô ö õ ø œ ō', s: 'ś š ß', u: 'ú ù û ü ū', y: 'ÿ', z: 'ž ź ż',
+};
+const PUNCT_ALTS: Record<string, string> = {
+  '.': '… ? !', ',': '\' " ; : ! ?', '-': '– — •', '/': '\\', '?': '¿', '!': '¡',
+  '"': '“ ” „ « »', "'": '‘ ’ `', '&': '§', '%': '‰', '0': '°', '₹': '$ € £ ¥',
+  '।': '. ॥ ? !',
+};
+/** Extra Indic alternates (conjuncts, other bindus) besides the key's own `alt`. */
+const INDIC_ALTS: Record<string, string> = {
+  'क': 'क्ष', 'ज': 'ज्ञ', 'त': 'त्र', 'श': 'श्र', 'ं': 'ँ ः', 'द': 'द्ध द्व',
+  'ক': 'ক্ষ', 'জ': 'জ্ঞ', 'শ': 'শ্র', 'ং': 'ঁ ঃ', 'ন': 'ন্ত ন্দ',
+};
+
+const words = (s?: string) => (s ? s.split(' ').filter(Boolean) : []);
+
+/**
+ * What a long-press offers for a key: accents (English), matra ↔ vowel and
+ * nukta forms (Hindi / Bengali, from the key's `alt`), extra conjuncts, or
+ * punctuation variants. Empty when the key has none.
+ */
+export function alternatesFor(key: KeyDef, lang: LayoutLang, shifted: boolean): string[] {
+  if (key.kind !== 'char' || !key.value) return [];
+  const v = key.value;
+  const out: string[] = [];
+  if (key.alt) out.push(key.alt);
+  if (lang === 'en' && EN_ALTS[v]) out.push(...words(EN_ALTS[v]).map((c) => (shifted ? c.toUpperCase() : c)));
+  out.push(...words(PUNCT_ALTS[v]));
+  if (lang !== 'en') out.push(...words(INDIC_ALTS[v]));
+  return [...new Set(out)].filter((c) => c !== v);
+}
+
 // ─── Geometry ────────────────────────────────────────────────────────────────
 
 /** `uid` is unique within a page (the same char can appear twice). */
 export type KeyRect = { uid: string; key: KeyDef; row: number; x: number; y: number; w: number; h: number };
 
-/** Height of the key area for a language (its letters page sets it, so
- *  switching pages never changes the keyboard height). */
-export function keyAreaHeight(l: LayoutLang): number {
-  const rows = getPage(l, 'letters').rows.length;
-  const rowHeight = rows <= 4 ? 52 : rows === 5 ? 47 : 43;
-  return PAD_TOP + rows * rowHeight + PAD_BOTTOM;
+/**
+ * Key-area metrics modelled on the iPhone system keyboard (390 pt portrait:
+ * 54 pt rows = 42 pt keys + 12 pt gaps, 6 pt between keys, ~5 pt corners,
+ * 22–23 pt letters), scaled to the screen width. Landscape gets short rows
+ * like the system keyboard; layouts with more rows (Hindi / Bengali) share
+ * a slightly taller budget instead of growing row by row.
+ */
+export type KeyboardMetrics = {
+  rowHeight:  number;
+  keyHeight:  number;
+  gapX:       number;
+  padTop:     number;
+  padBottom:  number;
+  areaHeight: number;
+  radius:     number;
+  fontLetter: number;
+  fontIndic:  number;
+  fontSmall:  number;
+  iconSize:   number;
+  /** Suggestion strip height. */
+  stripHeight: number;
+};
+
+export function keyboardMetrics(width: number, windowHeight: number, rows: number): KeyboardMetrics {
+  const landscape = width > windowHeight;
+  const s = Math.max(0.85, Math.min(1.12, width / 390));
+  const sv = Math.max(0.92, Math.min(1.06, width / 390));
+  const base = landscape ? 40 : 54 * sv;
+  const gapBase = landscape ? 7 : 12 * sv;
+  // 4 rows use the full row; more rows split 4.6 rows' worth of height.
+  const rowHeight = rows <= 4 ? base : Math.min(base, (base * 4.6) / rows);
+  const gapY = rows <= 4 ? gapBase : Math.max(landscape ? 5 : 7, gapBase * (rowHeight / base));
+  const padTop = landscape ? 2 : 3;
+  const padBottom = landscape ? 2 : 3;
+  const f = landscape ? 0.86 : s;
+  return {
+    rowHeight,
+    keyHeight:  rowHeight - gapY,
+    gapX:       landscape ? 6 : 6 * s,
+    padTop,
+    padBottom,
+    areaHeight: Math.round(padTop + rows * rowHeight + padBottom),
+    radius:     Math.round(5.5 * s * 2) / 2,
+    fontLetter: Math.round(23 * f),
+    fontIndic:  Math.round((rows > 4 ? 19 : 21) * f),
+    fontSmall:  Math.round(16 * f),
+    iconSize:   Math.round(22 * f),
+    stripHeight: landscape ? 36 : Math.round(44 * sv),
+  };
 }
 
-const PAD_X = 3;
-const PAD_TOP = 6;
-const PAD_BOTTOM = 4;
+/** Height of the key area for a language at a phone width (its letters
+ *  page sets it, so switching pages never changes the keyboard height). */
+export function keyAreaHeight(l: LayoutLang, width = 390, windowHeight = 844): number {
+  return keyboardMetrics(width, windowHeight, getPage(l, 'letters').rows.length).areaHeight;
+}
+
+type Pads = { padTop: number; padBottom: number };
+const DEFAULT_PADS: Pads = { padTop: 3, padBottom: 3 };
 
 /**
  * Lays out a page in a `width` × `height` key area. Each rect is the key's
- * full cell (the touch target); the drawn key is inset by a gap. Rows
- * narrower than the grid are centred.
+ * full cell (the touch target: taps in the gaps between keys land on a
+ * key, taps in a centred row's side margins on the nearest one — see
+ * hitTest); the drawn key is inset by half the gap.
  */
-export function layoutPage(p: PageDef, width: number, height: number): KeyRect[] {
-  const rowHeight = (height - PAD_TOP - PAD_BOTTOM) / p.rows.length;
-  const unit = (width - PAD_X * 2) / p.units;
+export function layoutPage(p: PageDef, width: number, height: number, pads: Pads = DEFAULT_PADS): KeyRect[] {
+  const rowHeight = (height - pads.padTop - pads.padBottom) / p.rows.length;
+  const unit = width / p.units;
   const rects: KeyRect[] = [];
   p.rows.forEach((keys, r) => {
     const fixed = keys.reduce((s, k) => s + (k.w === 0 ? 0 : (k.w ?? 1)), 0);
@@ -253,8 +338,8 @@ export function layoutPage(p: PageDef, width: number, height: number): KeyRect[]
     const free = Math.max(0, p.units - fixed);
     const flexW = flex ? free / flex : 0;
     const total = fixed + flexW * flex;
-    let x = PAD_X + ((p.units - total) / 2) * unit;
-    const y = PAD_TOP + r * rowHeight;
+    let x = ((p.units - total) / 2) * unit;
+    const y = pads.padTop + r * rowHeight;
     keys.forEach((k, i) => {
       const w = (k.w === 0 ? flexW : (k.w ?? 1)) * unit;
       rects.push({ uid: `${r}.${i}.${k.id}`, key: k, row: r, x, y, w, h: rowHeight });
@@ -265,12 +350,13 @@ export function layoutPage(p: PageDef, width: number, height: number): KeyRect[]
 }
 
 /** The key under a point: the touched row (clamped), then the key whose
- *  cell contains x, else the nearest one — so edge taps still land. */
+ *  cell contains x, else the nearest one — so edge and gap taps still land. */
 export function hitTest(rects: KeyRect[], x: number, y: number): KeyRect | null {
   if (!rects.length) return null;
   const rowHeight = rects[0].h;
+  const padTop = rects[0].y;
   const rows = rects[rects.length - 1].row + 1;
-  const r = Math.max(0, Math.min(rows - 1, Math.floor((y - PAD_TOP) / rowHeight)));
+  const r = Math.max(0, Math.min(rows - 1, Math.floor((y - padTop) / rowHeight)));
   let best: KeyRect | null = null;
   let bestD = Infinity;
   for (const k of rects) {
@@ -280,4 +366,45 @@ export function hitTest(rects: KeyRect[], x: number, y: number): KeyRect | null 
     if (d < bestD) { bestD = d; best = k; }
   }
   return best;
+}
+
+// ─── Alternates picker ───────────────────────────────────────────────────────
+
+export type PickerLayout = {
+  x:      number;
+  width:  number;
+  cellW:  number;
+  pad:    number;
+  /** Option index shown in each cell, left to right. */
+  order:  number[];
+};
+
+/**
+ * Places the long-press picker over a key (iOS-style): it grows to the
+ * right from the key, or to the left (in reverse order) near the right
+ * edge, so the first option always sits right above the finger.
+ */
+export function pickerLayout(rect: { x: number; w: number }, count: number, width: number, gapX: number): PickerLayout {
+  const pad = Math.max(3, gapX / 2);
+  const cellW = Math.max(28, rect.w - gapX);
+  const panelW = count * cellW + pad * 2;
+  const keyLeft = rect.x + gapX / 2;
+  const keyRight = rect.x + rect.w - gapX / 2;
+  const order = Array.from({ length: count }, (_, i) => i);
+  let x: number;
+  if (keyLeft - pad + panelW <= width - 2) {
+    x = keyLeft - pad;
+  } else {
+    x = keyRight + pad - panelW;
+    order.reverse();
+  }
+  x = Math.max(2, Math.min(width - panelW - 2, x));
+  if (panelW > width - 4) x = 2;
+  return { x, width: panelW, cellW, pad, order };
+}
+
+/** The option under a finger x in an open picker. */
+export function pickerIndexAt(l: PickerLayout, x: number): number {
+  const cell = Math.max(0, Math.min(l.order.length - 1, Math.floor((x - l.x - l.pad) / l.cellW)));
+  return l.order[cell];
 }

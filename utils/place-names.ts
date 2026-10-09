@@ -2,23 +2,25 @@
  * Display-only localisation of places (Hindi / Bengali).
  *
  * Stored places ("City, State, Country") and coordinates ALWAYS keep the English
- * names from country-state-city — utils/timezone.ts derives the time zone from
- * them. Everything here maps English -> a label for the screen and falls back to
+ * names from the place data (utils/places.ts; profiles from earlier builds keep
+ * their older spellings) — utils/timezone.ts derives the time zone from them. Everything here maps English -> a label for the screen and falls back to
  * the English original when there is no entry. Countries: full table (generated);
  * states: India + Bangladesh; cities: major Indian and Bangladeshi cities.
- * Pure TypeScript apart from the country-state-city lookup; safe under Node.
+ * Pure TypeScript; safe under Node.
  */
-import { Country } from 'country-state-city';
 import { COUNTRY_NAMES } from '@/constants/country-names';
+import { countryCodeFromName } from '@/utils/timezone';
 
 type Lng = string; // 'en' | 'hi' | 'bn'
 type Pair = [hi: string, bn: string];
 
 // ─── States (keyed by country code, then English name from the data) ─────────
+// Older spellings stay so profiles saved by earlier builds still localise.
 
 const STATES: Record<string, Record<string, Pair>> = {
   IN: {
     'Andaman and Nicobar Islands': ['अंडमान और निकोबार द्वीपसमूह', 'আন্দামান ও নিকোবর দ্বীপপুঞ্জ'],
+    'Andaman and Nicobar': ['अंडमान और निकोबार', 'আন্দামান ও নিকোবর'],
     'Andhra Pradesh': ['आंध्र प्रदेश', 'অন্ধ্রপ্রদেশ'],
     'Arunachal Pradesh': ['अरुणाचल प्रदेश', 'অরুণাচল প্রদেশ'],
     'Assam': ['असम', 'অসম'],
@@ -58,6 +60,7 @@ const STATES: Record<string, Record<string, Pair>> = {
   BD: {
     'Barisal Division': ['बरिशाल विभाग', 'বরিশাল বিভাগ'],
     'Chittagong Division': ['चटगाँव विभाग', 'চট্টগ্রাম বিভাগ'],
+    'Chittagong': ['चटगाँव', 'চট্টগ্রাম'],
     'Dhaka Division': ['ढाका विभाग', 'ঢাকা বিভাগ'],
     'Khulna Division': ['खुलना विभाग', 'খুলনা বিভাগ'],
     'Mymensingh Division': ['मयमनसिंह विभाग', 'ময়মনসিংহ বিভাগ'],
@@ -109,6 +112,7 @@ const CITIES: Record<string, Record<string, Pair>> = {
     'Rajkot': ['राजकोट', 'রাজকোট'],
     'Amritsar': ['अमृतसर', 'অমৃতসর'],
     'Allahabad': ['इलाहाबाद', 'এলাহাবাদ'],
+    'Prayagraj': ['प्रयागराज', 'প্রয়াগরাজ'],
     'Prayagraj (Allahabad)': ['प्रयागराज (इलाहाबाद)', 'প্রয়াগরাজ (এলাহাবাদ)'],
     'Ranchi': ['राँची', 'রাঁচি'],
     'Howrah': ['हावड़ा', 'হাওড়া'],
@@ -123,18 +127,22 @@ const CITIES: Record<string, Record<string, Pair>> = {
     'Guwahati': ['गुवाहाटी', 'গুয়াহাটি'],
     'Chandigarh': ['चंडीगढ़', 'চণ্ডীগড়'],
     'Gurgaon': ['गुड़गांव', 'গুরগাঁও'],
+    'Gurugram': ['गुरुग्राम', 'গুরুগ্রাম'],
     'Noida': ['नोएडा', 'নয়ডা'],
     'Solapur': ['सोलापुर', 'সোলাপুর'],
+    'Sholapur': ['सोलापुर', 'সোলাপুর'],
     'Tiruchirappalli': ['तिरुचिरापल्ली', 'তিরুচিরাপল্লি'],
     'Bareilly': ['बरेली', 'বেরেলি'],
     'Aligarh': ['अलीगढ़', 'আলিগড়'],
     'Moradabad': ['मुरादाबाद', 'মোরাদাবাদ'],
     'Gorakhpur': ['गोरखपुर', 'গোরখপুর'],
     'Bhubaneshwar': ['भुवनेश्वर', 'ভুবনেশ্বর'],
+    'Bhubaneswar': ['भुवनेश्वर', 'ভুবনেশ্বর'],
     'Salem': ['सेलम', 'সালেম'],
     'Warangal': ['वारंगल', 'ওয়ারঙ্গল'],
     'Thiruvananthapuram': ['तिरुवनंतपुरम', 'তিরুবনন্তপুরম'],
     'Cochin': ['कोच्चि', 'কোচি'],
+    'Kochi': ['कोच्चि', 'কোচি'],
     'Dehradun': ['देहरादून', 'দেরাদুন'],
     'Jamshedpur': ['जमशेदपुर', 'জামশেদপুর'],
     'Dhanbad': ['धनबाद', 'ধানবাদ'],
@@ -145,11 +153,13 @@ const CITIES: Record<string, Record<string, Pair>> = {
     'Jammu': ['जम्मू', 'জম্মু'],
     'Shimla': ['शिमला', 'শিমলা'],
     'Panaji': ['पणजी', 'পানাজি'],
+    'Panjim': ['पणजी', 'পানাজি'],
     'Mangaluru': ['मंगलुरु', 'মাঙ্গালুরু'],
     'Cuttack': ['कटक', 'কটক'],
     'Gaya': ['गया', 'গয়া'],
     'Kharagpur': ['खड़गपुर', 'খড়্গপুর'],
     'Darjeeling': ['दार्जिलिंग', 'দার্জিলিং'],
+    'Darjiling': ['दार्जिलिंग', 'দার্জিলিং'],
     'Haridwar': ['हरिद्वार', 'হরিদ্বার'],
     'Ujjain': ['उज्जैन', 'উজ্জয়িনী'],
     'Mathura': ['मथुरा', 'মথুরা'],
@@ -159,10 +169,12 @@ const CITIES: Record<string, Record<string, Pair>> = {
   BD: {
     'Dhaka': ['ढाका', 'ঢাকা'],
     'Chittagong': ['चटगाँव', 'চট্টগ্রাম'],
+    'Chattogram': ['चटगाँव', 'চট্টগ্রাম'],
     'Khulna': ['खुलना', 'খুলনা'],
     'Rajshahi': ['राजशाही', 'রাজশাহী'],
     'Sylhet': ['सिलहट', 'সিলেট'],
     'Barisal': ['बरिशाल', 'বরিশাল'],
+    'Barishal': ['बरिशाल', 'বরিশাল'],
     'Rangpur': ['रंगपुर', 'রংপুর'],
     'Mymensingh': ['मयमनसिंह', 'ময়মনসিংহ'],
     'Comilla': ['कुमिल्ला', 'কুমিল্লা'],
@@ -199,14 +211,6 @@ export function localCityName(countryCode: string, english: string, lng: Lng): s
   return pick(CITIES[countryCode]?.[english], lng) ?? english;
 }
 
-let codeByName: Map<string, string> | null = null;
-function countryCodeByName(name: string): string | null {
-  if (!codeByName) {
-    codeByName = new Map(Country.getAllCountries().map((c) => [c.name.toLowerCase(), c.isoCode]));
-  }
-  return codeByName.get(name.trim().toLowerCase()) ?? null;
-}
-
 /**
  * Display version of a stored place string ("City, State, Country"). Parts it
  * does not know stay as-is. NEVER store or parse the result — display only.
@@ -214,7 +218,7 @@ function countryCodeByName(name: string): string | null {
 export function localizePlace(place: string, lng: Lng): string {
   if (!place || (lng !== 'hi' && lng !== 'bn')) return place;
   const parts = place.split(',').map((s) => s.trim());
-  const cc = countryCodeByName(parts[parts.length - 1] ?? '');
+  const cc = countryCodeFromName(parts[parts.length - 1] ?? '');
   if (!cc) return place;
   return parts
     .map((part, i) => {

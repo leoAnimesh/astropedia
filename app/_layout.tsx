@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Stack, router, type Href } from 'expo-router';
+import { Stack, router, type ErrorBoundaryProps, type Href } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,22 +18,26 @@ import {
 } from '@expo-google-fonts/geist';
 import { GeistMono_400Regular } from '@expo-google-fonts/geist-mono';
 import 'react-native-reanimated';
-import '@/utils/i18n';   // initialise translations before first render
+import i18n from '@/utils/i18n';   // initialise translations before first render
 
-import { initDatabase, getAllProfiles, getAllThreads, isSystemProfile } from '@/utils/database';
+import { initDatabase, getAllProfiles, getAllThreads, isSystemProfile, chatsMovedToGurus } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { useProfileStore } from '@/stores/profile-store';
 import { useThreadStore } from '@/stores/thread-store';
+import { useSeenStore } from '@/stores/seen-store';
 import { useOnboardingStore } from '@/stores/onboarding-store';
-import { OverlayProvider } from '@/components/overlays';
+import { OverlayProvider, showDialog } from '@/components/overlays';
 import { unloadLocalLLM } from '@/utils/local-llm';
 import { handleModelAppState, startModelSetup, useModelSetup } from '@/utils/model-download';
+import { resumePendingModelSwitch } from '@/utils/model-switch';
 import { ModelSetupOverlay } from '@/components/overlays/ModelSetupOverlay';
-import {
-  setupNotifications,
-  scheduleDailyHoroscope,
-  scheduleTransitAlerts,
-} from '@/utils/notifications';
+import { setupNotifications, refreshScheduledNotifications } from '@/utils/notifications';
+import { installGlobalErrorHandlers, logger } from '@/utils/logger';
+import { AppErrorScreen } from '@/components/errors/AppErrorScreen';
+
+// Uncaught errors and unhandled promise rejections are recorded (logged only;
+// production prints nothing). Render errors land on ErrorBoundary below.
+installGlobalErrorHandlers();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +49,11 @@ LogBox.ignoreLogs(['[React Native ExecuTorch] No content-length header']);
 // (utils/model-download.ts). Start as early as possible so it is usually
 // done by the end of onboarding; a verified install is found in milliseconds.
 startModelSetup();
+
+/** Any render error below the root: a friendly en/hi/bn recovery screen (restart / try again / share details). */
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <AppErrorScreen {...props} />;
+}
 
 export const unstable_settings = {
   anchor: '(app)',
@@ -72,6 +81,12 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
+        // A model switch killed between its commit and its chat wipe: finish
+        // the wipe before the stores load the old chats.
+        await resumePendingModelSwitch().catch(() => {});
+        // Existing chats were just regrouped by guru (schema v7): the Chat
+        // tab owes a one-time explanation. Never on fresh installs.
+        if (chatsMovedToGurus() && !Storage.getGuruNoticeSeen()) Storage.setGuruNoticePending(true);
         // The on-device model loads on demand (~1 s) the first time a chat or
         // chart reading needs it, once utils/model-download.ts installed it.
         const [allProfiles, threads] = await Promise.all([
@@ -96,6 +111,9 @@ export default function RootLayout() {
           useOnboardingStore.getState().setDone(true);
         }
 
+        // Chats that existed before guru chats were read already: no unread dots.
+        if (chatsMovedToGurus()) useSeenStore.getState().markAllSeen(threads);
+
         const byProfile: Record<string, typeof threads> = {};
         for (const t of threads) {
           (byProfile[t.profileId] ??= []).push(t);
@@ -118,11 +136,12 @@ export default function RootLayout() {
         // Notifications: register handler and refresh any user-enabled
         // schedules. Daily push self-repeats; transit alerts need to be
         // re-scheduled occasionally so the 90-day window stays fresh.
+        // Festival reminders run even with the Settings toggle off (per-festival
+        // picks, stale ones from another language). Sequential and idempotent.
         setupNotifications();
-        if (Storage.getDailyHoroscopePush()) scheduleDailyHoroscope().catch(() => {});
-        if (Storage.getTransitAlerts())      scheduleTransitAlerts(null).catch(() => {});
+        refreshScheduledNotifications().catch(() => {});
       } catch (e) {
-        console.error('Bootstrap error', e);
+        logger.error('Bootstrap error', e);
       } finally {
         setDbReady(true);
       }
@@ -142,8 +161,7 @@ export default function RootLayout() {
       if (next === 'background' || next === 'inactive') {
         unloadLocalLLM();
       } else if (next === 'active') {
-        if (Storage.getDailyHoroscopePush()) scheduleDailyHoroscope().catch(() => {});
-        if (Storage.getTransitAlerts())      scheduleTransitAlerts(null).catch(() => {});
+        refreshScheduledNotifications().catch(() => {});
       }
     });
     return () => sub.remove();
@@ -156,8 +174,28 @@ export default function RootLayout() {
   useEffect(() => {
     if (!dbReady || !onboardingDone) return;
     const open = (response: Notifications.NotificationResponse | null) => {
-      const route = response?.notification.request.content.data?.route;
-      if (typeof route === 'string' && route !== '/') router.push(route as Href);
+      const data = response?.notification.request.content.data;
+      const route = data?.route;
+      if (typeof route !== 'string') return;
+      // Profile-specific notifications: show that person's data, whoever is
+      // active now. A deleted profile falls back to Home with a gentle note.
+      const pid = data?.profileId;
+      if (typeof pid === 'string' && pid) {
+        const ps = useProfileStore.getState();
+        if (!ps.profiles.some((p) => p.id === pid)) {
+          router.navigate('/');
+          showDialog({ title: i18n.t('alerts:notify.goneTitle'), message: i18n.t('alerts:notify.goneMessage') });
+          return;
+        }
+        if (ps.activeProfileId !== pid) {
+          ps.setActiveProfileId(pid);
+          Storage.setActiveProfileId(pid);
+        }
+      }
+      // The daily reading ('/') returns to Home even when the app was left on
+      // another screen; everything else opens over the current stack.
+      if (route === '/') router.navigate('/');
+      else router.push(route as Href);
     };
     Notifications.getLastNotificationResponseAsync()
       .then((response) => {
@@ -202,6 +240,7 @@ export default function RootLayout() {
           <Stack.Screen name="profile/new"       options={MODAL_OPTIONS} />
           <Stack.Screen name="profile/[id]" />
           <Stack.Screen name="profile/edit/[id]" options={MODAL_OPTIONS} />
+          <Stack.Screen name="chat/agent/[agent]" />
           <Stack.Screen name="chat/[threadId]" />
           <Stack.Screen name="horoscope/[profileId]" />
           <Stack.Screen name="phase/[profileId]" />
@@ -214,8 +253,17 @@ export default function RootLayout() {
           <Stack.Screen name="alerts/index" />
           <Stack.Screen name="alerts/[alertId]" />
           <Stack.Screen name="panchang/index" />
+          <Stack.Screen name="sade-sati/[profileId]" />
+          <Stack.Screen name="dasha/[profileId]" />
+          <Stack.Screen name="festivals/index" />
+          <Stack.Screen name="gita/index" />
           <Stack.Screen name="compatibility/index" />
+          <Stack.Screen name="report/[kind]" />
+          <Stack.Screen name="report/pair" />
           <Stack.Screen name="archived" />
+          <Stack.Screen name="settings/model" />
+          <Stack.Screen name="about/index" />
+          <Stack.Screen name="legal/[doc]" />
         </Stack.Protected>
       </Stack>
 

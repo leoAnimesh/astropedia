@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Country, State, City } from 'country-state-city';
 import { localCityName, localCountryName, localizePlace, localStateName } from '@/utils/place-names';
 import { useAccent } from '@/hooks/use-accent';
 import { useProfiles } from '@/hooks/use-profiles';
@@ -12,7 +11,10 @@ import { Icon } from '@/components/atoms/Icon';
 import { Button } from '@/components/atoms/Button';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
-import { LocationPickerModal, type PickerItem } from '@/components/molecules/LocationPickerModal';
+import {
+  LocationPickerModal, cityPickerItems, countryPickerItems, statePickerItems, type PickerItem,
+} from '@/components/molecules/LocationPickerModal';
+import { placeCountryName } from '@/utils/places';
 import { Storage } from '@/utils/storage';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { getSunSign } from '@/utils/astrology';
@@ -32,44 +34,24 @@ export default function BirthPlaceScreen() {
 
   const [countryCode, setCountryCode] = useState(OnboardingStore.countryCode);
   const [countryName, setCountryName] = useState(OnboardingStore.countryName);
-  const [stateCode,   setStateCode]   = useState(OnboardingStore.stateCode);
+  // States are keyed by English name now; drafts from older builds kept an ISO code here.
+  const [stateCode,   setStateCode]   = useState(OnboardingStore.stateName || OnboardingStore.stateCode);
   const [stateName,   setStateName]   = useState(OnboardingStore.stateName);
   const [cityName,    setCityName]     = useState(OnboardingStore.cityName);
   const [cityLat,     setCityLat]      = useState<number | null>(OnboardingStore.birthLat);
   const [cityLng,     setCityLng]      = useState<number | null>(OnboardingStore.birthLng);
+  const [cityTz,      setCityTz]       = useState<string | null>(null);
   const [activePicker, setActivePicker] = useState<Picker>(null);
   const [loading, setLoading] = useState(false);
 
   // ── Picker item arrays ────────────────────────────────────────────────────
 
-  const countryItems = useMemo<PickerItem[]>(() =>
-    Country.getAllCountries().map(c => ({
-      label:    `${c.flag} ${c.name}`,
-      value:    c.isoCode,
-      sublabel: c.isoCode,
-    })),
-  []);
+  const countryItems = useMemo<PickerItem[]>(() => countryPickerItems(), []);
 
-  const stateItems = useMemo<PickerItem[]>(() => {
-    if (!countryCode) return [];
-    return State.getStatesOfCountry(countryCode).map(s => ({
-      label: s.name,
-      value: s.isoCode,
-    }));
-  }, [countryCode]);
+  const stateItems = useMemo<PickerItem[]>(() => statePickerItems(countryCode), [countryCode]);
 
-  const cityItems = useMemo<PickerItem[]>(() => {
-    if (!countryCode) return [];
-    const cities = stateCode
-      ? City.getCitiesOfState(countryCode, stateCode)
-      : City.getCitiesOfCountry(countryCode) ?? [];
-    return cities.map(c => ({
-      label: c.name,
-      value: c.name,
-      lat:   c.latitude ? parseFloat(c.latitude) : undefined,
-      lng:   c.longitude ? parseFloat(c.longitude) : undefined,
-    }));
-  }, [countryCode, stateCode]);
+  // States are keyed by their English name (stateCode holds it too).
+  const cityItems = useMemo<PickerItem[]>(() => cityPickerItems(countryCode, stateCode || null), [countryCode, stateCode]);
 
   const hasStates = stateItems.length > 0;
 
@@ -85,12 +67,13 @@ export default function BirthPlaceScreen() {
 
   const handleSelectCountry = (item: PickerItem) => {
     setCountryCode(item.value);
-    setCountryName(Country.getCountryByCode(item.value)?.name ?? item.label.replace(/^\S+\s/, ''));
+    setCountryName(placeCountryName(item.value) ?? item.label.replace(/^\S+\s/, ''));
     setStateCode('');
     setStateName('');
     setCityName('');
     setCityLat(null);
     setCityLng(null);
+    setCityTz(null);
     setActivePicker(null);
   };
 
@@ -100,6 +83,7 @@ export default function BirthPlaceScreen() {
     setCityName('');
     setCityLat(null);
     setCityLng(null);
+    setCityTz(null);
     setActivePicker(null);
   };
 
@@ -107,6 +91,7 @@ export default function BirthPlaceScreen() {
     setCityName(item.label);
     setCityLat(item.lat ?? null);
     setCityLng(item.lng ?? null);
+    setCityTz(item.tz ?? null);
     setActivePicker(null);
   };
 
@@ -131,6 +116,7 @@ export default function BirthPlaceScreen() {
         birthCity: fullLocation,
         birthLat:  cityLat,
         birthLng:  cityLng,
+        birthTz:   cityTz,
         isYou:     true,
       });
       // The profile exists now, so the notifications step replaces this screen

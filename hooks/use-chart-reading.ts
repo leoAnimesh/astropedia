@@ -1,6 +1,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { askChartReading, replyLanguage } from '@/utils/ai';
+import { canRun } from '@/utils/agent/pipeline';
 import { isLLMReady, initLocalLLM, subscribeToLLMState, getLLMState } from '@/utils/local-llm';
 import { Storage } from '@/utils/storage';
 import type { Profile } from '@/utils/database';
@@ -60,7 +61,17 @@ export function useChartReading(profile: Profile | null): State {
       return;
     }
 
-    // The bundled model loads in about a second; kick it off and re-run when ready.
+    // No model can write readings (web, an installed model this build can't
+    // run) or it failed to load: the reading from chart facts, not cached, so
+    // a working model replaces it later.
+    if (!canRun('reading') || llmStatus === 'error') {
+      askChartReading(profile, lang).then((result) => {
+        if (!cancelled && result.text) setState({ reading: parseReading(result.text), loading: false });
+      }).catch(() => {});
+      return () => { cancelled = true; };
+    }
+
+    // The model loads in about a second; kick it off and re-run when ready.
     if (!isLLMReady()) {
       initLocalLLM().catch(() => {});
       return;
@@ -75,8 +86,9 @@ export function useChartReading(profile: Profile | null): State {
     const cachedEnglish = lang === 'en' ? null : Storage.getChartReading(profile.id, 'en');
     askChartReading(profile, lang, { skipEnglishFallback: !!cachedEnglish }).then((result) => {
       if (cancelled) return;
-      if (!result) {
-        setState({ reading: null, loading: false });
+      if (result.source !== 'model') {
+        // The model wasn't ready after all: show the chart-facts reading, don't cache it.
+        setState({ reading: result.text ? parseReading(result.text) : null, loading: false });
         return;
       }
       let reading: ChartReading | null = null;

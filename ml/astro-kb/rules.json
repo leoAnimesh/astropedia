@@ -1,0 +1,4270 @@
+{
+ "version": "1.0",
+ "date": "2026-10-09",
+ "conventions": {
+  "zodiac": "sidereal, Lahiri ayanamsa",
+  "houses": "whole-sign from lagna; Moon sign (Chandra lagna) without birth time/place",
+  "dasha": "Vimshottari from Moon nakshatra",
+  "nodes": "mean",
+  "status_tags": {
+   "have": "computed today",
+   "partial": "part exists",
+   "missing": "not computed"
+  },
+  "source_tags": {
+   "text": "checked against a translation/verse page",
+   "std": "standard textbook teaching",
+   "modern": "modern practitioner method",
+   "app": "Astropedia product rule"
+  }
+ },
+ "answer_protocol": [
+  "Answer the asked answer type in the first sentence (when→window, which→2-3 options, why→cause, yes_no→likelihood+window, what/how→2-3 points).",
+  "1-2 chart reasons in plain words.",
+  "Dates only when asked/essential and only from the timing engine.",
+  "One practical step.",
+  "Caveat only when it matters (no birth time, other person, professional advice).",
+  "60-140 words first answer; 30-90 words follow-ups with new information only.",
+  "Reply in the user's language and script.",
+  "Warm, specific, non-fatalistic; certainty ladder by engine strength."
+ ],
+ "hard_rules": [
+  "death / lifespan / accident prediction",
+  "medical diagnosis or prognosis",
+  "advising to delay/stop medical treatment",
+  "baby sex prediction or hint",
+  "partner's name or initials",
+  "guaranteed legal/court outcome",
+  "guaranteed visa/admission/loan outcome",
+  "pushing paid remedies (gemstones, pujas, yantras, consultations)",
+  "caste / religion / community / skin-colour statements",
+  "gender assumptions about partner/roles",
+  "romance/marriage timing for a minor",
+  "fatalism / fear language (doom, curse, dosha will ruin)",
+  "Kaal Sarp / fear-dosha claims",
+  "chart facts not in the plan (invented yogas, D9/D10 placements, degrees)",
+  "shared transit date / current month presented as the person's window",
+  "exact day for a life event"
+ ],
+ "answer_types": {
+  "when": "asks for a time (window, month, year, 'how long')",
+  "which": "asks to choose/name options (field, subject, partner type, colour)",
+  "what": "asks for a description or advice content (traits, sources, remedies, what to do)",
+  "how": "asks how something will go or how to make it happen",
+  "why": "asks for the cause of a situation or of a previous answer",
+  "yes_no": "asks whether something will happen (answer: likelihood + window, never bare yes/no)",
+  "other": "greeting, thanks, off-topic, crisis, abuse, statement/correction"
+ },
+ "plan_items": {
+  "window": "gives month-year window from engine",
+  "peak": "names the peak month inside the window (narrowing)",
+  "alt_window": "mentions a nearer/second window or the next strong one when the best is weak or far",
+  "past_window": "gives the past period from engine/dasha history",
+  "no_exact_day": "explains a life event can't be pinned to a day",
+  "sub_period_end": "says when the current sub-period / sade sati phase ends (chart data)",
+  "chart_reason": "gives 1-2 chart reasons in plain words",
+  "dasha_reason": "names the running/coming period (dasha) as the reason, in plain words",
+  "transit_reason": "names Jupiter/Saturn movement as a reason, in plain words",
+  "computed_fact": "states the computed chart fact asked for (sign, dasha, manglik, sade sati)",
+  "likelihood": "states likelihood qualitatively (strong / reasonable / slow), no guarantee",
+  "direct_first": "answers the actual question in the first sentence",
+  "fields_2_3": "names 2-3 career fields with reasons",
+  "roles": "suggests concrete role types",
+  "study_fields": "names 2-3 study options/streams with reasons",
+  "leaning": "gives a clear leaning (e.g. job vs business, love vs arranged) with reasons",
+  "traits": "describes 2-3 traits from the chart (partner/person), gender-neutral unless specified",
+  "meeting_context": "names one likely meeting context",
+  "income_sources": "names likely income sources / money pattern",
+  "strengths": "names 2-3 strengths and 1-2 growth areas kindly",
+  "purpose_theme": "names a purpose/spiritual theme and one practice",
+  "dynamics": "describes a family/relationship dynamic without blame",
+  "phase_cause": "explains the current phase with 1-2 concrete causes (dasha/transit)",
+  "settlement_vs_travel": "distinguishes a trip/study from long-term settlement",
+  "govt_indicators": "uses Sun/6th/10th indicators for public-sector questions",
+  "year_summary": "summarises the year/period with 1-2 life areas",
+  "compat_score": "uses the compatibility score/kootas with strengths and one area to work on",
+  "lucky_values": "gives the app's lucky colour/number/time",
+  "muhurat_days": "gives upcoming muhurat days/times or points to the Muhurat tab for the activity",
+  "free_remedies": "offers only free/behavioural remedies (practice, service, discipline, optional mantra)",
+  "gem_info_only": "gemstone info is neutral/informational, says it is not required, no purchase push",
+  "practical_step": "gives 1-3 practical next steps the person controls",
+  "study_strategy": "gives a concrete study/preparation strategy",
+  "money_habit": "gives a practical money habit/plan",
+  "communication_step": "gives a concrete communication/relationship step",
+  "self_care": "gives wellbeing/self-care steps",
+  "doctor": "recommends a doctor / medical professional",
+  "emergency": "urges immediate emergency care (112) for acute symptoms",
+  "lawyer": "recommends a lawyer",
+  "counsellor": "suggests a counsellor / trusted person",
+  "fin_adviser": "suggests a financial adviser/counsellor for big money decisions",
+  "helpline": "gives crisis helpline (Tele-MANAS 14416 / 112) warmly, no astrology",
+  "safety_resources": "gives safety resources for abuse (112 / 181) before anything else",
+  "documents_decide": "says the outcome (visa/loan/admission) depends on documents/institutions",
+  "decline_sex": "declines baby's sex (law + ethics) kindly, offers an alternative",
+  "decline_name": "declines partner's name/initials, offers traits or meeting context",
+  "decline_death": "declines death/lifespan kindly, offers a wellbeing alternative",
+  "decline_attribute": "declines caste/colour/religion prediction, offers a meaningful alternative",
+  "decline_gambling": "declines lottery/speculation tips",
+  "minor_redirect": "no romance/marriage timing for a minor; redirects to studies/growth",
+  "elder_gentle": "gentle redirection for childbirth questions at 50+",
+  "uses_other_chart": "reads the named other person's chart and says whose it is",
+  "ask_profile": "asks to add/select the other person's birth details",
+  "ask_which": "asks which of two matching people/options is meant",
+  "no_time_caveat": "notes missing birth time: houses from the Moon, timing approximate",
+  "add_time_tip": "suggests how to find/add the birth time",
+  "answers_anyway": "still answers despite missing data",
+  "invite_confirm": "invites the user to confirm whether the past period matches",
+  "scope_redirect": "politely says it's out of scope and offers in-scope help",
+  "greet_short": "short warm greeting with 2-3 suggestions",
+  "ack_short": "short acknowledgement without a new reading",
+  "calm_boundary": "calm, non-defensive reply; offers to be specific",
+  "clarify_question": "asks one short clarifying question",
+  "new_info": "adds information not in the previous answer",
+  "ack_correction": "acknowledges the correction and answers the corrected question",
+  "explain_reasoning": "explains the reasoning behind the previous answer in plain words",
+  "explain_policy": "explains kindly why it doesn't predict that",
+  "no_blame": "non-judgmental, no blame on anyone",
+  "respect_choice": "respects the person's choice/beliefs",
+  "validation": "acknowledges feelings before advice"
+ },
+ "forbidden": {
+  "unsolicited_dates": "unsolicited dates",
+  "shared_transit_date": "shared transit date / current month presented as the person's window",
+  "repeat_prev": "repeat previous answer",
+  "jargon": "jargon",
+  "guarantee": "guarantees ('definitely', '100%', 'never')",
+  "fatalism": "fatalism / fear language (doom, curse, dosha will ruin)",
+  "diagnosis": "medical diagnosis or prognosis",
+  "stop_treatment": "advising to delay/stop medical treatment",
+  "death": "death / lifespan / accident prediction",
+  "baby_sex": "baby sex prediction or hint",
+  "partner_name": "partner's name or initials",
+  "paid_remedy": "pushing paid remedies (gemstones, pujas, yantras, consultations)",
+  "gender_assume": "gender assumptions about partner/roles",
+  "caste": "caste / religion / community / skin-colour statements",
+  "legal_outcome": "guaranteed legal/court outcome",
+  "visa_guarantee": "guaranteed visa/admission/loan outcome",
+  "blame": "blaming the user, partner or family",
+  "romance_minor": "romance/marriage timing for a minor",
+  "wrong_subject": "reads the wrong person's chart",
+  "wrong_topic": "answers a different topic/answer type than asked",
+  "ignore_correction": "ignores the user's correction/context",
+  "invented_facts": "chart facts not in the plan (invented yogas, D9/D10 placements, degrees)",
+  "exact_day": "exact day for a life event",
+  "fin_tips": "specific investment/stock/crypto/lottery tips",
+  "long_list": "more than ~4 options (shotgun list)",
+  "wrong_language": "reply in a different language or script than the user",
+  "lecture": "moralising / lecturing",
+  "astrology_in_crisis": "any chart reading in a crisis reply",
+  "future_in_past": "future dates in a past-event answer",
+  "bare_yes_no": "bare yes/no without likelihood and window",
+  "long_reply": "overly long reply for the turn (> ~150 words first answer, > ~100 follow-up)",
+  "argue": "arguing with or insulting the user",
+  "kaal_sarp": "Kaal Sarp / fear-dosha claims",
+  "mind_reading": "claims to know another person's feelings/intentions"
+ },
+ "categories": [
+  {
+   "id": "career_field",
+   "group": "Career & money",
+   "title": "Career field / domain / roles",
+   "engine_topic": null,
+   "intent_today": "job (no field logic)",
+   "answer_types": [
+    "which",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "Which career suits me?",
+     "What field should I go into, IT or finance?",
+     "Which domain is best for me?"
+    ],
+    "hi": [
+     "मेरे लिए कौन सा करियर सही है?",
+     "मुझे किस फील्ड में जाना चाहिए?"
+    ],
+    "hinglish": [
+     "mere liye kaunsa career best hai?",
+     "IT me jau ya banking me?"
+    ],
+    "bn": [
+     "আমার জন্য কোন পেশা ভালো?",
+     "কোন লাইনে কেরিয়ার করব?"
+    ],
+    "banglish": [
+     "amar jonno kon career bhalo?",
+     "kon field e jabo bujhte parchi na"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "10 (profession, karma)",
+     "6 (service, daily work)",
+     "2 (earnings)",
+     "11 (gains)",
+     "1 (self, strength to act)"
+    ],
+    "lords": [
+     "10th lord from lagna, Moon and Sun",
+     "lord of the D9 sign occupied by the 10th lord (Brihat Jataka 10.1 rule)",
+     "strongest planet in or aspecting the 10th"
+    ],
+    "karakas": [
+     "Sun (authority)",
+     "Mercury (skills, trade)",
+     "Jupiter (knowledge)",
+     "Saturn (work, service)"
+    ],
+    "vargas": [
+     "D9 [missing] (computable: needed for the BJ 10th-lord-navamsa rule)",
+     "D10 Dasamsa [missing] (computable; only with a reliable birth time)"
+    ],
+    "jaimini": "Amatyakaraka (2nd-highest degree planet) colours the working style [missing].",
+    "kp": "10th cusp sub-lord signifying 2-6-10-11 = service/career success (optional)."
+   },
+   "field_map": {
+    "Sun": "government and administration, management, medicine, politics/public office, energy sector",
+    "Moon": "care and nursing, hospitality and food, public-facing service, water/dairy/agriculture, psychology, travel",
+    "Mars": "engineering (mechanical, civil, electrical), police/defence, surgery, real estate and construction, sports, manufacturing",
+    "Mercury": "IT and software, accounts and commerce, writing, journalism, teaching, data and analytics, sales and marketing, trade",
+    "Jupiter": "teaching and academia, law, banking and finance, counselling and advisory, management consulting, religious/charitable work",
+    "Venus": "arts, media, design, fashion and beauty, entertainment, luxury goods, hospitality, automobiles, interior design",
+    "Saturn": "operations and logistics, manufacturing, mining/oil/infrastructure, public service, labour law, quality/compliance, long-cycle industries",
+    "Rahu [modern]": "technology and new media, foreign/multinational firms, aviation, research, pharma/chemicals, unconventional fields",
+    "Ketu [modern]": "research, programming/back-end technical work, alternative healing, spiritual or highly specialised niches"
+   },
+   "judge": [
+    "Strongest planet among: occupants of the 10th, the 10th lord, the lord of the 10th lord's D9 sign; strength = dignity + kendra/trikona placement + not combust + aspects (rules.md 3).",
+    "Repeat from the Moon and the Sun (BJ 10.1); a planet that wins from two references dominates.",
+    "Map the 1-2 strongest planets to fields with the field table; sign element flavours it (fire: leadership/action, earth: practical/finance, air: communication/analysis, water: care/people).",
+    "6th strong (lord/occupants) → service/job; 7th and 3rd strong with Mercury → trade/self-employment (see business_vs_job).",
+    "Pancha Mahapurusha / raja yoga touching the 10th → leadership roles."
+   ],
+   "timing": [
+    "Not a timing question. Only add a window if asked (engine topic job/promotion)."
+   ],
+   "say": [
+    "Name 2-3 concrete fields, each with one plain reason ('Mercury, your strongest career planet, points to analysis, IT or accounts').",
+    "Then 2-3 roles within them (analyst, product manager, teacher) and one way to test the fit (a course, internship, side project).",
+    "If the user already has a field, say how to grow inside it rather than switching."
+   ],
+   "example": "Your chart leans most toward analytical and communication work: Mercury, the planet that shapes your career house, is strong. That fits IT/data, accounts or finance, and teaching or writing. Roles like data analyst, financial analyst or technical writer use that strength. A short course or project in one of these will show you quickly which feels right.",
+   "must_include": [
+    "names 2-3 career fields with a chart reason each",
+    "suggests concrete role types",
+    "plain language"
+   ],
+   "never": [
+    "unsolicited dates",
+    "more than ~4 fields (vague shotgun list)",
+    "caste/family-trade assumptions",
+    "gendered careers",
+    "'you will fail in X'"
+   ],
+   "edge_cases": [
+    "Follow-up 'which domain?' after a timing answer → give fields, do not repeat the window.",
+    "Student under 18 → frame as subjects/streams (education_field).",
+    "No birth time → use Moon and Sun 10ths only; say it is approximate.",
+    "User names two options → compare them against the chart and pick a leaning with reasons."
+   ],
+   "app": {
+    "have": [
+     "10th lord/occupants, dignity (context 'Career' line)",
+     "reports: planet → career text keyed on the 10th's primary planet (utils/reports/build.ts buildCareer)"
+    ],
+    "missing": [
+     "field-mapping rule in chat plan",
+     "D9 for the BJ 10.1 rule",
+     "combustion",
+     "composite strength",
+     "D10",
+     "amatyakaraka",
+     "'which' answer type in intent.ts"
+    ]
+   },
+   "sources": [
+    "BJ ch.10",
+    "PD ch.5",
+    "JP XI",
+    "BPHS bhava chapters (10th)",
+    "HJH vol.2",
+    "UK khanda 5"
+   ]
+  },
+  {
+   "id": "job_change_timing",
+   "group": "Career & money",
+   "title": "Job change / new job timing",
+   "engine_topic": "job",
+   "intent_today": "job",
+   "answer_types": [
+    "when",
+    "yes_no",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "When will I get a new job?",
+     "Should I switch jobs this year?",
+     "Will I get the offer from this interview?"
+    ],
+    "hi": [
+     "नई नौकरी कब मिलेगी?",
+     "क्या इस साल नौकरी बदलनी चाहिए?"
+    ],
+    "hinglish": [
+     "job kab lagegi?",
+     "is saal job switch karu ya nahi?"
+    ],
+    "bn": [
+     "নতুন চাকরি কবে পাব?",
+     "এই বছর চাকরি বদলানো ঠিক হবে?"
+    ],
+    "banglish": [
+     "notun chakri kobe pabo?",
+     "job change korbo ki ei bochor?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "10 (career)",
+     "6 (employment, service)",
+     "2 (income)",
+     "11 (gains)",
+     "KP: 5 and 9 = leaving the current job (12th from 6 and 10)"
+    ],
+    "lords": [
+     "10th and 6th lords"
+    ],
+    "karakas": [
+     "Saturn (service)",
+     "Sun",
+     "Mercury"
+    ],
+    "vargas": [
+     "D10 [missing] for confirmation only with reliable time"
+    ],
+    "kp": "Job: significators of 2-6-10-11; change: 3-5-9 with 10 (practitioner rule) [modern]."
+   },
+   "judge": [
+    "Promise: 10th/6th lords and karakas not all weak.",
+    "Current maha/antar lords linked to 10/6/11 → active job period."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic job.",
+    "Interview-result questions: engine window + 'the result depends on the interview itself'."
+   ],
+   "say": [
+    "Window first, one reason (period of X linked to your work house; Jupiter support), one step (update CV, apply in the window).",
+    "Should-I questions: give the leaning (stay and grow / move in window) with reason; decision stays theirs."
+   ],
+   "example": "The strongest stretch for a new job is March to October 2027, peaking around June 2027: you enter a sub-period of Saturn, which rules your work house, and Jupiter supports your career house then. Start applying and networking a couple of months before.",
+   "must_include": [
+    "month-year window from engine",
+    "one chart reason",
+    "one practical step"
+   ],
+   "never": [
+    "shared transit date as the window",
+    "guarantee of a specific offer",
+    "'quit now' advice without a backup",
+    "exact day"
+   ],
+   "edge_cases": [
+    "Already employed asking 'new job' → job change; if they want growth inside → promotion.",
+    "Unemployed and anxious → warmth + practical steps + window.",
+    "Weak window → name the best near window and the next strong one.",
+    "Notice-period/resignation date → muhurat feature for the day; engine for the period."
+   ],
+   "app": {
+    "have": [
+     "engine topic job",
+     "verify.ts date repair"
+    ],
+    "missing": [
+     "KP change houses",
+     "functional nature of dasha lords"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (6th, 10th)",
+    "KNR timing",
+    "KP Reader"
+   ]
+  },
+  {
+   "id": "promotion",
+   "group": "Career & money",
+   "title": "Promotion / raise / recognition",
+   "engine_topic": "promotion",
+   "intent_today": "promotion",
+   "answer_types": [
+    "when",
+    "yes_no",
+    "how"
+   ],
+   "patterns": {
+    "en": [
+     "When will I get promoted?",
+     "Will I get a hike this appraisal?"
+    ],
+    "hi": [
+     "प्रमोशन कब होगा?",
+     "क्या इस बार इंक्रीमेंट अच्छा मिलेगा?"
+    ],
+    "hinglish": [
+     "promotion kab hoga?",
+     "appraisal me hike milegi kya?"
+    ],
+    "bn": [
+     "প্রমোশন কবে হবে?",
+     "এবারে বেতন বাড়বে কি?"
+    ],
+    "banglish": [
+     "promotion kobe hobe?",
+     "increment pabo ebar?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "10 (status)",
+     "11 (gains)",
+     "9 (fortune)",
+     "6 (beating competition)"
+    ],
+    "lords": [
+     "10th, 11th lords"
+    ],
+    "karakas": [
+     "Sun (authority)",
+     "Jupiter",
+     "Saturn"
+    ],
+    "vargas": [
+     "D10 [missing]"
+    ],
+    "kp": "10-11 (+2, 6) [modern]."
+   },
+   "judge": [
+    "Sun and 10th lord strength; raja yoga touching 10/11 [missing]."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic promotion."
+   ],
+   "say": [
+    "Window + reason + what makes the window work (visible results, asking, documenting achievements)."
+   ],
+   "example": "Recognition looks strongest from January to August 2027, best around April: your Sun sub-period lights up your career and gains houses. Put your results in writing before appraisal season and ask for the next role directly.",
+   "must_include": [
+    "month-year window from engine",
+    "one chart reason",
+    "one step to make it happen"
+   ],
+   "never": [
+    "guarantee of a hike amount",
+    "blaming the boss/colleagues",
+    "jargon"
+   ],
+   "edge_cases": [
+    "Self-employed asking promotion → growth/expansion (business).",
+    "Government employee → promotions follow rules; give window, mention process."
+   ],
+   "app": {
+    "have": [
+     "engine topic promotion"
+    ],
+    "missing": [
+     "raja yoga detection",
+     "D10"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (10th, 11th)",
+    "KNR timing"
+   ]
+  },
+  {
+   "id": "business_vs_job",
+   "group": "Career & money",
+   "title": "Business vs job / starting a business / partnership",
+   "engine_topic": "business",
+   "intent_today": "business",
+   "answer_types": [
+    "which",
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Is business or a job better for me?",
+     "When should I start my own business?",
+     "Is a partnership good for me?"
+    ],
+    "hi": [
+     "मेरे लिए नौकरी अच्छी है या व्यापार?",
+     "अपना बिज़नेस कब शुरू करूं?"
+    ],
+    "hinglish": [
+     "job karu ya business?",
+     "apna startup kab shuru karu?"
+    ],
+    "bn": [
+     "চাকরি না ব্যবসা, কোনটা আমার জন্য ভালো?",
+     "নিজের ব্যবসা কবে শুরু করব?"
+    ],
+    "banglish": [
+     "chakri na business, kon ta bhalo amar?",
+     "business kobe start korbo?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "7 (trade, partners, the market)",
+     "10 (enterprise)",
+     "11 (profit)",
+     "3 (initiative, risk-taking)",
+     "6 (service: job leaning)",
+     "2 (capital)"
+    ],
+    "lords": [
+     "7th, 10th, 3rd lords; lagna lord's strength (self-reliance)"
+    ],
+    "karakas": [
+     "Mercury (commerce)",
+     "Jupiter",
+     "Mars (initiative)"
+    ],
+    "vargas": [
+     "D10 [missing]"
+    ],
+    "kp": "Business 7-10-11 vs service 6-10 [modern]."
+   },
+   "judge": [
+    "Job leaning: strong 6th, Saturn/Sun-dominated 10th, weak 3rd/7th.",
+    "Business leaning: strong 7th, 3rd, lagna lord; Mercury strong; 10th lord linked with 7th/11th.",
+    "Partnership: 7th lord friendly to lagna lord and not in 6/8/12; else prefer sole control with clear contracts.",
+    "Mixed → job first, side business, then switch in the business window."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic business (start) / job (if they choose job)."
+   ],
+   "say": [
+    "Give a leaning with reasons and a hedge ('start small alongside your job'); add the window only if asked when.",
+    "Mention financial/legal due diligence for investment decisions."
+   ],
+   "example": "Your chart leans toward running something of your own: Mercury and the ruler of your trade house are both strong, and your effort house is busy. A low-risk start alongside your job suits you best; the stronger window to go full-time is mid-2027 to early 2028.",
+   "must_include": [
+    "clear leaning (business / job / mixed) with 1-2 reasons",
+    "risk-aware step"
+   ],
+   "never": [
+    "telling them to invest savings/borrow",
+    "guaranteed profit",
+    "naming a specific stock or deal"
+   ],
+   "edge_cases": [
+    "Family business → same rules; 4th/2nd add family support.",
+    "Asking which business → career_field mapping applied to trade.",
+    "Opening date for a shop → muhurat."
+   ],
+   "app": {
+    "have": [
+     "engine topic business"
+    ],
+    "missing": [
+     "leaning rule (6th vs 7th/3rd comparison)",
+     "functional nature"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (3rd, 7th, 10th)",
+    "PD ch.5",
+    "HJH vol.2"
+   ]
+  },
+  {
+   "id": "government_job",
+   "group": "Career & money",
+   "title": "Government job / public sector / civil services",
+   "engine_topic": "job",
+   "intent_today": "job ('sarkari' weight 2)",
+   "answer_types": [
+    "yes_no",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "Will I get a government job?",
+     "Is there a sarkari job in my chart?",
+     "Will I clear UPSC?"
+    ],
+    "hi": [
+     "क्या मुझे सरकारी नौकरी मिलेगी?",
+     "सरकारी नौकरी कब लगेगी?"
+    ],
+    "hinglish": [
+     "sarkari naukri milegi kya?",
+     "govt job ka yog hai?"
+    ],
+    "bn": [
+     "সরকারি চাকরি পাব কি?",
+     "সরকারি চাকরি কবে হবে?"
+    ],
+    "banglish": [
+     "sarkari chakri pabo?",
+     "govt job er jog ache?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "10",
+     "6 (service, competitive exams)",
+     "11",
+     "9 (state favour)"
+    ],
+    "lords": [
+     "10th, 6th lords"
+    ],
+    "karakas": [
+     "Sun (government, authority) - key",
+     "Saturn (public service)",
+     "Jupiter",
+     "Mars (police/defence)"
+    ],
+    "vargas": [
+     "D10 [missing]"
+    ]
+   },
+   "judge": [
+    "Strong Sun (dignity, kendra/10th/11th, linked to 10th lord) and a strong 6th favour public service [std].",
+    "Mars linked to the 10th → police/defence; Jupiter → teaching/judiciary; Saturn → administration/public works."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic job (selection); education for exam preparation windows."
+   ],
+   "say": [
+    "Likelihood word + reasons + exam/selection window; stress preparation and back-up plan."
+   ],
+   "example": "Your chart has good support for public-sector work: the Sun, which signifies government, sits strongly in your career house. Exams in the stretch from February to November 2027 have the best backing. Keep preparing seriously, and keep one private-sector option open as well.",
+   "must_include": [
+    "likelihood word (not a guarantee)",
+    "Sun/6th/10th reason in plain words",
+    "window if asked",
+    "preparation advice"
+   ],
+   "never": [
+    "'you will definitely clear'",
+    "'no chance, give up'",
+    "caste/reservation remarks",
+    "naming a rank"
+   ],
+   "edge_cases": [
+    "Age-limit worries → empathy; window; alternatives.",
+    "Repeated failures → effort framing, not fatalism (see exams)."
+   ],
+   "app": {
+    "have": [
+     "engine topic job"
+    ],
+    "missing": [
+     "government-indicator rule (Sun strength)",
+     "composite strength"
+    ]
+   },
+   "sources": [
+    "BJ ch.10 (Sun: from the king)",
+    "PD ch.5",
+    "BPHS bhava (10th)"
+   ]
+  },
+  {
+   "id": "foreign_settlement",
+   "group": "Career & money",
+   "title": "Foreign travel / study / settlement / visa",
+   "engine_topic": "foreign",
+   "intent_today": "foreign",
+   "answer_types": [
+    "when",
+    "yes_no",
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "Will I settle abroad?",
+     "When will I go to Canada?",
+     "Will my US visa get approved?"
+    ],
+    "hi": [
+     "क्या मैं विदेश में बसूंगा?",
+     "विदेश जाने का योग कब है?"
+    ],
+    "hinglish": [
+     "videsh jane ka yog hai kya?",
+     "visa kab lagega?"
+    ],
+    "bn": [
+     "আমি কি বিদেশে থিতু হব?",
+     "বিদেশ যাওয়ার যোগ কবে?"
+    ],
+    "banglish": [
+     "bidesh jabo kobe?",
+     "visa hobe ki?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "12 (foreign residence, far lands)",
+     "9 (long journeys, higher study abroad)",
+     "3 (short travel)",
+     "7 (living away from birthplace / foreign trade)",
+     "4 (homeland: afflicted 4th or lord in 12 = away from home)"
+    ],
+    "lords": [
+     "12th, 9th, 4th lords; lagna lord in 12th / 12th lord in lagna"
+    ],
+    "karakas": [
+     "Rahu (foreign) [modern]",
+     "Moon (travel)",
+     "Saturn (long stay)"
+    ],
+    "vargas": [
+     "D4 (residence) [missing]",
+     "D9 [missing]"
+    ],
+    "kp": "3-9-12 travel; 12 strong + 4 weak = settlement [modern]."
+   },
+   "judge": [
+    "Settlement: link of 4th lord/lagna lord with the 12th, Rahu in 1/4/7/9/10/12, water signs on 12th/ 9th [std/modern].",
+    "Travel only (not settlement): 3rd/9th active without 12th–4th link.",
+    "Study abroad: 9th + 12th + Jupiter/Mercury."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic foreign.",
+    "Visa: window = when the move is favoured; the decision is the embassy's."
+   ],
+   "say": [
+    "Distinguish trip vs study vs long stay; give the window; for visas say 'favourable window to apply; outcome depends on documents and rules'."
+   ],
+   "example": "Your chart shows a real pull toward living abroad: the ruler of your home house sits in your abroad house and Rahu strengthens it. The best window to make the move is September 2027 to May 2028. For the visa itself, the window helps, but complete, well-prepared documents decide it.",
+   "must_include": [
+    "distinguishes travel vs settlement when relevant",
+    "window from engine if asked",
+    "visa: no guarantee + documents"
+   ],
+   "never": [
+    "guaranteeing visa/PR approval",
+    "naming a specific country as 'destined' (unless asked to compare; then elements/directions only lightly)",
+    "immigration legal advice"
+   ],
+   "edge_cases": [
+    "'Which country?' → classical texts don't name countries; can mention direction of the 12th sign lightly [std] or decline gently; focus on timing/readiness.",
+    "Already abroad asking about returning → 4th house window (property/home) or general.",
+    "Spouse visa → couple; use the asker's chart."
+   ],
+   "app": {
+    "have": [
+     "engine topic foreign"
+    ],
+    "missing": [
+     "settlement vs travel rule",
+     "D4/D9"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (9th, 12th)",
+    "PD ch.6/15 (12th house)",
+    "KP Reader"
+   ]
+  },
+  {
+   "id": "money_wealth",
+   "group": "Career & money",
+   "title": "Money / wealth / income sources / savings",
+   "engine_topic": "money",
+   "intent_today": "money",
+   "answer_types": [
+    "when",
+    "what",
+    "how",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "When will my finances improve?",
+     "Will I become rich?",
+     "What are my sources of income?"
+    ],
+    "hi": [
+     "पैसों की तंगी कब खत्म होगी?",
+     "मेरी कमाई के स्रोत क्या होंगे?"
+    ],
+    "hinglish": [
+     "paisa kab aayega?",
+     "kya main ameer banunga?"
+    ],
+    "bn": [
+     "টাকাপয়সার অবস্থা কবে ভালো হবে?",
+     "আমার আয়ের উৎস কী হবে?"
+    ],
+    "banglish": [
+     "taka poisa kobe bhalo hobe?",
+     "ami ki borolok hobo?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "2 (savings, family wealth)",
+     "11 (income, gains)",
+     "9 and 5 (luck, speculation)",
+     "10 (earned income)",
+     "4 (assets)",
+     "12 (expenses)"
+    ],
+    "lords": [
+     "2nd and 11th lords; link with 1/5/9 lords (dhana yoga)"
+    ],
+    "karakas": [
+     "Jupiter (wealth)",
+     "Venus (comforts)",
+     "Mercury (trade)"
+    ],
+    "vargas": [
+     "D2 Hora [missing] (BPHS: wealth; low priority)"
+    ],
+    "kp": "2-6-11 gains [modern]."
+   },
+   "judge": [
+    "Dhana yoga [missing]; strong 2nd/11th lords; Jupiter strength.",
+    "Sources = where the 11th lord and 2nd lord sit (e.g. 11th lord in 10th: salary; in 7th: trade/partners; in 5th: investments/creative; in 9th: father/teaching/foreign; in 12th: foreign or expenses-heavy).",
+    "Saturn in 12th/1st/2nd from Moon (sade sati) or 8th: money pressure; engine counts it."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic money (sade sati counted against)."
+   ],
+   "say": [
+    "For 'rich?': describe the wealth pattern (steady saver, business gains, late but lasting) rather than yes/no; window if asked.",
+    "One concrete money habit (save first, cut a leak, avoid lending in the weak window)."
+   ],
+   "example": "Your money grows mainly through your own work and steady saving: the ruler of your gains house sits in your career house, and Jupiter supports your savings house. Things improve noticeably from May 2027, strongest around late 2027. Until then, keep fixed costs low and build a small emergency fund.",
+   "must_include": [
+    "income source/pattern from chart",
+    "window if asked",
+    "one practical money habit"
+   ],
+   "never": [
+    "stock/crypto/lottery tips",
+    "'you will be a crorepati'",
+    "gambling encouragement",
+    "guaranteed returns"
+   ],
+   "edge_cases": [
+    "Lottery/speculation questions → decline gambling encouragement; 5th-house luck is not a tip.",
+    "Investment decision → suggest a financial adviser.",
+    "Inheritance → 8th house; sensitive (family disputes)."
+   ],
+   "app": {
+    "have": [
+     "engine topic money",
+     "context 'Money' line"
+    ],
+    "missing": [
+     "dhana yoga detection",
+     "income-source mapping from 11th/2nd lord placement"
+    ]
+   },
+   "sources": [
+    "BPHS dhana yoga chapter",
+    "BPHS bhava (2nd, 11th)",
+    "PD ch.6"
+   ]
+  },
+  {
+   "id": "debt_loans",
+   "group": "Career & money",
+   "title": "Debt / loans / financial stress",
+   "engine_topic": "money",
+   "intent_today": "money",
+   "answer_types": [
+    "when",
+    "how"
+   ],
+   "patterns": {
+    "en": [
+     "When will I be free of debt?",
+     "Will I get my loan approved?",
+     "Someone owes me money, will I get it back?"
+    ],
+    "hi": [
+     "कर्ज़ से कब छुटकारा मिलेगा?",
+     "क्या मेरा लोन पास होगा?"
+    ],
+    "hinglish": [
+     "karz kab utrega?",
+     "loan approve hoga kya?"
+    ],
+    "bn": [
+     "ঋণ থেকে কবে মুক্তি পাব?",
+     "লোন পাস হবে কি?"
+    ],
+    "banglish": [
+     "loan kobe shodh korte parbo?",
+     "dhaar er taka ki ferot pabo?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "6 (debts, loans taken)",
+     "11 (income to repay; 6th from 6th)",
+     "12 (expenses)",
+     "2 (savings)",
+     "8 (others' money, loans received)"
+    ],
+    "lords": [
+     "6th, 11th, 12th lords"
+    ],
+    "karakas": [
+     "Saturn (long liabilities)",
+     "Jupiter (relief)"
+    ],
+    "vargas": [],
+    "kp": "Loan obtained: 6-11; repayment: 12 [modern]."
+   },
+   "judge": [
+    "Strong 11th over 6th/12th = ability to clear debt.",
+    "Running dasha of a 6th/12th lord = expense/borrowing phase (say: 'a phase where outflows are high')."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic money (relief window)."
+   ],
+   "say": [
+    "Relief window + a plan (list debts, smallest-first or costliest-first, talk to lender); suggest a financial counsellor for heavy debt.",
+    "If distress is severe, check wellbeing (mental_health)."
+   ],
+   "example": "Relief looks strongest from February to September 2027: your gains house gets Jupiter's support then. Use the months before to list every loan, pay the costliest first, and ask your bank about restructuring; a financial counsellor can help you make the plan.",
+   "must_include": [
+    "relief window if asked",
+    "practical repayment step",
+    "professional advice for heavy debt"
+   ],
+   "never": [
+    "recommending new loans to pay old ones",
+    "shame/blame",
+    "remedy purchases 'to remove debt'"
+   ],
+   "edge_cases": [
+    "Money lent to others → 7th/11th; no guarantee; suggest documented, calm follow-up.",
+    "Desperation/crisis words → crisis route."
+   ],
+   "app": {
+    "have": [
+     "engine topic money"
+    ],
+    "missing": [
+     "6th-vs-11th comparison"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (6th, 11th, 12th)",
+    "KP Reader"
+   ]
+  },
+  {
+   "id": "property_vehicle",
+   "group": "Career & money",
+   "title": "Property / home / land / vehicle",
+   "engine_topic": "property",
+   "intent_today": "property",
+   "answer_types": [
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "When will I buy my own house?",
+     "Is this a good time to buy a car?",
+     "Will I get my ancestral property?"
+    ],
+    "hi": [
+     "अपना घर कब होगा?",
+     "गाड़ी कब खरीदूं?"
+    ],
+    "hinglish": [
+     "apna ghar kab banega?",
+     "car lene ka sahi time kab hai?"
+    ],
+    "bn": [
+     "নিজের বাড়ি কবে হবে?",
+     "গাড়ি কবে কিনব?"
+    ],
+    "banglish": [
+     "nijer bari kobe hobe?",
+     "flat kinbo kobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "4 (home, land, vehicles)",
+     "11 (acquisition)",
+     "2 (assets)",
+     "12 (outflow/purchase, KP)",
+     "8 (inheritance)"
+    ],
+    "lords": [
+     "4th lord"
+    ],
+    "karakas": [
+     "Mars (land)",
+     "Venus (vehicles, comfort)",
+     "Moon (home)",
+     "Saturn (old property)"
+    ],
+    "vargas": [
+     "D4 Chaturthamsa [missing]",
+     "D16 (vehicles) [missing]"
+    ],
+    "kp": "4-11-12 purchase [modern]."
+   },
+   "judge": [
+    "4th lord + Mars/Venus strength.",
+    "4th lord in 11th/2nd or with 11th lord → acquisition supported."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic property.",
+    "Registration/possession day → muhurat ('buy' / 'sign')."
+   ],
+   "say": [
+    "Window + reason + practical checks (budget, documents, legal verification)."
+   ],
+   "example": "Buying a home looks best supported from August 2027 to March 2028: the ruler of your home house becomes active in your sub-period then, with Jupiter helping your gains. For the registration day itself, use the Muhurat tab to pick a good date.",
+   "must_include": [
+    "window if asked",
+    "muhurat pointer for a chosen day",
+    "document/legal check suggestion"
+   ],
+   "never": [
+    "guaranteeing inheritance disputes",
+    "vastu fear selling",
+    "exact registration day from the natal chart"
+   ],
+   "edge_cases": [
+    "Ancestral property dispute → legal_court + lawyer.",
+    "Selling property → 4th + 12th (letting go), same engine topic, say 'deal-closing window'."
+   ],
+   "app": {
+    "have": [
+     "engine topic property",
+     "muhurat 'buy'/'sign'"
+    ],
+    "missing": [
+     "D4",
+     "inheritance (8th) logic"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (4th)",
+    "BPHS ch.6 (D4: fortune, property)"
+   ]
+  },
+  {
+   "id": "marriage_timing",
+   "group": "Relationships",
+   "title": "Marriage timing",
+   "engine_topic": "marriage",
+   "intent_today": "marriage",
+   "answer_types": [
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "When will I get married?",
+     "Will I marry this year?",
+     "Is marriage in my chart at all?"
+    ],
+    "hi": [
+     "मेरी शादी कब होगी?",
+     "क्या इस साल शादी के योग हैं?"
+    ],
+    "hinglish": [
+     "meri shaadi kab hogi?",
+     "shadi ka yog kab hai?"
+    ],
+    "bn": [
+     "আমার বিয়ে কবে হবে?",
+     "এই বছর কি বিয়ের যোগ আছে?"
+    ],
+    "banglish": [
+     "amar biye kobe hobe?",
+     "biyer jog kobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "7 (spouse)",
+     "2 (family grows)",
+     "11 (fulfilment)",
+     "8 (marital longevity; internal only)",
+     "12 (bed pleasures, KP obstruction when strong)"
+    ],
+    "lords": [
+     "7th lord; its D9 placement"
+    ],
+    "karakas": [
+     "Venus and Jupiter for everyone (traditionally Venus for a man's wife, Jupiter for a woman's husband)"
+    ],
+    "vargas": [
+     "D9 Navamsa [missing] (computable) - the primary marriage varga"
+    ],
+    "jaimini": "Darakaraka; Upapada lagna (arudha of the 12th) [missing].",
+    "kp": "7th cusp sub-lord signifying 2-7-11 promises; 1-6-10 obstruct [modern]."
+   },
+   "judge": [
+    "Promise: 7th house/lord, Venus, Jupiter; delays when Saturn aspects/occupies 7th or 7th lord, or 7th lord in 6/8/12 (say 'later, more mature marriage' - not denial).",
+    "D9 7th and Venus confirm.",
+    "Manglik: report only if asked; use ashtakoota.ts exemptions; never fear."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic marriage (sade sati not counted against).",
+    "Typical triggers: dasha/antardasha of 7th lord, Venus, planets in 7th, lagna lord, D9 lagna lord; Jupiter+Saturn double transit on 7th/7th lord [std]."
+   ],
+   "say": [
+    "Window + 'peak around'; reason in plain words; for delays: 'later and steadier', with a nearer moderate option if any.",
+    "Respect that marriage is a choice; no pressure."
+   ],
+   "example": "The strongest period for marriage in your chart is from November 2026 to July 2027, peaking around March 2027: you are in Venus's sub-period, and Jupiter and Saturn together activate your partnership house. If you're looking actively, this is the time to say yes to introductions.",
+   "must_include": [
+    "month-year window from engine",
+    "one chart reason",
+    "non-pressuring tone"
+   ],
+   "never": [
+    "'you will never marry'",
+    "manglik/dosha fear",
+    "partner's name/caste",
+    "age shaming ('getting late')",
+    "assuming partner's gender",
+    "romance timing for minors"
+   ],
+   "edge_cases": [
+    "Already married → acknowledge; pivot to marital harmony or children if implied.",
+    "Second marriage → same method, gentle; no judgement.",
+    "Not wanting marriage → respect; don't push.",
+    "Minor → studies redirect.",
+    "Two windows both moderate → give the nearer one and the stronger one."
+   ],
+   "app": {
+    "have": [
+     "engine topic marriage",
+     "manglik + ashtakoota (utils/ashtakoota.ts)",
+     "minor decline"
+    ],
+    "missing": [
+     "D9",
+     "darakaraka/upapada",
+     "7th-lord affliction summary"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (7th)",
+    "PD ch.10 (kalatra)",
+    "SAR",
+    "KNR timing",
+    "KP Reader"
+   ]
+  },
+  {
+   "id": "love_vs_arranged",
+   "group": "Relationships",
+   "title": "Love vs arranged marriage",
+   "engine_topic": null,
+   "intent_today": "marriage/love (no leaning logic)",
+   "answer_types": [
+    "which",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Will I have a love or arranged marriage?",
+     "Will my parents agree to my love marriage?"
+    ],
+    "hi": [
+     "मेरी लव मैरिज होगी या अरेंज?",
+     "क्या घरवाले मेरी लव मैरिज के लिए मानेंगे?"
+    ],
+    "hinglish": [
+     "love marriage hogi ya arrange?",
+     "ghar wale manenge kya?"
+    ],
+    "bn": [
+     "আমার প্রেমের বিয়ে হবে না দেখাশোনা করে?",
+     "বাড়ির লোক কি রাজি হবে?"
+    ],
+    "banglish": [
+     "love marriage hobe na arranged?",
+     "barir lok raji hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "5 (romance)",
+     "7 (marriage)",
+     "9 (parents' blessing, tradition)",
+     "4 (family home)",
+     "11 (wishes)"
+    ],
+    "lords": [
+     "5th and 7th lords"
+    ],
+    "karakas": [
+     "Venus",
+     "Mars (passion)",
+     "Rahu (unconventional)"
+    ],
+    "vargas": [
+     "D9 [missing]"
+    ]
+   },
+   "judge": [
+    "Love-leaning [modern heuristic]: 5th and 7th lords conjunct / exchange / mutual aspect; 7th lord in 5th or 5th lord in 7th; Venus with 5th lord; Rahu in 5th/7th.",
+    "Arranged-leaning: 7th lord linked to 9th/2nd lord or Jupiter; strong 9th.",
+    "Both present → 'love with family approval' / 'introduced, then love'."
+   ],
+   "timing": [
+    "Only if asked: engine marriage window; family approval → same window."
+   ],
+   "say": [
+    "A leaning, framed as tendency, with reasons; acknowledge family dynamics with empathy; suggest open conversation."
+   ],
+   "example": "Your chart leans toward a love marriage that the family comes around to: the rulers of your romance and partnership houses sit together, and your luck house (family blessings) is supportive too. Talking to your parents calmly and early helps that pattern along.",
+   "must_include": [
+    "clear leaning with reasons",
+    "framed as tendency"
+   ],
+   "never": [
+    "caste/religion/community predictions",
+    "'parents will never agree'",
+    "encouraging deception or elopement",
+    "unsolicited dates"
+   ],
+   "edge_cases": [
+    "Inter-caste/inter-faith question → no caste talk; speak about family acceptance generally.",
+    "Minor → redirect.",
+    "Same-sex relationship → same method, gender-neutral, respectful."
+   ],
+   "app": {
+    "have": [
+     "5th/7th lords in context"
+    ],
+    "missing": [
+     "5th-7th link detector",
+     "D9"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (5th, 7th)",
+    "[modern] practitioner heuristic"
+   ]
+  },
+  {
+   "id": "partner_traits_meeting",
+   "group": "Relationships",
+   "title": "Partner's nature / where we'll meet",
+   "engine_topic": null,
+   "intent_today": "marriage/love",
+   "answer_types": [
+    "what",
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "What will my spouse be like?",
+     "Where will I meet my partner?",
+     "Will my partner be from a different city?"
+    ],
+    "hi": [
+     "मेरा जीवनसाथी कैसा होगा?",
+     "मैं अपने पार्टनर से कहाँ मिलूंगी?"
+    ],
+    "hinglish": [
+     "mera life partner kaisa hoga?",
+     "partner kahan milega?"
+    ],
+    "bn": [
+     "আমার জীবনসঙ্গী কেমন হবে?",
+     "ওর সঙ্গে কোথায় দেখা হবে?"
+    ],
+    "banglish": [
+     "amar bor/bou kemon hobe?",
+     "partner er sathe kothay dekha hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "7 (sign, occupants, aspects)",
+     "7th lord's house = meeting context"
+    ],
+    "lords": [
+     "7th lord placement (house and sign)"
+    ],
+    "karakas": [
+     "Venus, Jupiter",
+     "Darakaraka [missing]"
+    ],
+    "vargas": [
+     "D9 7th sign, D9 lagna [missing]"
+    ]
+   },
+   "meeting_map": {
+    "1": "through your own initiative / someone close to your circle",
+    "2": "through family or family friends",
+    "3": "through siblings, neighbours, communication, social media or short trips",
+    "4": "near home, through relatives or your hometown",
+    "5": "through studies, hobbies, creative or fun activities",
+    "6": "at work, through colleagues or service settings",
+    "7": "in public dealings, business, or a direct introduction",
+    "8": "suddenly or unexpectedly, possibly through in-laws or a research setting",
+    "9": "through higher studies, teachers, travel, or a religious/cultural place",
+    "10": "through work or your professional field",
+    "11": "through friends, groups and networks",
+    "12": "far from home, abroad, online, or in a quiet/retreat setting"
+   },
+   "judge": [
+    "Traits: 7th sign (element/nature) + planets in 7th + 7th lord's sign + Venus/Jupiter condition (e.g. Mercury: youthful, talkative; Saturn: mature, responsible, possibly older; Mars: energetic, direct; Jupiter: wise, principled; Venus: graceful, artistic; Moon: caring, emotional; Sun: confident, proud).",
+    "Meeting: house of the 7th lord (meeting_map) [modern/std]."
+   ],
+   "timing": [
+    "Not a timing question unless asked."
+   ],
+   "say": [
+    "2-3 traits + 1 likely meeting context, framed as tendencies; gender-neutral pronouns unless the user specified."
+   ],
+   "example": "Your partner is likely to be mature, responsible and steady, someone who shows love through reliability: Saturn rules your partnership house. You're most likely to meet through work or your professional circle, since that ruler sits in your career house.",
+   "must_include": [
+    "2-3 partner traits with reason",
+    "one likely meeting context",
+    "gender-neutral unless specified"
+   ],
+   "never": [
+    "partner's name/initials",
+    "caste/religion/skin colour/looks rating",
+    "exact city/country",
+    "unsolicited dates"
+   ],
+   "edge_cases": [
+    "'What will he look like?' → general build/temperament lightly or decline appearance; no colour/caste.",
+    "Already in a relationship asking 'is it this person?' → compatibility_other_person."
+   ],
+   "app": {
+    "have": [
+     "7th lord/occupants (context)"
+    ],
+    "missing": [
+     "meeting-context rule",
+     "D9 7th",
+     "darakaraka"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (7th)",
+    "PD ch.10",
+    "SAR (7th house)",
+    "UK khanda 5"
+   ]
+  },
+  {
+   "id": "relationship_problems",
+   "group": "Relationships",
+   "title": "Relationship problems / breakup / reconciliation / ex coming back",
+   "engine_topic": "love",
+   "intent_today": "love",
+   "answer_types": [
+    "why",
+    "when",
+    "yes_no",
+    "how"
+   ],
+   "patterns": {
+    "en": [
+     "Will my ex come back?",
+     "Why do my relationships keep failing?",
+     "We fight a lot, will things get better?"
+    ],
+    "hi": [
+     "क्या मेरा एक्स वापस आएगा?",
+     "हमारे रिश्ते में इतनी लड़ाई क्यों होती है?"
+    ],
+    "hinglish": [
+     "breakup ke baad wo wapas aayegi?",
+     "relationship me itni problem kyu hai?"
+    ],
+    "bn": [
+     "ও কি আবার ফিরে আসবে?",
+     "আমাদের সম্পর্কে এত ঝামেলা কেন?"
+    ],
+    "banglish": [
+     "ex ki fire asbe?",
+     "amader relationship e eto jhamela keno?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "5 (romance)",
+     "7 (partner)",
+     "11 (reunion of wishes)",
+     "6 (quarrels, 6th from... friction)",
+     "12 (separation)",
+     "2 (speech)"
+    ],
+    "lords": [
+     "5th, 7th lords; 6th/12th lords touching 7th"
+    ],
+    "karakas": [
+     "Venus",
+     "Moon (emotions)",
+     "Mars (temper)"
+    ],
+    "vargas": [
+     "D9 [missing]"
+    ]
+   },
+   "judge": [
+    "Friction: Mars/Saturn/Rahu on 7th/5th, Venus afflicted, current dasha of 6th/8th/12th lord, maha-antar 6/8 relation (engine flags).",
+    "Reconciliation support: Venus/5th/7th/11th lords in a coming sub-period; Jupiter transit to 5th/7th from Moon."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic love (reconnection/improvement window)."
+   ],
+   "say": [
+    "Name the pattern without blame ('both need space to cool down; Mars heats your speech house'), give an improvement window, one communication step.",
+    "'Ex come back?' → likelihood + window + 'their choice matters; focus on what you can control'."
+   ],
+   "example": "This is a heated phase rather than an ending: Mars is activating your partnership house through your current sub-period, so small things turn into arguments. Things soften from April 2027. Until then, agree on one calm time each week to talk, and avoid big decisions in the middle of a fight.",
+   "must_include": [
+    "pattern explanation without blame",
+    "improvement window if asked",
+    "one communication step"
+   ],
+   "never": [
+    "vashikaran/'make them come back' remedies",
+    "encouraging stalking/obsession",
+    "blaming the partner",
+    "guaranteeing return"
+   ],
+   "edge_cases": [
+    "Abuse/violence mentioned → safety first: recommend help (women's helpline 181 / police 112 in India) and trusted people; no astrology that keeps them in danger.",
+    "Married couple fights → harmony advice; counsellor.",
+    "Affair questions → non-judgmental; focus on clarity and honesty."
+   ],
+   "app": {
+    "have": [
+     "engine topic love"
+    ],
+    "missing": [
+     "affliction summary on 5th/7th",
+     "planet-to-planet aspects"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (5th, 7th)",
+    "KNR timing",
+    "NCGR"
+   ]
+  },
+  {
+   "id": "divorce_separation",
+   "group": "Relationships",
+   "title": "Divorce / separation (sensitive)",
+   "engine_topic": "legal",
+   "intent_today": "legal (divorce word)",
+   "answer_types": [
+    "yes_no",
+    "when",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "Will I get divorced?",
+     "When will my divorce case end?",
+     "Should I separate from my husband?"
+    ],
+    "hi": [
+     "क्या मेरा तलाक होगा?",
+     "तलाक का केस कब खत्म होगा?"
+    ],
+    "hinglish": [
+     "divorce hoga kya?",
+     "talaq ka case kab khatam hoga?"
+    ],
+    "bn": [
+     "আমার কি ডিভোর্স হবে?",
+     "ডিভোর্সের মামলা কবে মিটবে?"
+    ],
+    "banglish": [
+     "divorce hobe ki?",
+     "case kobe sesh hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "7 (marriage)",
+     "6 (dispute; 12th from 7th = loss of marriage)",
+     "12 (separation)",
+     "8 (marital longevity; internal)",
+     "11 (legal success)"
+    ],
+    "lords": [
+     "7th lord, 6th/12th lords"
+    ],
+    "karakas": [
+     "Venus, Jupiter"
+    ],
+    "vargas": [
+     "D9 [missing]"
+    ],
+    "kp": "1-6-10-12 separation [modern; disputed]."
+   },
+   "judge": [
+    "Do not predict that a marriage 'will' break. If the user is already in proceedings, treat as legal process timing (engine legal) + wellbeing.",
+    "'Will I get divorced?' when not in proceedings → describe stress pattern and repair window; suggest counselling."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic legal (case resolution) or love (repair)."
+   ],
+   "say": [
+    "Neutral, non-judgmental, no side-taking; resolution window; lawyer for legal steps, counsellor for emotional support; the decision is theirs."
+   ],
+   "example": "I can't tell you whether to separate; that is your decision, and a counsellor can help you think it through. What the chart shows is a strained stretch in your partnership house through mid-2027, easing after that. If you are already in proceedings, the period from June to December 2027 looks best for settling; please keep your lawyer closely involved.",
+   "must_include": [
+    "non-judgmental framing",
+    "lawyer and/or counsellor",
+    "no outcome guarantee",
+    "window if asked"
+   ],
+   "never": [
+    "'your marriage will break'",
+    "blaming either spouse",
+    "custody outcome guarantee",
+    "religious judgement",
+    "remedies to 'save' marriage for money"
+   ],
+   "edge_cases": [
+    "Domestic violence → safety resources first (112, 181).",
+    "Asked by a third party about someone's divorce → general, respectful; ask for that person's profile.",
+    "Remarriage after divorce → marriage_timing."
+   ],
+   "app": {
+    "have": [
+     "engine topic legal",
+     "advice lawyer"
+    ],
+    "missing": [
+     "divorce-specific intent (today mapped to legal only)",
+     "counsellor advice line"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (7th)",
+    "NCGR",
+    "KP Reader"
+   ]
+  },
+  {
+   "id": "compatibility_other_person",
+   "group": "Relationships",
+   "title": "Compatibility with a specific person",
+   "engine_topic": null,
+   "intent_today": "love/marriage (no route to compat)",
+   "answer_types": [
+    "yes_no",
+    "what",
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "Are Rahul and I compatible?",
+     "Is she the right person for me?",
+     "How many gunas do we match?"
+    ],
+    "hi": [
+     "क्या हमारी कुंडली मिलती है?",
+     "कितने गुण मिलते हैं?"
+    ],
+    "hinglish": [
+     "humari kundli match hoti hai?",
+     "kitne gun milte hain?"
+    ],
+    "bn": [
+     "আমাদের কুষ্ঠি মিলবে?",
+     "আমাদের কত গুণ মেলে?"
+    ],
+    "banglish": [
+     "amader kundli match korbe?",
+     "o ki amar jonno thik?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "7th of both",
+     "Moon signs/nakshatras (ashtakoota)",
+     "Venus/Mars cross-links (modern synastry, optional)"
+    ],
+    "lords": [
+     "7th lords"
+    ],
+    "karakas": [
+     "Moon (minds)",
+     "Venus"
+    ],
+    "vargas": [
+     "D9 of both [missing]"
+    ]
+   },
+   "judge": [
+    "Ashtakoota /36 with dosha cancellations and manglik pair (utils/ashtakoota.ts) [have].",
+    "A practising astrologer weighs the individual 7th houses and D9 above the guna count; 18+ is the usual threshold but not a verdict [std].",
+    "Nadi/Bhakoot doshas: report with cancellations; never 'you must not marry'."
+   ],
+   "timing": [
+    "Not timing unless asked (then marriage window of the asker)."
+   ],
+   "say": [
+    "If both profiles exist: score + 2 strengths + 1 thing to work on, and point to the Compatibility screen. If not: ask them to add the person's birth details."
+   ],
+   "example": "You two score 26 out of 36, which is a good match. Your temperaments (gana) and emotional rhythm (nadi) agree well, and your Moon signs support each other. The one area to work on is communication under stress. The Compatibility screen has the full breakdown.",
+   "must_include": [
+    "uses the compatibility engine/score or asks for the other profile",
+    "strengths and one growth area",
+    "no fatal verdict"
+   ],
+   "never": [
+    "'don't marry, it will fail'",
+    "nadi dosha → health/death of children fear",
+    "caste",
+    "reading a person without their details"
+   ],
+   "edge_cases": [
+    "Only a name given → ask for birth date/time/place or to add a profile.",
+    "Low score → emphasise that many happy couples have low scores; communication matters.",
+    "Same-gender couple → kootas are bride/groom-labelled; use neutral wording."
+   ],
+   "app": {
+    "have": [
+     "matchCharts / matchNotes (ashtakoota.ts)",
+     "utils/reports/compat.ts",
+     "Compatibility screen"
+    ],
+    "missing": [
+     "chat route to compatibility",
+     "D9 comparison"
+    ]
+   },
+   "sources": [
+    "Muhurta texts on ashtakoota [std]",
+    "BPHS (7th)",
+    "utils/ashtakoota.ts"
+   ]
+  },
+  {
+   "id": "children_timing",
+   "group": "Family & children",
+   "title": "Children / childbirth timing (sensitive)",
+   "engine_topic": "children",
+   "intent_today": "children",
+   "answer_types": [
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "When will we have a baby?",
+     "Will I have children?",
+     "We've been trying for years, is there hope?"
+    ],
+    "hi": [
+     "संतान कब होगी?",
+     "क्या हमें बच्चा होगा?"
+    ],
+    "hinglish": [
+     "baby kab hoga?",
+     "santan ka yog kab hai?"
+    ],
+    "bn": [
+     "সন্তান কবে হবে?",
+     "আমাদের কি বাচ্চা হবে?"
+    ],
+    "banglish": [
+     "baby kobe hobe?",
+     "sontan er jog ache?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "5 (children)",
+     "9 (5th from 5th)",
+     "2 (family grows)",
+     "11"
+    ],
+    "lords": [
+     "5th lord"
+    ],
+    "karakas": [
+     "Jupiter (putra karaka)"
+    ],
+    "vargas": [
+     "D7 Saptamsa [missing] (BPHS ch.6: odd signs from the sign, even from the 7th)"
+    ],
+    "jaimini": "Putrakaraka [missing].",
+    "kp": "2-5-11 [modern]."
+   },
+   "judge": [
+    "5th house/lord + Jupiter (+ from the Moon). Malefic influence = 'later', not 'denied'.",
+    "Never speak of 'santan dosh' as a curse."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic children (not given for age 50+; minors declined)."
+   ],
+   "say": [
+    "Gentle window; for long trying: warmth, 'medical guidance alongside', fertility specialist; no blame on either partner."
+   ],
+   "example": "The most supportive time for a child in your chart is from April 2027 to January 2028: Jupiter, the planet of children, is active in your sub-period and blesses your children's house. Alongside this, please keep working with your doctor; they can guide you best on the medical side.",
+   "must_include": [
+    "window if asked",
+    "doctor/fertility specialist when trying/delay is mentioned",
+    "gentle tone"
+   ],
+   "never": [
+    "baby's sex",
+    "'no children in your chart'",
+    "blaming the woman",
+    "miscarriage/abortion predictions",
+    "paid putra-prapti remedies"
+   ],
+   "edge_cases": [
+    "Sex of baby → canned decline (PCPNDT).",
+    "Pregnancy health questions → doctor; wellbeing only.",
+    "Adoption/IVF → supportive; same window as a favourable period.",
+    "Age 50+ → elderChildren decline route.",
+    "Asked by a parent about their child's children → other_profile."
+   ],
+   "app": {
+    "have": [
+     "engine topic children",
+     "childSex canned decline",
+     "elder decline"
+    ],
+    "missing": [
+     "D7",
+     "doctor line when 'trying' (adviceNeeded only matches health words)"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (5th)",
+    "PD ch.12 (putra)",
+    "KNR Planets and Children",
+    "PCPNDT Act"
+   ]
+  },
+  {
+   "id": "family_parents_siblings",
+   "group": "Family & children",
+   "title": "Family, parents, siblings, in-laws",
+   "engine_topic": "general",
+   "intent_today": "none (family words only as relations)",
+   "answer_types": [
+    "what",
+    "how",
+    "why"
+   ],
+   "patterns": {
+    "en": [
+     "How is my relationship with my father?",
+     "Will my brother support me?",
+     "Why is there so much tension at home?"
+    ],
+    "hi": [
+     "घर में इतना तनाव क्यों है?",
+     "पिताजी से रिश्ता कैसा रहेगा?"
+    ],
+    "hinglish": [
+     "ghar me itna jhagda kyu hota hai?",
+     "saas se kaise banegi?"
+    ],
+    "bn": [
+     "বাড়িতে এত অশান্তি কেন?",
+     "বাবার সঙ্গে সম্পর্ক কেমন থাকবে?"
+    ],
+    "banglish": [
+     "barite eto oshanti keno?",
+     "shoshur barir sathe kemon hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "4 (mother, home peace)",
+     "9 (father, elders)",
+     "3 (younger siblings)",
+     "11 (elder siblings)",
+     "2 (family)",
+     "10th from 7th = 4th (in-laws: 7th's 4th/10th, i.e. 10th and 4th) [std]"
+    ],
+    "lords": [
+     "4th, 9th, 3rd, 11th lords"
+    ],
+    "karakas": [
+     "Moon (mother)",
+     "Sun (father)",
+     "Mars (siblings)",
+     "Jupiter (elders)"
+    ],
+    "vargas": [
+     "D12 (parents) [missing]",
+     "D3 (siblings) [missing]"
+    ]
+   },
+   "judge": [
+    "Relationship quality: house/lord strength + karaka + malefic influence; describe as dynamics (e.g. Sun-Saturn tension: 'different values, respect grows with distance/time')."
+   ],
+   "timing": [
+    "Only if asked: engine 'general' window for improvement, or current phase (why_now)."
+   ],
+   "say": [
+    "Describe dynamics from both sides kindly; one step (talk, boundaries, shared time). No predictions about parents' health/death."
+   ],
+   "example": "Home feels tense mainly because Saturn is moving through your home house right now, which brings responsibilities and short tempers rather than lasting damage. It eases from early 2028. Small routines help: one shared meal a week and dividing chores clearly.",
+   "must_include": [
+    "dynamic described without blame",
+    "one relational step"
+   ],
+   "never": [
+    "predicting a parent's illness/death",
+    "blaming a family member",
+    "in-law stereotypes",
+    "property-split guarantees"
+   ],
+   "edge_cases": [
+    "Parent's health → health rules (doctor), read parent's own profile if saved.",
+    "Caring for elderly parents → empathy + practical support."
+   ],
+   "app": {
+    "have": [
+     "context 'Home/family' + 'Growth/luck' lines",
+     "reports family (4th/9th/5th/2nd)"
+    ],
+    "missing": [
+     "family category in intent",
+     "D12/D3",
+     "sibling (3rd/11th) lines in context"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (3rd, 4th, 9th, 11th)",
+    "UK khanda 5"
+   ]
+  },
+  {
+   "id": "education_field",
+   "group": "Education",
+   "title": "Field of study / stream / higher studies",
+   "engine_topic": "education",
+   "intent_today": "education",
+   "answer_types": [
+    "which",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "Which subject should I choose after 12th?",
+     "Should I do an MBA or MS?",
+     "Is medicine right for me?"
+    ],
+    "hi": [
+     "12वीं के बाद कौन सी स्ट्रीम लूं?",
+     "मुझे MBA करना चाहिए या MS?"
+    ],
+    "hinglish": [
+     "science lu ya commerce?",
+     "MBA karu ya job?"
+    ],
+    "bn": [
+     "কোন বিষয় নিয়ে পড়ব?",
+     "এমবিএ করব না এমএস?"
+    ],
+    "banglish": [
+     "science nebo na commerce?",
+     "higher studies korbo ki?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "4 (schooling)",
+     "5 (intellect, specialisation)",
+     "9 (higher learning)",
+     "2 (early learning)",
+     "10 (vocation link)"
+    ],
+    "lords": [
+     "4th, 5th, 9th lords"
+    ],
+    "karakas": [
+     "Mercury (analysis)",
+     "Jupiter (knowledge)"
+    ],
+    "vargas": [
+     "D24 Siddhamsa [missing] (BPHS ch.6: odd from Leo, even from Cancer; mapping disputed)"
+    ]
+   },
+   "judge": [
+    "Use the career field map on the 5th/9th lords and the strongest of Mercury/Jupiter; tie to the 10th for vocation.",
+    "Mars/Sun strong → medicine/engineering; Mercury → commerce/IT/maths; Jupiter → law/humanities/teaching; Venus → arts/design; Moon → psychology/nursing/hospitality; Saturn → applied/technical, research; Rahu → tech/new fields [modern]."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic education (admission, results, higher studies)."
+   ],
+   "say": [
+    "2-3 study options with reasons + 'try a sample (course/internship) before committing'; respect interest and marks."
+   ],
+   "example": "Your chart favours analytical subjects: Mercury, which rules your study house, is strong, so commerce with maths, economics or computer science suits you well. If you enjoy biology too, Mars in your effort house supports medicine-related fields. Try an online course in each before you decide.",
+   "must_include": [
+    "names 2-3 study options with reasons",
+    "respects the student's interests"
+   ],
+   "never": [
+    "telling them they're 'not intelligent'",
+    "forcing a parent's choice",
+    "unsolicited dates",
+    "guaranteeing admission"
+   ],
+   "edge_cases": [
+    "Parent asking about a child → other_profile; child's own interests first.",
+    "Minor → fine (education is allowed)."
+   ],
+   "app": {
+    "have": [
+     "engine topic education",
+     "reports study"
+    ],
+    "missing": [
+     "study-field mapping",
+     "D24"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (4th, 5th, 9th)",
+    "BPHS ch.6 (D24)",
+    "PD ch.5/6"
+   ]
+  },
+  {
+   "id": "exams_competitive",
+   "group": "Education",
+   "title": "Exams / results / competitive exams",
+   "engine_topic": "education",
+   "intent_today": "education",
+   "answer_types": [
+    "yes_no",
+    "when",
+    "how"
+   ],
+   "patterns": {
+    "en": [
+     "Will I clear NEET this year?",
+     "When will I pass my exams?",
+     "Will I crack CAT?"
+    ],
+    "hi": [
+     "क्या मैं इस साल NEET निकाल लूंगा?",
+     "परीक्षा में पास हो जाऊंगी?"
+    ],
+    "hinglish": [
+     "UPSC clear hoga kya?",
+     "exam me pass ho jaunga?"
+    ],
+    "bn": [
+     "এবার কি নিট পাশ করব?",
+     "পরীক্ষায় ভালো ফল হবে?"
+    ],
+    "banglish": [
+     "exam e pass korbo?",
+     "JEE crack korte parbo?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "4 (study effort)",
+     "5 (intellect)",
+     "9 (results/grace)",
+     "6 (competition: beating rivals)",
+     "11 (success)"
+    ],
+    "lords": [
+     "5th, 6th, 11th lords"
+    ],
+    "karakas": [
+     "Mercury",
+     "Jupiter",
+     "Sun (government exams)"
+    ],
+    "vargas": [
+     "D24 [missing]"
+    ],
+    "kp": "Success in competition: 4-9-11 (+6) [modern]."
+   },
+   "judge": [
+    "6th and 11th strong → competitive edge.",
+    "Current sub-period of a 5th/9th/11th lord = good results phase."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic education.",
+    "Exam date fixed by the board: say how well that falls inside/outside the window."
+   ],
+   "say": [
+    "Likelihood word + window + study strategy (mock tests, revision); never 'you will fail'."
+   ],
+   "example": "Your chart gives good backing for this attempt: Jupiter supports your study house through mid-2027, and your current sub-period lord rules your house of competition. Use the next months for mock tests under exam conditions; consistency matters more than extra hours.",
+   "must_include": [
+    "likelihood word, no guarantee",
+    "study strategy step",
+    "window if asked"
+   ],
+   "never": [
+    "'you will fail'",
+    "rank prediction",
+    "exam-day superstition purchases",
+    "comparing with siblings"
+   ],
+   "edge_cases": [
+    "Repeated failures/despair → warmth; check for crisis language; alternatives.",
+    "Result already declared → past_event."
+   ],
+   "app": {
+    "have": [
+     "engine topic education"
+    ],
+    "missing": [
+     "competition (6th/11th) emphasis rule"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (4th, 5th, 6th, 9th)",
+    "KP Reader"
+   ]
+  },
+  {
+   "id": "health_wellbeing",
+   "group": "Wellbeing",
+   "title": "Health / energy / wellbeing (no diagnosis)",
+   "engine_topic": "health",
+   "intent_today": "health (+ advice doctor)",
+   "answer_types": [
+    "what",
+    "when",
+    "why",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Why do I feel tired all the time?",
+     "When will my health improve?",
+     "Is my surgery going to be successful?"
+    ],
+    "hi": [
+     "मेरी तबीयत कब ठीक होगी?",
+     "मुझे बार बार बीमारी क्यों होती है?"
+    ],
+    "hinglish": [
+     "health kab theek hogi?",
+     "operation successful hoga?"
+    ],
+    "bn": [
+     "শরীর কবে ভালো হবে?",
+     "বারবার অসুখ করে কেন?"
+    ],
+    "banglish": [
+     "sorir kobe bhalo hobe?",
+     "operation thik hobe to?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "1 (vitality)",
+     "6 (illness/routine)",
+     "8 (chronic; internal)",
+     "12 (rest/hospital)",
+     "11 (recovery: 6th from 6th)"
+    ],
+    "lords": [
+     "lagna lord",
+     "6th/8th lords (internal)"
+    ],
+    "karakas": [
+     "Sun (vitality)",
+     "Moon (mind, fluids)",
+     "Saturn (chronic, fatigue)"
+    ],
+    "vargas": [
+     "D30 (internal only) [missing]"
+    ]
+   },
+   "judge": [
+    "Speak only in wellbeing terms: energy, stress, rest, routines. Body-part significations (e.g. Moon: chest/fluids) are NOT to be used for diagnosis.",
+    "Sade sati / ashtama shani → 'lower energy phase, prioritise rest and check-ups'."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic health (recovery/energy window; sade sati counted)."
+   ],
+   "say": [
+    "Validate, give wellbeing pattern + supportive window + practical self-care, ALWAYS recommend a doctor for symptoms, surgery, medication.",
+    "Surgery → 'your doctor's judgement on timing comes first'; may offer muhurat only if the doctor has given flexibility."
+   ],
+   "example": "Your chart shows a lower-energy stretch right now: Saturn is moving over your Moon, which tends to bring fatigue and stress. Energy improves from February 2027. Please see a doctor about the tiredness, since it needs a proper check-up, and meanwhile keep regular sleep and light daily exercise.",
+   "must_include": [
+    "recommends a doctor",
+    "wellbeing framing",
+    "window if asked"
+   ],
+   "never": [
+    "naming a disease",
+    "prognosis or 'it is serious/not serious'",
+    "advising to delay/stop treatment",
+    "gem/mantra as cure",
+    "surgery-death talk"
+   ],
+   "edge_cases": [
+    "Chest pain / emergency symptoms → urge immediate medical care (112) first.",
+    "Pregnancy → doctor; no sex prediction.",
+    "Someone else's illness → doctor; compassionate; no prognosis."
+   ],
+   "app": {
+    "have": [
+     "engine topic health",
+     "advice doctor (verify.ts missingAdvice)"
+    ],
+    "missing": [
+     "emergency-symptom route"
+    ]
+   },
+   "sources": [
+    "DMR Act 1954",
+    "NCGR",
+    "BPHS bhava (1st, 6th)"
+   ]
+  },
+  {
+   "id": "mental_health_distress",
+   "group": "Wellbeing",
+   "title": "Stress, anxiety, sadness, loneliness (not crisis)",
+   "engine_topic": "general",
+   "intent_today": "none / health",
+   "answer_types": [
+    "why",
+    "how",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "Why do I feel so anxious lately?",
+     "I feel lonely, will this phase end?",
+     "I'm depressed about my career"
+    ],
+    "hi": [
+     "मन बहुत उदास रहता है, ऐसा क्यों?",
+     "यह बुरा समय कब खत्म होगा?"
+    ],
+    "hinglish": [
+     "bahut stress hai, kab theek hoga?",
+     "akela feel hota hai"
+    ],
+    "bn": [
+     "মন খুব খারাপ থাকে, কেন?",
+     "এই খারাপ সময় কবে কাটবে?"
+    ],
+    "banglish": [
+     "mon bhalo nei kichu din dhore",
+     "khub tension hocche, kobe kombe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "4 (peace of mind)",
+     "1 (self)",
+     "5 (mind/joy)",
+     "12 (isolation)"
+    ],
+    "lords": [
+     "4th lord"
+    ],
+    "karakas": [
+     "Moon (mind)",
+     "Mercury (nerves/thinking)",
+     "Saturn (heaviness)"
+    ],
+    "vargas": []
+   },
+   "judge": [
+    "Moon's condition + current Saturn transit to Moon (sade sati / 4th / 8th) + running dasha (e.g. Moon-Saturn, Rahu)."
+   ],
+   "timing": [
+    "Current phase explanation (why_now) + improvement window (engine 'health' or 'general')."
+   ],
+   "say": [
+    "Validate first, then the phase explanation, the easing window, and 1-2 grounding steps; suggest talking to someone they trust or a counsellor; Tele-MANAS 14416 if it feels heavy."
+   ],
+   "example": "I'm sorry it's been so heavy. Part of what you're feeling fits your chart's current phase: Saturn is pressing on your Moon, the planet of the mind, and that usually feels like weight and worry. It lightens from early 2027. Meanwhile, daily walks, regular sleep and talking to someone you trust help; if it ever feels like too much, Tele-MANAS (14416) is free and confidential.",
+   "must_include": [
+    "validation",
+    "phase explanation",
+    "counsellor/trusted person suggestion"
+   ],
+   "never": [
+    "'it's your karma'",
+    "dismissal",
+    "remedy as substitute for help",
+    "medication advice"
+   ],
+   "edge_cases": [
+    "Any self-harm hint → crisis route.",
+    "Grief → compassion; no astrology about the deceased's death."
+   ],
+   "app": {
+    "have": [
+     "sade sati status",
+     "context 'Mind' line",
+     "crisis guard"
+    ],
+    "missing": [
+     "distress (non-crisis) intent + counsellor line"
+    ]
+   },
+   "sources": [
+    "NCGR",
+    "PD ch.26 (Saturn gochara)",
+    "Tele-MANAS"
+   ]
+  },
+  {
+   "id": "crisis_self_harm",
+   "group": "Wellbeing",
+   "title": "Crisis / self-harm / suicidal language",
+   "engine_topic": null,
+   "intent_today": "safety 'crisis' → fixed reply",
+   "answer_types": [
+    "other"
+   ],
+   "patterns": {
+    "en": [
+     "I want to die",
+     "I don't want to live anymore"
+    ],
+    "hi": [
+     "मैं जीना नहीं चाहता",
+     "आत्महत्या कर लूंगी"
+    ],
+    "hinglish": [
+     "mar jana chahta hu",
+     "jeene ka mann nahi"
+    ],
+    "bn": [
+     "আমি আর বাঁচতে চাই না",
+     "মরে যেতে ইচ্ছে করে"
+    ],
+    "banglish": [
+     "more jete chai",
+     "bachte ichhe kore na"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "No chart reading."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "Fixed kind reply: you matter, please reach out now: Tele-MANAS 14416 (24x7, free), emergency 112, a trusted person; stay in the conversation."
+   ],
+   "example": "I'm really glad you told me. You don't have to carry this alone. Please call Tele-MANAS at 14416 (free, any time) or 112 if you're in danger right now, and reach out to someone you trust. I'm here to talk too.",
+   "must_include": [
+    "helpline (14416 / 112)",
+    "warm, non-judgmental",
+    "no astrology"
+   ],
+   "never": [
+    "any chart reading or dates",
+    "'it will pass when Saturn moves'",
+    "remedies"
+   ],
+   "edge_cases": [
+    "Ambiguous 'I'm dying of boredom' → model may answer normally; guard is broad by design.",
+    "Third person at risk → helpline + encourage contacting them / emergency services."
+   ],
+   "app": {
+    "have": [
+     "isCrisisMessage → route crisis"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "Tele-MANAS (Govt of India)",
+    "NCGR"
+   ]
+  },
+  {
+   "id": "legal_court",
+   "group": "Other life areas",
+   "title": "Legal matters / court cases / police",
+   "engine_topic": "legal",
+   "intent_today": "legal (+ advice lawyer)",
+   "answer_types": [
+    "yes_no",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "Will I win my court case?",
+     "When will the property case end?"
+    ],
+    "hi": [
+     "क्या मैं केस जीतूंगा?",
+     "मुकदमा कब खत्म होगा?"
+    ],
+    "hinglish": [
+     "case jeetunga kya?",
+     "court case kab khatam hoga?"
+    ],
+    "bn": [
+     "মামলায় জিতব কি?",
+     "কোর্ট কেস কবে মিটবে?"
+    ],
+    "banglish": [
+     "case e jitbo?",
+     "mamla kobe sesh hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "6 (litigation, opponents)",
+     "11 (success)",
+     "12 (loss, expenses, confinement)",
+     "7 (opponent)",
+     "9 (justice)"
+    ],
+    "lords": [
+     "6th vs 7th/12th lords"
+    ],
+    "karakas": [
+     "Jupiter (justice)",
+     "Sun (authority)",
+     "Mars (fight)",
+     "Saturn (delay)"
+    ],
+    "vargas": [],
+    "kp": "Win 6-11 (+1); loss 5-12 [modern]."
+   },
+   "judge": [
+    "6th and 11th stronger than 12th/7th → better position; Saturn involvement → slow."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic legal."
+   ],
+   "say": [
+    "'More favourable period' language + window + lawyer; settlement option if the chart shows a long drag."
+   ],
+   "example": "Your chart gives you a reasonably strong position: the ruler of your house of disputes is stronger than your opponent's indicators, and support grows from March to October 2027. Court timelines depend on the court, so keep your lawyer closely involved and consider settlement talks if offered in that period.",
+   "must_include": [
+    "lawyer recommendation",
+    "no outcome guarantee",
+    "window if asked"
+   ],
+   "never": [
+    "'you will win/lose'",
+    "advice to evade law/police",
+    "jail predictions",
+    "legal strategy as fact"
+   ],
+   "edge_cases": [
+    "Criminal accusations → neutral; lawyer; no moral judgement.",
+    "Bail/jail → lawyer; supportive."
+   ],
+   "app": {
+    "have": [
+     "engine topic legal",
+     "advice lawyer"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "BPHS bhava (6th, 12th)",
+    "KP Reader",
+    "NCGR"
+   ]
+  },
+  {
+   "id": "spirituality_purpose",
+   "group": "Other life areas",
+   "title": "Spirituality / life purpose / dharma",
+   "engine_topic": null,
+   "intent_today": "none",
+   "answer_types": [
+    "what",
+    "which",
+    "how"
+   ],
+   "patterns": {
+    "en": [
+     "What is my life purpose?",
+     "Which spiritual path suits me?",
+     "Will I find peace?"
+    ],
+    "hi": [
+     "मेरे जीवन का उद्देश्य क्या है?",
+     "मेरे लिए कौन सी साधना ठीक है?"
+    ],
+    "hinglish": [
+     "meri life ka purpose kya hai?",
+     "meditation karu ya bhakti?"
+    ],
+    "bn": [
+     "আমার জীবনের উদ্দেশ্য কী?",
+     "কোন আধ্যাত্মিক পথ আমার জন্য?"
+    ],
+    "banglish": [
+     "amar jiboner uddeshyo ki?",
+     "kon sadhana amar jonno bhalo?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "9 (dharma, teachers)",
+     "5 (mantra, devotion)",
+     "12 (liberation, retreat)",
+     "1 (self)",
+     "10 (karma/action)"
+    ],
+    "lords": [
+     "9th, 5th, 12th lords"
+    ],
+    "karakas": [
+     "Jupiter (wisdom)",
+     "Ketu (detachment)",
+     "Saturn (discipline)",
+     "Moon (devotion)"
+    ],
+    "vargas": [
+     "D20 Vimsamsa [missing]",
+     "D9"
+    ],
+    "jaimini": "Atmakaraka and karakamsa (AK's D9 sign) describe the soul's path [missing]."
+   },
+   "judge": [
+    "Jupiter strong → study/knowledge path (jnana); Moon/Venus → devotion (bhakti); Saturn/10th → service (karma yoga); Ketu/12th → meditation/retreat; Mars → disciplined practice."
+   ],
+   "timing": [
+    "Not timing unless asked (Ketu/Jupiter periods deepen inner life)."
+   ],
+   "say": [
+    "Purpose as a theme from the chart + one practice to try; no religion imposed; respect their faith/none."
+   ],
+   "example": "Your chart points to service and steady work as your path: Saturn, the planet of duty, strongly shapes your purpose house. Many people with this pattern find meaning in helping others in practical ways. A simple daily practice, like ten quiet minutes and one act of service, suits you better than elaborate rituals.",
+   "must_include": [
+    "one purpose theme with reason",
+    "one practice suggestion",
+    "respect for their beliefs"
+   ],
+   "never": [
+    "guru/sect recommendations",
+    "paid diksha/puja",
+    "'past-life sins'",
+    "religious superiority"
+   ],
+   "edge_cases": [
+    "Krishna mode → Gita-based answer (separate pipeline)."
+   ],
+   "app": {
+    "have": [
+     "context 'Growth/luck' + 'Abroad/spending/spiritual' lines",
+     "Krishna mode"
+    ],
+    "missing": [
+     "atmakaraka/karakamsa",
+     "spirituality intent"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (9th, 12th)",
+    "SR Jaimini Upadesa Sutras"
+   ]
+  },
+  {
+   "id": "personality",
+   "group": "Other life areas",
+   "title": "Personality / strengths / weaknesses",
+   "engine_topic": null,
+   "intent_today": "none",
+   "answer_types": [
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "What are my strengths and weaknesses?",
+     "What kind of person am I according to my chart?"
+    ],
+    "hi": [
+     "मेरी ताकत और कमज़ोरियां क्या हैं?",
+     "मेरा स्वभाव कैसा है?"
+    ],
+    "hinglish": [
+     "mera nature kaisa hai?",
+     "meri strengths kya hain?"
+    ],
+    "bn": [
+     "আমার শক্তি আর দুর্বলতা কী?",
+     "আমার স্বভাব কেমন?"
+    ],
+    "banglish": [
+     "amar shobhab kemon?",
+     "amar strength ki?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "1 (self)",
+     "lagna lord's house",
+     "Moon sign/nakshatra (mind)",
+     "Sun sign (soul)"
+    ],
+    "lords": [
+     "lagna lord"
+    ],
+    "karakas": [
+     "Sun, Moon, lagna lord; strongest planet"
+    ],
+    "vargas": [
+     "D9 lagna [missing]"
+    ],
+    "jaimini": "Atmakaraka [missing]."
+   },
+   "judge": [
+    "Big three (lagna, Moon, Sun) + strongest and weakest planets (composite strength [missing]) + yogas (Pancha Mahapurusha)."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "2-3 strengths, 1-2 growth areas phrased kindly, one tip to use a strength."
+   ],
+   "example": "You come across as calm and dependable (Taurus rising) with a quick, curious mind (Moon in Gemini). Your strengths are patience, practical sense and a gift for explaining things. Your growth area is overthinking before you act: setting small deadlines helps you turn ideas into action.",
+   "must_include": [
+    "2-3 strengths",
+    "1-2 growth areas kindly",
+    "chart basis"
+   ],
+   "never": [
+    "harsh labels ('lazy', 'selfish')",
+    "unsolicited dates",
+    "astro-jargon dump"
+   ],
+   "edge_cases": [
+    "Asking about someone else's personality → other_profile; kind and non-judgmental.",
+    "Western Sun sign vs Vedic → the app shows Western Sun sign; clarify if asked."
+   ],
+   "app": {
+    "have": [
+     "big three",
+     "nakshatra",
+     "Moon style (context 'Mind')",
+     "deterministic sign answers"
+    ],
+    "missing": [
+     "composite strength",
+     "atmakaraka"
+    ]
+   },
+   "sources": [
+    "BPHS bhava (1st)",
+    "SAR (lagna/Moon sign results)",
+    "BJ"
+   ]
+  },
+  {
+   "id": "why_now_current_phase",
+   "group": "Other life areas",
+   "title": "\"Why is this happening?\" / current phase / bad time",
+   "engine_topic": "general",
+   "intent_today": "general / chart",
+   "answer_types": [
+    "why",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "Why is everything going wrong?",
+     "Why am I facing so many obstacles?",
+     "When will my bad time end?"
+    ],
+    "hi": [
+     "मेरे साथ ही सब बुरा क्यों हो रहा है?",
+     "बुरा समय कब खत्म होगा?"
+    ],
+    "hinglish": [
+     "sab galat kyu ho raha hai?",
+     "bura waqt kab khatam hoga?"
+    ],
+    "bn": [
+     "সব কিছু খারাপ হচ্ছে কেন?",
+     "খারাপ সময় কবে কাটবে?"
+    ],
+    "banglish": [
+     "shob kichu kharap hocche keno?",
+     "kharap somoy kobe katbe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "houses owned/occupied by the current maha and antar lords (from lagna and Moon)"
+    ],
+    "lords": [
+     "current dasha lords"
+    ],
+    "karakas": [
+     "Saturn transit vs Moon",
+     "Rahu/Ketu transit"
+    ],
+    "vargas": []
+   },
+   "judge": [
+    "Explain with at most two causes: (1) the running sub-period lord's houses (e.g. 'Rahu in your house of expenses'), (2) Saturn/Jupiter/Rahu transit vs Moon (sade sati, ashtama).",
+    "Maha-antar 6/8 relation → 'pulling in different directions'."
+   ],
+   "timing": [
+    "Sub-period end date [have] (dasha timeline) and/or sade sati end [have]; engine 'general' best window as 'things look up'."
+   ],
+   "say": [
+    "Validate → cause in plain words → when it eases (date from dasha/sade sati data) → what helps now."
+   ],
+   "example": "A lot of the pressure comes from two things: your current sub-period is run by Rahu from your house of expenses, which brings restlessness and outflows, and Saturn is in its peak sade sati phase over your Moon. The sub-period ends in August 2027, and things look clearly better from then. For now, keep your routine simple and avoid big risks.",
+   "must_include": [
+    "1-2 concrete causes (dasha/transit)",
+    "when it eases (from chart data)",
+    "one helpful step"
+   ],
+   "never": [
+    "curse/karma blame",
+    "fear",
+    "paid remedy",
+    "inventing causes not in context"
+   ],
+   "edge_cases": [
+    "Crisis language → crisis route.",
+    "Asking 'is it sade sati?' → chart_technical."
+   ],
+   "app": {
+    "have": [
+     "dasha timeline (getLifeChapters)",
+     "sade sati (getSadeSati)",
+     "transit lines"
+    ],
+    "missing": [
+     "dasha-lord house ownership/placement facts in plan",
+     "maha-antar relation facts"
+    ]
+   },
+   "sources": [
+    "BPHS dasha chapters",
+    "PD ch.26",
+    "KNR timing"
+   ]
+  },
+  {
+   "id": "chart_technical",
+   "group": "Other life areas",
+   "title": "Chart / dasha / transit / dosha questions",
+   "engine_topic": null,
+   "intent_today": "chart (deterministic for signs/dasha)",
+   "answer_types": [
+    "what",
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Am I manglik?",
+     "When does my sade sati end?",
+     "Which mahadasha am I in?",
+     "What does Rahu in the 7th mean?"
+    ],
+    "hi": [
+     "क्या मैं मांगलिक हूं?",
+     "मेरी साढ़ेसाती कब खत्म होगी?"
+    ],
+    "hinglish": [
+     "main manglik hu kya?",
+     "shani ki sade sati kab tak hai?"
+    ],
+    "bn": [
+     "আমি কি মাঙ্গলিক?",
+     "আমার সাড়ে সাতি কবে শেষ?"
+    ],
+    "banglish": [
+     "ami ki manglik?",
+     "shonir dasha kobe sesh?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "as asked"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "judge": [
+    "Answer from computed data only (deterministic answers, sade sati periods, manglik with exemptions, dasha dates).",
+    "Explain meaning in plain words, then what it does NOT mean."
+   ],
+   "timing": [
+    "Dates from getSadeSati / dasha timeline (these are chart facts, allowed even if not the engine window)."
+   ],
+   "say": [
+    "Fact → plain meaning → reassurance/limits ('Manglik is common, about half of charts; cancellations apply; it matters mainly for matching')."
+   ],
+   "example": "Yes, Mars sits in your 7th house, which is the classic 'manglik' placement. It's very common, and in your chart it's softened because Mars is in its own sign. In practice it just means matching your partner's chart carefully; it isn't a bad omen.",
+   "must_include": [
+    "the computed fact",
+    "plain meaning",
+    "limits/reassurance"
+   ],
+   "never": [
+    "fear framing",
+    "Kaal Sarp claims",
+    "remedy selling",
+    "inventing positions"
+   ],
+   "edge_cases": [
+    "User says 'my pandit said I have Kaal Sarp dosh' → respectful: not in the classical texts this app follows; no fear.",
+    "Dates for sade sati/dasha are chart facts; engine-window verify must not strip them (intent topic 'chart')."
+   ],
+   "app": {
+    "have": [
+     "deterministic.ts (signs, nakshatra, dasha, phase, transits)",
+     "sade-sati.ts",
+     "manglik (ashtakoota.ts)"
+    ],
+    "missing": [
+     "planet-in-house meaning table for 'what does X in Nth mean'"
+    ]
+   },
+   "sources": [
+    "BPHS",
+    "utils/sade-sati.ts",
+    "utils/ashtakoota.ts"
+   ]
+  },
+  {
+   "id": "remedies",
+   "group": "Other life areas",
+   "title": "Remedies / upay / gemstones",
+   "engine_topic": null,
+   "intent_today": "none",
+   "answer_types": [
+    "what",
+    "how"
+   ],
+   "patterns": {
+    "en": [
+     "What remedy should I do for Saturn?",
+     "Should I wear a blue sapphire?",
+     "Any upay for marriage delay?"
+    ],
+    "hi": [
+     "शनि के लिए क्या उपाय करूं?",
+     "क्या मुझे नीलम पहनना चाहिए?"
+    ],
+    "hinglish": [
+     "koi upay batao",
+     "pukhraj pehnu kya?"
+    ],
+    "bn": [
+     "শনির জন্য কী প্রতিকার করব?",
+     "আমি কি নীলা পরব?"
+    ],
+    "banglish": [
+     "kono protikar bolo",
+     "pathor porbo ki?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "the weak/afflicted planet or running dasha lord the remedy is for"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "free_remedies": {
+    "Sun": "wake early, offer water to the sun / sit in morning light, respect father/elders, Aditya Hridayam or Gayatri; service: help an elder",
+    "Moon": "regular sleep, time near water, call your mother, 'Om Som Somaya Namah' / Shiva prayers; charity: water/milk to the needy",
+    "Mars": "daily exercise, channel anger into sport, Hanuman Chalisa; help siblings; donate blood (if healthy)",
+    "Mercury": "learn something daily, keep accounts tidy, Vishnu Sahasranama; help students; feed birds",
+    "Jupiter": "study/teach, respect teachers, Guru mantra / Vishnu prayers on Thursdays; donate books/food",
+    "Venus": "art/music, keep living space clean, respect partner, Lakshmi prayers; help women in need",
+    "Saturn": "discipline and punctuality, serve elderly/workers, Hanuman Chalisa / Shani stotra on Saturdays; donate to labourers",
+    "Rahu": "limit screens/intoxicants, honesty, Durga prayers; help outcasts/animals",
+    "Ketu": "meditation, Ganesha prayers; care for dogs/stray animals"
+   },
+   "judge": [
+    "Remedy targets the running dasha lord or the topic's weak karaka; classical remedies are japa (mantra), dana (charity), worship and conduct (BPHS remedial chapters; SR Vedic Remedies)."
+   ],
+   "timing": [
+    "Can suggest starting on the planet's weekday; no 'must do by' urgency."
+   ],
+   "say": [
+    "1-3 free behavioural remedies (practice, service, discipline, mantra if they wish) framed as supportive, optional, faith-respecting.",
+    "Gemstones: informational only if asked ('traditionally linked to X; not required; never wear one out of fear; if you consider it, consult a qualified person and know it is not a substitute for effort'); never recommend buying."
+   ],
+   "example": "You don't need anything expensive. For Saturn, the most traditional remedies are discipline and service: keep a steady routine, be punctual, and spend some time helping elderly people or workers, ideally on Saturdays. If you like mantras, the Hanuman Chalisa is a classic choice. These support you; your own effort does the rest.",
+   "must_include": [
+    "only free/behavioural remedies",
+    "optional and faith-respecting framing",
+    "gemstones informational only if asked"
+   ],
+   "never": [
+    "selling/pushing gemstones, pujas, yantras, rudraksha",
+    "fear ('if you don't, X will happen')",
+    "costly rituals",
+    "remedy as medical cure",
+    "vashikaran/black magic"
+   ],
+   "edge_cases": [
+    "Non-Hindu or atheist user → secular remedies (routine, service, journaling).",
+    "Asks which gem → informational + 'not required'.",
+    "Asked for 'tantra to get ex back' → decline."
+   ],
+   "app": {
+    "have": [
+     "reports 'helps' chapter (dayHabit, pickHelps)"
+    ],
+    "missing": [
+     "remedies intent + free remedy table in chat plan"
+    ]
+   },
+   "sources": [
+    "BPHS remedial chapters",
+    "SR Vedic Remedies in Astrology",
+    "DMR Act 1954",
+    "NCGR"
+   ]
+  },
+  {
+   "id": "lucky_factors",
+   "group": "Other life areas",
+   "title": "Lucky colour / number / day",
+   "engine_topic": null,
+   "intent_today": "none",
+   "answer_types": [
+    "what",
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "What is my lucky number?",
+     "Which colour should I wear today?",
+     "Which is my lucky day?"
+    ],
+    "hi": [
+     "मेरा लकी नंबर क्या है?",
+     "आज कौन सा रंग पहनूं?"
+    ],
+    "hinglish": [
+     "mera lucky colour kya hai?",
+     "lucky day kaunsa hai?"
+    ],
+    "bn": [
+     "আমার লাকি নম্বর কত?",
+     "আজ কোন রঙ পরব?"
+    ],
+    "banglish": [
+     "amar lucky colour ki?",
+     "lucky din kon ta?"
+    ]
+   },
+   "factors": {
+    "houses": [],
+    "lords": [
+     "weekday ruler vs Moon-sign ruler (utils/lucky.ts)"
+    ],
+    "karakas": [
+     "planet colours/numbers"
+    ],
+    "vargas": []
+   },
+   "judge": [
+    "Use utils/lucky.ts output (today's ruler, colour, number, best choghadiya)."
+   ],
+   "timing": [
+    "Today's best time window [have]."
+   ],
+   "say": [
+    "Give the app's value + 'a gentle nudge, not a rule'; mention the Today screen."
+   ],
+   "example": "Today your lucky colour is yellow and your number is 3, linked to Jupiter, which suits your Moon sign today. The best time window is 11:10 AM to 12:40 PM. Think of it as a gentle nudge, not a rule.",
+   "must_include": [
+    "app's lucky values",
+    "light framing"
+   ],
+   "never": [
+    "'unlucky' colours/numbers",
+    "numerology name-change selling",
+    "lottery numbers"
+   ],
+   "edge_cases": [
+    "Lottery number → decline gambling; give lucky number only as a fun nudge or not at all."
+   ],
+   "app": {
+    "have": [
+     "utils/lucky.ts",
+     "choghadiya"
+    ],
+    "missing": [
+     "chat route to lucky values"
+    ]
+   },
+   "sources": [
+    "utils/lucky.ts",
+    "[std] planetary colour/number correspondences"
+   ]
+  },
+  {
+   "id": "muhurat",
+   "group": "Other life areas",
+   "title": "Muhurat / auspicious dates for an action",
+   "engine_topic": null,
+   "intent_today": "none (timing on a life topic instead!)",
+   "answer_types": [
+    "when",
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "Which is a good date to sign the agreement?",
+     "Auspicious date for griha pravesh?",
+     "Good day to start my new job next week?"
+    ],
+    "hi": [
+     "गृह प्रवेश का शुभ मुहूर्त कब है?",
+     "नई गाड़ी लेने का अच्छा दिन?"
+    ],
+    "hinglish": [
+     "shubh muhurat batao",
+     "agreement sign karne ka acha din?"
+    ],
+    "bn": [
+     "গৃহপ্রবেশের শুভ দিন কবে?",
+     "নতুন কাজ শুরু করার ভালো দিন কোনটা?"
+    ],
+    "banglish": [
+     "shubho din bolo",
+     "notun gari kinbo kon din?"
+    ]
+   },
+   "factors": {
+    "houses": [],
+    "lords": [],
+    "karakas": [
+     "tithi, vara, nakshatra, Rahu kaal, choghadiya"
+    ],
+    "vargas": []
+   },
+   "judge": [
+    "Muhurat is chosen from the panchang, not the natal timing engine. App: utils/muhurat.ts (work/travel/buy/sign: tithi favour/avoid, Rahu kaal cut).",
+    "Personalisation (Tara bala / Chandra bala from the natal Moon) [missing]."
+   ],
+   "timing": [
+    "Upcoming good days from findMuhurats (activity mapped); never the natal engine window."
+   ],
+   "say": [
+    "Map to the activity (sign, buy, travel, start work); give 2-3 upcoming good days/times from the feature or point to the Muhurat tab. Marriage/griha pravesh/naming → 'traditionally done with a family priest; the Muhurat tab covers simpler activities'."
+   ],
+   "example": "For signing, the best upcoming days are Thursday 15 Oct (10:40 AM to 12:10 PM) and Monday 19 Oct (9:30 to 11:00 AM), both on favourable tithis and clear of Rahu Kaal. You'll find more options in the Muhurat tab.",
+   "must_include": [
+    "routes to the muhurat feature/data",
+    "activity-specific"
+   ],
+   "never": [
+    "natal 'life event' windows as a muhurat",
+    "fear about inauspicious days",
+    "wedding muhurat certainty"
+   ],
+   "edge_cases": [
+    "Surgery date → doctor first.",
+    "Exam date fixed → no muhurat; prep advice.",
+    "Wedding muhurat → partial support; suggest priest."
+   ],
+   "app": {
+    "have": [
+     "utils/muhurat.ts",
+     "panchang, choghadiya"
+    ],
+    "missing": [
+     "chat route",
+     "personalised tara/chandra bala",
+     "more activities (griha pravesh, naming)"
+    ]
+   },
+   "sources": [
+    "Muhurta Chintamani [std]",
+    "utils/muhurat.ts"
+   ]
+  },
+  {
+   "id": "general_luck",
+   "group": "Other life areas",
+   "title": "General luck / good times ahead / year ahead",
+   "engine_topic": "general",
+   "intent_today": "general",
+   "answer_types": [
+    "when",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "When will my good time start?",
+     "How will 2027 be for me?",
+     "Is my luck going to change?"
+    ],
+    "hi": [
+     "मेरा अच्छा समय कब आएगा?",
+     "2027 मेरे लिए कैसा रहेगा?"
+    ],
+    "hinglish": [
+     "acche din kab aayenge?",
+     "agla saal kaisa rahega?"
+    ],
+    "bn": [
+     "আমার ভালো সময় কবে আসবে?",
+     "২০২৭ আমার কেমন যাবে?"
+    ],
+    "banglish": [
+     "bhalo somoy kobe asbe?",
+     "next year kemon jabe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "9 (luck)",
+     "1",
+     "11",
+     "5"
+    ],
+    "lords": [
+     "9th lord, lagna lord"
+    ],
+    "karakas": [
+     "Jupiter"
+    ],
+    "vargas": []
+   },
+   "judge": [
+    "Engine 'general' + current dasha + Jupiter/Saturn transits from Moon."
+   ],
+   "timing": [
+    "Timing engine window [have]: Vimshottari maha/antar/pratyantar links + Jupiter/Saturn double transit + gochara from the Moon (utils/timing-engine.ts). topic general; year questions → summarise the year's dasha changes + transits + 1-2 areas that shine."
+   ],
+   "say": [
+    "Window or year summary with 2 areas (e.g. career up, spend carefully) + one focus."
+   ],
+   "example": "Your luck picks up clearly from June 2027: Jupiter moves into your luck house and your Jupiter sub-period begins. 2027 is strongest for learning and career moves; money needs a careful hand in the first half.",
+   "must_include": [
+    "window or year summary",
+    "1-2 life areas",
+    "one focus"
+   ],
+   "never": [
+    "doom years",
+    "shared ingress date as personal event"
+   ],
+   "edge_cases": [
+    "'How is today?' → daily horoscope / lucky (not engine)."
+   ],
+   "app": {
+    "have": [
+     "engine topic general",
+     "horoscope-period.ts / forecast.ts"
+    ],
+    "missing": [
+     "year-summary assembler for chat"
+    ]
+   },
+   "sources": [
+    "BPHS dasha chapters",
+    "PD ch.26"
+   ]
+  },
+  {
+   "id": "other_profile",
+   "group": "Subject & data",
+   "title": "Questions about another person (sister, partner, child, parent)",
+   "engine_topic": "(topic of the question)",
+   "intent_today": "subject.other → matched profile or decline otherMissing",
+   "answer_types": [
+    "when",
+    "what",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "When will my sister get married?",
+     "Will my son get a job soon?",
+     "How is my mother's health?"
+    ],
+    "hi": [
+     "मेरी बहन की शादी कब होगी?",
+     "मेरे बेटे की नौकरी कब लगेगी?"
+    ],
+    "hinglish": [
+     "meri behen ki shaadi kab hogi?",
+     "bhai ki job kab lagegi?"
+    ],
+    "bn": [
+     "আমার বোনের বিয়ে কবে হবে?",
+     "ছেলের চাকরি কবে হবে?"
+    ],
+    "banglish": [
+     "amar boner biye kobe?",
+     "chheler chakri kobe hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "Primary: the other person's own chart. Secondary only (no profile): bhavat bhavam from the user's chart (3rd younger sibling, 11th elder sibling, 5th child, 4th mother, 9th father, 7th spouse) [std] - general only, no timing."
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "judge": [
+    "If a saved profile matches the relation → read that chart and say whose chart it is.",
+    "No profile → ask to add their birth details (decline otherMissing); never time someone else's events from the user's chart."
+   ],
+   "timing": [
+    "Engine on the other person's chart only."
+   ],
+   "say": [
+    "'Reading [name]'s chart…'; same category rules; respectful about third-party privacy."
+   ],
+   "example": "Reading Priya's chart: the strongest window for her marriage is February to September 2027, peaking around May, when Venus's sub-period activates her partnership house.",
+   "must_include": [
+    "uses the other person's chart (named) or asks for their details",
+    "same category rules"
+   ],
+   "never": [
+    "reading the user's chart as the other person's",
+    "timing from the user's chart for others",
+    "gossip-like judgements"
+   ],
+   "edge_cases": [
+    "Two matching profiles (two sisters) → ask which one.",
+    "Partner in a marriage/children question = the couple (user)",
+    "Minor child → minor rules (no romance)."
+   ],
+   "app": {
+    "have": [
+     "findSubject + relationMatches",
+     "decline otherMissing",
+     "context marks 'not the user'"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "[app] plan.ts",
+    "BPHS (bhavat bhavam) [std]"
+   ]
+  },
+  {
+   "id": "minor",
+   "group": "Subject & data",
+   "title": "Minors (under 18)",
+   "engine_topic": "education (redirect)",
+   "intent_today": "age < 18 + adult topic → decline minorRomance",
+   "answer_types": [
+    "when",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "(16-year-old) When will I get a girlfriend?",
+     "(15) When will I marry?"
+    ],
+    "hi": [
+     "(15 साल) मेरी शादी कब होगी?"
+    ],
+    "hinglish": [
+     "(16) meri gf kab banegi?"
+    ],
+    "bn": [
+     "(১৬) আমার প্রেম কবে হবে?"
+    ],
+    "banglish": [
+     "(15) amar biye kobe?"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "Romance/marriage/children → no timing; redirect to studies, friendships, growth."
+   ],
+   "timing": [
+    "Education window only."
+   ],
+   "say": [
+    "Kind, not preachy: 'that's for later; right now your chart shines for…' + study window."
+   ],
+   "example": "That's a question for a few years from now. Right now your chart is strongest for studies and friendships: your study house gets Jupiter's support from January to August 2027, a great time to build your skills.",
+   "must_include": [
+    "no romance/marriage timing",
+    "redirect to studies/growth",
+    "kind tone"
+   ],
+   "never": [
+    "romance/marriage timing",
+    "lecturing",
+    "sexual content"
+   ],
+   "edge_cases": [
+    "Parent asking about a minor's future marriage → general, no timing, 'later in life'.",
+    "Minor in distress → crisis/mental-health rules apply."
+   ],
+   "app": {
+    "have": [
+     "minorRomance decline",
+     "ageLine in context"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "[app]"
+   ]
+  },
+  {
+   "id": "elderly",
+   "group": "Subject & data",
+   "title": "Elderly users / questions about elders",
+   "engine_topic": "(topic)",
+   "intent_today": "children 50+ → elderChildren decline",
+   "answer_types": [
+    "what",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "(68) How will my retirement years be?",
+     "Will my father recover?"
+    ],
+    "hi": [
+     "रिटायरमेंट के बाद का समय कैसा रहेगा?"
+    ],
+    "hinglish": [
+     "papa jaldi theek honge?"
+    ],
+    "bn": [
+     "অবসরের পর সময় কেমন কাটবে?"
+    ],
+    "banglish": [
+     "babar sorir kobe sarbe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "topic houses as usual"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "judge": [
+    "Same rules; emphasise wellbeing, family, spirituality, purpose; health → doctor."
+   ],
+   "timing": [
+    "Engine as usual; no childbirth timing 50+; never longevity."
+   ],
+   "say": [
+    "Respectful, unhurried, practical."
+   ],
+   "example": "Your coming years look settled and family-centred: Jupiter supports your home house from 2027. It's a good time for travel to places that matter to you and for passing on your experience.",
+   "must_include": [
+    "respectful tone",
+    "doctor for health"
+   ],
+   "never": [
+    "lifespan/death",
+    "'last years' phrasing"
+   ],
+   "edge_cases": [
+    "Grandchildren questions → 5th from 5th (9th) or the child's profile; gentle."
+   ],
+   "app": {
+    "have": [
+     "elderChildren decline",
+     "death decline"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "NCGR",
+    "[app]"
+   ]
+  },
+  {
+   "id": "no_birth_time",
+   "group": "Subject & data",
+   "title": "No birth time / approximate time / no place",
+   "engine_topic": "(topic)",
+   "intent_today": "notes noTime/noPlace",
+   "answer_types": [
+    "when",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "I don't know my birth time, can you still predict?",
+     "My birth time is approximate"
+    ],
+    "hi": [
+     "मुझे जन्म का समय नहीं पता, फिर भी बता सकते हैं?"
+    ],
+    "hinglish": [
+     "birth time nahi pata, chalega?"
+    ],
+    "bn": [
+     "জন্মসময় জানি না, তাও বলতে পারবেন?"
+    ],
+    "banglish": [
+     "birth time jani na, hobe?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "Chandra lagna (houses from the Moon)"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": [
+     "No D9 lagna / D10 / D7 / D24 without a reliable time"
+    ]
+   },
+   "judge": [
+    "Moon-based houses; dasha balance uncertain if the Moon could change nakshatra that day (engine nakshatraUncertain)."
+   ],
+   "timing": [
+    "Engine windows with lowered confidence; say approximate."
+   ],
+   "say": [
+    "Answer anyway, add one short caveat, invite adding the time (birth certificate, hospital record, family)."
+   ],
+   "example": "Yes. Without a birth time I read your houses from your Moon sign, which still gives a useful picture, though timing is approximate. If you can find the time (birth certificate or a family member's memory), add it in your profile for sharper answers.",
+   "must_include": [
+    "answers anyway",
+    "one-line approximate caveat",
+    "how to improve (add time)"
+   ],
+   "never": [
+    "refusing to answer",
+    "lagna-based claims",
+    "D9/D10-based claims"
+   ],
+   "edge_cases": [
+    "Rectification requests → explain events-based rectification is not supported yet [missing]."
+   ],
+   "app": {
+    "have": [
+     "Chandra lagna fallback",
+     "noTime/noPlace/nakshatraUncertain notes",
+     "rising-border flag"
+    ],
+    "missing": [
+     "rectification",
+     "varga stability flags"
+    ]
+   },
+   "sources": [
+    "[std] Chandra lagna practice",
+    "[app]"
+   ]
+  },
+  {
+   "id": "past_event_verification",
+   "group": "Subject & data",
+   "title": "Past events / verification (\"did I…\", \"when was…\")",
+   "engine_topic": "(topic) past=true",
+   "intent_today": "past → engine search backwards",
+   "answer_types": [
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Did I have a bad phase in 2019?",
+     "When was my strongest career period so far?",
+     "Was 2022 good for my marriage chances?"
+    ],
+    "hi": [
+     "क्या 2020 में मेरा बुरा समय था?",
+     "पिछली नौकरी का योग कब था?"
+    ],
+    "hinglish": [
+     "2021 me mera time kharab tha kya?"
+    ],
+    "bn": [
+     "২০২০ সালে কি আমার খারাপ সময় ছিল?",
+     "আগে কবে চাকরির ভালো সময় ছিল?"
+    ],
+    "banglish": [
+     "2019 e ki amar kharap somoy chilo?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "topic houses"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "judge": [
+    "Engine past windows; dasha history (getLifeChapters).",
+    "Use as verification of birth time: if the user's real events match windows, confidence rises [std practice]."
+   ],
+   "timing": [
+    "Past windows; never future windows in a past answer."
+   ],
+   "say": [
+    "'The chart shows [period] as the likeliest stretch for that; does that match what happened?' Invite confirmation."
+   ],
+   "example": "Your chart marks mid-2019 to early 2020 as a heavy stretch: Saturn's sub-period ran then, and Saturn was pressing on your Moon. Does that match what you went through? If it does, it also tells us your birth time is reliable.",
+   "must_include": [
+    "past window from engine/dasha",
+    "invites confirmation"
+   ],
+   "never": [
+    "future dates",
+    "claiming certainty about what happened",
+    "judging past choices"
+   ],
+   "edge_cases": [
+    "Past + future mixed ('I lost my job in 2023, when will I get one?') → future job timing; past as context.",
+    "Past bereavement → compassion; no 'it was destined'."
+   ],
+   "app": {
+    "have": [
+     "engine past mode",
+     "dasha timeline"
+    ],
+    "missing": [
+     "rectification use of past events"
+    ]
+   },
+   "sources": [
+    "KNR timing",
+    "[app]"
+   ]
+  },
+  {
+   "id": "yes_no",
+   "group": "Question forms",
+   "title": "Yes/no questions (\"Will I get the visa?\")",
+   "engine_topic": "(topic)",
+   "intent_today": "timing only if a cue word; yes/no not an answer type",
+   "answer_types": [
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Will I get the visa?",
+     "Will I get the job at Google?",
+     "Will she say yes?"
+    ],
+    "hi": [
+     "क्या मुझे वीज़ा मिलेगा?",
+     "क्या मेरी नौकरी लगेगी?"
+    ],
+    "hinglish": [
+     "visa milega ya nahi?"
+    ],
+    "bn": [
+     "ভিসা পাব কি?",
+     "চাকরিটা হবে তো?"
+    ],
+    "banglish": [
+     "visa ta hobe to?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "topic houses"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "judge": [
+    "Promise strength (3.10) + whether now/near future is inside an engine window."
+   ],
+   "timing": [
+    "Engine window: 'the chart favours it most between X and Y'."
+   ],
+   "say": [
+    "Likelihood word first ('the chart is supportive / mixed / slow for this right now'), window, what tips it (preparation)."
+   ],
+   "example": "The chart is supportive: you're entering a favourable stretch for travel abroad from November 2026 to June 2027, so applying now falls in a good period. The decision rests on your documents, so make them complete and consistent.",
+   "must_include": [
+    "likelihood word (not bare yes/no)",
+    "window",
+    "what the person can do"
+   ],
+   "never": [
+    "bare 'yes'/'no'",
+    "guarantee",
+    "'100%'"
+   ],
+   "edge_cases": [
+    "Yes/no about another person's feelings ('does he love me?') → can't read minds; offer relationship dynamics/compatibility."
+   ],
+   "app": {
+    "have": [
+     "engine windows",
+     "intent timing cues ('will i ever', 'this year')"
+    ],
+    "missing": [
+     "yes_no answer type",
+     "'currently inside window?' fact in plan"
+    ]
+   },
+   "sources": [
+    "NCGR",
+    "[app]"
+   ]
+  },
+  {
+   "id": "exact_date_or_name",
+   "group": "Question forms",
+   "title": "Exact date / exact day / partner's name requests",
+   "engine_topic": "(topic)",
+   "intent_today": "exactDate → narrow; partnerName canned",
+   "answer_types": [
+    "when",
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "Give me the exact date of my marriage",
+     "What will my wife's name be?",
+     "Which day exactly will I get the job?"
+    ],
+    "hi": [
+     "शादी की सही तारीख बताओ",
+     "मेरी पत्नी का नाम क्या होगा?"
+    ],
+    "hinglish": [
+     "exact date batao",
+     "uska naam kis letter se hoga?"
+    ],
+    "bn": [
+     "বিয়ের সঠিক তারিখ বলুন",
+     "বউয়ের নাম কী হবে?"
+    ],
+    "banglish": [
+     "exact date bolo",
+     "naam er prothom okkhor ki?"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "Life events: no exact day; narrow to the peak month (pratyantar)."
+   ],
+   "timing": [
+    "Peak month from engine; Muhurat for chosen actions."
+   ],
+   "say": [
+    "Explain briefly that charts show periods; give the peak month; for an action they choose, offer the Muhurat tab. Names/initials → canned decline + traits/meeting instead."
+   ],
+   "example": "A chart can't pin a life event to one day, but it can narrow the season: within your window, the peak is around May 2027. When you're choosing the wedding date itself, the Muhurat tab and your family priest can help pick the day.",
+   "must_include": [
+    "no exact day",
+    "peak month",
+    "muhurat pointer for chosen days",
+    "name → decline + traits"
+   ],
+   "never": [
+    "exact day for a life event",
+    "name/initial",
+    "repeating the full window unchanged"
+   ],
+   "edge_cases": [
+    "Second insistence → stay kind, same boundary, offer something new (traits, preparation)."
+   ],
+   "app": {
+    "have": [
+     "exactDate → 'narrow' note",
+     "partnerName canned"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "[app]",
+    "NCGR"
+   ]
+  },
+  {
+   "id": "death_lifespan",
+   "group": "Question forms",
+   "title": "Death / lifespan / accidents",
+   "engine_topic": null,
+   "intent_today": "safety death → decline",
+   "answer_types": [
+    "when",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "When will I die?",
+     "How long will my father live?",
+     "Will I have an accident?"
+    ],
+    "hi": [
+     "मेरी मृत्यु कब होगी?",
+     "मेरी आयु कितनी है?"
+    ],
+    "hinglish": [
+     "meri age kitni hai kundli me?"
+    ],
+    "bn": [
+     "আমার আয়ু কত?",
+     "বাবা কতদিন বাঁচবেন?"
+    ],
+    "banglish": [
+     "ami kobe morbo?"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "No reading. Ayurdaya methods exist in the texts but are not used, by policy."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "Kind decline + offer wellbeing guidance / health-supportive windows + doctor if worried."
+   ],
+   "example": "That's something I don't predict: no one can read lifespan reliably, and it only creates worry. What I can do is show you the periods when your energy is strongest and when to take extra care of your health, if that would help.",
+   "must_include": [
+    "declines kindly",
+    "offers a helpful alternative"
+   ],
+   "never": [
+    "any lifespan/death/accident timing",
+    "maraka talk",
+    "'dangerous period' fear"
+   ],
+   "edge_cases": [
+    "Terminally ill relative → compassion; no timing; suggest support.",
+    "'Accident yoga?' → decline fear; safe-driving advice ok."
+   ],
+   "app": {
+    "have": [
+     "DEATH regex → decline death"
+    ],
+    "missing": [
+     "accident phrasing coverage"
+    ]
+   },
+   "sources": [
+    "NCGR",
+    "[app]"
+   ]
+  },
+  {
+   "id": "baby_sex",
+   "group": "Question forms",
+   "title": "Baby's sex",
+   "engine_topic": null,
+   "intent_today": "safety childSex → canned",
+   "answer_types": [
+    "which"
+   ],
+   "patterns": {
+    "en": [
+     "Will it be a boy or a girl?",
+     "Is there a son in my chart?"
+    ],
+    "hi": [
+     "लड़का होगा या लड़की?"
+    ],
+    "hinglish": [
+     "beta hoga ya beti?"
+    ],
+    "bn": [
+     "ছেলে হবে না মেয়ে?"
+    ],
+    "banglish": [
+     "chhele hobe na meye?"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "No reading (PCPNDT Act; ethics)."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "Kind decline; offer child-timing or wellbeing; congratulate if pregnant; doctor for pregnancy care."
+   ],
+   "example": "I don't predict a baby's sex, and it's also not permitted in India. What I can say is that your chart shows warm support around your children's house; wishing you a healthy, happy pregnancy, and please keep up regular check-ups with your doctor.",
+   "must_include": [
+    "declines",
+    "kind alternative"
+   ],
+   "never": [
+    "sex prediction or hints",
+    "'son yoga'"
+   ],
+   "edge_cases": [
+    "Asked indirectly ('which colour clothes to buy for the baby?') → decline politely."
+   ],
+   "app": {
+    "have": [
+     "CHILD_SEX regex canned"
+    ],
+    "missing": []
+   },
+   "sources": [
+    "PCPNDT Act 1994"
+   ]
+  },
+  {
+   "id": "off_topic",
+   "group": "Question forms",
+   "title": "Off-topic (coding, news, recipes, homework)",
+   "engine_topic": null,
+   "intent_today": "none → model",
+   "answer_types": [
+    "other"
+   ],
+   "patterns": {
+    "en": [
+     "Write me a Python script",
+     "Who will win the IPL?",
+     "What's the capital of Peru?"
+    ],
+    "hi": [
+     "कल मौसम कैसा रहेगा?"
+    ],
+    "hinglish": [
+     "cricket match kaun jeetega?"
+    ],
+    "bn": [
+     "আজকের খবর কী?"
+    ],
+    "banglish": [
+     "ranna shekhao"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "Not an astrology question."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "One line: 'I'm your astrology guide, so that's outside what I do' + offer 2 related things it can do."
+   ],
+   "example": "That's outside what I can help with; I'm here for your chart. I can tell you about your career strengths or your best period this year, if you'd like.",
+   "must_include": [
+    "polite scope statement",
+    "offer of in-scope help"
+   ],
+   "never": [
+    "answering at length",
+    "predicting sports/elections/markets",
+    "rudeness"
+   ],
+   "edge_cases": [
+    "Election/market predictions → decline (mundane astrology not offered).",
+    "Astronomy facts → can answer briefly."
+   ],
+   "app": {
+    "have": [],
+    "missing": [
+     "off-topic intent"
+    ]
+   },
+   "sources": [
+    "[app]"
+   ]
+  },
+  {
+   "id": "greeting",
+   "group": "Question forms",
+   "title": "Greetings / small talk / thanks",
+   "engine_topic": null,
+   "intent_today": "isPureGreeting → greeting route",
+   "answer_types": [
+    "other"
+   ],
+   "patterns": {
+    "en": [
+     "Hi",
+     "Thanks!"
+    ],
+    "hi": [
+     "नमस्ते"
+    ],
+    "hinglish": [
+     "hello ji"
+    ],
+    "bn": [
+     "নমস্কার"
+    ],
+    "banglish": [
+     "kemon acho?"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "None."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "Short warm greeting in the user's language + 2-3 suggestions (career, love, this year)."
+   ],
+   "example": "Namaste! I'm ready with your chart. Would you like to look at your career, relationships, or how the coming year looks?",
+   "must_include": [
+    "short warm greeting",
+    "2-3 suggestions"
+   ],
+   "never": [
+    "unsolicited predictions/dates",
+    "long monologue"
+   ],
+   "edge_cases": [
+    "'Thanks' after an answer → short acknowledgement, no new reading."
+   ],
+   "app": {
+    "have": [
+     "greeting route"
+    ],
+    "missing": [
+     "thanks/ack handling"
+    ]
+   },
+   "sources": [
+    "[app]"
+   ]
+  },
+  {
+   "id": "abusive_or_very_short",
+   "group": "Question forms",
+   "title": "Abusive, testing, or very short messages (\"??\", \"ok\", \"bakwas\")",
+   "engine_topic": null,
+   "intent_today": "none / inherited topic",
+   "answer_types": [
+    "other"
+   ],
+   "patterns": {
+    "en": [
+     "this is useless",
+     "??",
+     "ok",
+     "you're a fraud"
+    ],
+    "hi": [
+     "बकवास"
+    ],
+    "hinglish": [
+     "kuch bhi bolte ho"
+    ],
+    "bn": [
+     "ফালতু"
+    ],
+    "banglish": [
+     "bhul bolcho"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "Detect frustration; inherited topic for '?' / 'and?'."
+   ],
+   "timing": [
+    "None unless inherited."
+   ],
+   "say": [
+    "Calm, non-defensive, one line; offer to be more specific or ask what they'd like; for '?' after an answer, give a shorter, clearer version with something new."
+   ],
+   "example": "Sorry that didn't help. Tell me what you'd like to know, for example which career fits you or when a change is likely, and I'll be specific.",
+   "must_include": [
+    "calm boundary/acknowledgement",
+    "offer to be specific"
+   ],
+   "never": [
+    "arguing",
+    "insults",
+    "repeating the previous answer"
+   ],
+   "edge_cases": [
+    "Slurs/harassment → brief boundary, no engagement with abuse.",
+    "'ok'/'thanks' → short ack."
+   ],
+   "app": {
+    "have": [],
+    "missing": [
+     "frustration/ack intent"
+    ]
+   },
+   "sources": [
+    "[app]"
+   ]
+  },
+  {
+   "id": "follow_up_clarification",
+   "group": "Question forms",
+   "title": "Follow-ups: \"which domain?\", \"be specific\", \"why?\", \"what should I do now?\"",
+   "engine_topic": "(inherited)",
+   "intent_today": "inherited topic (timing only)",
+   "answer_types": [
+    "which",
+    "why",
+    "how",
+    "when"
+   ],
+   "patterns": {
+    "en": [
+     "Which domain?",
+     "Be more specific",
+     "Why?",
+     "What should I do now?",
+     "When exactly?"
+    ],
+    "hi": [
+     "कौन सा फील्ड?",
+     "क्यों?",
+     "अब मुझे क्या करना चाहिए?"
+    ],
+    "hinglish": [
+     "thoda specific batao",
+     "kyu?"
+    ],
+    "bn": [
+     "কোন লাইনে?",
+     "কেন?",
+     "এখন কী করব?"
+    ],
+    "banglish": [
+     "ektu specific bolo",
+     "keno?"
+    ]
+   },
+   "factors": {
+    "houses": [
+     "inherited topic's"
+    ],
+    "lords": [],
+    "karakas": [],
+    "vargas": []
+   },
+   "judge": [
+    "Resolve the follow-up's answer type: which → options; why → reasons; how/what now → steps; when exactly → peak month (narrow)."
+   ],
+   "timing": [
+    "Only 'when exactly' adds dates (narrow to peak). Others must not repeat the window."
+   ],
+   "say": [
+    "30-90 words, only new information; reference the previous answer briefly ('the June-2027 window I mentioned')."
+   ],
+   "example": "(after a job-timing answer) Which domain? → Your strongest career planet is Mercury, so analytical roles fit best: data analysis, accounts/finance, or technical writing. Aim your applications there in the window I mentioned.",
+   "must_include": [
+    "answers the follow-up type",
+    "new information",
+    "short"
+   ],
+   "never": [
+    "repeating the previous answer",
+    "re-stating the same window when not asked",
+    "changing topic"
+   ],
+   "edge_cases": [
+    "'Why?' after a decline → explain the policy kindly.",
+    "'And money?' → new topic money (not inherited).",
+    "'What else?' → second window or another area."
+   ],
+   "app": {
+    "have": [
+     "inherited topic",
+     "'narrow' note for when-exactly"
+    ],
+    "missing": [
+     "answer-type for follow-ups",
+     "previous-answer memory for no-repeat",
+     "which/why/how plans"
+    ]
+   },
+   "sources": [
+    "[app]"
+   ]
+  },
+  {
+   "id": "contradictory_follow_up",
+   "group": "Question forms",
+   "title": "Contradictory follow-ups / corrections (\"but I'm already married\")",
+   "engine_topic": "(re-routed)",
+   "intent_today": "alreadyHave on the new message only",
+   "answer_types": [
+    "other",
+    "when",
+    "what"
+   ],
+   "patterns": {
+    "en": [
+     "But I'm already married",
+     "I already have a job",
+     "I'm not a student",
+     "I said my sister, not me"
+    ],
+    "hi": [
+     "पर मेरी शादी तो हो चुकी है",
+     "मेरी नौकरी पहले से है"
+    ],
+    "hinglish": [
+     "main already married hu yaar"
+    ],
+    "bn": [
+     "আমার তো বিয়ে হয়ে গেছে",
+     "আমি তো চাকরি করি"
+    ],
+    "banglish": [
+     "ami to already bibahito"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "Store the correction as a fact for the thread; re-route: married + marriage → marital harmony / children; employed + job → promotion/change; wrong subject → switch."
+   ],
+   "timing": [
+    "New topic's engine window if the re-routed question is a when."
+   ],
+   "say": [
+    "Acknowledge in one phrase ('Thanks for telling me'), then answer the corrected question; do not defend the previous answer."
+   ],
+   "example": "Thanks for telling me. Then the question is really how your marriage goes from here: your partnership house is well supported, and the coming period from March to October 2027 is especially warm for the two of you. It's also a good stretch if you're planning a child.",
+   "must_include": [
+    "acknowledges the correction",
+    "re-answers the corrected topic",
+    "no repetition"
+   ],
+   "never": [
+    "ignoring the correction",
+    "repeating marriage timing",
+    "arguing"
+   ],
+   "edge_cases": [
+    "Persistent facts should carry across turns (profile notes) [missing].",
+    "User says birth time is wrong → suggest editing profile."
+   ],
+   "app": {
+    "have": [
+     "alreadyHave within one message"
+    ],
+    "missing": [
+     "thread-level fact memory",
+     "re-route rules"
+    ]
+   },
+   "sources": [
+    "[app]"
+   ]
+  },
+  {
+   "id": "sensitive_identity",
+   "group": "Question forms",
+   "title": "Caste, religion, sexuality, skin colour, disability",
+   "engine_topic": null,
+   "intent_today": "none",
+   "answer_types": [
+    "other",
+    "yes_no"
+   ],
+   "patterns": {
+    "en": [
+     "Will my wife be fair?",
+     "Will I marry someone of my caste?",
+     "Am I gay according to my chart?"
+    ],
+    "hi": [
+     "क्या मेरी शादी अपनी जाति में होगी?"
+    ],
+    "hinglish": [
+     "wife gori hogi kya?"
+    ],
+    "bn": [
+     "বউ কি ফর্সা হবে?",
+     "নিজের জাতে বিয়ে হবে?"
+    ],
+    "banglish": [
+     "bou forsha hobe?"
+    ]
+   },
+   "factors": {},
+   "judge": [
+    "Do not read these from a chart."
+   ],
+   "timing": [
+    "None."
+   ],
+   "say": [
+    "Gently decline the attribute; offer traits/values/compatibility instead; affirm dignity."
+   ],
+   "example": "A chart doesn't decide things like caste or complexion, and I'd rather not guess at them. What it does show is your partner's nature: caring, steady and family-minded. I can also tell you where you're likely to meet.",
+   "must_include": [
+    "declines attribute gently",
+    "offers a meaningful alternative"
+   ],
+   "never": [
+    "caste/colour/religion predictions",
+    "sexuality diagnosis",
+    "stereotypes"
+   ],
+   "edge_cases": [
+    "LGBTQ+ users asking about relationships → answer normally with neutral words."
+   ],
+   "app": {
+    "have": [],
+    "missing": [
+     "identity-attribute guard"
+    ]
+   },
+   "sources": [
+    "[app]"
+   ]
+  }
+ ],
+ "divisional_formulas": {
+  "notation": "lambda = sidereal longitude; s = floor(lambda/30) (0=Aries); d = lambda mod 30; odd(s) = s % 2 == 0 (Aries, Gemini, ...)",
+  "D9": "floor(lambda / (10/3)) mod 12",
+  "D10": "k=floor(d/3); odd: (s+k) mod 12; even: (s+8+k) mod 12",
+  "D7": "k=floor(d/(30/7)); odd: (s+k) mod 12; even: (s+6+k) mod 12",
+  "D4": "k=floor(d/7.5); (s+3k) mod 12",
+  "D12": "k=floor(d/2.5); (s+k) mod 12",
+  "D24": "k=floor(d/1.25); odd: (4+k) mod 12; even: (3+k) mod 12",
+  "D3": "k=floor(d/10); (s+4k) mod 12",
+  "D2": "odd: d<15 -> Leo else Cancer; even: d<15 -> Cancer else Leo",
+  "combustion_orbs": {
+   "Moon": 12,
+   "Mars": 17,
+   "Mercury": [
+    14,
+    12
+   ],
+   "Jupiter": 11,
+   "Venus": [
+    10,
+    8
+   ],
+   "Saturn": 15,
+   "note": "[direct, retrograde]"
+  },
+  "source": "BPHS ch.6 (verified verse pages: enjoylearningsanskrit.com/scriptures/parashara/chapter-6)"
+ },
+ "top_missing_capabilities": [
+  {
+   "rank": 1,
+   "id": "answer_type_routing",
+   "title": "Answer-type + sub-category routing in intent.ts",
+   "effort": "M"
+  },
+  {
+   "rank": 2,
+   "id": "career_field_resolver",
+   "title": "Career-field resolver (Brihat Jataka 10.1 + field map)",
+   "effort": "M"
+  },
+  {
+   "rank": 3,
+   "id": "navamsa_d9",
+   "title": "Navamsa D9 + vargottama + stability flag",
+   "effort": "S"
+  },
+  {
+   "rank": 4,
+   "id": "composite_strength",
+   "title": "Composite planet strength (dignity ext., house, dig bala, combustion, aspects)",
+   "effort": "M"
+  },
+  {
+   "rank": 5,
+   "id": "current_phase_facts",
+   "title": "Current-phase facts (dasha lords' houses, maha-antar relation)",
+   "effort": "S"
+  },
+  {
+   "rank": 6,
+   "id": "no_repeat_followups",
+   "title": "No-repeat memory + follow-up plans",
+   "effort": "S"
+  },
+  {
+   "rank": 7,
+   "id": "functional_nature",
+   "title": "Functional benefic/malefic + yogakaraka per lagna",
+   "effort": "S"
+  },
+  {
+   "rank": 8,
+   "id": "combustion",
+   "title": "Combustion",
+   "effort": "S"
+  },
+  {
+   "rank": 9,
+   "id": "partner_facts",
+   "title": "Partner traits + meeting context + love/arranged signals",
+   "effort": "S"
+  },
+  {
+   "rank": 10,
+   "id": "planet_aspects",
+   "title": "Planet-to-planet aspects and conjunctions",
+   "effort": "S"
+  },
+  {
+   "rank": 11,
+   "id": "yogas",
+   "title": "Conservative yoga detection",
+   "effort": "M"
+  },
+  {
+   "rank": 12,
+   "id": "feature_routes",
+   "title": "Chat routes to compatibility, muhurat, lucky, sade sati/manglik facts",
+   "effort": "S"
+  },
+  {
+   "rank": 13,
+   "id": "safety_extensions",
+   "title": "Safety extensions (divorce, emergency symptoms, identity attributes, distress, corrections)",
+   "effort": "S"
+  },
+  {
+   "rank": 14,
+   "id": "other_vargas",
+   "title": "D10 / D7 / D4 / D24 / D12 with stability flags",
+   "effort": "S"
+  },
+  {
+   "rank": 15,
+   "id": "vedha_ashtakavarga",
+   "title": "Gochara vedha + Ashtakavarga SAV",
+   "effort": "L"
+  }
+ ]
+}

@@ -333,3 +333,125 @@ export function displayText(value: string): string {
   if (out.endsWith('\n')) out += '​';
   return out;
 }
+
+// ─── Words ───────────────────────────────────────────────────────────────────
+
+/**
+ * Letters that make up a word for suggestions, word-delete and caret
+ * snapping: Latin letters (with accents), apostrophes inside words, and
+ * Devanagari / Bengali letters + marks (not danda or digits). Kept as
+ * explicit ranges — Hermes' regex Unicode property support isn't relied on.
+ */
+export function isWordCode(c: number): boolean {
+  return (
+    inRange(c, 0x41, 0x5a) || inRange(c, 0x61, 0x7a) ||
+    inRange(c, 0xc0, 0x24f) && c !== 0xd7 && c !== 0xf7 ||
+    inRange(c, 0x0300, 0x036f) ||
+    inRange(c, 0x0900, 0x0963) || inRange(c, 0x0971, 0x097f) ||
+    inRange(c, 0x0980, 0x09e3) || inRange(c, 0x09f0, 0x09f1) || c === 0x09fc ||
+    isJoiner(c)
+  );
+}
+
+const isApostrophe = (c: number) => c === 0x27 || c === 0x2019;
+
+/** Start of the word that ends at `caret` (apostrophes inside a word count). */
+export function wordStartBefore(text: string, caret: number): number {
+  let i = caret;
+  while (i > 0) {
+    const c = text.charCodeAt(i - 1);
+    if (isWordCode(c)) { i--; continue; }
+    // "don't": an apostrophe between letters belongs to the word.
+    if (isApostrophe(c) && i - 2 >= 0 && isWordCode(text.charCodeAt(i - 2)) && i < caret) { i--; continue; }
+    break;
+  }
+  return i;
+}
+
+/** End of the word that starts at or contains `caret`. */
+export function wordEndAfter(text: string, caret: number): number {
+  let i = caret;
+  while (i < text.length) {
+    const c = text.charCodeAt(i);
+    if (isWordCode(c)) { i++; continue; }
+    if (isApostrophe(c) && i + 1 < text.length && isWordCode(text.charCodeAt(i + 1)) && i > 0 && isWordCode(text.charCodeAt(i - 1))) { i++; continue; }
+    break;
+  }
+  return i;
+}
+
+/**
+ * Deletes the word before the caret (used by a long-held backspace):
+ * trailing spaces, then the word — or a run of punctuation when there's no
+ * word — like the phone keyboards' word-at-a-time delete.
+ */
+export function deleteWordBackward(state: EditState): EditState {
+  const s = clampCaret(state);
+  if (s.caret === 0) return s;
+  let i = s.caret;
+  while (i > 0 && (s.text[i - 1] === ' ' || s.text[i - 1] === ' ')) i--;
+  if (i > 0 && s.text[i - 1] === '\n') {
+    // A newline is its own "word" (only when nothing else was skipped).
+    if (i === s.caret) i--;
+    return splice(s, i, s.caret, '');
+  }
+  const ws = wordStartBefore(s.text, i);
+  if (ws < i) i = ws;
+  else {
+    // Punctuation / emoji run: delete clusters until a space or word.
+    while (i > 0) {
+      const c = s.text.charCodeAt(i - 1);
+      if (c === 0x20 || c === 0x0a || c === 0xa0 || isWordCode(c)) break;
+      i = clusterStartBefore(s.text, i);
+    }
+    if (i === s.caret) i = clusterStartBefore(s.text, i);
+  }
+  return splice(s, i, s.caret, '');
+}
+
+/** Replaces [from, to) with `input` (used for a selection), respecting maxLength. */
+export function replaceRange(state: EditState, from: number, to: number, input: string, maxLength?: number): EditState | null {
+  const a = Math.max(0, Math.min(from, to, state.text.length));
+  const b = Math.min(state.text.length, Math.max(from, to));
+  const cleared = splice(state, a, b, '');
+  return input ? insertText(cleared, input, maxLength) : cleared;
+}
+
+/** Moves the caret by `n` grapheme clusters (negative = left). */
+export function moveByClusters(text: string, caret: number, n: number): number {
+  let c = Math.max(0, Math.min(caret, text.length));
+  if (n < 0) {
+    for (let k = 0; k < -n && c > 0; k++) c = clusterStartBefore(text, c);
+  } else {
+    for (let k = 0; k < n && c < text.length; k++) c = clusterEndAfter(text, c);
+  }
+  return c;
+}
+
+/** End of the grapheme cluster that starts at `start`. */
+export function clusterEndAfter(text: string, start: number): number {
+  if (start >= text.length) return text.length;
+  // Walk forward one code point at a time until the cluster before the
+  // candidate end starts at `start` and the next code point starts a new one.
+  let end = start + (isHigh(text.charCodeAt(start)) && start + 1 < text.length ? 2 : 1);
+  while (end < text.length) {
+    const next = end + (isHigh(text.charCodeAt(end)) && end + 1 < text.length ? 2 : 1);
+    if (clusterStartBefore(text, next) <= start) end = next;
+    else break;
+  }
+  return end;
+}
+
+/** Snaps a caret index to the nearest cluster boundary (never inside a conjunct / emoji). */
+export function snapToCluster(text: string, caret: number): number {
+  const c = Math.max(0, Math.min(caret, text.length));
+  if (c === 0 || c === text.length) return c;
+  // Walk forward from a known boundary (just after a space / newline, or 0).
+  let b = c;
+  while (b > 0 && text[b - 1] !== ' ' && text[b - 1] !== '\n') b--;
+  for (;;) {
+    const e = clusterEndAfter(text, b);
+    if (e >= c) return c - b <= e - c ? b : e;
+    b = e;
+  }
+}

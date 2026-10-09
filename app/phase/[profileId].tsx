@@ -14,6 +14,7 @@ import { askLanguage, formatMonthYear, tAsk, tPlanet } from '@/utils/i18n';
 import { phaseMeaning } from '@/utils/transits';
 import { FONTS, RADIUS } from '@/constants/themes';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
+import { openGuruChat } from '@/utils/guru-nav';
 
 export default function LifePhaseScreen() {
   const styles = useIndicStyles(baseStyles);
@@ -57,8 +58,7 @@ export default function LifePhaseScreen() {
     const q = tAsk(`phase:question.${isYou ? 'you' : 'other'}`, {
       name: first, planet: tPlanet(sub.lord, lng), date: formatMonthYear(sub.end, lng),
     });
-    const tempId = 't_' + Math.random().toString(36).slice(2, 11);
-    router.push(`/chat/${tempId}?profileId=${profile.id}&isNew=true&ask=${encodeURIComponent(q)}`);
+    openGuruChat('saga', profile.id, q);
   };
 
   return (
