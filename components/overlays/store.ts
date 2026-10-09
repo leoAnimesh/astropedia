@@ -9,6 +9,7 @@
  * that navigation triggered by an action never races the overlay.
  */
 import type { IconName } from '@/components/atoms/Icon';
+import { logger } from '@/utils/logger';
 
 export type DialogActionStyle = 'default' | 'cancel' | 'destructive';
 
@@ -126,10 +127,10 @@ export function removeOverlay(id: number) {
     try {
       const r = result?.onPress?.();
       if (r && typeof (r as Promise<void>).catch === 'function') {
-        (r as Promise<void>).catch((e) => console.warn('[overlay] action failed', e));
+        (r as Promise<void>).catch((e) => logger.warn('[overlay] action failed', e));
       }
     } catch (e) {
-      console.warn('[overlay] action failed', e);
+      logger.warn('[overlay] action failed', e);
     }
     (entry.resolve as (v: unknown) => void)(result);
   }, 60);

@@ -7,6 +7,7 @@
  */
 
 import type { View } from 'react-native';
+import { logger } from './logger';
 
 export async function captureAndShare(
   ref:      View | null,
@@ -28,6 +29,6 @@ export async function captureAndShare(
       await Sharing.shareAsync(uri, { mimeType: 'image/png' });
     }
   } catch (e) {
-    console.warn('[share] capture failed', e);
+    logger.warn('[share] capture failed', e);
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Stack, router, type Href } from 'expo-router';
+import { Stack, router, type ErrorBoundaryProps, type Href } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -32,6 +32,12 @@ import { handleModelAppState, startModelSetup, useModelSetup } from '@/utils/mod
 import { resumePendingModelSwitch } from '@/utils/model-switch';
 import { ModelSetupOverlay } from '@/components/overlays/ModelSetupOverlay';
 import { setupNotifications, refreshScheduledNotifications } from '@/utils/notifications';
+import { installGlobalErrorHandlers, logger } from '@/utils/logger';
+import { AppErrorScreen } from '@/components/errors/AppErrorScreen';
+
+// Uncaught errors and unhandled promise rejections are recorded (logged only;
+// production prints nothing). Render errors land on ErrorBoundary below.
+installGlobalErrorHandlers();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,6 +49,11 @@ LogBox.ignoreLogs(['[React Native ExecuTorch] No content-length header']);
 // (utils/model-download.ts). Start as early as possible so it is usually
 // done by the end of onboarding; a verified install is found in milliseconds.
 startModelSetup();
+
+/** Any render error below the root: a friendly en/hi/bn recovery screen (restart / try again / share details). */
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <AppErrorScreen {...props} />;
+}
 
 export const unstable_settings = {
   anchor: '(app)',
@@ -130,7 +141,7 @@ export default function RootLayout() {
         setupNotifications();
         refreshScheduledNotifications().catch(() => {});
       } catch (e) {
-        console.error('Bootstrap error', e);
+        logger.error('Bootstrap error', e);
       } finally {
         setDbReady(true);
       }
@@ -251,6 +262,8 @@ export default function RootLayout() {
           <Stack.Screen name="report/pair" />
           <Stack.Screen name="archived" />
           <Stack.Screen name="settings/model" />
+          <Stack.Screen name="about/index" />
+          <Stack.Screen name="legal/[doc]" />
         </Stack.Protected>
       </Stack>
 
