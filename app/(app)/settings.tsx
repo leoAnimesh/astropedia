@@ -16,7 +16,7 @@ import { Icon, type IconName } from '@/components/atoms/Icon';
 import { showDialog } from '@/components/overlays';
 import { overlayPalette } from '@/components/overlays/palette';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
-import { FONTS, LIGHT_TOKENS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
+import { FONTS, RADIUS, ACCENT_THEMES, type AccentKey } from '@/constants/themes';
 import { clearAllData, type Profile } from '@/utils/database';
 import { Storage } from '@/utils/storage';
 import { Cache } from '@/utils/cache';
@@ -51,12 +51,11 @@ const NOTIFY: Record<NotifyKey, {
   set: (v: boolean) => void;
   schedule: () => Promise<void>;
   cancel: () => Promise<void>;
-  isNew?: boolean;
 }> = {
   daily:    { get: Storage.getDailyHoroscopePush, set: Storage.setDailyHoroscopePush, schedule: () => scheduleDailyHoroscope(), cancel: cancelDailyHoroscope },
   transit:  { get: Storage.getTransitAlerts, set: Storage.setTransitAlerts, schedule: () => scheduleTransitAlerts(null), cancel: cancelTransitAlerts },
-  festival: { get: Storage.getFestivalReminders, set: Storage.setFestivalReminders, schedule: scheduleFestivalReminders, cancel: cancelFestivalReminders, isNew: true },
-  rahu:     { get: Storage.getRahuKaalPush, set: Storage.setRahuKaalPush, schedule: scheduleRahuKaalHeadsUp, cancel: cancelRahuKaalHeadsUp, isNew: true },
+  festival: { get: Storage.getFestivalReminders, set: Storage.setFestivalReminders, schedule: scheduleFestivalReminders, cancel: cancelFestivalReminders },
+  rahu:     { get: Storage.getRahuKaalPush, set: Storage.setRahuKaalPush, schedule: scheduleRahuKaalHeadsUp, cancel: cancelRahuKaalHeadsUp },
 };
 const NOTIFY_KEYS: NotifyKey[] = ['daily', 'transit', 'festival', 'rahu'];
 
@@ -346,7 +345,7 @@ export default function SettingsScreen() {
             })}
           </View>
 
-          {divider}
+          <View style={[styles.divider, styles.appearanceDivider, { backgroundColor: theme.hairline }]} />
 
           <Text style={[styles.rowLabel, { color: theme.ink }]}>{t('appearance.theme')}</Text>
           <Text style={[styles.rowSub, { color: theme.muted }]}>{t('appearance.themeSub')}</Text>
@@ -385,9 +384,6 @@ export default function SettingsScreen() {
               <View style={styles.flex}>
                 <View style={styles.toggleLabelRow}>
                   <Text style={[styles.toggleLabel, { color: theme.ink }]}>{t(`notifications.${key}`)}</Text>
-                  {NOTIFY[key].isNew && (
-                    <Text style={[styles.newBadge, { backgroundColor: theme.accentMuted, color: LIGHT_TOKENS.ink2 }]}>{t('notifications.new')}</Text>
-                  )}
                 </View>
                 <Text style={[styles.toggleSub, { color: theme.muted }]}>{t(`notifications.${key}Sub`)}</Text>
               </View>
@@ -603,6 +599,7 @@ const baseStyles = StyleSheet.create({
     height:    StyleSheet.hairlineWidth,
     alignSelf: 'stretch',
   },
+  appearanceDivider: { marginVertical: 18 },
   cardRow: {
     flexDirection: 'row',
     alignItems:    'center',
@@ -683,15 +680,6 @@ const baseStyles = StyleSheet.create({
     fontSize:   12.5,
     lineHeight: 17,
     marginTop:  2,
-  },
-  newBadge: {
-    fontFamily:        FONTS.monoRegular,
-    fontSize:          9.5,
-    letterSpacing:     0.9,
-    paddingHorizontal: 6,
-    paddingVertical:   2,
-    borderRadius:      RADIUS.pill,
-    overflow:          'hidden',
   },
   status: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
