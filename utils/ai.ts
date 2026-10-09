@@ -2,6 +2,7 @@ import type { Profile } from './database';
 import { getAppLanguage } from './i18n';
 import type { AgentId } from '../constants/gurus';
 import { runPipeline, runReading, runTitle, runFollowUps } from './agent/pipeline';
+import type { ThreadFacts } from './agent/thread-facts';
 import { activeAdapter } from './agent/adapters';
 import { estimateTokens, sagaHistory } from './agent/adapters/gemma21';
 
@@ -43,11 +44,15 @@ export type AIRequest = {
   agent?:      AgentId;
   /** All of the user's profiles, so "when will my sister marry" can read hers. */
   people?:     Profile[];
+  /** What the user told us earlier in this thread (threads.facts, parsed). */
+  facts?:      ThreadFacts | null;
 };
 
 export type AIStreamResult = {
   stream: AsyncGenerator<string>;
   tier:   ModelTier;
+  /** The thread's facts after this message (store them with the thread). */
+  facts?: ThreadFacts;
 };
 
 // ─── Reply language ───────────────────────────────────────────────────────────
@@ -213,9 +218,10 @@ export function stripMarkdown(text: string): string {
  */
 export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
   const mode = req.mode ?? 'saga';
-  const { stream, tier } = await runPipeline({
+  const { stream, tier, plan } = await runPipeline({
     profile: req.profile,
     people: req.people,
+    facts: req.facts,
     history: req.history,
     question: req.userMessage,
     lang: replyLanguage(req.userMessage),
@@ -225,7 +231,7 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     waitMs: LOCAL_LLM_WAIT_MS,
     offlineReply: OFFLINE_REPLY,
   });
-  return { stream, tier };
+  return { stream, tier, facts: plan.thread };
 }
 
 export async function askAI(req: AIRequest): Promise<{ text: string; tier: ModelTier }> {

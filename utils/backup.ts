@@ -102,6 +102,8 @@ export const BACKUP_TABLES: readonly TableSpec[] = [
       { name: 'archived_at',          kind: 'textNull', default: null },
       { name: 'pinned',               kind: 'bool',     default: 0, since: 3 },
       { name: 'pinned_at',            kind: 'textNull', default: null, since: 3 },
+      // Missing in v1-8 backups: no stated facts yet (utils/agent/thread-facts.ts).
+      { name: 'facts',                kind: 'textNull', default: null, since: 9 },
       { name: 'created_at',           kind: 'text',     default: 'now' },
       { name: 'updated_at',           kind: 'text',     default: 'now' },
       { name: 'synced_at',            kind: 'textNull', default: null },

@@ -45,6 +45,8 @@ export type Thread = {
   archivedAt: string | null;
   pinned: boolean;
   pinnedAt: string | null;
+  /** Thread facts memory (JSON of utils/agent/thread-facts.ts ThreadFacts), or null. */
+  facts?: string | null;
   createdAt: string;
   updatedAt: string;
   syncedAt: string | null;
@@ -256,6 +258,7 @@ function rowToThread(row: Record<string, unknown>): Thread {
     archivedAt:         row.archived_at as string | null,
     pinned:             Boolean(row.pinned),
     pinnedAt:           (row.pinned_at as string | null) ?? null,
+    facts:              (row.facts as string | null) ?? null,
     createdAt:          row.created_at as string,
     updatedAt:          row.updated_at as string,
     syncedAt:           row.synced_at as string | null,
@@ -309,6 +312,7 @@ export async function updateThread(id: string, patch: Partial<Thread>): Promise<
   if (patch.lastMessagePreview !== undefined) { sets.push('last_message_preview = ?'); vals.push(patch.lastMessagePreview ?? null); }
   if (patch.archived           !== undefined) { sets.push('archived = ?');             vals.push(patch.archived ? 1 : 0); }
   if (patch.archivedAt         !== undefined) { sets.push('archived_at = ?');          vals.push(patch.archivedAt ?? null); }
+  if (patch.facts              !== undefined) { sets.push('facts = ?');                vals.push(patch.facts ?? null); }
   if (patch.pinned             !== undefined) {
     sets.push('pinned = ?');     vals.push(patch.pinned ? 1 : 0);
     sets.push('pinned_at = ?');  vals.push(patch.pinned ? new Date().toISOString() : null);

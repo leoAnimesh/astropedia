@@ -12,6 +12,7 @@ import {
   type Thread,
 } from '@/utils/database';
 import { questionTitle } from '@/utils/agent/strings';
+import { parseFacts, serializeFacts } from '@/utils/agent/thread-facts';
 import { streamAI, askThreadTitle, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
 import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
 import { isModelReady, waitForModelReady } from '@/utils/model-download';
@@ -126,6 +127,9 @@ export function isChatErrorMessage(m: Pick<Message, 'role' | 'content'>): boolea
     (['en', 'hi', 'bn'] as const).some((lng) => i18n.t(key, { lng, postProcess: [] }) === m.content || i18n.t(key, { lng }) === m.content),
   ) || m.content === "I couldn't load the on-device model right now. Try again in a moment.";
 }
+
+/** Latest facts per thread this session (the Thread prop can be a render behind). */
+const threadFactsCache = new Map<string, string>();
 
 export function useChat(
   thread:    Thread | null,
@@ -261,8 +265,16 @@ export function useChat(
         content: toEnglish[m.content] ?? m.content,
       }));
       const people = useProfileStore.getState().profiles;
-      const request = { profile, people, history: recentHistory, userMessage: text.trim(), mode, userName, agent };
-      let { stream, tier } = await streamAI(request);
+      // The thread's facts memory ("I'm already married", "I meant my sister"): stored with the thread.
+      const storedFacts = threadFactsCache.get(threadId) ?? thread.facts ?? null;
+      const request = { profile, people, history: recentHistory, userMessage: text.trim(), mode, userName, agent, facts: parseFacts(storedFacts) };
+      let { stream, tier, facts } = await streamAI(request);
+      const nextFacts = facts ? serializeFacts(facts) : null;
+      if (nextFacts && nextFacts !== storedFacts) {
+        threadFactsCache.set(threadId, nextFacts);
+        updateThread(threadId, { facts: nextFacts }).catch(() => { /* kept in memory for this session */ });
+        useThreadStore.getState().updateThread(threadId, thread.profileId, { facts: nextFacts });
+      }
 
       // The model is still downloading (utils/model-download.ts): wait for
       // it with the "waking" status; the inline pill shows the progress.

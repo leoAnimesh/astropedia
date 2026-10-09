@@ -185,6 +185,16 @@ export const MIGRATIONS: Migration[] = [
       `CREATE INDEX IF NOT EXISTS idx_reports_viewed ON reports(profile_id, viewed_at)`,
     ],
   },
+  {
+    version: 9,
+    sql: [
+      // Per-thread facts memory (utils/agent/thread-facts.ts, JSON): what the
+      // user told the chat about themselves ("I'm already married", "I meant
+      // my sister"), so later turns are planned with it after the message
+      // has left the history window. Null until something is stated.
+      `ALTER TABLE threads ADD COLUMN facts TEXT`,
+    ],
+  },
 ];
 
 /** Latest migration version; written into backups as `schema`. */
