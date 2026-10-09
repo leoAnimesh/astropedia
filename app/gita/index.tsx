@@ -96,6 +96,7 @@ export default function GitaScreen() {
               <Text style={[styles.actionText, { color: theme.muted }]}>{t('common:share')}</Text>
             </Pressable>
           </View>
+          <Text style={[styles.small, { color: theme.muted }]}>{t('credit')}</Text>
         </View>
 
         <View style={[styles.forDay, { backgroundColor: theme.surface2 }]}>

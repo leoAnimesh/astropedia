@@ -186,6 +186,7 @@ export default function AboutScreen() {
           {divider}
           {navRow('book', t('legal.licences'), () => router.push('/legal/licenses'), t('legal.licencesSub'))}
           <Text style={[styles.notice, { color: theme.muted }]}>{t('legal.placesCredit')}</Text>
+          <Text style={[styles.notice, { color: theme.muted }]}>{t('legal.gitaCredit')}</Text>
         </View>
 
         {/* Data deletion */}
