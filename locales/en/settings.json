@@ -159,12 +159,13 @@
       "btnDone": "Done"
     },
     "progressNote": "Your current model keeps working until the new one is ready.",
+    "progressResumed": "Picking up where the download stopped. Your current model keeps working until the new one is ready.",
     "cancelDownload": "Cancel download",
     "cancelledTitle": "Download cancelled",
     "cancelledMessage": "{{current}} is still in use.",
     "failedTitle": "Couldn't switch model",
     "failed": {
-      "offline": "No internet connection. Your current model is still in use.",
+      "offline": "No internet connection. Your current model is still in use, and the download picks up where it stopped next time.",
       "no-space": "Not enough free space. Your current model is still in use.",
       "verify": "The download was damaged. Your current model is still in use; please try again.",
       "unavailable": "This model can't be downloaded right now. Your current model is still in use.",

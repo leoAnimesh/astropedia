@@ -16,6 +16,15 @@
  * A "wipe owed" flag is written before the commit and cleared after the
  * wipe, so a kill in between finishes the wipe at the next launch
  * (resumePendingModelSwitch, app/_layout.tsx).
+ *
+ * Resume: until the commit, the switch is recorded in MMKV
+ * (model_switch_pending_v1, with the catalog entry). A killed app, or a
+ * switch that ran out of retries offline, keeps its partial files; the
+ * download continues from them (Android: HTTP Range from the .part size; iOS:
+ * resume data checkpointed to MMKV every 24 MB) at the next launch once setup
+ * is ready, or when the picker is reopened (resumeInterruptedSwitch). The
+ * SHA-256 check still runs on the finished files. Cancel, a hash mismatch or
+ * an unavailable file clears the record and the partial files.
  */
 import { AppState, Platform } from 'react-native';
 import * as Device from 'expo-device';
@@ -29,7 +38,7 @@ import {
   NoSpaceError, beginModelSwitch, commitSwitchedModel, discardSwitchDownload, downloadForSwitch, endModelSwitch,
   freeDiskBytes, getInstallMarker, useModelSetup, warmSwitchedModel, type DownloadControl,
 } from './model-download';
-import { backoffDelayMs, errorMessage } from './model-download-logic';
+import { backoffDelayMs, errorMessage, parsePendingSwitch, planSwitchResume, type PendingSwitch } from './model-download-logic';
 import {
   INITIAL_SWITCH_STATE, MODEL_SWITCH_WIPE_SQL, canCancelSwitch, classifySwitchError, deviceSupport, isModelDerivedKey,
   pendingWipeAction, reduceSwitch, selectionToStore, shouldRetrySwitch, switchActive,
@@ -40,6 +49,13 @@ import { useThreadStore } from '@/stores/thread-store';
 import { useSeenStore } from '@/stores/seen-store';
 
 export const useModelSwitch = create<SwitchState>(() => INITIAL_SWITCH_STATE);
+/** The running switch continues an interrupted download (the picker says so). */
+export const useSwitchResumed = create<{ resumed: boolean }>(() => ({ resumed: false }));
+
+function readPending(): PendingSwitch<CatalogEntry> | null {
+  const p = parsePendingSwitch<CatalogEntry>(Storage.getModelSwitchPending());
+  return p && typeof p.entry === 'object' && !!p.entry.spec && p.entry.id === p.id ? p : null;
+}
 
 function dispatch(e: SwitchEvent) {
   useModelSwitch.setState((s) => reduceSwitch(s, e));
@@ -91,8 +107,29 @@ export function canStartSwitch(): boolean {
 /** Replace the installed model with `entry` (see the file comment). Never rejects. */
 export function switchModel(entry: CatalogEntry): Promise<SwitchResult> {
   if (!canStartSwitch()) return Promise.resolve({ ok: false, failure: 'busy' });
+  useSwitchResumed.setState({ resumed: false });
   _inflight = run(entry).finally(() => { _inflight = null; });
   return _inflight;
+}
+
+let _pickerOpen = false;
+/** The picker (app/settings/model.tsx) is on screen and reports the result itself. */
+export function setModelPickerOpen(open: boolean): void {
+  _pickerOpen = open;
+}
+
+/** A switch resumed at launch finished while the picker was closed: say so (the chats were cleared). */
+function noticeResumedDone(entry: CatalogEntry): void {
+  if (_pickerOpen) return;
+  try {
+    const { showDialog } = require('../components/overlays/store') as typeof import('../components/overlays/store');
+    const i18n = (require('./i18n') as typeof import('./i18n')).default;
+    showDialog({
+      title: i18n.t('settings:modelPicker.doneTitle'),
+      message: i18n.t('settings:modelPicker.doneMessage', { name: entry.name }),
+    });
+  } catch { /* no UI (tests) */ }
+  dispatch({ type: 'reset' });
 }
 
 /** Cancel before the new model starts replacing the old one; later it is ignored. */
@@ -106,19 +143,85 @@ export function cancelModelSwitch(): void {
 /** Back to idle after a finished / cancelled / failed switch (the picker dismissed its card). */
 export function resetModelSwitch(): void {
   dispatch({ type: 'reset' });
+  useSwitchResumed.setState({ resumed: false });
+}
+
+/** The switch running now (also one resumed at launch), so the picker can follow it to the end. */
+export function currentSwitch(): Promise<SwitchResult> | null {
+  return _inflight;
+}
+
+/**
+ * Continue an interrupted switch download (see the file comment), or null
+ * when there is none / one can't start now. A stale or already-installed
+ * record is dropped with its partial files.
+ */
+export function resumeInterruptedSwitch(): Promise<SwitchResult> | null {
+  if (_inflight) return _inflight;
+  const p = readPending();
+  const action = planSwitchResume(p, getInstallMarker()?.version ?? null, new Date());
+  if (action === 'none') {
+    if (Storage.getModelSwitchPending()) Storage.clearModelSwitchPending(); // malformed
+    return null;
+  }
+  if (action === 'drop') {
+    Storage.clearModelSwitchPending();
+    discardSwitchDownload(p!.version).catch(() => {});
+    log('dropped interrupted switch', p!.id);
+    return null;
+  }
+  if (!canStartSwitch()) return null;
+  log('resuming interrupted switch', p!.id);
+  const entry = p!.entry;
+  const res = switchModel(entry);
+  useSwitchResumed.setState({ resumed: true });
+  return res.then((r) => {
+    if (r.ok) noticeResumedDone(entry);
+    return r;
+  });
+}
+
+/** At launch: resume an interrupted switch once setup is ready and the app is in front. */
+function scheduleSwitchResume(): void {
+  if (!Storage.getModelSwitchPending()) return;
+  let done = false;
+  let unsub: (() => void) | null = null;
+  const tryStart = () => {
+    if (done || useModelSetup.getState().phase !== 'ready' || AppState.currentState !== 'active') return;
+    done = true;
+    unsub?.();
+    resumeInterruptedSwitch();
+  };
+  unsub = useModelSetup.subscribe(tryStart);
+  tryStart();
 }
 
 async function run(entry: CatalogEntry): Promise<SwitchResult> {
   dispatch({ type: 'reset' });
   const support = deviceSupport(entry, getDeviceInfo(), false);
   if (!support.ok) {
+    // An interrupted download of a model this device can't take any more goes.
+    if (readPending()?.id === entry.id) {
+      Storage.clearModelSwitchPending();
+      await discardSwitchDownload(entry.spec.version).catch(() => {});
+    }
     const failure: SwitchFailure = support.reason === 'disk' ? 'no-space' : 'unsupported';
     dispatch({ type: 'fail', failure, message: `unsupported: ${support.reason}` });
     return { ok: false, failure };
   }
 
+  // Record the switch until its commit, so a kill or a lost connection resumes
+  // it; a different model's leftover download goes.
+  const prev = readPending();
+  if (prev && prev.version !== entry.spec.version) await discardSwitchDownload(prev.version).catch(() => {});
+  const pending: PendingSwitch<CatalogEntry> = {
+    entry, id: entry.id, version: entry.spec.version,
+    startedAt: prev && prev.version === entry.spec.version ? prev.startedAt : new Date().toISOString(),
+  };
+  Storage.setModelSwitchPending(JSON.stringify(pending));
+
   dispatch({ type: 'start', targetId: entry.id, total: entry.sizeBytes });
-  const ctl: DownloadControl = { cancelled: false, task: null, checkpoints: false };
+  const ctl: DownloadControl = { cancelled: false, task: null, checkpoints: true };
   _ctl = ctl;
   await beginModelSwitch();
   try {
@@ -145,11 +248,13 @@ async function run(entry: CatalogEntry): Promise<SwitchResult> {
     }
     if (ctl.cancelled || useModelSwitch.getState().phase !== 'verifying') throw new SwitchError('cancelled', 'cancelled after verify');
 
-    // 2. Commit (no cancel from here on).
+    // 2. Commit (no cancel from here on). The pending record goes once the new
+    // install record is written: a kill before that resumes into verify + commit.
     dispatch({ type: 'install' });
     _ctl = null;
     Storage.setModelSwitchWipe(JSON.stringify({ to: entry.id } satisfies PendingWipe));
     await commitSwitchedModel(entry.spec);
+    Storage.clearModelSwitchPending();
     Storage.setSelectedModel(selectionToStore(entry));
 
     // 3. Wipe what the old model wrote.
@@ -172,10 +277,13 @@ async function run(entry: CatalogEntry): Promise<SwitchResult> {
     log('switch stopped', failure, errorMessage(e));
     if (failure === 'cancelled') dispatch({ type: 'cancel' });
     else dispatch({ type: 'fail', failure, message: errorMessage(e) });
-    // The installed model was never touched. Partial files go, except after a
-    // dropped connection (a retry continues them; the next launch's cleanup
-    // removes them otherwise).
-    if (failure !== 'offline') await discardSwitchDownload(entry.id).catch(() => {});
+    // The installed model was never touched. Partial files go (cancel, hash
+    // mismatch, file gone, no space), except after a dropped connection: those
+    // stay with the pending record, and the next launch or the picker resumes.
+    if (failure !== 'offline') {
+      Storage.clearModelSwitchPending();
+      await discardSwitchDownload(entry.spec.version).catch(() => {});
+    }
     return { ok: false, failure };
   } finally {
     _ctl = null;
@@ -206,6 +314,8 @@ export async function wipeModelData(): Promise<void> {
  * the switch never committed).
  */
 export async function resumePendingModelSwitch(): Promise<void> {
+  // An interrupted download (not yet committed) resumes once setup is ready.
+  scheduleSwitchResume();
   const raw = Storage.getModelSwitchWipe();
   if (!raw) return;
   let pending: PendingWipe | null = null;

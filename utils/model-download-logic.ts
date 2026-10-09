@@ -353,6 +353,57 @@ export function planFileResume(args: {
   return { kind: 'fresh', deletePartial: partialSize != null, dropSaved: !!saved };
 }
 
+// ─── Interrupted model switch ────────────────────────────────────────────────
+
+/**
+ * A Settings model switch whose download hasn't finished (MMKV
+ * model_switch_pending_v1). `entry` is the catalog entry as chosen, so the
+ * resume needs no network to know what to fetch.
+ */
+export type PendingSwitch<E = unknown> = { entry: E; id: string; version: string; startedAt: string };
+
+/** An interrupted switch older than this starts over instead (stale URLs / resume data). */
+export const SWITCH_RESUME_MAX_DAYS = 14;
+
+/** Parses the stored record; null when absent or malformed. */
+export function parsePendingSwitch<E = unknown>(raw: string | null | undefined): PendingSwitch<E> | null {
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw) as PendingSwitch<E>;
+    const ok = p && typeof p === 'object' && typeof p.id === 'string' && typeof p.version === 'string'
+      && typeof p.startedAt === 'string' && !Number.isNaN(Date.parse(p.startedAt)) && p.entry != null;
+    return ok ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What to do with an interrupted switch at launch / when the picker opens:
+ *   'none'   nothing pending;
+ *   'drop'   already installed (the commit happened), or too old: forget it
+ *            and delete its partial files;
+ *   'resume' continue the download from its partial files (Android: Range
+ *            from the .part size; iOS: the saved resume data), then verify
+ *            (size + SHA-256) and commit as usual.
+ */
+export function planSwitchResume(
+  pending: Pick<PendingSwitch, 'version' | 'startedAt'> | null,
+  installedVersion: string | null,
+  now: Date,
+): 'none' | 'drop' | 'resume' {
+  if (!pending) return 'none';
+  if (pending.version === installedVersion) return 'drop';
+  const age = now.getTime() - Date.parse(pending.startedAt);
+  if (!Number.isFinite(age) || age < 0 || age > SWITCH_RESUME_MAX_DAYS * 86_400_000) return 'drop';
+  return 'resume';
+}
+
+/** Model-folder names a cleanup must keep for an interrupted switch's partial download. */
+export function switchKeep(pending: Pick<PendingSwitch, 'version'> | null, installedVersion: string | null): string[] {
+  return pending && pending.version !== installedVersion ? [pending.version] : [];
+}
+
 /** Space to keep free beyond the download itself (tmp files, SQLite, MMKV). */
 export const DISK_HEADROOM_BYTES = 64 * 1024 * 1024;
 

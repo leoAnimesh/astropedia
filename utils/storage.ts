@@ -204,6 +204,16 @@ export const Storage = {
   getModelSwitchWipe: (): string | null => getStorage().getString('model_switch_wipe_v1') ?? null,
   setModelSwitchWipe: (json: string): void => getStorage().set('model_switch_wipe_v1', json),
   clearModelSwitchWipe: (): void => getStorage().delete('model_switch_wipe_v1'),
+  // A switch whose download hasn't finished ({ entry, startedAt }): kept across
+  // launches so the download resumes (next launch or reopening the picker);
+  // cleared at the commit, on cancel and on a failure that can't resume.
+  getModelSwitchPending: (): string | null => getStorage().getString('model_switch_pending_v1') ?? null,
+  setModelSwitchPending: (json: string): void => getStorage().set('model_switch_pending_v1', json),
+  clearModelSwitchPending: (): void => getStorage().delete('model_switch_pending_v1'),
+  // iOS resume data of that switch download (same shape as model_resume_v1, kept apart from setup's).
+  getModelSwitchResume: (): string | null => getStorage().getString('model_switch_resume_v1') ?? null,
+  setModelSwitchResume: (json: string): void => getStorage().set('model_switch_resume_v1', json),
+  clearModelSwitchResume: (): void => getStorage().delete('model_switch_resume_v1'),
   // The full-screen "Preparing Saga…" overlay owed after onboarding; kept
   // until the model is ready so a relaunch mid-download shows it again.
   getModelOverlayPending: (): boolean => getStorage().getBoolean('model_overlay_pending') ?? false,

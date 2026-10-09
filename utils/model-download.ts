@@ -26,7 +26,10 @@
  * Model choice: Settings → Change model (utils/model-switch.ts) installs a
  * model from the catalog (utils/model-catalog.ts; the manifest's `catalog`,
  * files possibly in other Hugging Face repos, pinned by commit) through
- * downloadForSwitch / commitSwitchedModel below. The choice is persisted
+ * downloadForSwitch / commitSwitchedModel below. A switch download resumes
+ * the same way (its own MMKV resume record, model_switch_resume_v1), and its
+ * folder survives launch cleanups while the switch is pending
+ * (model_switch_pending_v1), so a killed or offline switch continues. The choice is persisted
  * (Storage model_selected_v1) and launches keep that model instead of
  * following `latest`; setup never runs while a switch owns the models folder.
  */
@@ -40,8 +43,8 @@ import { CHAT_FORMAT, CONTEXT_VERSION, MODEL_FOLLOWUPS } from './local-llm';
 import { configureExecuTorchRuntime, setActiveAdapter } from './agent/adapters';
 import {
   INITIAL_SETUP_STATE, adapterOf, adapterRunnable, basename, classifyError, decideAfterError, errorMessage, fileUrl, isFailurePhase,
-  markerFor, markerMatchesSpec, markerUsable, parseManifest, planFileResume, reduceSetup,
-  remainingBytes, resolveUrl, selectModel, spaceShortfall, totalBytes, verifyFile,
+  markerFor, markerMatchesSpec, markerUsable, parseManifest, parsePendingSwitch, planFileResume, reduceSetup,
+  remainingBytes, resolveUrl, selectModel, spaceShortfall, switchKeep, totalBytes, verifyFile,
   type AppModelCaps, type InstallMarker, type ModelFile, type ModelFileRole,
   type ModelSpec, type ResumePlan, type SavedResume, type Selection, type SetupEvent, type SetupState,
 } from './model-download-logic';
@@ -223,8 +226,10 @@ function availableSpace(): number | null {
 }
 
 /** Delete every models/ entry except the given versions. */
-async function cleanupVersions(keep: string[]) {
+async function cleanupVersions(keepVersions: string[]) {
   const root = docPath(MODELS_DIR);
+  // An interrupted Settings switch keeps its partial download for the resume.
+  const keep = [...keepVersions, ...switchKeep(parsePendingSwitch(Storage.getModelSwitchPending()), readMarker()?.version ?? null)];
   try {
     if (!(await fs.exists(root))) return;
     for (const name of await fs.ls(root)) {
@@ -249,11 +254,25 @@ function readMarker(): InstallMarker | null {
   }
 }
 
-function readResume(): SavedResume | null {
-  const raw = Storage.getModelResume();
+function parseResume(raw: string | null): SavedResume | null {
   if (!raw) return null;
   try { return JSON.parse(raw) as SavedResume; } catch { return null; }
 }
+
+/** Where a download keeps its iOS resume checkpoint (setup and a Settings switch each have one). */
+type ResumeStore = { read: () => SavedResume | null; write: (r: SavedResume) => void; clear: () => void };
+
+const SETUP_RESUME: ResumeStore = {
+  read: () => parseResume(Storage.getModelResume()),
+  write: (r) => Storage.setModelResume(JSON.stringify(r)),
+  clear: () => Storage.clearModelResume(),
+};
+
+const SWITCH_RESUME: ResumeStore = {
+  read: () => parseResume(Storage.getModelSwitchResume()),
+  write: (r) => Storage.setModelSwitchResume(JSON.stringify(r)),
+  clear: () => Storage.clearModelSwitchResume(),
+};
 
 function appCaps(): AppModelCaps {
   return {
@@ -641,6 +660,8 @@ type FileJob = {
   atFinal: boolean;
   plan: ResumePlan;
   have: number;
+  /** Its iOS resume checkpoint record. */
+  store: ResumeStore;
 };
 
 /**
@@ -650,7 +671,7 @@ type FileJob = {
 export type DownloadControl = {
   cancelled: boolean;
   task: DownloadTask | null;
-  /** iOS resume checkpoints (setup only; a switch download starts over after a kill). */
+  /** iOS: checkpoint resume data every CHECKPOINT_BYTES (to model_switch_resume_v1) so a kill loses little. */
   checkpoints: boolean;
 };
 
@@ -659,7 +680,7 @@ export class DownloadCancelledError extends Error {
 }
 
 /** Plan each file of `spec`: what is already on disk, and how to resume the rest. */
-async function prepareJobs(spec: ModelSpec, resumable: boolean): Promise<FileJob[]> {
+async function prepareJobs(spec: ModelSpec, store: ResumeStore): Promise<FileJob[]> {
   const dir = versionDir(spec.version);
   await ensureDir(dir);
   await excludeFromBackup(MODELS_DIR);
@@ -684,20 +705,21 @@ async function prepareJobs(spec: ModelSpec, resumable: boolean): Promise<FileJob
     const partPath = docPath(partRel);
     const finalSize = await sizeOf(finalPath);
     if (finalSize === file.size) {
-      jobs.push({ file, name, url, finalPath, partRel, partPath, atFinal: true, plan: { kind: 'complete' }, have: file.size });
+      jobs.push({ file, name, url, finalPath, partRel, partPath, atFinal: true, plan: { kind: 'complete' }, have: file.size, store });
       continue;
     }
     if (finalSize != null) await unlinkQuiet(finalPath);
     const plan = planFileResume({
       platform, expectedSize: file.size, partialSize: await sizeOf(partPath),
-      saved: resumable ? readResume() : null, url, version: spec.version, name,
+      saved: store.read(), url, version: spec.version, name,
     });
     if (plan.kind === 'fresh') {
       if (plan.deletePartial) await unlinkQuiet(partPath);
-      if (plan.dropSaved && resumable) Storage.clearModelResume();
+      if (plan.dropSaved) store.clear();
     }
     const have = plan.kind === 'complete' ? file.size : plan.kind === 'resume' ? plan.from : 0;
-    jobs.push({ file, name, url, finalPath, partRel, partPath, atFinal: false, plan, have });
+    if (plan.kind === 'resume') log('resuming', name, 'from', have, 'bytes');
+    jobs.push({ file, name, url, finalPath, partRel, partPath, atFinal: false, plan, have, store });
   }
   return jobs;
 }
@@ -734,8 +756,9 @@ async function verifyJobs(jobs: FileJob[], ctl?: DownloadControl): Promise<void>
     const sha256 = size === job.file.size ? await fs.hash(path, 'sha256') : null;
     const result = verifyFile(job.file, { size, sha256 });
     if (result !== 'ok') {
+      // A bad file never resumes: delete it and its checkpoint.
       await unlinkQuiet(path);
-      if (!ctl) Storage.clearModelResume();
+      job.store.clear();
       throw new Error(`verification failed for ${job.name}: ${result}`);
     }
   }
@@ -751,7 +774,7 @@ async function promoteJobs(jobs: FileJob[]): Promise<void> {
 }
 
 async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<void> {
-  const jobs = await prepareJobs(spec, true);
+  const jobs = await prepareJobs(spec, SETUP_RESUME);
   checkSpace(jobs);
 
   const total = totalBytes(spec);
@@ -799,7 +822,9 @@ export { NoSpaceError };
  * Download and verify `spec` into models/<version>/ next to the installed
  * model, without touching it or its install record. Throws NoSpaceError,
  * DownloadCancelledError (ctl.cancelled), network / HTTP errors or
- * "verification failed"; partial files are kept for a retry.
+ * "verification failed"; partial files (and the iOS checkpoint) are kept for
+ * a retry or a later resume, so a second call continues where this one
+ * stopped (Android: HTTP Range from the .part size; iOS: resume data).
  */
 export async function downloadForSwitch(
   spec: ModelSpec,
@@ -807,7 +832,7 @@ export async function downloadForSwitch(
   on: { start: (received: number, total: number) => void; progress: (received: number) => void; verify: () => void },
 ): Promise<void> {
   if (!remoteEnabled) throw new Error('on-device models are not available here');
-  const jobs = await prepareJobs(spec, false);
+  const jobs = await prepareJobs(spec, SWITCH_RESUME);
   checkSpace(jobs);
   on.start(jobs.reduce((n, j) => n + j.have, 0), totalBytes(spec));
   await fetchJobs(spec.version, jobs, on.progress, ctl);
@@ -831,6 +856,7 @@ export async function commitSwitchedModel(spec: ModelSpec): Promise<void> {
   const marker = markerFor(spec, new Date());
   Storage.setModelInstall(JSON.stringify(marker));
   Storage.clearModelResume();
+  SWITCH_RESUME.clear();
   activateInstalledAdapter(marker);
   useModelSetup.setState({ ...INITIAL_SETUP_STATE, phase: 'ready', version: spec.version, received: totalBytes(spec), total: totalBytes(spec) });
   dismissModelOverlay();
@@ -843,8 +869,9 @@ export function warmSwitchedModel(): void {
   warmModel();
 }
 
-/** Remove a cancelled / failed switch's partial files (the installed model's folder is kept). */
+/** Remove a cancelled / failed switch's partial files and checkpoint (the installed model's folder is kept). */
 export async function discardSwitchDownload(version: string): Promise<void> {
+  SWITCH_RESUME.clear();
   const installed = readMarker()?.version;
   if (version === installed) return;
   await unlinkQuiet(docPath(versionDir(version)));
@@ -911,7 +938,7 @@ async function downloadOne(version: string, job: FileJob, onBytes: (bytes: numbe
       // Stale iOS resume data (expired redirect, purged temp file) would fail
       // the same way forever; drop it so the retry starts over. Keep it when
       // the network was simply down.
-      if (!ctl && isIOS && classifyError(e) !== 'network') Storage.clearModelResume();
+      if (isIOS && !ctl?.cancelled && classifyError(e) !== 'network') job.store.clear();
       throw e;
     }
   } else {
@@ -925,20 +952,18 @@ async function downloadOne(version: string, job: FileJob, onBytes: (bytes: numbe
     let saved: string | undefined;
     try { saved = task.savable().resumeData; } catch { saved = undefined; }
     if (saved) {
-      Storage.setModelResume(JSON.stringify({
-        version, name: job.name, url: job.url, resumeData: saved, bytes: lastCheckpoint,
-      } satisfies SavedResume));
+      job.store.write({ version, name: job.name, url: job.url, resumeData: saved, bytes: lastCheckpoint });
       result = await guard(task.resumeAsync());
     } else {
       // The server gave no resume data: stop checkpointing and start over
       // (only the bytes since the start are lost, once).
       log('no resume data; checkpoints disabled for', job.name);
       checkpointsWork = false;
-      Storage.clearModelResume();
+      job.store.clear();
       task = fresh();
       result = await guard(task.downloadAsync());
     }
   }
-  if (isIOS && !ctl) Storage.clearModelResume();
+  if (isIOS) job.store.clear();
   if (ctl) ctl.task = null;
 }

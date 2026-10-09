@@ -14,7 +14,8 @@ import { FONTS, RADIUS } from '@/constants/themes';
 import { localizeDigits } from '@/utils/i18n';
 import { fetchCatalog, getInstallMarker, useModelSetup } from '@/utils/model-download';
 import {
-  cancelModelSwitch, canStartSwitch, getDeviceInfo, resetModelSwitch, switchModel, useModelSwitch,
+  cancelModelSwitch, canStartSwitch, currentSwitch, getDeviceInfo, resetModelSwitch, resumeInterruptedSwitch,
+  setModelPickerOpen, switchModel, useModelSwitch, useSwitchResumed, type SwitchResult,
 } from '@/utils/model-switch';
 import {
   FALLBACK_CATALOG, canCancelSwitch, currentEntryId, displayMB, pickerEntries, switchActive, switchPercent,
@@ -48,12 +49,15 @@ export default function ModelPickerScreen() {
   const [data, setData] = useState<Loaded | null>(null);
   const [err, setErr] = useState<{ id: string; failure: string } | null>(null);
   const mounted = useRef(true);
+  const dataRef = useRef<Loaded | null>(null);
+  useEffect(() => { dataRef.current = data; }, [data]);
 
   const phase    = useModelSwitch((s) => s.phase);
   const received = useModelSwitch((s) => s.received);
   const total    = useModelSwitch((s) => s.total);
   const retrying = useModelSwitch((s) => s.retrying);
   const targetId = useModelSwitch((s) => s.targetId);
+  const resumed  = useSwitchResumed((s) => s.resumed);
   const setupPhase = useModelSetup((s) => s.phase);
 
   useEffect(() => {
@@ -77,19 +81,39 @@ export default function ModelPickerScreen() {
       : e.description[lang];
   const mb = (bytes: number) => localizeDigits(String(displayMB(bytes)));
 
-  const runSwitch = async (entry: CatalogEntry) => {
-    setErr(null);
-    const res = await switchModel(entry);
+  /** Wait for a switch (started here, at launch, or resumed) and report how it ended. */
+  const follow = async (id: string, name: () => string, running: Promise<SwitchResult>) => {
+    const res = await running;
     if (res.ok) {
       await new Promise((r) => setTimeout(r, 700)); // let "Done" show on the button
       if (mounted.current) router.back();
-      await showDialog({ title: t('modelPicker.doneTitle'), message: t('modelPicker.doneMessage', { name: entry.name }) });
+      await showDialog({ title: t('modelPicker.doneTitle'), message: t('modelPicker.doneMessage', { name: name() }) });
     } else if (res.failure !== 'cancelled' && mounted.current) {
-      setErr({ id: entry.id, failure: res.failure });
+      setErr({ id, failure: res.failure });
     }
     resetModelSwitch();
     if (!res.ok && mounted.current) load().then((d) => { if (mounted.current) setData(d); }).catch(() => {});
   };
+
+  const runSwitch = (entry: CatalogEntry) => {
+    setErr(null);
+    return follow(entry.id, () => entry.name, switchModel(entry));
+  };
+
+  // Reopening the picker: follow a switch that is running (e.g. resumed at
+  // launch), or continue one a kill or a lost connection interrupted.
+  useEffect(() => {
+    setModelPickerOpen(true);
+    const live = currentSwitch() ?? resumeInterruptedSwitch();
+    if (live) {
+      const id = useModelSwitch.getState().targetId ?? '';
+      follow(id, () => dataRef.current?.all.find((e) => e.id === id)?.name ?? id, live);
+    } else if (!switchActive(useModelSwitch.getState())) {
+      resetModelSwitch(); // a finished switch nobody dismissed
+    }
+    return () => setModelPickerOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const confirm = (entry: CatalogEntry) => {
     if (!canStartSwitch()) {
@@ -209,7 +233,9 @@ export default function ModelPickerScreen() {
                     ) : null}
                     {isTarget && (
                       <View style={styles.progressFoot}>
-                        <Text style={[styles.note, styles.footNote, { color: theme.muted }]}>{t('modelPicker.progressNote')}</Text>
+                        <Text style={[styles.note, styles.footNote, { color: theme.muted }]}>
+                          {resumed ? t('modelPicker.progressResumed') : t('modelPicker.progressNote')}
+                        </Text>
                         {canCancelSwitch({ phase }) && (
                           <TouchableOpacity onPress={cancelModelSwitch} accessibilityRole="button" style={styles.cancelLink}>
                             <Text style={[styles.cancelText, { color: theme.accent }]}>{t('modelPicker.cancel')}</Text>
