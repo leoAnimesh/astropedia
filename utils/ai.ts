@@ -8,7 +8,7 @@ import {
 import { generateFollowUps, FOLLOWUPS_MAX_TOKENS, type FollowUpMessage } from './follow-ups';
 import i18n, { getAppLanguage } from './i18n';
 import {
-  cannedQuestion, createSentenceFilter, isCrisisMessage, isPureGreeting, isTimingQuestion, missingAdvice, readingScriptRatio,
+  cannedQuestion, createSentenceFilter, isCrisisMessage, isPureGreeting, isTimingQuestion, contextDates, unrelatedTransitDates, missingAdvice, readingScriptRatio,
   readingSeed, runGuarded, stripCountdowns, NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, type ReplyGuard,
 } from './reply-guards';
 import { classifyDeterministic, deterministicAnswer } from './deterministic';
@@ -219,15 +219,21 @@ async function* streamLocal(
 
 /** The checks for a chat reply (CONTEXT_VERSION 2 only; see utils/reply-guards.ts runGuarded). */
 function replyGuard(
-  lang: ReplyLang, names: (string | undefined)[], history: AIMessage[] = [], question?: string,
+  lang: ReplyLang, names: (string | undefined)[], history: AIMessage[] = [], question?: string, context?: string,
 ): ReplyGuard | null {
   if (CONTEXT_VERSION !== 2) return null;
   const previous = [...history].reverse().find(m => m.role === 'assistant')?.content;
   // Saga's "when" questions should get a month or year (Krishna's never do).
   const needsDate = question != null && isTimingQuestion(question);
   if (lang === 'en' && !previous && !needsDate) return null;
+  // The small model copies the one near-term transit date every chart shares
+  // ("from around Oct 2026") into unrelated timing answers: read the ingress
+  // months back from the prompt it was given and retry replies made only of them.
+  const dates = needsDate && context ? contextDates(context) : null;
   return {
     lang, previous, needsDate, today: needsDate ? todayIso() : undefined,
+    transitDates: dates ? unrelatedTransitDates(question, dates.transitDates) : undefined,
+    timingDates: dates?.timingDates,
     ignore: names.flatMap(n => (n ? [n.split(' ')[0]] : [])),
   };
 }
@@ -443,7 +449,7 @@ export async function streamAI(req: AIRequest): Promise<AIStreamResult> {
     ...sagaHistory(system, req.history, req.userMessage),
     { role: 'user', content: req.userMessage },
   ];
-  const guard = replyGuard(lang, [req.profile.name, req.userName], req.history, req.userMessage);
+  const guard = replyGuard(lang, [req.profile.name, req.userName], req.history, req.userMessage, system);
   if (CONTEXT_VERSION !== 2) {
     return { stream: streamLocal(messages, REPLY_MAX_TOKENS, { guard }), tier: 'executorch' };
   }
