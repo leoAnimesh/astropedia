@@ -9,7 +9,8 @@
  *    readings in Bengali and Hinglish/Banglish questions;
  *  - pure greetings answered with a full chart dump;
  *  - "when" questions answered without any month or year, or (v2.1) with only
- *    the current month;
+ *    the current month (questions the timing engine has no window for; the
+ *    engine's windows are checked and repaired by utils/agent/verify.ts);
  *  - (v2.1) baby's-sex and partner-name questions answered instead of declined;
  *  - (v2.1) invented "about N months from now" countdowns, wrong 21 of 21 times;
  *  - (v2.1) health / legal answers without "see a doctor / lawyer".
@@ -299,83 +300,6 @@ export function dateStatus(text: string, today?: string): 'none' | 'current' | '
   return current ? 'current' : 'ok';
 }
 
-export type MonthYear = { month: number; year: number };
-export type TransitPlanet = 'Jupiter' | 'Saturn' | 'Rahu';
-export type TransitDate = MonthYear & { planet: TransitPlanet };
-
-const CTX_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const CTX_MONTH_YEAR = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4})\b/g;
-
-function ctxMonthYears(line: string): MonthYear[] {
-  return [...line.matchAll(CTX_MONTH_YEAR)].map(m => ({ month: CTX_MONTHS.indexOf(m[1]) + 1, year: Number(m[2]) }));
-}
-
-/**
- * The dates the v2 prompt itself hands the model, read back from the context
- * text it was sent (utils/astrology.ts writes both, "Mon YYYY"):
- *  - `transitDates`: every month-year on a "- Jupiter/Saturn/Rahu ..." line that
- *    has a "From around ... it moves into / slips back into" ingress (including
- *    the back-and-forth months), tagged with the planet;
- *  - `timingDates`: the month-years of the "Timing" block (stretch / chapter dates).
- */
-export function contextDates(context: string): { transitDates: TransitDate[]; timingDates: MonthYear[] } {
-  const transitDates: TransitDate[] = [];
-  const timingDates: MonthYear[] = [];
-  let inTiming = false;
-  for (const raw of context.split('\n')) {
-    const line = raw.trim();
-    if (/^Timing\b/.test(line)) { inTiming = true; continue; }
-    if (inTiming) {
-      if (!line.startsWith('-')) { inTiming = false; } else { timingDates.push(...ctxMonthYears(line)); continue; }
-    }
-    const pl = /^- (Jupiter|Saturn|Rahu)\b/.exec(line);
-    if (pl && /From around \w+ \d{4} it (?:moves|slips back) into/.test(line)) {
-      for (const d of ctxMonthYears(line)) transitDates.push({ ...d, planet: pl[1] as TransitPlanet });
-    }
-  }
-  return { transitDates, timingDates };
-}
-
-// Words that make a question really about a transit (so its date is a fair answer).
-const ABOUT_PLANET: Record<TransitPlanet, string[]> = {
-  Jupiter: ['jupiter', 'guru', 'brihaspati', 'bruhaspati', 'barhaspati', 'luck', 'lucky', 'fortune', 'growth', 'bhagya', 'bhagyo',
-    'बृहस्पति', 'गुरु', 'भाग्य', 'किस्मत', 'বৃহস্পতি', 'গুরু', 'ভাগ্য'],
-  Saturn: ['saturn', 'shani', 'sade sati', 'sadhe sati', 'sadesati', 'साढ़े साती', 'साढ़ेसाती', 'साढे साती', 'शनि', 'সাড়ে সাতি', 'শনি'],
-  Rahu: ['rahu', 'राहु', 'রাহু'],
-};
-
-/** Transit dates of the planets the question is not about (the ones a copied answer would come from). */
-export function unrelatedTransitDates(question: string | undefined, transitDates: TransitDate[]): TransitDate[] {
-  const q = (question ?? '').normalize('NFC').toLowerCase();
-  const about = (p: TransitPlanet) => ABOUT_PLANET[p].some(w => q.includes(w.normalize('NFC')));
-  return transitDates.filter(d => !about(d.planet));
-}
-
-/**
- * True when every dated mention in `reply` is a transit ingress month (of a
- * planet the question is not about) or the current month, and at least one is
- * an ingress: the small model's "by October 2026" copied from the Transit
- * lines. A Timing-block date, any other month-year, or a bare year is not.
- */
-export function copiedTransitDate(
-  reply: string, transitDates: TransitDate[], timingDates: MonthYear[] = [], today?: string,
-): boolean {
-  if (transitDates.length === 0) return false;
-  const dates = findDates(reply);
-  if (dates.length === 0) return false;
-  const t = /^(\d{4})-(\d{2})/.exec(today ?? '');
-  const same = (d: FoundDate, x: MonthYear) => d.month === x.month && d.year === x.year;
-  let hit = false;
-  for (const d of dates) {
-    if (d.month == null || d.year == null) return false;
-    if (timingDates.some(x => same(d, x))) return false;
-    if (transitDates.some(x => same(d, x))) { hit = true; continue; }
-    if (t && d.year === Number(t[1]) && d.month === Number(t[2])) continue;
-    return false;
-  }
-  return hit;
-}
-
 // ─── Questions answered without the model ─────────────────────────────────────
 
 const nfc = (s: string) => s.normalize('NFC');
@@ -593,6 +517,14 @@ const LAWYER = new RegExp(nfc(
  * whose reply names no lawyer (en/hi/bn and Hinglish/Banglish questions; the
  * reply is checked in all three languages).
  */
+export function adviceNeeded(question: string): ('doctor' | 'lawyer')[] {
+  const q = nfc(question).toLowerCase();
+  const out: ('doctor' | 'lawyer')[] = [];
+  if (HEALTH_Q.test(q)) out.push('doctor');
+  if (LEGAL_Q.test(q)) out.push('lawyer');
+  return out;
+}
+
 export function missingAdvice(question: string, reply: string): ('doctor' | 'lawyer')[] {
   const q = nfc(question).toLowerCase();
   const r = nfc(reply);
@@ -671,15 +603,6 @@ export type ReplyGuard = {
    * names a later date.
    */
   today?: string;
-  /**
-   * With `needsDate`: the transit ingress months in the prompt, already
-   * limited to planets the question is not about (unrelatedTransitDates). A
-   * reply whose dates are only these (or the current month) copied the shared
-   * transit line and is retried once; the retry is kept only if it does not.
-   */
-  transitDates?: TransitDate[];
-  /** The Timing block's months (stretch / chapter dates); never counted as copied. */
-  timingDates?: MonthYear[];
 };
 
 /**
@@ -699,23 +622,14 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
     checkScript && (a.stoppedLatin || (letterCount(a.text) >= 8 && scriptRatio(a.text) < NATIVE_SCRIPT_MIN));
   const repeatBad = (a: Attempt) => !!previous && overlap(a.text) >= REPEAT_OVERLAP_MAX;
   const dates = (t: string) => dateStatus(t, guard.today);
-  const copied = (t: string) =>
-    !!guard.transitDates?.length && copiedTransitDate(t, guard.transitDates, guard.timingDates, guard.today);
   // 2 = no date, 1 = only the current month, 0 = fine.
   const dateFail = (a: Attempt) => {
     if (!guard.needsDate) return 0;
     const st = dates(a.text);
     if (st === 'none') return 2;
-    if (st === 'current') return 1;
-    return copied(a.text) ? 1 : 0;
+    return st === 'current' ? 1 : 0;
   };
   const dateBad = (a: Attempt) => dateFail(a) > 0;
-  // A streamed month name whose year may still follow ("October" | " 2026").
-  const monthPending = (t: string) => {
-    const w = /[\p{L}\p{M}]+\s*$/u.exec(t);
-    return !!w && findDates(w[0].trim()).some(d => d.month != null && d.year == null);
-  };
-
   // `final`: the last try, which is never stopped early (a Latin reply is held
   // to the end so there is always a whole reply to show).
   const attempt = async (temperature?: number, final = false): Promise<Attempt> => {
@@ -745,7 +659,7 @@ export async function runGuarded(generate: GenerateFn, guard: ReplyGuard, emit: 
         if (overlap(a.text) < REPEAT_OVERLAP_MAX) repeatDone = true;
         else repeatSuspect = true; // hold to the end and judge the whole reply
       }
-      if (!dateDone && dates(a.text) === 'ok' && !(guard.transitDates?.length && (copied(a.text) || monthPending(a.text)))) {
+      if (!dateDone && dates(a.text) === 'ok') {
         dateDone = true;
       }
       if (scriptDone && repeatDone && dateDone && !hold) {

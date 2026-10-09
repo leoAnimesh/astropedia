@@ -30,6 +30,7 @@ import Constants from 'expo-constants';
 import { create } from 'zustand';
 import { Storage } from './storage';
 import { CHAT_FORMAT, CONTEXT_VERSION, MODEL_FOLLOWUPS } from './local-llm';
+import { setActiveAdapter } from './agent/adapters';
 import {
   INITIAL_SETUP_STATE, basename, classifyError, decideAfterError, errorMessage, isFailurePhase,
   markerFor, markerMatchesSpec, markerUsable, parseManifest, planFileResume, reduceSetup,
@@ -306,6 +307,7 @@ async function fetchManifest(): Promise<Manifest | null> {
 async function selectTarget(): Promise<Selection> {
   const sel = selectModel(await fetchManifest(), appCaps(), PINNED_MODEL);
   log('selected', sel.spec.version, `(${sel.source}: ${sel.reason})`);
+  setActiveAdapter(sel.spec.adapter);
   return sel;
 }
 

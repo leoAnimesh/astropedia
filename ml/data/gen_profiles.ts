@@ -17,11 +17,19 @@
  * the chart-context format (utils/astrology.ts ContextVersion); the app sends
  * the version in utils/local-llm.ts CONTEXT_VERSION, so train on the one it
  * will ship with.
+ * `--windows` (Saga v2.2) adds `windows`: for every timing-engine topic
+ * (utils/timing-engine.ts TIMING_TOPICS) the engine's best window as of the
+ * row's today, with the exact Timing line the app appends for a timing
+ * question on that topic (utils/agent/adapters/gemma21-prompt.ts windowLine,
+ * mode 'line-bottom') and the context with off-window ingress dates cut
+ * (filterTransitDates). See RUN_V3.md "Saga v2.2: timing windows".
  */
 
 import { writeFileSync } from 'node:fs';
 import { getAstrologyContext, getCurrentMahadasha, getFullKundli, getTimingContext, LATEST_CONTEXT_VERSION, type ContextVersion } from '@/utils/astrology';
 import { guessTimeZone } from '@/utils/timezone';
+import { TIMING_TOPICS, timingWindows } from '@/utils/timing-engine';
+import { filterTransitDates, windowLine } from '@/utils/agent/adapters/gemma21-prompt';
 
 const argv = process.argv.slice(2);
 const cvAt = argv.indexOf('--context-version');
@@ -31,6 +39,8 @@ const trAt = argv.indexOf('--today-range');
 const todayRange = trAt >= 0 ? argv.splice(trAt, 2)[1] : null;
 const ipAt = argv.indexOf('--id-prefix');
 const idPrefix = ipAt >= 0 ? argv.splice(ipAt, 2)[1] : 'p';
+const wiAt = argv.indexOf('--windows');
+const withWindows = wiAt >= 0 && argv.splice(wiAt, 1).length > 0;
 const [countArg = '2000', outPath = 'ml/data/profiles.jsonl', seedArg = '42', todayArg] = argv;
 // Local noon of the given day, so transits and timing match the app on that date.
 // The day is written into every row ("today"); generate.py uses it for the
@@ -152,6 +162,19 @@ for (let i = 0; i < Number(countArg); i++) {
     today: rowDay,
     // Same timing block utils/ai.ts adds (relative to the generation date).
     timing: getTimingContext(p, now, contextVersion),
+    ...(withWindows ? { windows: Object.fromEntries(TIMING_TOPICS.map((topic) => {
+      const r = timingWindows(p, topic, now);
+      const w = r.windows[0];
+      if (!w) return [topic, null];
+      const iso = (d: Date) => localToday(d).slice(0, 7);
+      return [topic, {
+        line: windowLine(topic, w),
+        context: filterTransitDates(getAstrologyContext(p, { version: contextVersion, date: now }), r.windows),
+        start: iso(w.start), end: iso(w.end), peak: iso(w.peak), strength: w.strength, confidence: w.confidence,
+        others: r.windows.slice(1).map((x) => ({ start: iso(x.start), end: iso(x.end), peak: iso(x.peak) })),
+        nextStrong: r.nextStrong ? iso(r.nextStrong.start) : null,
+      }];
+    })) } : {}),
     reading: {
       firstName: p.name.split(' ')[0],
       sun: sun?.name ?? null,

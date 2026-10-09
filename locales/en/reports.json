@@ -899,7 +899,8 @@
       "bodyLife": "Your life chapters and the big planet moves of the next three years.",
       "tag": {
         "chapter": "Life chapter",
-        "move": "Planet move"
+        "move": "Planet move",
+        "window": "Best window"
       },
       "nowTo": "Now → {{date}}",
       "range": "{{from}} → {{to}}",
@@ -973,6 +974,18 @@
       "sadeStart": {
         "title": "A long, slow test begins",
         "sub": "Saturn starts its seven-and-a-half-year pass over your Moon. Slow down, simplify and keep routines steady. It is a building time, not a bad time."
+      },
+      "window": {
+        "title": {
+          "life": "Best window for big steps",
+          "career": "Best window for a new job",
+          "love": "Best window for marriage",
+          "health": "Best window for better energy",
+          "study": "Best window for studies",
+          "family": "Best window for a home of your own"
+        },
+        "strong": "The life timeline and the slow planets line up here, peaking around {{peak}}.",
+        "steady": "A steady window rather than a dramatic one, best around {{peak}}."
       }
     },
     "helps": {
@@ -1387,7 +1400,8 @@
           "Mercury": "Easy talk and plans together."
         },
         "jupiter": "Jupiter supports {{name}}",
-        "jupiterSub": "A year when {{name}} is more open and generous."
+        "jupiterSub": "A year when {{name}} is more open and generous.",
+        "marry": "Best window for {{name}} to marry"
       },
       "helps": {
         "partner": [

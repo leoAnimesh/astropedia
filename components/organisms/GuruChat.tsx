@@ -45,6 +45,7 @@ import {
 } from '@/utils/database';
 import { KRISHNA_PROFILE, KRISHNA_PROFILE_ID, getKrishnaStarters } from '@/utils/krishna';
 import { replyLanguage, stripMarkdown, suggestFollowUps } from '@/utils/ai';
+import { planChipWindows } from '@/utils/agent/pipeline';
 import { MODEL_FOLLOWUPS, isLLMReady } from '@/utils/local-llm';
 import { Storage } from '@/utils/storage';
 import i18n, { askLanguage, tAsk, useAppLanguage } from '@/utils/i18n';
@@ -379,7 +380,12 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
     const asked = messages.filter((m) => m.role === 'user').map((m) => m.content);
     const label = (c: FollowUp) => t(followUpKey(c), followUpVars(c, appLang));
     const send  = (c: FollowUp) => tAsk(`chat:${followUpKey(c)}`, followUpVars(c, askLang));
-    const candidates = followUpCandidates({ reply: lastMessage.content, question: asked[asked.length - 1] });
+    const question = asked[asked.length - 1] ?? '';
+    const history = messages.slice(0, -2).filter((m) => !isChatErrorMessage(m))
+      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    // Chip dates come from the same timing engine as the reply.
+    const windows = profile && question ? planChipWindows(profile, question, history, replyLanguage(question), agent) : [];
+    const candidates = followUpCandidates({ reply: lastMessage.content, question, windows });
     return pickFollowUps(candidates, asked, (c) => [label(c), send(c)])
       .map((c) => ({ id: followUpKey(c), label: label(c), ask: send(c) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps

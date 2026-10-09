@@ -188,3 +188,34 @@ build_sft as above but WITHOUT answers_v4_en_dates.jsonl in --reuse, then en rea
   - Bengali weather fabrication
   - Hindi date attribution
   - a gender line in the reading prompt
+
+## Saga v2.2: timing windows (app side shipped 2026-10-09; data pass not run yet)
+
+**Problem.** v2.1 gave almost every chart the same date: the first transit ingress in the context ("Jupiter … From around Oct 2026 it moves into …"). Every chart with the same `today` shares that line. The fix moved astrology out of the model. `utils/timing-engine.ts` works out the window the way an astrologer does: Vimshottari maha/antar/pratyantar lords tied to the topic's houses and karakas, plus Jupiter/Saturn double transit from the Lagna and the Moon (sources are in the file header). The app pipeline (`utils/agent/`) then feeds that window to the model and checks the reply against it.
+
+**What the app sends now (gemma21 adapter, `TIMING_PROMPT_MODE = 'line-bottom'`).** This applies to a timing question with a life topic (`utils/agent/intent.ts`):
+- "Now (sky today)" lines whose ingress month is outside the engine windows (±1 month) lose their dated sentence. Where the planet sits now stays.
+- The Timing block gets one more line at the end, in its own grammar: `- Best window for marriage: Mar 2028 to Nov 2028 (peak Jul 2028)`. Topic words come from `gemma21-prompt.ts TOPIC_PHRASE`.
+- The verify layer (`utils/agent/verify.ts`) checks each sentence as it streams. If a sentence's dates are outside the windows, or name the current month, the first such sentence is replaced with "The best window for this is …" in en/hi/bn. Any later ones are dropped. A reply with no date gets that sentence appended. The old copied-transit retry is gone.
+
+**Eval** (`ml/scripts/timing_eval`, profiles `ml/data/eval_timing_profiles.jsonl`): 69 timing questions, en/hi/bn rotating, 10 charts, today ∈ {2026-10-09, 2027-04-15, 2027-11-20, 2028-06-10}, `ml/out/astro_gemma_v21_8da8w.pte`. "1st∈top" = the first future month-year in the answer falls inside the engine's best window. "transit" = the answer copies a context ingress month that is outside the windows.
+
+| greedy | 1st∈top | 1st∈any of 3 | current month | Oct 2026 | transit copy | per-chart same date | v5 pass | v4 pass |
+|---|---|---|---|---|---|---|---|---|
+| baseline (v2.1 as shipped) | 21.7% | 27.5% | 33.3% | 24.6% | 60.9% | 81% | 85.5% | 92.8% |
+| filter only | 36.2% | 47.8% | 4.3% | 1.4% | 8.7% | 69% | 88.4% | 92.8% |
+| + line at top of Timing | 62.3% | 71.0% | 5.8% | 1.4% | 5.8% | 50% | 84.1% | 85.5% |
+| **+ line at bottom (chosen)** | **68.1%** | **75.4%** | 2.9% | 1.4% | 5.8% | 43% | 84.1% | 85.5% |
+| chosen + verify layer | 94.2% | **100%** | 0% | 0% | 0% | 39% | 88.4% | 89.9% |
+| T=0.3: baseline → chosen → chosen + verify | 21.7 → 66.7 → 94.2% | 30.4 → 75.4 → 100% | 36.2 → 4.3 → 0% | | 60.9 → 4.3 → 0% | 77 → 41 → 38% | 94.2 → 85.5 → 89.9% | |
+
+In the chosen mode the verify sentence was needed in 19 of 69 greedy answers (21 of 69 at T=0.3). Most of the validator drop comes from `date_event_mismatch`: the model ties the window date to Jupiter ("from Apr 2031 Jupiter's support …"). `validate_answer.py` doesn't know the window line. Often the window really does come from a Jupiter transit, but the attribution isn't checked. Teach the student to say "that is the best window" instead of naming a planet for it (see below).
+
+**Data pass for v2.2 (the model should learn the line natively):**
+1. Profiles: `gen_profiles.ts … --windows` adds `windows[topic] = {line, context, start, end, peak, strength, confidence, others, nextStrong}` for all 13 engine topics, as of the row's today.
+2. Questions: tag each timing question with its engine topic. Either use `utils/agent/intent.ts classifyIntent` (port it, or run it through `npx tsx` over the question bank), or map `questions.py` categories directly. Questions about planets, transits or dashas stay topic-less (topic `chart`): no line, no filter.
+3. Student prompt (`build_sft.student_saga_system`): for a tagged timing question, use `windows[topic].context` in place of `context`, and append `windows[topic].line` to `timing`. Keep everything else byte-identical. It must match `utils/agent/adapters/gemma21-prompt.ts sagaSystem(..., mode 'line-bottom')`.
+4. Teacher prompt (`teacher_prompts.py`): give the same line and add a rule. When there is a "Best window" line, the timing in the answer is that window (one month-year from it, or "between X and Y"). Say the window is when the life timeline and the slow planets line up for this. Don't credit it to one planet's move. If `strength` is weak, say it's the best of quieter years. If the birth time is unknown, say the dates are approximate. Add the window months to the validator's allowed dates (`parse_context` already reads Timing lines, and `check_date_events` should accept window dates for the topic sentence).
+5. Validator: treat `- Best window for …` as its own event ("window") so sentences that use its dates without a planet pass. A sentence that puts a window date on a named planet's move should fail (`date_misattributed`).
+6. Mix: about 30% of Saga timing turns should get a line, including "when exactly?" follow-ups (answer: the peak month) and past questions ("did I…": no line; the app answers those from the engine's past windows).
+7. Gate before shipping v2.2: re-run `ml/scripts/timing_eval` (first date in the best window ≥ 85% raw, transit copy ≤ 2%, v5 pass ≥ baseline). The app keeps the verify layer either way.

@@ -29,6 +29,7 @@ import {
   type PlanetName,
 } from './facts';
 import { AREAS, focusFor, linked, linkedSubs, type Focus, type ReportKind } from './areas';
+import { timingWindows, type TimingTopic, type TimingWindow } from '../timing-engine';
 import {
   REPORT_VERSION,
   type Chapter,
@@ -218,9 +219,39 @@ function subItem(f: ChartFacts, kind: ReportKind, s: DashaPeriod, isNow: boolean
   };
 }
 
+/**
+ * The timing-engine topic behind each report's "Best window" (the same
+ * window chat gives for that question, so chat and reports agree).
+ */
+export const REPORT_TOPIC: Record<ReportKind, TimingTopic> = {
+  life: 'general', career: 'job', love: 'marriage', health: 'health', study: 'education', family: 'property',
+};
+/** Kinds whose window is shown to under-18s (no job / home / marriage timing for minors). */
+const MINOR_WINDOW: ReportKind[] = ['life', 'health', 'study'];
+
+/** The report's best window, or null (minor and an adult topic, or unusable data). */
+export function reportWindow(f: ChartFacts, kind: ReportKind): TimingWindow | null {
+  if (f.minor && !MINOR_WINDOW.includes(kind)) return null;
+  return timingWindows(f.profile, REPORT_TOPIC[kind], f.now).windows[0] ?? null;
+}
+
+function windowItem(f: ChartFacts, kind: ReportKind, w: TimingWindow): TimelineItem {
+  return {
+    date: tr('timing.range', { from: my(w.start), to: my(w.end) }),
+    tag: tr('timing.tag.window'),
+    title: tr(`timing.window.title.${kind}`),
+    sub: tr(w.strength === 'strong' ? 'timing.window.strong' : 'timing.window.steady', { peak: my(w.peak) }),
+    state: stateOf(f, w.start),
+    start: w.start.toISOString(),
+    end: w.end.toISOString(),
+    source: 'window',
+  };
+}
+
 export function timeline(f: ChartFacts, kind: ReportKind): TimelineItem[] {
   const area = AREAS[kind];
   const items: TimelineItem[] = [subItem(f, kind, f.dasha.antar, true)];
+  const best = reportWindow(f, kind);
   const subs = kind === 'life' ? f.dasha.ahead.slice(1) : linkedSubs(f, kind);
   for (const s of subs.slice(0, 2)) items.push(subItem(f, kind, s, false));
 
@@ -270,8 +301,12 @@ export function timeline(f: ChartFacts, kind: ReportKind): TimelineItem[] {
     });
   }
   const [first, ...rest] = items;
+  const win = best ? windowItem(f, kind, best) : null;
+  if (win) rest.push(win);
   rest.sort((a, b) => a.start.localeCompare(b.start));
-  return [first, ...rest].slice(0, 7);
+  // Date order, at most 7 items; the best window always stays in.
+  let room = win ? 5 : 6;
+  return [first, ...rest.filter((i) => i === win || room-- > 0)];
 }
 
 function timingChapter(f: ChartFacts, kind: ReportKind, title: string, chip: string, body?: string): TimingChapter {

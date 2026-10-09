@@ -12,6 +12,7 @@
  * and "good times ahead" from both people's dasha sub-periods and Jupiter's
  * moves counted from each Moon (utils/reports/facts.ts).
  */
+import { timingWindows } from '../timing-engine';
 import { matchCharts, verdictFor, type KootaKey } from '../ashtakoota';
 import { computeCompatibility } from '../compatibility';
 import { guruLocked } from '../guru-context';
@@ -92,7 +93,27 @@ function goodTimes(a: Person, b: Person, mode: CompatMode, now: Date): TimelineI
       });
     }
   }
-  return items.sort((x, y) => x.start.localeCompare(y.start)).slice(0, 6);
+  items.sort((x, y) => x.start.localeCompare(y.start));
+  // Partner mode: each adult's marriage window from the timing engine (the
+  // one chat gives for "when will I marry"), always kept.
+  const windows: TimelineItem[] = [];
+  if (mode === 'partner') {
+    for (const p of [a, b]) {
+      const f = getChartFacts(p, now);
+      if (f.minor) continue;
+      const w = timingWindows(p, 'marriage', now).windows[0];
+      if (!w) continue;
+      windows.push({
+        date: tr('timing.range', { from: my(w.start), to: my(w.end) }),
+        tag: tr('timing.tag.window'),
+        title: tr('compat.warm.marry', { name: first(p) }),
+        sub: tr(w.strength === 'strong' ? 'timing.window.strong' : 'timing.window.steady', { peak: my(w.peak) }),
+        state: w.start.getTime() - now.getTime() < 365 * DAY_MS ? 'soon' : 'later',
+        start: w.start.toISOString(), end: w.end.toISOString(), source: 'window',
+      });
+    }
+  }
+  return [...windows, ...items].slice(0, 6 + windows.length);
 }
 
 /**

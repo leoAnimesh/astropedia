@@ -103,6 +103,8 @@ export type BirthProfile = {
 };
 
 export type ChartFacts = {
+  /** The birth data these facts were computed from (the timing engine reads it too). */
+  profile: BirthProfile;
   now: Date;
   age: number | null;
   minor: boolean;
@@ -269,7 +271,7 @@ function computeFacts(raw: BirthProfile, now: Date): ChartFacts {
   }
 
   return {
-    now, age, minor: age != null && age < 18,
+    profile: raw, now, age, minor: age != null && age < 18,
     hasTime, hasPlace: !!hasPlace,
     basis: ascSign == null ? 'moon' : 'rising',
     ascSign, moonSign, moonLon, first, planets,

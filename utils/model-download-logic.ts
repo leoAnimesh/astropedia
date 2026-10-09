@@ -33,8 +33,17 @@ export type ModelSpec = {
   chatFormat: string;
   /** Oldest app version (expo version string) that can run this model. */
   minAppVersion?: string;
+  /**
+   * Answer-pipeline adapter that drives this model (utils/agent/adapters):
+   * "gemma21" for astro-gemma v2 / v2.1. Absent = derived from contextVersion
+   * + chatFormat. A build only installs models whose adapter it can run.
+   */
+  adapter?: string;
   files: ModelFile[];
 };
+
+/** Adapters this build can run a downloaded model with (utils/agent/adapters/index.ts). */
+export const RUNNABLE_ADAPTERS: readonly string[] = ['gemma21'];
 
 export type Manifest = {
   latest: string;
@@ -108,11 +117,13 @@ export function parseModelSpec(version: string, raw: unknown, defaultRevision: s
     : defaultRevision;
   const chatFormat = typeof raw.chatFormat === 'string' ? raw.chatFormat : 'gemma';
   const minAppVersion = typeof raw.minAppVersion === 'string' ? raw.minAppVersion : undefined;
+  const adapter = typeof raw.adapter === 'string' && NAME_RE.test(raw.adapter) ? raw.adapter : undefined;
   return {
     version, revision, files, chatFormat,
     contextVersion: raw.contextVersion,
     followups: raw.followups,
     ...(minAppVersion ? { minAppVersion } : {}),
+    ...(adapter ? { adapter } : {}),
   };
 }
 
@@ -140,6 +151,7 @@ export function compareVersions(a: string, b: string): number {
 
 /** Why a model can't run in this build, or null when it can. */
 export function incompatibility(spec: ModelSpec, caps: AppModelCaps): string | null {
+  if (spec.adapter && !RUNNABLE_ADAPTERS.includes(spec.adapter)) return `adapter ${spec.adapter} not in this build`;
   if (spec.contextVersion !== caps.contextVersion) return `contextVersion ${spec.contextVersion} != ${caps.contextVersion}`;
   if (caps.usesFollowups && !spec.followups) return 'app needs followups';
   if (spec.chatFormat !== caps.chatFormat) return `chatFormat ${spec.chatFormat} != ${caps.chatFormat}`;

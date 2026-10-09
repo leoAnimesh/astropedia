@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useChatStore } from '@/stores/chat-store';
 import { useThreadStore } from '@/stores/thread-store';
+import { useProfileStore } from '@/stores/profile-store';
 import {
   getMessagesByThread,
   insertMessage,
@@ -254,7 +255,8 @@ export function useChat(
         role: m.role as 'user' | 'assistant',
         content: toEnglish[m.content] ?? m.content,
       }));
-      const request = { profile, history: recentHistory, userMessage: text.trim(), mode, userName, agent };
+      const people = useProfileStore.getState().profiles;
+      const request = { profile, people, history: recentHistory, userMessage: text.trim(), mode, userName, agent };
       let { stream, tier } = await streamAI(request);
 
       // The model is still downloading (utils/model-download.ts): wait for

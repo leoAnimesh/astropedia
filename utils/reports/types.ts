@@ -6,7 +6,7 @@
 import type { AnyReportKind } from './areas';
 
 /** Bumped whenever generated text or structure changes: cached payloads regenerate. */
-export const REPORT_VERSION = 1;
+export const REPORT_VERSION = 2;
 
 export type ReportLang = 'en' | 'hi' | 'bn';
 
@@ -30,7 +30,7 @@ export type TextChapter = {
 export type TimelineItem = {
   /** "Now → Jul 2028", "31 Oct 2026". */
   date: string;
-  /** "Life chapter" | "Planet move". */
+  /** "Life chapter" | "Planet move" | "Best window". */
   tag: string;
   title: string;
   sub: string;
@@ -38,7 +38,8 @@ export type TimelineItem = {
   /** ISO dates for tests and sorting. */
   start: string;
   end: string | null;
-  source: 'sub' | 'chapter' | 'move' | 'sade';
+  /** 'window': the timing engine's best window (utils/timing-engine.ts), the same one chat gives. */
+  source: 'sub' | 'chapter' | 'move' | 'sade' | 'window';
 };
 
 export type TimingChapter = {

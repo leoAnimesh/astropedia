@@ -263,15 +263,34 @@ export type FollowUpInput = {
   question?: string;
   /** Today (dates before next month are not "after" dates). */
   now?: Date;
+  /**
+   * The timing engine's windows for the question (utils/agent/pipeline.ts
+   * planChipWindows). When given, the "after" chip only uses a reply date
+   * inside them, else the best window's start, so chip dates always come
+   * from the engine.
+   */
+  windows?: { start: Date; end: Date }[];
 };
 
+const ymKey = (y: number, m: number) => y * 12 + m - 1;
+function inWindows(d: { year: number | null; month: number | null }, windows: { start: Date; end: Date }[]): boolean {
+  if (d.year == null) return false;
+  return windows.some((w) => {
+    if (d.month == null) return w.start.getFullYear() <= d.year! && w.end.getFullYear() >= d.year!;
+    const k = ymKey(d.year!, d.month);
+    return k >= ymKey(w.start.getFullYear(), w.start.getMonth() + 1) - 1 && k <= ymKey(w.end.getFullYear(), w.end.getMonth() + 1) + 1;
+  });
+}
+
 /** All candidate chips for a reply, best first (see the file comment). */
-export function followUpCandidates({ reply, question = '', now = new Date() }: FollowUpInput): FollowUp[] {
+export function followUpCandidates({ reply, question = '', now = new Date(), windows }: FollowUpInput): FollowUp[] {
   const out: FollowUp[] = [];
   const nowKey = now.getFullYear() * 12 + now.getMonth() + 1;
   const future = findDates(reply).find(d => d.year != null &&
-    (d.month ? d.year * 12 + d.month > nowKey : d.year > now.getFullYear()));
+    (d.month ? d.year * 12 + d.month > nowKey : d.year > now.getFullYear()) &&
+    (!windows?.length || inWindows(d, windows)));
   if (future) out.push({ key: 'after', month: future.month, year: future.year! });
+  else if (windows?.length) out.push({ key: 'after', month: windows[0].start.getMonth() + 1, year: windows[0].start.getFullYear() });
 
   const topic = detectTopic(question, reply);
   const covered = topic ? TOPIC_AREAS[topic] : [];

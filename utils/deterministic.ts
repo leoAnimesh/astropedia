@@ -19,6 +19,7 @@ import {
   getTodayTransits,
 } from './astrology';
 import { todayIso } from './format';
+import { natalChart } from './timing-engine';
 
 export type DeterministicTopic =
   | 'sun_sign'
@@ -82,11 +83,26 @@ function answerBigThree(profile: Profile): string | null {
   return parts.join(' ');
 }
 
+/**
+ * Without a birth time (or zone), the Moon may have been in the next or
+ * previous nakshatra on the birth day, which shifts the whole dasha sequence.
+ */
+function uncertain(profile: Profile): string {
+  if (profile.birthTime && (profile.birthTz || profile.birthLng != null)) return '';
+  try {
+    return natalChart(profile).nakshatraUncertain
+      ? " Your birth time isn't saved, and the Moon changed nakshatra that day, so this could be the neighbouring one; add your birth time for a sure answer."
+      : '';
+  } catch {
+    return '';
+  }
+}
+
 function answerNakshatra(profile: Profile): string | null {
   if (!profile.birthDate) return null;
   const moonLon = getMoonLongitudeExact(profile.birthDate, profile.birthTime, profile.birthLng, profile.birthTz);
   const nak     = getNakshatra(moonLon);
-  return `Your moon nakshatra is ${nak.name}, ruled by ${nak.lord}. It shapes the texture of your mind and your dasha cycle.`;
+  return `Your moon nakshatra is ${nak.name}, ruled by ${nak.lord}. It shapes the texture of your mind and your dasha cycle.${uncertain(profile)}`;
 }
 
 function answerCurrentDasha(profile: Profile): string | null {
@@ -95,7 +111,7 @@ function answerCurrentDasha(profile: Profile): string | null {
   const dasha   = getCurrentMahadasha(moonLon, profile.birthDate);
   const months  = monthsUntil(dasha.endDate);
   const ends    = prettyDate(dasha.endDate);
-  return `You're currently in ${dasha.lord} Mahadasha until ${ends} (about ${months} months left). This is the big planetary chapter coloring your life right now.`;
+  return `You're currently in ${dasha.lord} Mahadasha until ${ends} (about ${months} months left). This is the big planetary chapter coloring your life right now.${uncertain(profile)}`;
 }
 
 function answerLunarPhase(): string {
