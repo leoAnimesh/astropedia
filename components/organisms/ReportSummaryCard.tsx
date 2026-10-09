@@ -32,6 +32,8 @@ type Props = {
   report: ReportPayload;
   /** Adds a small brand line at the bottom (the shared image). */
   branded?: boolean;
+  /** Partner match: a plain sentence under each of the eight parts, by koota key. */
+  kootaNotes?: Partial<Record<string, string>>;
 };
 
 /**
@@ -39,7 +41,7 @@ type Props = {
  * the at-a-glance rows and the focus meter, or for a partner match the
  * traditional 36-point count, its eight parts and the Mars check.
  */
-export const ReportSummaryCard = forwardRef<View, Props>(function ReportSummaryCard({ report, branded }, ref) {
+export const ReportSummaryCard = forwardRef<View, Props>(function ReportSummaryCard({ report, branded, kootaNotes }, ref) {
   const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t } = useTranslation('reports');
@@ -104,10 +106,11 @@ export const ReportSummaryCard = forwardRef<View, Props>(function ReportSummaryC
         <>
           <View style={[styles.kootas, { borderTopColor: theme.hairline }]}>
             {score.kootas.map((k) => (
-              <View key={k.key} style={styles.kRow} accessible accessibilityLabel={`${k.name}, ${n(k.score)} / ${n(k.max)}`}>
+              <View key={k.key} style={styles.kRow} accessible accessibilityLabel={`${k.name}, ${n(k.score)} / ${n(k.max)}${kootaNotes?.[k.key] ? `. ${kootaNotes[k.key]}` : ''}`}>
                 <View style={styles.kText}>
                   <Text style={[styles.kName, { color: theme.ink }]}>{k.name}</Text>
                   <Text style={[styles.kTrad, { color: theme.muted }]}>{k.trad}</Text>
+                  {kootaNotes?.[k.key] ? <Text style={[styles.kNote, { color: theme.ink2 }]}>{kootaNotes[k.key]}</Text> : null}
                 </View>
                 <View style={[styles.kTrack, { backgroundColor: theme.hairline }]}>
                   <View style={[styles.kFill, { width: `${Math.round((k.score / k.max) * 100)}%`, backgroundColor: theme.accent }]} />
@@ -158,6 +161,7 @@ const baseStyles = StyleSheet.create({
   focusReason: { fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 17 },
   kootas: { paddingTop: 4, paddingHorizontal: 18, paddingBottom: 10, borderTopWidth: StyleSheet.hairlineWidth },
   kRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 34 },
+  kNote: { marginTop: 2, marginBottom: 6, fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 16 },
   kText: { flex: 1 },
   kName: { fontFamily: FONTS.sansRegular, fontSize: 13, lineHeight: 17 },
   kTrad: { fontFamily: FONTS.monoRegular, fontSize: 9.5, lineHeight: 12, letterSpacing: 0.5 },

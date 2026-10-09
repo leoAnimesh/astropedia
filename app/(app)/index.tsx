@@ -164,7 +164,7 @@ export default function HomeScreen() {
   const tiles: { key: string; icon: IconName; sub: string; onPress: () => void }[] = [
     { key: 'panchang',  icon: 'sun',     sub: t('tiles.panchang.sub', { time: clock(rahu.start) }), onPress: () => go('/panchang') },
     { key: 'muhurat',   icon: 'clock',   sub: t('tiles.muhurat.sub'),   onPress: () => go('/muhurat') },
-    { key: 'matching',  icon: 'match',   sub: t('tiles.matching.sub'),  onPress: () => go('/compatibility') },
+    { key: 'matching',  icon: 'match',   sub: t('tiles.matching.sub'),  onPress: () => go('/report/pair?mode=partner') },
     { key: 'family',    icon: 'people',  sub: t('tiles.family.sub', { count: profiles.length }), onPress: () => go('/family') },
     { key: 'journal',   icon: 'book',    sub: t('tiles.journal.sub'),   onPress: () => pid && go(`/journal/${pid}`) },
     { key: 'festivals', icon: 'diya',    sub: t('tiles.festivals.sub'), onPress: () => go('/festivals') },

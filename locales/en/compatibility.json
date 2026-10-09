@@ -1,16 +1,4 @@
 {
-  "title": "Kundli matching",
-  "back": "Go back",
-  "heading1": "How do your",
-  "heading2": "charts meet?",
-  "tapToChange": "tap to change",
-  "addAProfile": "add a profile",
-  "addProfileCta": "+ add profile",
-  "hintSame": "Pick two different profiles to see how their charts meet.",
-  "hintNeedTwo": "You'll need at least two profiles to compare. Add a partner, family member, or friend from the home screen.",
-  "outOf": " / 10",
-  "pieces": "The pieces",
-  "footer": "Vedic charts hint at patterns, not destinies. The way two people show up for each other day after day matters more than any score.",
   "verdict": {
     "strong": "Strong match",
     "workable": "Workable, with effort",
@@ -40,41 +28,13 @@
     }
   },
   "match": {
-    "eyebrow": "Kundli matching · 36 gunas",
-    "heading": {
-      "before": "Guna ",
-      "em": "milan"
-    },
-    "lead": "The traditional eight-part match, read from both Moons. Choose the bride and the groom.",
     "bride": "Bride",
     "groom": "Groom",
     "swap": "Swap bride and groom",
-    "choose": "Choose",
-    "change": "Change",
-    "pickTitle": {
-      "bride": "Choose the bride",
-      "groom": "Choose the groom"
-    },
     "moonLine": "Moon in {{sign}} · {{nakshatra}} · pada {{pada}}",
-    "noDetails": "No birth details yet",
     "addDetails": "Add {{name}}'s birth details →",
     "noTimeNote": "No birth time for {{name}}, so the Moon (and Manglik) are approximate.",
     "addTime": "Add birth time →",
-    "outOf": "/ 36",
-    "gunas": "gunas",
-    "verdict": {
-      "excellent": "Excellent match",
-      "good": "Good match",
-      "average": "Average match",
-      "low": "Low match"
-    },
-    "verdictLine": {
-      "excellent": "A rare, very harmonious pairing by the traditional count.",
-      "good": "A good match. Most of the eight parts sit well together.",
-      "average": "Workable. Families usually go ahead in this range, with a little care.",
-      "low": "Below 18, so the tradition doesn't usually recommend it. Many couples look at the full charts before deciding."
-    },
-    "kootas": "The eight kootas",
     "koota": {
       "varna": {
         "name": "Varna",
@@ -192,8 +152,6 @@
         }
       }
     },
-    "ask": "Ask Saga about this match →",
-    "footer": "Guna milan is one traditional lens. How two people care for each other, day after day, matters far more than any score.",
     "nadiName": {
       "Aadi": "Aadi",
       "Madhya": "Madhya",
@@ -203,7 +161,6 @@
       "noTimeBoth": "Neither profile has a birth time, so both Moons and all the Manglik readings are approximate.",
       "noPlace": "No birth place for {{name}}, so there's no ascendant; Manglik is read from the Moon and Venus only.",
       "addPlace": "Add birth place →",
-      "minor": "{{name}} is under 18. Kundli matching is meant for adults, so treat this as just for interest.",
       "ageGap": "There's an age gap of about {{years}} years. The kootas don't look at age; it's simply something families often talk through.",
       "identical": "These two profiles have exactly the same birth details. Is one of them a duplicate?",
       "roles": "You choose who's the bride and who's the groom here. A few kootas count from the bride, so swapping (⇄) can shift the score a little."
