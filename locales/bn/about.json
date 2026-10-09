@@ -47,7 +47,8 @@
     "terms": "ব্যবহারের শর্ত",
     "licences": "ওপেন-সোর্স লাইসেন্স",
     "licencesSub": "এই অ্যাপে ব্যবহৃত লাইব্রেরি, ফন্ট, জায়গার তথ্য আর মডেল",
-    "placesCredit": "জন্মস্থান: GeoNames (geonames.org), CC BY 4.0 লাইসেন্সে।"
+    "placesCredit": "জন্মস্থান: GeoNames (geonames.org), CC BY 4.0 লাইসেন্সে।",
+    "gitaCredit": "ভগবদ্গীতা: ইংরেজি অনুবাদ কে. টি. তেলাং (1882, Sacred Books of the East খণ্ড 8), পাবলিক ডোমেন। সংস্কৃত পাঠ: github.com/gita/gita (Unlicense)। হিন্দি ও বাংলা অনুবাদ: Astropedia।"
   },
   "data": {
     "delete": "আমার সব ডেটা মুছে ফেলুন",

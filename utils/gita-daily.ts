@@ -1,9 +1,10 @@
 /**
  * Bhagavad Gita verse of the day: a deterministic rotation through the 62
  * curated verses (assets/gita-corpus/curated-verses.json, the ones Krishna
- * mode quotes, with original Hindi/Bengali renderings), plus the Sanskrit and
+ * mode quotes: K. T. Telang's public-domain English, with Astropedia's own
+ * Hindi/Bengali renderings), plus the Sanskrit and
  * IAST transliteration from assets/gita-corpus/sanskrit-verses.json
- * (github.com/gita/gita, public domain).
+ * (Devanagari from github.com/gita/gita, public domain; IAST generated from it).
  *
  * Every calendar date maps to one verse; consecutive days step 23 places
  * through the canonical order (23 is coprime with 62, so all 62 verses come

@@ -11,8 +11,9 @@ const CURATED: {
   verses: Record<string, { ref: string; text: string; prompt: string; text_hi?: string; text_bn?: string }>;
 } = require('@/assets/gita-corpus/curated-verses.json');
 
-// `text` is shown in English and is also the model's prompt; `text_hi` /
-// `text_bn` are original renderings for display (ml/data/translate_verses.py).
+// `text` is K. T. Telang's public-domain English translation (1882), shown in
+// English and also used as the model's prompt; `text_hi` / `text_bn` are
+// Astropedia's own renderings for display (see assets/gita-corpus/README.md).
 export type GitaVerse = { id: string; ref: string; text: string; prompt: string; text_hi?: string; text_bn?: string };
 
 // Keyword cues per theme; the first theme with the most hits wins.

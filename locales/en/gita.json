@@ -20,5 +20,6 @@
   "earlier": "Earlier this week",
   "earlierA11y": "Verse {{ref}}, {{when}}",
   "question": "Today's verse is Bhagavad Gita {{ref}}: \"{{text}}\" How can I live this today?",
-  "reflectNote": "A verse for reflection, not a prediction."
+  "reflectNote": "A verse for reflection, not a prediction.",
+  "credit": "English translation: K. T. Telang (1882), public domain. Hindi and Bengali renderings: Astropedia."
 }

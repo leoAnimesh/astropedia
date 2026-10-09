@@ -43,6 +43,9 @@ const EXTRA = [
   { name: 'Instrument Serif font', version: '', license: 'OFL-1.1', copyright: ['Copyright 2022 The Instrument Serif Project Authors'], url: 'https://github.com/Instrument/instrument-serif', via: '@expo-google-fonts/instrument-serif' },
   // Birth places (assets/places, scripts/build-places.mjs). CC BY 4.0 asks for credit and a note of changes.
   { name: 'GeoNames place data', version: '', license: 'CC-BY-4.0', copyright: ['Place names, coordinates and time zones: GeoNames (geonames.org).', 'Changed: places of 1,000+ people only, coordinates rounded, reformatted for the app.'], url: 'https://www.geonames.org', via: 'assets/places' },
+  // Bhagavad Gita text (assets/gita-corpus). See assets/gita-corpus/README.md.
+  { name: 'Bhagavad Gita, English translation', version: '', license: 'Public-Domain', copyright: ['Translated by Kashinath Trimbak Telang, Sacred Books of the East vol. 8 (Oxford, 1882). Public domain.', 'Changed: split into verses, archaic spellings of names modernised, OCR typos fixed.'], url: 'https://sacred-texts.com/hin/sbe08/index.htm', via: 'assets/gita-corpus' },
+  { name: 'Bhagavad Gita, Sanskrit text', version: '', license: 'Unlicense', copyright: ['From github.com/gita/gita, released into the public domain.'], url: 'https://github.com/gita/gita', via: 'assets/gita-corpus' },
 ];
 
 const LICENSE_FILES = /^(licen[cs]e|copying)(\.(md|txt|markdown))?$/i;
@@ -151,6 +154,8 @@ texts['BSD-3-Clause'] ??= BSD3;
 texts['OFL-1.1'] ??= 'This Font Software is licensed under the SIL Open Font License, Version 1.1. The full licence is available at https://openfontlicense.org/open-font-license-official-text/';
 texts['CC-BY-4.0'] ??= 'Creative Commons Attribution 4.0 International. You are free to share and adapt the material for any purpose, even commercially, as long as you give appropriate credit, provide a link to the licence and indicate if changes were made. No warranties are given. Full licence: https://creativecommons.org/licenses/by/4.0/legalcode';
 texts.blessing ??= 'The author disclaims copyright to this source code. In place of a legal notice, here is a blessing: May you do good and not evil. May you find forgiveness for yourself and forgive others. May you share freely, never taking more than you give.';
+texts['Public-Domain'] ??= 'This work is in the public domain: its copyright has expired. No permission is needed to copy, adapt or share it.';
+texts.Unlicense ??= 'This is free and unencumbered software released into the public domain. Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means. See https://unlicense.org';
 
 // Only keep texts something refers to (compound ids like "MIT AND OFL-1.1" keep both parts).
 const used = new Set(packages.flatMap((p) => [p.license, ...p.license.split(/\s+(?:AND|OR)\s+|[()]/).filter(Boolean)]));
