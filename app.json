@@ -65,10 +65,11 @@
     "android": {
       "package": "com.astropedia",
       "versionCode": 1,
+      "icon": "./assets/images/android-icon-legacy-light.png",
       "adaptiveIcon": {
-        "backgroundColor": "#1D1A14",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
+        "backgroundColor": "#FAF9F6",
+        "foregroundImage": "./assets/images/android-icon-foreground-light.png",
+        "backgroundImage": "./assets/images/android-icon-background-light.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
