@@ -219,3 +219,22 @@ In the chosen mode the verify sentence was needed in 19 of 69 greedy answers (21
 5. Validator: treat `- Best window for …` as its own event ("window") so sentences that use its dates without a planet pass. A sentence that puts a window date on a named planet's move should fail (`date_misattributed`).
 6. Mix: about 30% of Saga timing turns should get a line, including "when exactly?" follow-ups (answer: the peak month) and past questions ("did I…": no line; the app answers those from the engine's past windows).
 7. Gate before shipping v2.2: re-run `ml/scripts/timing_eval` (first date in the best window ≥ 85% raw, transit copy ≤ 2%, v5 pass ≥ baseline). The app keeps the verify layer either way.
+
+## GURU_CONTEXT_FOCUS eval (2026-10-09): stays off
+
+Focused chart context per guru (AnswerPlan.focus = guru areas + question topic area; `guru` = the
+guru's areas alone, identical prompts for 185/189 items) vs the full v2 context, v2.1 `.pte`, greedy,
+line-bottom timing line. `ml/scripts/timing_eval/focus_gen.ts` → `run_pte.py` → `focus_score.py`;
+validator (`validate_answer.validate`) always against the full context.
+
+| set | variant | n | v5 ok | v4 ok | 1st date in best window | 1st in any window | on-topic |
+|---|---|---|---|---|---|---|---|
+| timing (69, guru by topic) | full | 69 | 84.1% | 85.5% | 68.1% | 75.4% | 89.9% |
+| | focus (plan) | 69 | 87.0% | 87.0% | 73.9% | 79.7% | 91.3% |
+| guru, non-timing (40 Qs x en/hi/bn) | full | 120 | 80.8% | 83.3% | – | – | 93.3% |
+| | focus (plan) | 120 | 72.5% | 75.8% | – | – | 95.8% |
+
+Guru set by language (v4): en 87.5 → 90.0, hi 85.0 → 72.5, bn 77.5 → 65.0. Extra failures with focus:
+script_latin_word 2 → 8, date_event_mismatch 3 → 8, date_misattributed 0 → 3. Per guru (v4): love 100 → 87.5,
+health 54.2 → 41.7, family 91.7 → 79.2, career and study unchanged. Decision: OFF (all 189: 84.1% → 79.9% v4);
+the small timing gain doesn't matter after the verify layer, which already puts every shown date in a window.

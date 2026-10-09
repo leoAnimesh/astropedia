@@ -207,6 +207,25 @@ export function westernDigits(text: string): string {
     .replace(/[০-৯]/g, d => String(d.charCodeAt(0) - 0x9e6));
 }
 
+/**
+ * Western digits → Devanagari (hi) / Bengali (bn) digits; English unchanged.
+ * The pure twin of utils/i18n.ts localizeDigits, for user-visible text the
+ * agent layers write (templates, repairs, model replies). Model-bound text
+ * (prompts, history, chip questions) stays in Western digits: westernDigits.
+ */
+export function nativeDigits(text: string, lang: GuardLang): string {
+  if (lang === 'en') return text;
+  const zero = lang === 'bn' ? 0x9e6 : 0x966;
+  return text.replace(/[0-9]/g, d => String.fromCharCode(zero + Number(d)));
+}
+
+/** nativeDigits for text in whatever script it is written in (hi for Devanagari, bn for Bengali). */
+export function nativeDigitsByScript(text: string): string {
+  if (/[ঀ-৿]/.test(text)) return nativeDigits(text, 'bn');
+  if (/[ऀ-ॣ०-ॿ]/.test(text)) return nativeDigits(text, 'hi');
+  return text;
+}
+
 export type FoundDate = { month: number | null; year: number | null; index: number };
 
 /**

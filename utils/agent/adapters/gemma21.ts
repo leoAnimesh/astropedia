@@ -5,21 +5,33 @@
  * guards (utils/reply-guards.ts runGuarded: script, repetition, undated
  * "when" answers) and the countdown strip. Timing is verified by the
  * pipeline (verify.ts), like every adapter's output.
+ *
+ * Also the small tasks the model was trained on: the chart card reading
+ * ([reading], with the hi/bn script check and seeded retry), thread titles
+ * ([title]) and follow-up chips ([followups], MODEL_FOLLOWUPS). Everything
+ * the model reads is in Western digits (the training format): history and
+ * replies shown in hi/bn digits are converted back before prompting.
  */
 import { Platform } from 'react-native';
 import {
-  runLocalLLM, ensureLocalLLM, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW, MODEL_FOLLOWUPS,
-  type ChatMessage,
+  runLocalLLM, ensureLocalLLM, isLLMReady, MODEL_LANGUAGES, CONTEXT_VERSION, REPLY_MAX_TOKENS, CONTEXT_WINDOW,
+  MODEL_FOLLOWUPS, type ChatMessage, type RunOptions,
 } from '../../local-llm';
 import {
-  createSentenceFilter, isTimingQuestion, runGuarded, stripCountdowns, type ReplyGuard,
+  createSentenceFilter, isTimingQuestion, readingScriptRatio, readingSeed, runGuarded, stripCountdowns, westernDigits,
+  NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, type ReplyGuard,
 } from '../../reply-guards';
+import { generateFollowUps, FOLLOWUPS_MAX_TOKENS } from '../../follow-ups';
 import { pickGitaVerse, formatGitaQuote } from '../../gita';
 import { GURU_CONTEXT_FOCUS } from '../../../constants/gurus';
 import type { AnswerPlan } from '../plan';
 import type { Lang } from '../strings';
-import { krishnaSystem, sagaSystem, isoDay, type TimingPromptMode } from './gemma21-prompt';
-import type { ChatTurn, ModelAdapter, RenderRequest } from './types';
+import {
+  krishnaSystem, readingSystem, sagaSystem, titlePrompt, isoDay, READING_USER, type TimingPromptMode,
+} from './gemma21-prompt';
+import type {
+  AdapterTask, ChatTurn, FollowUpsRequest, ModelAdapter, ReadingRequest, ReadingResult, RenderRequest, TitleRequest,
+} from './types';
 
 /**
  * How a timing question's prompt is shaped. Chosen by the date eval
@@ -68,6 +80,84 @@ export function sagaHistory(system: string, history: ChatTurn[], userMessage: st
   }
   while (start < recent.length && recent[start].role !== 'user') start++;
   return recent.slice(start);
+}
+
+/** Turns as the model was trained on them: Western digits (hi/bn replies are shown with native ones). */
+export const modelTurns = (turns: ChatTurn[]): ChatTurn[] =>
+  turns.map(m => ({ role: m.role, content: westernDigits(m.content) }));
+
+async function collect(messages: ChatMessage[], maxNewTokens: number, options: RunOptions = {}): Promise<string> {
+  let text = '';
+  await runLocalLLM(messages, (token) => { text += token; }, { maxNewTokens, ...options });
+  return text.trim();
+}
+
+/** Reading length cap (new tokens). */
+const READING_MAX_TOKENS = 300;
+/** Title length cap (new tokens). */
+const TITLE_MAX_TOKENS = 16;
+
+/**
+ * Personality reading for the chart card. With CONTEXT_VERSION 2, hi/bn
+ * readings are checked for script: the first attempt is unseeded (v2.1
+ * writes hi/bn readings in the right script), a reading mostly in Latin
+ * script is retried once with a native seed (readingSeed), and if that fails
+ * too the reading is generated in English (lang 'en' in the result), or text
+ * null with `skipEnglishFallback` (the caller has one cached).
+ */
+async function gemmaReading({ profile, lang, skipEnglishFallback = false }: ReadingRequest): Promise<ReadingResult> {
+  const read = async (l: Lang, replyPrefix = '', temperature?: number) => {
+    const messages: ChatMessage[] = [
+      { role: 'system', content: readingSystem(profile, l) },
+      { role: 'user',   content: READING_USER },
+    ];
+    const opts: RunOptions = temperature == null ? { replyPrefix } : { replyPrefix, temperature };
+    return replyPrefix + (await collect(messages, READING_MAX_TOKENS, opts));
+  };
+  if (CONTEXT_VERSION !== 2 || lang === 'en') return { text: (await read(lang)).trim(), lang };
+
+  const firstName = profile.name.split(' ')[0];
+  // In the right script, and more than a seed the model stopped right after.
+  const ok = (t: string) => t.replace(/\s/g, '').length >= 60 && readingScriptRatio(t, lang, firstName) >= NATIVE_SCRIPT_MIN;
+  for (const attempt of [0, 1] as const) {
+    const text = (await read(lang, readingSeed(lang, attempt), attempt ? RETRY_TEMPERATURE : undefined)).trim();
+    if (ok(text)) return { text, lang };
+  }
+  if (skipEnglishFallback) return { text: null, lang: 'en' };
+  return { text: (await read('en')).trim(), lang: 'en' };
+}
+
+async function gemmaTitle({ question, reply, lang }: TitleRequest): Promise<string | null> {
+  const { system, user } = titlePrompt(westernDigits(question), westernDigits(reply), lang);
+  return collect([{ role: 'system', content: system }, { role: 'user', content: user }], TITLE_MAX_TOKENS);
+}
+
+/**
+ * The v2.1 "[followups]" task (utils/follow-ups.ts generateFollowUps). Runs in
+ * the model queue after anything already queued; `isCancelled` (polled on
+ * every token) stops it when the user sends a message. The prompt has the
+ * conversation only, no chart facts (build_sft.py).
+ */
+async function gemmaFollowUps({ history, lastAnswer, lang, isCancelled }: FollowUpsRequest): Promise<string[]> {
+  return generateFollowUps(
+    async ({ system, user, maxNewTokens, temperature }, onText) => {
+      let text = '';
+      return runLocalLLM(
+        [{ role: 'system', content: system }, { role: 'user', content: user }],
+        (token) => { text += token; return onText(text); },
+        { maxNewTokens, temperature, isCancelled },
+      );
+    },
+    {
+      enabled: true,
+      history: modelTurns(history),
+      lastAnswer: westernDigits(lastAnswer),
+      lang,
+      isCancelled,
+      fits: ({ system, user }) =>
+        estimateTokens(system) + estimateTokens(user) + FOLLOWUPS_MAX_TOKENS[lang] + PROMPT_MARGIN_TOKENS <= CONTEXT_WINDOW,
+    },
+  );
 }
 
 type StreamOptions = {
@@ -146,20 +236,29 @@ export function replyGuard(
   };
 }
 
+const GEMMA_TASKS: readonly AdapterTask[] = ['saga', 'krishna', 'reading', 'title', ...(MODEL_FOLLOWUPS ? ['followups' as const] : [])];
+
 export const gemma21Adapter: ModelAdapter = {
   caps: {
     id: 'gemma21',
-    tasks: ['saga', 'krishna', 'reading', 'title', 'followups'],
-    contextFormat: 'gemma-v2',
+    tasks: GEMMA_TASKS,
+    contextFormat: CONTEXT_VERSION === 2 ? 'gemma-v2' : 'gemma-v1',
     followups: MODEL_FOLLOWUPS,
     maxTokens: REPLY_MAX_TOKENS,
     contextWindow: CONTEXT_WINDOW,
     languages: MODEL_LANGUAGES,
     timingInPrompt: CONTEXT_VERSION === 2,
+    model: true,
   },
   async ready(waitMs: number) {
     return Platform.OS !== 'web' && ensureLocalLLM(waitMs);
   },
+  loaded() {
+    return Platform.OS !== 'web' && isLLMReady();
+  },
+  reading: gemmaReading,
+  title: gemmaTitle,
+  followups: gemmaFollowUps,
   render(plan: AnswerPlan, req: RenderRequest): AsyncGenerator<string> {
     if (plan.mode === 'krishna') {
       // The app chooses the verse; the model writes only Krishna's words and
@@ -167,7 +266,7 @@ export const gemma21Adapter: ModelAdapter = {
       const verse = pickGitaVerse(plan.question);
       const messages: ChatMessage[] = [
         { role: 'system', content: krishnaSystem(req.userName, verse.prompt, plan.lang) },
-        { role: 'user',   content: plan.question },
+        { role: 'user',   content: westernDigits(plan.question) },
       ];
       const guard = replyGuard(plan.lang, [req.userName]);
       return streamLocal(messages, REPLY_MAX_TOKENS, { suffix: `\n\n${formatGitaQuote(verse, plan.lang)}`, guard });
@@ -177,16 +276,18 @@ export const gemma21Adapter: ModelAdapter = {
       profile: plan.subject,
       lang: plan.lang,
       now: plan.now,
-      focus: GURU_CONTEXT_FOCUS ? plan.agent : null,
+      focus: GURU_CONTEXT_FOCUS ? plan.focus : null,
       timing: t && t.asked && plan.route === 'answer' && CONTEXT_VERSION === 2
         ? { topic: t.topic, windows: t.result.windows, mode: TIMING_PROMPT_MODE } : null,
     });
+    const history = modelTurns(req.history);
+    const question = westernDigits(plan.question);
     const messages: ChatMessage[] = [
       { role: 'system', content: system },
-      ...sagaHistory(system, req.history, plan.question),
-      { role: 'user', content: plan.question },
+      ...sagaHistory(system, history, question),
+      { role: 'user', content: question },
     ];
-    const guard = replyGuard(plan.lang, [plan.subject.name, req.userName], req.history, plan.question, !!t?.asked);
+    const guard = replyGuard(plan.lang, [plan.subject.name, req.userName], history, question, !!t?.asked);
     if (CONTEXT_VERSION !== 2) return streamLocal(messages, REPLY_MAX_TOKENS, { guard });
     // v2.1's "about N months from now" countdowns are wrong almost every
     // time: they are cut sentence by sentence before display.

@@ -45,8 +45,7 @@ import {
 } from '@/utils/database';
 import { KRISHNA_PROFILE, KRISHNA_PROFILE_ID, getKrishnaStarters } from '@/utils/krishna';
 import { replyLanguage, stripMarkdown, suggestFollowUps } from '@/utils/ai';
-import { planChipWindows } from '@/utils/agent/pipeline';
-import { MODEL_FOLLOWUPS, isLLMReady } from '@/utils/local-llm';
+import { followUpsAvailable, planChipWindows } from '@/utils/agent/pipeline';
 import { Storage } from '@/utils/storage';
 import i18n, { askLanguage, tAsk, useAppLanguage } from '@/utils/i18n';
 import {
@@ -56,7 +55,7 @@ import { guruLocked, nudgeTarget } from '@/utils/guru-context';
 import { openGuruChat, replaceWithGuruChat } from '@/utils/guru-nav';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
 
-// Model-written chips per assistant message id (MODEL_FOLLOWUPS); MMKV behind it.
+// Model-written chips per assistant message id (adapter 'followups' task); MMKV behind it.
 const modelChipCache = new Map<string, string[]>();
 function cachedModelChips(messageId: string): string[] | null {
   const hit = modelChipCache.get(messageId);
@@ -391,7 +390,7 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFollowUps, lastMessage?.id, lastMessage?.content, messages.length, appLang]);
 
-  // Model-written chips (MODEL_FOLLOWUPS): see the notes in the original Saga
+  // Model-written chips (the active adapter's 'followups' task): see the notes in the original Saga
   // chat — a same-height skeleton while the model writes them, rule-based
   // chips on timeout or too few valid ones, cached per message id.
   const [settledId, setSettledId] = useState<string | null>(null);
@@ -399,7 +398,7 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
   if (isTyping) typingSeen.current = true;
   const waitedIds = useRef(new Set<string>());
   const lastId = lastMessage?.id ?? null;
-  const modelEligible = MODEL_FOLLOWUPS && showFollowUps && lastMessage?.modelTier === 'executorch' && isLLMReady();
+  const modelEligible = showFollowUps && lastMessage?.modelTier === 'executorch' && followUpsAvailable();
   const cachedChips = modelEligible && lastId ? cachedModelChips(lastId) : null;
   const waiting = modelEligible && typingSeen.current && !!lastId && cachedChips === null && settledId !== lastId;
   if (waiting && lastId) waitedIds.current.add(lastId);

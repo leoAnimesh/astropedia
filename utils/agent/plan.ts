@@ -8,10 +8,10 @@
  *
  * Pure: no React Native, no i18n.
  */
-import { GURUS, type AgentId } from '../../constants/gurus';
+import { GURUS, type AgentId, type LifeArea } from '../../constants/gurus';
 import type { ContextProfile } from '../astrology';
 import { isPureGreeting } from '../reply-guards';
-import { ageOn } from '../guru-context';
+import { ageOn, type ContextFocus } from '../guru-context';
 import {
   lordOfHouse, natalChart, timingWindows, topicLinks, TOPIC_RULES, yearsAway,
   type TimingResult, type TimingTopic, type TimingWindow, type Planet,
@@ -73,6 +73,12 @@ export type AnswerPlan = {
   notes: Note[];
   facts: KeyFact[];
   advice: ('doctor' | 'lawyer')[];
+  /**
+   * The chart lines this answer needs (planFocus): the guru's areas and
+   * transits plus the question's own topic area; null = the whole chart
+   * (Saga, Krishna). Model adapters use it only when GURU_CONTEXT_FOCUS is on.
+   */
+  focus: ContextFocus | null;
 };
 
 export type PlanInput = {
@@ -123,6 +129,28 @@ export function keyFacts(profile: PlanProfile, topic: TimingTopic): KeyFact[] {
   return [];
 }
 
+/** The "Life areas" line(s) of the v2 context behind each topic (utils/astrology.ts lifeAreaLines). */
+export const TOPIC_AREAS: Record<TimingTopic, LifeArea[]> = {
+  marriage: ['Love/marriage'], love: ['Love/marriage', 'Romance/children/study'],
+  job: ['Career'], promotion: ['Career'], business: ['Career', 'Money'], money: ['Money'],
+  property: ['Home/family'], children: ['Romance/children/study'], education: ['Romance/children/study'],
+  foreign: ['Abroad/spending/spiritual'], health: ['Self/health'], legal: [], general: [],
+};
+
+/**
+ * Topic-relevant chart lines for a guru's answer: the guru's own focus
+ * (constants/gurus.ts `context`) plus the area of the question's topic, so a
+ * Career-guru question about marriage still sees the marriage line. Null for
+ * gurus without a focus (Saga, Krishna): they read the whole chart.
+ */
+export function planFocus(agent: AgentId, topic: TimingTopic | null): ContextFocus | null {
+  const base = GURUS[agent]?.context;
+  if (!base) return null;
+  const areas = [...base.areas];
+  for (const a of topic ? TOPIC_AREAS[topic] : []) if (!areas.includes(a)) areas.push(a);
+  return { areas, transits: base.transits };
+}
+
 function findSubject(input: PlanInput, intent: Intent): { subject: PlanProfile; switched: boolean; missing: Relation | null } {
   if (intent.subject.kind === 'self') return { subject: input.profile, switched: false, missing: null };
   const rel = intent.subject.relation;
@@ -148,6 +176,7 @@ export function buildPlan(input: PlanInput): AnswerPlan {
     question: input.question, lang: input.lang, agent, mode, now, intent, subject,
     subjectSwitched: switched, missingRelation: missing, age,
     route: 'answer', decline: null, canned: null, timing: null, notes: [], facts: [], advice: intent.advice,
+    focus: planFocus(agent, intent.topic && intent.topic !== 'chart' ? intent.topic : null),
   };
 
   if (intent.safety === 'crisis' && GURUS[agent]?.crisisGuard !== false) return { ...plan, route: 'crisis' };

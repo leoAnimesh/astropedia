@@ -32,7 +32,7 @@ import { Storage } from './storage';
 import { CHAT_FORMAT, CONTEXT_VERSION, MODEL_FOLLOWUPS } from './local-llm';
 import { setActiveAdapter } from './agent/adapters';
 import {
-  INITIAL_SETUP_STATE, basename, classifyError, decideAfterError, errorMessage, isFailurePhase,
+  INITIAL_SETUP_STATE, adapterOf, adapterRunnable, basename, classifyError, decideAfterError, errorMessage, isFailurePhase,
   markerFor, markerMatchesSpec, markerUsable, parseManifest, planFileResume, reduceSetup,
   remainingBytes, resolveUrl, selectModel, spaceShortfall, totalBytes, verifyFile,
   type AppModelCaps, type InstallMarker, type Manifest, type ModelFile, type ModelFileRole,
@@ -256,8 +256,20 @@ function appCaps(): AppModelCaps {
   };
 }
 
+/**
+ * Activate the answer-pipeline adapter of an install (utils/agent/adapters):
+ * the installed model decides it, not the manifest's selection. An adapter
+ * this build can't run activates the template adapter (setup then installs a
+ * supported model; Settings → Re-download does the same).
+ */
+function activateInstalledAdapter(marker: InstallMarker): void {
+  const id = adapterOf(marker, appCaps());
+  const active = setActiveAdapter(id ?? 'unsupported');
+  log('adapter', id ?? '(unknown)', '->', active);
+}
+
 /** Local file paths of the installed model, or null when not ready. */
-export async function getInstalledModelFiles(): Promise<{ model: string; tokenizer: string; version: string } | null> {
+export async function getInstalledModelFiles(): Promise<{ model: string; tokenizer: string; version: string; adapter: string | null } | null> {
   if (!remoteEnabled || !isModelReady()) return null;
   const marker = readMarker();
   if (!marker) return null;
@@ -266,7 +278,7 @@ export async function getInstalledModelFiles(): Promise<{ model: string; tokeniz
   const tokenizer = byRole('tokenizer');
   if (!model || !tokenizer) return null;
   const dir = docPath(versionDir(marker.version));
-  return { model: `${dir}/${model}`, tokenizer: `${dir}/${tokenizer}`, version: marker.version };
+  return { model: `${dir}/${model}`, tokenizer: `${dir}/${tokenizer}`, version: marker.version, adapter: adapterOf(marker, appCaps()) };
 }
 
 /**
@@ -285,7 +297,12 @@ export async function awaitInstalledModelFiles(timeoutMs = 10_000): Promise<Awai
       });
     });
   }
-  return getInstalledModelFiles();
+  const files = await getInstalledModelFiles();
+  // The files about to be loaded decide the adapter (a background update
+  // installed earlier in the session takes effect here, with its model).
+  const marker = files ? readMarker() : null;
+  if (marker) activateInstalledAdapter(marker);
+  return files;
 }
 
 // ─── Manifest ─────────────────────────────────────────────────────────────────
@@ -307,7 +324,6 @@ async function fetchManifest(): Promise<Manifest | null> {
 async function selectTarget(): Promise<Selection> {
   const sel = selectModel(await fetchManifest(), appCaps(), PINNED_MODEL);
   log('selected', sel.spec.version, `(${sel.source}: ${sel.reason})`);
-  setActiveAdapter(sel.spec.adapter);
   return sel;
 }
 
@@ -393,6 +409,8 @@ export async function redownloadModel(): Promise<void> {
   Storage.clearModelInstall();
   Storage.clearModelResume();
   await cleanupVersions([]);
+  // Nothing installed now: back to the build's default adapter, which waits for the download.
+  setActiveAdapter(null);
   useModelSetup.setState({ ...INITIAL_SETUP_STATE });
   startModelSetup();
 }
@@ -407,6 +425,7 @@ async function run(): Promise<void> {
     const sizes: Record<string, number | null> = {};
     for (const f of marker.files) sizes[f.name] = await sizeOf(docPath(`${versionDir(marker.version)}/${f.name}`));
     if (markerUsable(marker, sizes, caps)) {
+      activateInstalledAdapter(marker);
       dispatch({ type: 'ready', version: marker.version });
       if (isModelReady()) dismissModelOverlay();
       // Over-the-air update: fetch a newer compatible model in the background.
@@ -422,6 +441,9 @@ async function run(): Promise<void> {
       return;
     }
     log('install marker unusable; re-checking', marker.version);
+    // Installed with an adapter this build can't run: answer from templates
+    // until the supported model below is installed.
+    if (!adapterRunnable(marker, caps)) activateInstalledAdapter(marker);
     Storage.clearModelInstall();
   }
 
@@ -627,10 +649,14 @@ async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<voi
     await fs.mv(job.partPath, job.finalPath);
   }
 
-  Storage.setModelInstall(JSON.stringify(markerFor(spec, new Date())));
+  const marker = markerFor(spec, new Date());
+  Storage.setModelInstall(JSON.stringify(marker));
   Storage.clearModelResume();
   log('installed', spec.version, silent ? '(background update, used on next load)' : '');
+  // A background update switches the adapter when its model is next loaded
+  // (awaitInstalledModelFiles); a first install is used right away.
   if (silent) return;
+  activateInstalledAdapter(marker);
 
   dispatch({ type: 'ready', version: spec.version });
   // Old versions are deleted now on first install (nothing has them open).

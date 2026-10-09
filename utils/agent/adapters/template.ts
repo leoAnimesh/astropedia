@@ -3,10 +3,14 @@
  * en / hi / bn, with no model. Used for the plan's declines and redirects,
  * whenever no model is available (not downloaded, failed to load, web), and
  * as the last fallback of the verify layer. Pure.
+ *
+ * Output is user-visible, so hi/bn text carries Devanagari / Bengali digits
+ * ("এপ্রিল ২০৩১"), like the rest of the app; the verifier reads both forms.
  */
 import type { AnswerPlan } from '../plan';
-import { AREA, AREA_GEN_BN, HELPS, S, fill, monthLabel, relationWord, type Lang } from '../strings';
+import { AREA, AREA_GEN_BN, HELPS, S, fill, localText, monthLabel, relationWord, type Lang } from '../strings';
 import type { TimingTopic, TimingWindow } from '../../timing-engine';
+import { formatGitaQuote, pickGitaVerse } from '../../gita';
 
 const firstName = (name: string) => name.split(' ')[0];
 
@@ -22,7 +26,7 @@ function vars(lang: Lang, topic: TimingTopic, w?: TimingWindow): Record<string, 
 export function repairSentence(plan: AnswerPlan): string {
   const t = plan.timing!;
   const table = t.result.past ? S.repairPast : plan.notes.includes('narrow') ? S.repairPeak : S.repair;
-  return fill(table[plan.lang], vars(plan.lang, t.topic, t.best));
+  return localText(fill(table[plan.lang], vars(plan.lang, t.topic, t.best)), plan.lang);
 }
 
 /** The timing paragraph: window, reasons, strength, second window, notes. */
@@ -52,7 +56,7 @@ export function timingSentences(plan: AnswerPlan, { withHelps = true } = {}): st
   if (plan.notes.includes('exactDate')) out.push(S.exactDate[lang]);
   if (plan.notes.includes('noTime')) out.push(S.noTime[lang]);
   else if (plan.notes.includes('noPlace')) out.push(S.noPlace[lang]);
-  return out;
+  return out.map(x => localText(x, lang));
 }
 
 /**
@@ -74,7 +78,7 @@ export function renderTemplate(plan: AnswerPlan): string | null {
       case 'minorRomance': {
         const parts = [fill(S.minorRomance[lang], { age: plan.age ?? '' })];
         if (plan.timing) parts.push(...timingSentences(plan));
-        return parts.join(' ');
+        return localText(parts.join(' '), lang);
       }
       default: return null;
     }
@@ -85,10 +89,15 @@ export function renderTemplate(plan: AnswerPlan): string | null {
   const fact = plan.facts[0];
   if (fact && !t.result.past) parts.push(fill(S[fact.code][lang], vars(lang, t.topic)));
   parts.push(...timingSentences(plan));
-  return parts.join(' ');
+  return localText(parts.join(' '), lang);
 }
 
 /** A short pointer used when no model is available and the plan has nothing to say. */
 export function renderNoTopic(lang: Lang): string {
   return S.askWhen[lang];
+}
+
+/** Krishna without a model: a short line, then the verse the app picks for the question (hi/bn digits). */
+export function krishnaTemplate(question: string, lang: Lang): string {
+  return localText(`${S.krishnaOffline[lang]}\n\n${formatGitaQuote(pickGitaVerse(question), lang)}`, lang);
 }

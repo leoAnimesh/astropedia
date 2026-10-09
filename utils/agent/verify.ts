@@ -13,12 +13,16 @@
  *  - past dates (birth, "since 2023") are left alone;
  *  - a reply that ends without any date gets the window sentence appended.
  * This supersedes the old copied-transit-date retry (no extra model run).
+ *
+ * Dates are read in Western and Devanagari / Bengali digits alike
+ * (findDates), so the hi/bn repair sentence (native digits) and a model reply
+ * (usually Western digits) are judged the same way.
  */
-import { createSentenceFilter, findDates, type FoundDate } from '../reply-guards';
+import { createSentenceFilter, findDates, nativeDigits, type FoundDate } from '../reply-guards';
 import type { TimingWindow } from '../timing-engine';
 import type { AnswerPlan } from './plan';
 import { repairSentence } from './adapters/template';
-import { S } from './strings';
+import { S, type Lang } from './strings';
 
 const key = (y: number, m: number) => y * 12 + m - 1;
 
@@ -166,4 +170,9 @@ export async function* verifyStream(
   if (!reply.trim()) return;
   const tail = repair.finish(reply) + advice(reply);
   if (tail) yield tail;
+}
+
+/** Finalize for display: hi/bn replies in the language's own digits, token by token (a digit is one character). */
+export async function* localizeDigitsStream(source: AsyncIterable<string>, lang: Lang): AsyncGenerator<string> {
+  for await (const t of source) yield nativeDigits(t, lang);
 }

@@ -11,6 +11,7 @@ import {
   type Profile,
   type Thread,
 } from '@/utils/database';
+import { questionTitle } from '@/utils/agent/strings';
 import { streamAI, askThreadTitle, stripMarkdown, stripThinking, stripJargon, stripChatArtifacts, dedupeRepetition, type AIMode } from '@/utils/ai';
 import { ensureLocalLLM, isLLMReady } from '@/utils/local-llm';
 import { isModelReady, waitForModelReady } from '@/utils/model-download';
@@ -84,8 +85,10 @@ async function generateThreadTitle(
 ): Promise<void> {
   try {
     // Leave out Krishna's appended verse; titles describe the exchange itself.
-    const text = await askThreadTitle(userMsg, aiReply.split(GITA_QUOTE_START)[0].trim());
-    if (!text) return;
+    const result = await askThreadTitle(userMsg, aiReply.split(GITA_QUOTE_START)[0].trim());
+    // No model: the placeholder (the first question, cut short) already is the title.
+    if (!result || result.source !== 'model') return;
+    const text = result.text;
 
     // Clean the title against everything models tend to leak:
     //  - <think>...</think> reasoning blocks (Qwen 3)
@@ -202,7 +205,7 @@ export function useChat(
 
     // Set a placeholder title immediately so the thread list shows something
     if (isFirstMessage) {
-      const placeholder = text.length > 36 ? text.slice(0, 34).trim() + '…' : text;
+      const placeholder = questionTitle(text);
       await updateThread(threadId, { title: placeholder });
       useThreadStore.getState().updateThread(threadId, thread.profileId, { title: placeholder });
     }

@@ -8,18 +8,21 @@
  *    "Ask <guru> →" chip under an answer.
  *  - ageOn / isMinor: the under-18 gate for adults-only gurus (Love).
  */
-import { GURUS, TOPIC_GURU, type AgentId } from '../constants/gurus';
+import { GURUS, TOPIC_GURU, type AgentId, type LifeArea, type TransitPlanet } from '../constants/gurus';
 import { detectTopic } from './follow-ups';
 
 /**
  * The v2 chart context (utils/astrology.ts getAstrologyContext) with only the
- * "Life areas" lines and "Now (sky today)" transit lines listed for `agent`.
+ * "Life areas" lines and "Now (sky today)" transit lines listed for `by` (a
+ * guru, or an AnswerPlan's focus: utils/agent/plan.ts planFocus).
  * Header lines (Reading for, Born, Age, signs, Planets) and everything else
  * (Timing, "Birth time unknown.") are kept as they are. Gurus without a
  * focus (Saga, Krishna) get the context unchanged.
  */
-export function focusContext(context: string, agent: AgentId): string {
-  const focus = GURUS[agent]?.context;
+export type ContextFocus = { areas: readonly LifeArea[]; transits: readonly TransitPlanet[] };
+
+export function focusContext(context: string, by: AgentId | ContextFocus): string {
+  const focus = typeof by === 'string' ? GURUS[by]?.context : by;
   if (!focus) return context;
   const areas = new Set<string>(focus.areas);
   const transits = new Set<string>(focus.transits);

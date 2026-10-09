@@ -12,7 +12,6 @@
  */
 import i18n from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
-import { MODEL_LANGUAGES } from './local-llm';
 import { Storage } from './storage';
 
 export const LANGUAGES = [
@@ -196,9 +195,11 @@ export function localizeTime(s: string, lng: AppLanguage = getAppLanguage()): st
 
 // ─── Questions sent to the model ─────────────────────────────────────────────
 
-/** True when the bundled model reads and answers this language. */
+/** True when the active answer adapter (utils/agent/adapters) reads and answers this language. */
 export function modelSpeaks(lang: AppLanguage = getAppLanguage()): boolean {
-  return MODEL_LANGUAGES.includes(lang);
+  // Required lazily: the adapters import modules that import this one.
+  const { activeAdapter } = require('./agent/adapters') as typeof import('./agent/adapters');
+  return activeAdapter().caps.languages.includes(lang);
 }
 
 /** Language for questions the app sends on the user's behalf. */

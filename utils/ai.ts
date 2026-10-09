@@ -1,28 +1,20 @@
-import { Platform } from 'react-native';
 import type { Profile } from './database';
-import { getFullKundli } from './astrology';
-import {
-  runLocalLLM, ensureLocalLLM, isLLMReady, MODEL_LANGUAGES, CONTEXT_VERSION, CONTEXT_WINDOW,
-  MODEL_FOLLOWUPS, type ChatMessage, type RunOptions,
-} from './local-llm';
-import { generateFollowUps, FOLLOWUPS_MAX_TOKENS, type FollowUpMessage } from './follow-ups';
 import { getAppLanguage } from './i18n';
-import { findDates, readingScriptRatio, readingSeed, NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE } from './reply-guards';
 import type { AgentId } from '../constants/gurus';
-import { runPipeline, planChipWindows } from './agent/pipeline';
-import { langLine } from './agent/adapters/gemma21-prompt';
-import { estimateTokens, sagaHistory, PROMPT_MARGIN_TOKENS } from './agent/adapters/gemma21';
-import { dateInWindows } from './timing-engine';
+import { runPipeline, runReading, runTitle, runFollowUps } from './agent/pipeline';
+import { activeAdapter } from './agent/adapters';
+import { estimateTokens, sagaHistory } from './agent/adapters/gemma21';
 
 // The prompt-budget helpers moved to the Gemma adapter; kept exported here for callers.
 export { estimateTokens, sagaHistory };
 
 /*
- * The on-device model (SmolLM2-135M fine-tuned in ml/) was trained on short
- * task-tagged prompts: "[saga]", "[krishna]", "[reading]", "[title]" plus the
- * facts for the request. The voice and rules that used to live in long system
- * prompts are in its weights. These formats must stay identical to the
- * student_* functions in ml/data/build_sft.py.
+ * Every model task goes through the answer pipeline (utils/agent/pipeline.ts)
+ * and the active adapter (utils/agent/adapters): chat (streamAI), the chart
+ * card reading, thread titles and follow-up chips. Prompt formats live in the
+ * adapters (astro-gemma: ./agent/adapters/gemma21-prompt.ts, identical to the
+ * student_* functions in ml/data/build_sft.py); each task has a model-free
+ * fallback when no model can run it.
  */
 
 export type AIMessage = { role: 'user' | 'assistant'; content: string };
@@ -72,27 +64,7 @@ export function replyLanguage(userText = ''): ReplyLang {
     /[\u0980-\u09FF]/.test(userText) ? 'bn' :
     /[\u0900-\u0963\u0966-\u097F]/.test(userText) ? 'hi' : null;
   const lang = typed ?? getAppLanguage();
-  return MODEL_LANGUAGES.includes(lang) ? lang : 'en';
-}
-
-function readingSystem(profile: Profile, lang: ReplyLang): string {
-  const k = getFullKundli({
-    birthDate: profile.birthDate,
-    birthTime: profile.birthTime ?? undefined,
-    birthLat:  profile.birthLat,
-    birthLng:  profile.birthLng,
-    birthTz:   profile.birthTz,
-  });
-  const { sun, moon, rising } = k.bigThree;
-  const lines = [
-    `Name: ${profile.name.split(' ')[0]}`,
-    `Sun: ${sun?.name ?? 'None'}`,
-    `Moon: ${moon?.name ?? 'None'}`,
-    ...(rising ? [`Rising: ${rising.name}`] : []),
-    `Nakshatra: ${k.nakshatra.name} (lord ${k.nakshatra.lord})`,
-    `Phase: ${k.dasha.lord} until ${k.dasha.endDate}`,
-  ];
-  return `[reading]${langLine(lang)}\n${lines.join('\n')}`;
+  return activeAdapter().caps.languages.includes(lang) ? lang : 'en';
 }
 
 /**
@@ -198,8 +170,9 @@ export function stripJargon(text: string): string {
     .replace(/\b(maha\s*)?dasha\b/gi, 'phase')
     // Lone Sanskrit terms that don't have a clean replacement → drop them
     .replace(/\b(nakshatra|rashi|lagna|kundli|janma\s+star)\b/gi, '')
-    // Collapse raw ISO dates (YYYY-MM-DD) to the year alone
+    // Collapse raw ISO dates (YYYY-MM-DD, also in hi/bn digits) to the year alone
     .replace(/\b(\d{4})-\d{2}-\d{2}\b/g, '$1')
+    .replace(/([०-९]{4})-[०-९]{2}-[०-९]{2}|([০-৯]{4})-[০-৯]{2}-[০-৯]{2}/g, (_m, a, b) => a ?? b)
     // Clean up artifacts. IMPORTANT: only collapse horizontal whitespace
     // (spaces, tabs) — never newlines. Markdown paragraphs depend on \n\n.
     .replace(/[ \t]+([,.;:])/g, '$1')
@@ -264,29 +237,20 @@ export async function askAI(req: AIRequest): Promise<{ text: string; tier: Model
   return { text: text.trim(), tier };
 }
 
-async function collect(messages: ChatMessage[], maxNewTokens: number, options: RunOptions = {}): Promise<string> {
-  let text = '';
-  await runLocalLLM(messages, (token) => { text += token; }, { maxNewTokens, ...options });
-  return text.trim();
-}
-
 export type ChartReadingResult = {
   /** null: hi/bn failed and `skipEnglishFallback` was set (use a cached English reading). */
   text: string | null;
   /** Language the text is in: the requested one, or 'en' if hi/bn failed twice. */
   lang: ReplyLang;
+  /** 'template': written from chart facts without a model (don't cache it as the model's reading). */
+  source: 'model' | 'template';
 };
 
 /**
  * Personality reading for the chart card, in the "SUN: …\nMOON: …" line
- * format that use-chart-reading parses. Returns null if the model isn't
- * available.
- *
- * With CONTEXT_VERSION 2, hi/bn readings are checked for script: the first
- * attempt is unseeded (v2.1 writes hi/bn readings in the right script), a
- * reading mostly in Latin script is retried once with a native seed
- * (readingSeed), and if that fails too the reading is generated in English
- * (lang 'en' in the result).
+ * format that use-chart-reading parses: the active adapter's [reading] task
+ * (gemma21: script-checked hi/bn with a seeded retry, then English), or the
+ * deterministic reading from chart facts when no model can run it.
  * `skipEnglishFallback` returns text null instead of generating that English
  * reading (the caller has one cached).
  */
@@ -294,51 +258,29 @@ export async function askChartReading(
   profile: Profile,
   lang: ReplyLang = replyLanguage(),
   { skipEnglishFallback = false } = {},
-): Promise<ChartReadingResult | null> {
-  if (!(await ensureLocalLLM(LOCAL_LLM_WAIT_MS))) return null;
-  const read = async (l: ReplyLang, replyPrefix = '', temperature?: number) => {
-    const messages: ChatMessage[] = [
-      { role: 'system', content: readingSystem(profile, l) },
-      { role: 'user',   content: 'Read my chart.' },
-    ];
-    const opts: RunOptions = temperature == null ? { replyPrefix } : { replyPrefix, temperature };
-    return replyPrefix + (await collect(messages, 300, opts));
-  };
-  if (CONTEXT_VERSION !== 2 || lang === 'en') return { text: (await read(lang)).trim(), lang };
-
-  const firstName = profile.name.split(' ')[0];
-  // In the right script, and more than a seed the model stopped right after.
-  const ok = (t: string) => t.replace(/\s/g, '').length >= 60 && readingScriptRatio(t, lang, firstName) >= NATIVE_SCRIPT_MIN;
-  for (const attempt of [0, 1] as const) {
-    const text = (await read(lang, readingSeed(lang, attempt), attempt ? RETRY_TEMPERATURE : undefined)).trim();
-    if (ok(text)) return { text, lang };
-  }
-  if (skipEnglishFallback) return { text: null, lang: 'en' };
-  return { text: (await read('en')).trim(), lang: 'en' };
-}
-
-/** A 2–4 word title for a chat thread, from its first exchange. */
-export async function askThreadTitle(userMessage: string, aiReply: string): Promise<string | null> {
-  if (!(await ensureLocalLLM(LOCAL_LLM_WAIT_MS))) return null;
-  return collect([
-    { role: 'system', content: `[title]${langLine(replyLanguage(userMessage + aiReply))}` },
-    { role: 'user',   content: `User: ${userMessage}\nAssistant: ${aiReply}` },
-  ], 16);
+): Promise<ChartReadingResult> {
+  return runReading(profile, lang, { skipEnglishFallback, waitMs: LOCAL_LLM_WAIT_MS });
 }
 
 /**
- * Up to 3 model-written follow-up chips for Saga's reply `lastAnswer` (the
- * v2.1 "[followups]" task; utils/follow-ups.ts generateFollowUps). `history`
- * is the thread before that reply, error bubbles left out, ending with the
- * question it answers; `lang` is the reply's language (replyLanguage(question)),
- * so the chips are in the language of the conversation and are sent as written.
- * The prompt has no chart facts, only the conversation (build_sft.py), so
- * `profile` is not part of it.
- *
- * Returns [] when MODEL_FOLLOWUPS is off, on web, or when the model isn't
- * already loaded (chips never load the model by themselves). Runs in the model
- * queue after anything already queued; `isCancelled` (polled on every token)
- * lets the chat stop it when the user sends a message.
+ * A 2–4 word title for a chat thread, from its first exchange: the model's
+ * ('model', raw text to clean) or the first question cut short ('template',
+ * the thread's placeholder title). Null when there is nothing to use.
+ */
+export async function askThreadTitle(
+  userMessage: string, aiReply: string,
+): Promise<{ text: string; source: 'model' | 'template' } | null> {
+  return runTitle(userMessage, aiReply, replyLanguage(userMessage + aiReply), LOCAL_LLM_WAIT_MS);
+}
+
+/**
+ * Up to 3 model-written follow-up chips for Saga's reply `lastAnswer`
+ * (pipeline runFollowUps: the adapter's 'followups' task). `history` is the
+ * thread before that reply, error bubbles left out, ending with the question
+ * it answers; `lang` is the reply's language (replyLanguage(question)), so the
+ * chips are in the language of the conversation and are sent as written.
+ * Returns [] when the adapter writes no chips or its model isn't already
+ * loaded; `isCancelled` lets the chat stop it when the user sends a message.
  */
 export async function suggestFollowUps(
   profile: Profile | null,
@@ -347,34 +289,5 @@ export async function suggestFollowUps(
   lang: ReplyLang,
   { isCancelled }: { isCancelled?: () => boolean } = {},
 ): Promise<string[]> {
-  const enabled = MODEL_FOLLOWUPS && Platform.OS !== 'web' && isLLMReady();
-  // Dates in chips must come from the timing engine, like the reply's.
-  const question = [...history].reverse().find(m => m.role === 'user')?.content ?? '';
-  const windows = profile && question ? planChipWindows(profile, question, history.slice(0, -1), lang) : [];
-  const datesOk = (chip: string) => !windows.length || findDates(chip).every(d =>
-    d.year == null ? true : dateInWindows({ year: d.year, month: d.month }, windows));
-  try {
-    const chips = await generateFollowUps(
-      async ({ system, user, maxNewTokens, temperature }, onText) => {
-        let text = '';
-        return runLocalLLM(
-          [{ role: 'system', content: system }, { role: 'user', content: user }],
-          (token) => { text += token; return onText(text); },
-          { maxNewTokens, temperature, isCancelled },
-        );
-      },
-      {
-        enabled,
-        history: history as FollowUpMessage[],
-        lastAnswer,
-        lang,
-        isCancelled,
-        fits: ({ system, user }) =>
-          estimateTokens(system) + estimateTokens(user) + FOLLOWUPS_MAX_TOKENS[lang] + PROMPT_MARGIN_TOKENS <= CONTEXT_WINDOW,
-      },
-    );
-    return chips.filter(datesOk);
-  } catch {
-    return [];
-  }
+  return runFollowUps(profile, history, lastAnswer, lang, { isCancelled });
 }

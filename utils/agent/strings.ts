@@ -7,6 +7,7 @@
  * {age} {owner} {relation}.
  */
 import type { TimingTopic } from '../timing-engine';
+import { nativeDigits } from '../reply-guards';
 
 export type Lang = 'en' | 'hi' | 'bn';
 
@@ -155,6 +156,12 @@ export const S = {
   } as Table,
   ownerSelf: { en: 'yours', hi: 'आपका', bn: 'আপনার' } as Table,
   ownerOther: { en: "{name}'s", hi: '{name} का', bn: '{name}-এর' } as Table,
+  /** Krishna without a model: a short line before the app's chosen verse. */
+  krishnaOffline: {
+    en: "I'm with you. Sit with this verse for a moment; it speaks to what you're carrying.",
+    hi: 'मैं तुम्हारे साथ हूँ। इस श्लोक के साथ एक पल ठहरो; यह उसी बात से जुड़ा है जो तुम्हारे मन में है।',
+    bn: 'আমি তোমার পাশে আছি। এই শ্লোকটির সঙ্গে একটু থামো; তোমার মনের কথাটির সঙ্গেই এটা জড়িয়ে আছে।',
+  } as Table,
   askWhen: {
     en: 'Ask me "when" about any part of life and I will look for the best window in the chart.',
     hi: 'जीवन के किसी भी हिस्से के बारे में "कब" पूछिए, चार्ट में सबसे अच्छा समय ढूँढ़कर बताया जाएगा।',
@@ -217,9 +224,22 @@ const MONTHS: Record<Lang, string[]> = {
   bn: ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'],
 };
 
-/** "March 2028" / "मार्च 2028" / "মার্চ 2028" (Western digits, like the chips). */
-export function monthLabel(d: Date, lang: Lang): string {
-  return `${MONTHS[lang][d.getMonth()]} ${d.getFullYear()}`;
+/**
+ * "March 2028" / "मार्च २०२८" / "মার্চ ২০২৮": user-visible text, so hi/bn use
+ * their own digits like the rest of the app (utils/i18n.ts localizeDigits).
+ * `western` keeps 0-9 for model-bound text (prompts, chip questions).
+ */
+export function monthLabel(d: Date, lang: Lang, { western = false } = {}): string {
+  const label = `${MONTHS[lang][d.getMonth()]} ${d.getFullYear()}`;
+  return western ? label : nativeDigits(label, lang);
+}
+
+/** A finished user-visible sentence in `lang`'s digits (ages, years filled into templates). */
+export const localText = (text: string, lang: Lang): string => nativeDigits(text, lang);
+
+/** Thread title without a model: the first question, cut to fit the thread list. */
+export function questionTitle(question: string, max = 36): string {
+  return question.length > max ? `${question.slice(0, max - 2).trim()}…` : question;
 }
 
 /** Fill {placeholders}; unknown ones are left as they are. */

@@ -17,11 +17,10 @@
  * Pure: no React Native.
  */
 import {
-  getAstrologyContext, getTimingContext, monthYear, type ContextProfile,
+  getAstrologyContext, getFullKundli, getTimingContext, monthYear, type ContextProfile,
 } from '../../astrology';
 import { dateInWindows, type TimingTopic, type TimingWindow } from '../../timing-engine';
-import { focusContext } from '../../guru-context';
-import type { AgentId } from '../../../constants/gurus';
+import { focusContext, type ContextFocus } from '../../guru-context';
 
 export type GemmaLang = 'en' | 'hi' | 'bn';
 
@@ -47,8 +46,8 @@ export type SagaPromptInput = {
   profile: ContextProfile;
   lang: GemmaLang;
   now: Date;
-  /** Guru focus (GURU_CONTEXT_FOCUS); null = full context. */
-  focus?: AgentId | null;
+  /** Chart lines to keep (AnswerPlan.focus, GURU_CONTEXT_FOCUS); null = full context. */
+  focus?: ContextFocus | null;
   timing?: { topic: TimingTopic; windows: TimingWindow[]; mode: TimingPromptMode } | null;
 };
 
@@ -103,4 +102,33 @@ export function sagaSystem({ profile, lang, now, focus, timing }: SagaPromptInpu
 export function krishnaSystem(userName: string | undefined, versePrompt: string, lang: GemmaLang): string {
   const name = userName ? `\nName: ${userName.split(' ')[0]}` : '';
   return `[krishna]${langLine(lang)}${name}\nVerse: ${versePrompt}`;
+}
+
+/** [reading] system prompt (build_sft.student_reading_system): the big three, nakshatra and current phase. */
+export function readingSystem(profile: ContextProfile, lang: GemmaLang): string {
+  const k = getFullKundli({
+    birthDate: profile.birthDate,
+    birthTime: profile.birthTime ?? undefined,
+    birthLat:  profile.birthLat,
+    birthLng:  profile.birthLng,
+    birthTz:   profile.birthTz,
+  });
+  const { sun, moon, rising } = k.bigThree;
+  const lines = [
+    `Name: ${profile.name.split(' ')[0]}`,
+    `Sun: ${sun?.name ?? 'None'}`,
+    `Moon: ${moon?.name ?? 'None'}`,
+    ...(rising ? [`Rising: ${rising.name}`] : []),
+    `Nakshatra: ${k.nakshatra.name} (lord ${k.nakshatra.lord})`,
+    `Phase: ${k.dasha.lord} until ${k.dasha.endDate}`,
+  ];
+  return `[reading]${langLine(lang)}\n${lines.join('\n')}`;
+}
+
+/** The [reading] user turn. */
+export const READING_USER = 'Read my chart.';
+
+/** [title] system prompt and user turn (build_sft.student_title). */
+export function titlePrompt(question: string, reply: string, lang: GemmaLang): { system: string; user: string } {
+  return { system: `[title]${langLine(lang)}`, user: `User: ${question}\nAssistant: ${reply}` };
 }

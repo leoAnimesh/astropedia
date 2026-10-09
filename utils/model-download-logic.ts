@@ -42,8 +42,32 @@ export type ModelSpec = {
   files: ModelFile[];
 };
 
-/** Adapters this build can run a downloaded model with (utils/agent/adapters/index.ts). */
+/**
+ * Adapters this build can run a downloaded model with (utils/agent/adapters/index.ts
+ * isRunnableAdapter; 'instruct' joins once a build registers an LLMRuntime).
+ */
 export const RUNNABLE_ADAPTERS: readonly string[] = ['gemma21'];
+/** The adapter of a model entry / install without an explicit `adapter` that matches this build's format. */
+export const DEFAULT_ADAPTER = 'gemma21';
+
+/**
+ * The adapter that drives a model (manifest entry or install marker): its
+ * explicit `adapter`, else DEFAULT_ADAPTER when its context version and chat
+ * format are this build's (astro-gemma v2 / v2.1), else null (unknown).
+ */
+export function adapterOf(
+  m: { adapter?: string; contextVersion: number; chatFormat?: string },
+  caps: Pick<AppModelCaps, 'contextVersion' | 'chatFormat'>,
+): string | null {
+  if (m.adapter) return m.adapter;
+  return m.contextVersion === caps.contextVersion && (m.chatFormat ?? 'gemma') === caps.chatFormat ? DEFAULT_ADAPTER : null;
+}
+
+/** This build can run the model's adapter. */
+export function adapterRunnable(m: Parameters<typeof adapterOf>[0], caps: Parameters<typeof adapterOf>[1]): boolean {
+  const id = adapterOf(m, caps);
+  return id != null && RUNNABLE_ADAPTERS.includes(id);
+}
 
 export type Manifest = {
   latest: string;
@@ -279,6 +303,8 @@ export type InstallMarker = {
   followups: boolean;
   chatFormat: string;
   installedAt: string;
+  /** Adapter that drives this install (ModelSpec.adapter); absent in markers written before adapters. */
+  adapter?: string;
 };
 
 export function markerFor(spec: ModelSpec, now: Date): InstallMarker {
@@ -289,13 +315,15 @@ export function markerFor(spec: ModelSpec, now: Date): InstallMarker {
     followups: spec.followups,
     chatFormat: spec.chatFormat,
     installedAt: now.toISOString(),
+    ...(spec.adapter ? { adapter: spec.adapter } : {}),
   };
 }
 
 /**
  * Whether an install marker can be trusted at launch without re-hashing: the
  * same files are still there with the recorded sizes and the model is still
- * compatible with this build (an app update may change CONTEXT_VERSION).
+ * compatible with this build (an app update may change CONTEXT_VERSION, an
+ * older build may not have the install's adapter).
  */
 export function markerUsable(
   marker: InstallMarker | null,
@@ -303,6 +331,9 @@ export function markerUsable(
   caps: AppModelCaps,
 ): boolean {
   if (!marker || !Array.isArray(marker.files) || marker.files.length === 0) return false;
+  // An install this build has no adapter for (an app downgrade, a newer model
+  // family) is not used: setup installs a supported model instead.
+  if (marker.adapter && !RUNNABLE_ADAPTERS.includes(marker.adapter)) return false;
   if (marker.contextVersion !== caps.contextVersion) return false;
   if (caps.usesFollowups && !marker.followups) return false;
   if ((marker.chatFormat ?? 'gemma') !== caps.chatFormat) return false;

@@ -20,9 +20,17 @@ import type { FollowUpTopic } from '../utils/follow-ups';
 export type { AgentId };
 
 /**
- * Send each guru only the chart lines its topic needs (utils/guru-context.ts
- * focusContext). OFF until ml/data/eval_saga.py shows no drop (> ~2 points)
- * on filtered vs full context in en/hi/bn; see the IA proposal §6.1.
+ * Send each guru only the chart lines its topic needs (AnswerPlan.focus →
+ * utils/guru-context.ts focusContext). OFF: evaluated 2026-10-09 with the
+ * v2.1 .pte (ml/scripts/timing_eval/focus_gen.ts + focus_score.py, greedy,
+ * validator against the full chart). 40 non-timing guru questions x en/hi/bn:
+ * v4 pass 83.3% full vs 75.8% focused (hi 85.0 → 72.5, bn 77.5 → 65.0; more
+ * Latin words and misattributed dates), on-topic 93.3% → 95.8%. 69 timing
+ * questions: v4 85.5% → 87.0%, first date in the best window 68.1% → 73.9%
+ * (the verify layer already makes every shown date in-window). Worse overall
+ * (84.1% → 79.9% v4 on all 189), so the model keeps the full context; v2.1 was
+ * trained on the full Life areas block only. Re-run before turning it on for
+ * a model trained with focused contexts.
  */
 export const GURU_CONTEXT_FOCUS = false as boolean;
 

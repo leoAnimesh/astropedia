@@ -13,7 +13,7 @@
  *  5. "What should I do now?", "How will I know?".
  * The chips use everyday words: planet and house names never reach the text.
  */
-import { findDates, hasDate, westernDigits, words } from './reply-guards';
+import { findDates, hasDate, nativeDigitsByScript, westernDigits, words } from './reply-guards';
 
 export type FollowUpLang = 'en' | 'hi' | 'bn';
 export type FollowUpArea =
@@ -333,8 +333,8 @@ export function pickFollowUps(
 
 // ─── Model-written chips (astro-gemma v2.1 "[followups]" task) ────────────────
 //
-// Pure helpers for utils/ai.ts suggestFollowUps (behind MODEL_FOLLOWUPS in
-// utils/local-llm.ts). The prompt must stay byte-identical to
+// Pure helpers for the gemma21 adapter's 'followups' task
+// (utils/agent/adapters/gemma21.ts, behind MODEL_FOLLOWUPS in utils/local-llm.ts). The prompt must stay byte-identical to
 // ml/data/build_sft.py student_followups_system / followups_convo, and the
 // checks follow ml/data/validate_answer.py validate_followups (format, length,
 // script, astrology words, unsafe topics, "your", invented years, repeats of an
@@ -542,7 +542,7 @@ export type FollowUpsRunner = (
 ) => Promise<string>;
 
 /**
- * Model chips for the reply `lastAnswer` (see utils/ai.ts suggestFollowUps).
+ * Model chips for the reply `lastAnswer` (see utils/agent/pipeline.ts runFollowUps).
  * Returns [] without calling `run` when `enabled` is false. `fits` may drop
  * the oldest turns until the prompt fits the context window. Generation stops
  * once 3 lines are complete or `isCancelled()` turns true (then returns []).
@@ -578,12 +578,13 @@ export async function generateFollowUps(
 export type ChipView = { id: string; label: string; ask: string };
 
 /**
- * The chips to show: the model's chips alone (label = sent text, already in the
- * reply language, up to 3) when it gave at least MODEL_FOLLOWUPS_MIN; otherwise
+ * The chips to show: the model's chips alone (label = sent text with the
+ * script's own digits, already in the reply language, up to 3) when it gave at least MODEL_FOLLOWUPS_MIN; otherwise
  * the rule-based ones (the same array). Never a mix: the user sees only
  * model-written questions, or only the fallback set.
  */
 export function mergeFollowUps(rule: ChipView[], model: string[] | null | undefined, _lang: FollowUpLang = 'en'): ChipView[] {
   if (!model || model.length < MODEL_FOLLOWUPS_MIN) return rule;
-  return model.slice(0, 3).map(q => ({ id: `model:${q}`, label: q, ask: q }));
+  // The label is shown (hi/bn digits, like the rule chips' labels); `ask` goes to the model as written.
+  return model.slice(0, 3).map(q => ({ id: `model:${q}`, label: nativeDigitsByScript(q), ask: q }));
 }
