@@ -13,6 +13,7 @@
  */
 import { findDates, replyOverlap, westernDigits, words } from '../reply-guards';
 import type { L3 } from './ask-strings';
+import { bnCase, hiCase } from './strings';
 
 export const PLAN_CODES = [
   'window', 'peak', 'alt_window', 'past_window', 'no_exact_day', 'sub_period_end', 'chart_reason', 'dasha_reason', 'transit_reason',
@@ -50,7 +51,10 @@ const rx = (parts: string[]) => new RegExp(parts.join('|').normalize('NFC'), 'iu
 /** Vocabulary detectors (a reply in any of the three languages). */
 export const VOCAB: Partial<Record<PlanCode, RegExp>> = {
   no_exact_day: rx(['single day', 'exact day', 'one day', 'a month and a window', 'not a single', 'एक तारीख', 'कोई एक तारीख', 'किसी एक तारीख', 'एक दिन', 'নির্দিষ্ট (?:একটা )?দিন', 'একটা দিন']),
-  likelihood: rx(['\\b(?:strong|reasonable|good|fair|slower|slow|steady|supportive|mixed|promising|modest)\\b (?:chance|period|stretch|support|backing|window)',
+  likelihood: rx(['\\b(?:strong|reasonable|good|fair|slower|slow|steady|supportive|mixed|promising|modest|real)\\b (?:chance|period|stretch|support|backing|window)',
+    '\\bnot strongly\\b', '\\bcomes slowly\\b', '\\bstrongest fits\\b', '\\bcan work for you\\b', '\\bnot among the stronger\\b',
+    'अच्छा साथ', 'ज़ोर नहीं', 'धीरे-धीरे', 'सहायक समय', 'ठीक-ठाक साथ', 'सबसे अच्छे विकल्पों', 'ठीक रह सकता', 'मज़बूत विकल्पों में नहीं',
+    'ভালো সমর্থন', 'জোর কম', 'ধীরে ধীরে', 'সহায়ক সময়', 'মোটামুটি সমর্থন', 'মানানসই বিষয়গুলোর', 'চলতে পারে', 'জোরালো বিষয়গুলোর মধ্যে নেই',
     '\\bstrong chance\\b', '\\breasonable chance\\b', '\\blooks slower\\b', '\\bchance\\b', '\\blikely\\b', '\\breachable\\b',
     'मज़बूत', 'मजबूत', 'अच्छी संभावना', 'ठीक-ठाक संभावना', 'संभावना', 'धीमा', 'धीमी', 'संभव', 'জোরালো', 'ভালো সম্ভাবনা', 'মোটামুটি সম্ভাবনা', 'সম্ভাবনা', 'ধীর', 'সম্ভব']),
   doctor: rx(['doctor', 'physician', 'surgeon', 'fertility specialist', 'डॉक्टर', 'चिकित्सक', 'विशेषज्ञ', 'ডাক্তার', 'চিকিৎসক', 'বিশেষজ্ঞ', 'সার্জন']),
@@ -63,7 +67,7 @@ export const VOCAB: Partial<Record<PlanCode, RegExp>> = {
   documents_decide: rx(['documents?', 'paperwork', 'कागज़ात', 'कागजात', 'दस्तावेज़', 'কাগজপত্র', 'নথি']),
   decline_sex: rx(["baby'?s sex", 'boy or a girl', 'लिंग', 'बेटा होगा या बेटी', 'লিঙ্গ', 'ছেলে হবে না মেয়ে']),
   decline_name: rx(['name or initial', 'नाम या (?:नाम का )?पहला अक्षर', 'নাম বা নামের']),
-  decline_death: rx(['how long someone will live', 'lifespan', 'कितना जिएगा', 'कितना जीएगा', 'আয়ু', 'কতদিন বাঁচবেন']),
+  decline_death: rx(['how long someone will live', 'lifespan', "can'?t predict accidents", 'कितना जिएगा', 'कितना जीएगा', 'दुर्घटना का अंदाज़ा', 'আয়ু', 'কতদিন বাঁচবেন', 'দুর্ঘটনা বলা যায় না']),
   decline_attribute: rx(["doesn'?t decide", 'does not decide', 'तय नहीं करती', 'ঠিক করে না']),
   decline_gambling: rx(['lottery', 'gambl', 'market tips', 'लॉटरी', 'सट्टा', 'शेयर बाज़ार की टिप्स', 'লটারি', 'জুয়া', 'শেয়ার বাজারের টিপস']),
   minor_redirect: rx(['stud(?:y|ies)', 'पढ़ाई', 'পড়াশোনা']),
@@ -72,7 +76,7 @@ export const VOCAB: Partial<Record<PlanCode, RegExp>> = {
   ask_which: rx(['which one do you mean', 'कौन सी बात', 'কোন জনের']),
   no_time_caveat: rx(['birth ?time', 'जन्म (?:का )?समय', 'जन्म समय', 'জন্মের সময়', 'জন্মসময়']),
   add_time_tip: rx(['birth certificate', 'add (?:it|the time)', 'जन्म प्रमाणपत्र', 'प्रोफ़ाइल में (?:जन्म समय )?जोड़', 'জন্ম সার্টিফিকেট', 'প্রোফাইলে (?:জন্মের সময় )?যোগ']),
-  answers_anyway: rx(['\\bstill\\b', 'फिर भी', 'তবুও', 'তাও']),
+  answers_anyway: rx(['\\bstill\\b', 'फिर भी', 'इससे भी', 'তবুও', 'তাও', 'তাতেও']),
   invite_confirm: rx(['does (?:that|this) match', 'मेल खाता', 'মেলে কি', 'মেলে\\?']),
   scope_redirect: rx(['outside what', 'here for your chart', 'दायरे से बाहर', 'কাজের বাইরে']),
   ack_short: rx(["you'?re welcome", 'glad', 'स्वागत', 'ख़ुशी', 'খুশি', 'স্বাগত']),
@@ -96,8 +100,8 @@ export const VOCAB: Partial<Record<PlanCode, RegExp>> = {
   govt_indicators: rx(['government', 'public[- ]sector', 'sarkari', 'सरकारी', 'সরকারি']),
   muhurat_days: rx(['muhurat', 'मुहूर्त', 'মুহূর্ত']),
   gem_info_only: rx(["isn'?t required", 'not required', 'not needed', 'ज़रूरी नहीं', 'दरकार नहीं', 'দরকার নেই']),
-  chart_reason: rx(['planet', 'cycle', 'life timeline', 'sub-period', 'chart (?:shows|points|leans|favours|gives|has)', '\\bside\\b', 'ग्रह', 'चक्र', 'दौर', 'अंतर्दशा', 'चार्ट (?:में|का|दिखाता)', 'पहलू', 'গ্রহ', 'চক্র', 'পর্ব', 'অন্তর্দশা', 'চার্টে', 'দিক']),
-  dasha_reason: rx(['sub-period', 'life cycle', 'cycle', 'part of the life timeline', 'period of', 'दौर', 'चक्र', 'अंतर्दशा', 'महादशा', 'পর্ব', 'চক্র', 'অন্তর্দশা', 'মহাদশা']),
+  chart_reason: rx(['planet', 'cycle', 'life timeline', 'sub-period', '\\bphase runs\\b', 'tied to', 'chart (?:shows|points|leans|favours|gives|has)', '\\bside\\b', 'ग्रह', 'चक्र', 'दौर', 'अंतर्दशा', 'चार्ट (?:में|का|दिखाता)', 'पहलू', 'গ্রহ', 'চক্র', 'পর্ব', 'অন্তর্দশা', 'চার্টে', 'দিক']),
+  dasha_reason: rx(['sub-period', 'life cycle', 'cycle', 'part of the life timeline', 'period of', '\\bphase runs\\b', '\\b(?:long|shorter) \\w+ period\\b', 'दौर', 'चक्र', 'अंतर्दशा', 'महादशा', 'পর্ব', 'চক্র', 'অন্তর্দশা', 'মহাদশা']),
   transit_reason: rx(['jupiter', 'saturn', 'slow-moving', 'big planets', 'planet of growth', 'बृहस्पति', 'शनि', 'धीमे चलने', 'विकास का ग्रह', 'বৃহস্পতি', 'শনি', 'ধীর গতির', 'বৃদ্ধির গ্রহ']),
   greet_short: rx(['hello', '\\bhi\\b', 'namaste', "i'?m saga", 'नमस्ते', 'सागा', 'নমস্কার', 'সাগা']),
 };
@@ -153,7 +157,9 @@ const firstSentence = (t: string) => t.split(/(?<=[.!?।])\s+/)[0] ?? t;
 export function hasCode(code: PlanCode, plan: CheckPlan, reply: string, previous: string[] = []): boolean {
   const r = nfc(reply);
   const lines = plan.say.filter(l => l.code === code || l.also?.includes(code));
-  const lineHit = lines.some(l => (l.terms ? new RegExp(l.terms.normalize('NFC'), 'iu').test(r) : replyOverlap(nfc(l.text[plan.lang]), r) >= 0.8 || r.includes(nfc(l.text[plan.lang]))));
+  // A line as the reply shows it (the template applies the bn / hi case endings when it finishes a sentence).
+  const shown = (l: PlanLine) => nfc(plan.lang === 'bn' ? bnCase(l.text.bn) : plan.lang === 'hi' ? hiCase(l.text.hi) : l.text[plan.lang]);
+  const lineHit = lines.some(l => (l.terms ? new RegExp(l.terms.normalize('NFC'), 'iu').test(r) : replyOverlap(shown(l), r) >= 0.8 || r.includes(shown(l))));
   const dates = findDates(r);
   const items = (k: number) => plan.itemTerms.filter(t => new RegExp(t, 'iu').test(r)).length >= k;
   switch (code) {
@@ -180,9 +186,12 @@ export function hasCode(code: PlanCode, plan: CheckPlan, reply: string, previous
       return sentences.some(s => previous.every(p => replyOverlap(s, nfc(p)) < 0.5));
     }
     case 'direct_first': {
-      const f = firstSentence(r);
+      // A one-sentence acknowledgement may open the answer (rules.md §1.8); the answer is then the next sentence.
+      const OPEN = plan.say.filter(l => l.pos === 'lead' && ['validation', 'ack_correction', 'calm_boundary'].includes(l.code)).map(l => nfc(l.text[plan.lang]));
+      const ss = r.split(/(?<=[.!?।])\s+/);
+      const f = ss.length > 1 && OPEN.some(o => replyOverlap(o, ss[0]) >= 0.8) ? ss[1] : firstSentence(r);
       const DIRECT_CODES: PlanCode[] = ['likelihood', 'leaning', 'compat_score', 'lucky_values', 'muhurat_days', 'computed_fact', 'decline_name', 'no_exact_day', 'peak', 'window', 'income_sources', 'dynamics', 'year_summary', 'govt_indicators', 'settlement_vs_travel'];
-      if (plan.say.some(l => l.pos === 'lead' && DIRECT_CODES.includes(l.code) && replyOverlap(nfc(l.text[plan.lang]), f) >= 0.8)) return true;
+      if (plan.say.some(l => l.pos === 'lead' && DIRECT_CODES.includes(l.code) && replyOverlap(shown(l), f) >= 0.8)) return true;
       if (plan.kind === 'timing') return findDates(f).length > 0 || VOCAB.no_exact_day!.test(f);
       if (plan.kind === 'yesno') return VOCAB.likelihood!.test(f) || plan.itemTerms.some(t => new RegExp(t, 'iu').test(f));
       if (plan.itemTerms.length) return plan.itemTerms.some(t => new RegExp(t, 'iu').test(f));

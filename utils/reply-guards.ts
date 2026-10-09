@@ -504,7 +504,8 @@ const HEALTH_Q = new RegExp(nfc([
   '\\b(?:health|healthy|ill|illness|sick|sickness|disease|symptoms?|fever|surgery|hospital|hospitali[sz]ed|cancer|tumou?r|diabetes|blood pressure|bp',
   'heart (?:attack|disease|problem|condition|surgery)|(?:chest|back|stomach|body|joint|knee|neck|leg|period|tooth) ?pains?|stomach ?ache|headaches?|backache',
   'pregnan\\w*|conceive|conceiving|miscarriage|infertil\\w*|ivf|depress\\w*|anxiety|panic attacks?|mental health|suicid\\w*|self[- ]harm',
-  'medicines?|medication|treatment|therapy|injur\\w*|infection|thyroid|pcos|pcod|migraine|insomnia|asthma|kidney|liver|stroke|paralysis|diagnos\\w*',
+  // "medicine" alone is also a field of study ("Is medicine the right field for me?"): only medicine taken counts.
+  'medicines|(?:take|taking|took|my|his|her|the) medicine|medicine (?:for|dose)|medication|treatment|therapy|injur\\w*|infection|thyroid|pcos|pcod|migraine|insomnia|asthma|kidney|liver|stroke|paralysis|diagnos\\w*',
   'bimari|bimaari|beemari|bimar|bimaar|beemar|dard|bukhar|bukhaar|sehat|tabiyat|tabiyet|ilaj|ilaaj|dawai|davai',
   'osukh|asukh|osustho|asustho|byatha|betha|shorir kharap|sorir kharap|chikitsa|oshudh|osudh)\\b',
   // Hindi
@@ -516,7 +517,8 @@ const HEALTH_Q = new RegExp(nfc([
 ].join('|')), 'i');
 
 const LEGAL_Q = new RegExp(nfc([
-  '\\b(?:court|courts|lawsuit|legal|divorce|custody|alimony|police|fir|arrest\\w*|jail|prison|bail|litigation|sue|sued|suing|inheritance',
+  // (No bare "fir": in Hinglish it means "then" — "abhi kya karu fir?"; an FIR is matched in capitals in missingAdvice.)
+  '\\b(?:court|courts|lawsuit|legal|divorce|custody|alimony|police|arrest\\w*|jail|prison|bail|litigation|sue|sued|suing|inheritance',
   '(?:property|land|inheritance|family) dispute|case (?:against|filed|hearing)|(?:court|legal|police|criminal|civil|property|land|divorce) case',
   '(?:win|lose|won|lost|winning|losing) (?:the|my|this|our|a) case',
   'mukadma|mukadama|muqadma|muqadama|talaq|talak|thana|zamanat|jamanat|adalat|adalot|kachahri|mamla|mamla[ay])\\b',
@@ -562,7 +564,7 @@ export function missingAdvice(question: string, reply: string): ('doctor' | 'law
   const r = nfc(reply);
   const out: ('doctor' | 'lawyer')[] = [];
   if (HEALTH_Q.test(q) && !DOCTOR.test(r)) out.push('doctor');
-  if (LEGAL_Q.test(q) && !LAWYER.test(r)) out.push('lawyer');
+  if ((LEGAL_Q.test(q) || /\bFIR\b|police complaint/.test(nfc(question))) && !LAWYER.test(r)) out.push('lawyer');
   return out;
 }
 

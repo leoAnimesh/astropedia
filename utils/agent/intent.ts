@@ -126,7 +126,7 @@ const LATIN: Record<IntentTopic, Lex> = {
     ['bie\\b', 3], ['bibaho?', 3], ['rishta', 1.5], ['patni', 2], ['pati\\b', 2], ['bou\\b', 2], ['bor\\b', 1.5], ['swami', 1.5], ['proposal', 1.5]],
   love: [['love', 3], ['relationship', 2.5], ['girl ?friend', 2.5], ['boy ?friend', 2.5], ['\\bgf\\b', 2], ['\\bbf\\b', 2],
     ['crush', 2.5], ['dating', 2.5], ['romance', 2.5], ['romantic', 2.5], ['soul ?mate', 2.5], ['break ?up', 2], ['my ex\\b', 2],
-    ['pyaa?r', 3], ['prem\\b', 3], ['premik', 3], ['mohabb?at', 3], ['bhalob[ae]sh?a', 3], ['partner', 1]],
+    ['pyaa?r', 3], ['prem\\b', 3], ['premik', 3], ['mohabb?at', 3], ['bhalob[ae]sh?a', 3], ['partner(?!ship)', 1]],
   job: [['jobs?\\b', 3], ['employ', 2.5], ['hired', 2.5], ['hiring', 2], ['offer letter', 3], ['interview', 2.5], ['placement', 2.5],
     ['naukri', 3], ['naukari', 3], ['nokri', 3], ['chakri', 3], ['chakori', 3], ['sarkari', 2], ['government post', 3],
     ['career', 1.5], ['resign', 3], ['better company', 2.5], ['work\\b', 0.8], ['kaam\\b', 0.8], ['kaj\\b', 0.8], ['unemploy', 3], ['switch', 1.5],
@@ -139,7 +139,7 @@ const LATIN: Record<IntentTopic, Lex> = {
     ['tarakk?i', 3], ['padonn?ati', 4]],
   business: [['business', 3], ['start-?up', 3], ['venture', 2.5], ['entrepreneur', 3], ['own company', 3], ['self-?employ', 3],
     ['shop\\b', 2], ['trade\\b', 1.5], ['trading', 1.5], ['vyapa?a?r', 3], ['vyavsay', 3], ['dhandh?a', 3], ['dukaa?n', 2],
-    ['bya?bsh?a', 3], ['babsa', 3], ['partnership firm', 3]],
+    ['bya?bsh?a', 3], ['babsa', 3], ['partnership firm', 3], ['partnership', 2.5], ['dhandha', 3]],
   money: [['money', 3], ['wealth', 3], ['rich\\b', 2.5], ['financ', 2.5], ['income', 2], ['salary', 1.5], ['savings?', 2],
     ['debts?\\b', 2.5], ['loans?\\b', 2], ['invest', 2], ['profit', 2], ['paisa', 3], ['paise', 3], ['dhan\\b', 2.5],
     ['kamai', 2.5], ['karz', 2.5], ['lakhs?\\b', 2], ['owes? me', 3], ['taka\\b', 3], ['poi?sa\\b', 2], ['dhon\\b', 2.5], ['arthik', 2.5], ['stock market', 2]],
@@ -219,6 +219,9 @@ const INDIC_LEX: Record<IntentTopic, [string, number][]> = Object.fromEntries(
   TOPICS.map(t => [t, INDIC[t].map(([s, w]) => [s.normalize('NFC'), w] as [string, number])]),
 ) as Record<IntentTopic, [string, number][]>;
 
+const ROMANCE = /\b(?:love|girl ?friend|boy ?friend|gf|bf|crush|dating|romance|romantic|pyaa?r|prem|premik)\b|प्यार|प्रेम|गर्लफ्रेंड|बॉयफ्रेंड|প্রেম|ভালোবাসা|গার্লফ্রেন্ড|বয়ফ্রেন্ড/i;
+const FAMILY_REL = /\b(?:father|mother|dad|mom|mum|papa|mummy|parents?|brother|sister|sibling|in-?laws?|saas|sasur|bhai|behen|didi|dada|boudi|baba|maa)\b|पिता|पापा|माँ|मां|माता|भाई|बहन|सास|ससुर|ननद|देवर|बाबा|বাবা|মা\b|মায়ের|ভাই|বোন|দাদা|দিদি|শ্বশুর|শাশুড়ি|ননদ/i;
+
 /** Topic hits in a text: topic → [best weight, first index]. */
 function topicHits(text: string): Map<IntentTopic, { w: number; at: number }> {
   const out = new Map<IntentTopic, { w: number; at: number }>();
@@ -238,6 +241,9 @@ function topicHits(text: string): Map<IntentTopic, { w: number; at: number }> {
       if (i >= 0) add(t, w, i);
     }
   }
+  // "My relationship with my father / brother / in-laws" is family, not romance (Stage 3: a minor's question
+  // about her father was declined as romance).
+  if (out.has('love') && FAMILY_REL.test(text) && !ROMANCE.test(text)) out.delete('love');
   // "Property dispute / divorce case" is legal; "salary hike" is promotion.
   if (out.has('legal') && out.has('property')) out.get('property')!.w *= 0.5;
   if (out.has('promotion')) {
@@ -369,6 +375,8 @@ const EXTRA_TIMING = new RegExp([
 const DEATH = new RegExp([
   '\\bwill i (?:have|meet with) an? accident\\b', '\\baccident (?:yog|in my chart)\\b', '\\bhow long will (?:my |his |her )?\\w+ live\\b', '\\bkotodin banchben\\b', '\\bkotodin bachben\\b',
   '\\bmaut kab likhi\\b', '\\bmeri maut\\b', '\\bayu kitni\\b', 'कब तक जीएंगे', 'कितने दिन जिएंगे', 'দুর্ঘটনা হবে', 'কতদিন বাঁচবেন', 'আর কতদিন বাঁচ',
+  '\\bwill i die\\b', '\\b(?:am i going to|could i) die\\b', '\\bdie (?:young|early|in an? \\w+)\\b', '\\bmar jaunga\\b', '\\bmore jabo\\b',
+  'मर जाऊंगा', 'मर जाऊँगा', 'मर जाऊंगी', 'मारा जाऊंगा', 'মরে যাব', 'মারা যাব',
   '\\bwhen will i die\\b', '\\bhow long will i live\\b', '\\b(?:my|his|her) (?:death|lifespan|life span)\\b', '\\bdeath (?:date|time|year)\\b',
   '\\bwhen will (?:my )?\\w+ die\\b', '\\bmaut kab\\b', '\\bmrityu\\b', '\\bkobe morbo\\b', '\\bkobe mara\\b',
   'मौत कब', 'मृत्यु कब', 'कब मरूंगा', 'कब मरूँगा', 'कब मरूंगी', 'आयु कितनी', 'कितने साल जीऊंगा', 'মৃত্যু কবে', 'কবে মারা', 'কবে মরব', 'আয়ু কত', 'আয়ু কত',
@@ -413,6 +421,8 @@ const ADVICE = rx([
 const YESNO = rx([
   '^\\s*(?:will|would|can|could|should|shall|is|are|am|do|does|have|has)\\b', '\\b(?:will|can|should|shall) i\\b', '\\bam i\\b', '\\bis (?:it|there)\\b',
   '\\bkya (?:mujhe|meri|mera|mere|main|mai|hum)\\b', '\\b(?:hoga|hogi|milega|milegi) (?:kya|ki nahi)\\b', '\\b(?:hobe|pabo|parbo) (?:ki|kina)\\b',
+  // Banglish "… ki ferot pabo?", "… ki hobe?" (the particle ki before the verb).
+  '\\bki\\b[^?]{0,30}\\b(?:pabo|hobe|parbo|korbe|debe|asbe|milbe)\\b\\s*\\??\\s*$',
   '^\\s*क्या ', 'क्या मुझे', 'क्या मैं', 'क्या मेरी', 'क्या मेरा', 'होगा या नहीं', 'होगी या नहीं', 'मिलेगी या नहीं',
   'আমার কি ', 'আমি কি ', 'হবে কি', 'পাব কি', 'পাবো কি', 'পারব কি', 'পারবো কি', 'হবে কিনা', 'কি\\s*[?？]\\s*$',
 ]);
@@ -469,10 +479,12 @@ const ASK_WORDS: [Ask, RegExp][] = [
 
 /** A yes/no question form in any language ("Will I…?", "क्या …?", "… কি …?"), also when it asks "this year?". */
 const YESNO_ANY = rx(['(?:^|[.?!]\\s+)(?:is|will|can|should|am|are|do|does|would)\\b', '\\bkya\\b(?! kar)', '(?:^|\\s)কি\\s(?!কর)', '(?:^|\\s)कि\\s', 'क्या', '\\b(?:hobe|pabo|parbo) to\\b', '\\bya nahi\\b', 'হবে তো']);
+/** "What is …?" ends a question that is not yes/no ("मेरे जीवन का उद्देश्य क्या है?", "jibon er uddeshyo ki?"). */
+const WHAT_IS = rx(['क्या (?:है|हैं)\\s*[?？]?\\s*$', '\\bkya (?:hai|hain)\\s*[?]?\\s*$', 'কী\\s*[?？]?\\s*$', 'কী কী\\s*[?？]?\\s*$']);
 const WHAT_TO_DO = rx(['\\bki kor(?:bo|i)\\b', '\\bkya kar(?:u|un|oon|na)\\b', 'क्या करूँ', 'क्या करूं', 'क्या करना', 'কী করব', 'কি করব', 'কী করা', 'কি করা']);
 export function isYesNo(question: string): boolean {
   const q = nfc(question);
-  return !WHAT_TO_DO.test(q) && (YESNO.test(q) || YESNO_ANY.test(q));
+  return !WHAT_TO_DO.test(q) && !WHAT_IS.test(q) && (YESNO.test(q) || YESNO_ANY.test(q));
 }
 
 /** Kind of answer a message wants (`timing` comes from the timing cues). */

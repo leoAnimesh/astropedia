@@ -299,7 +299,7 @@ const STUDY_CHOICE = rx([
   'स्ट्रीम', 'सब्जेक्ट', 'विषय', 'एडमिशन', 'दाखिला', 'বিষয়', 'বিষয়', 'ভর্তি', 'উচ্চশিক্ষা', 'স্ট্রিম',
 ]);
 const DEBT = rx([
-  '\\bdebts?\\b', '\\bloans?\\b', '\\bemi\\b', '\\bkarz', '\\bqarz', '\\bowes? me\\b', '\\bborrow', '\\bdhar\\b', '\\bdhaar\\b', '\\bferot\\b', '\\bfreed? of (?:my )?(?:debt|loan)',
+  '\\bdebts?\\b', '\\bloans?\\b', '\\bemi\\b', '\\bkarz', '\\bqarz', '\\bowes? me\\b', '\\b(?:money|amount) i (?:lent|gave)\\b', '\\bget back (?:the|my) money\\b', '\\bborrow', '\\bdhar\\b', '\\bdhaar\\b', '\\bferot\\b', '\\bfreed? of (?:my )?(?:debt|loan)',
   'कर्ज', 'क़र्ज़', 'कर्ज़', 'ऋण', 'लोन', 'उधार', 'ঋণ', 'লোন', 'ধার', 'দেনা',
 ]);
 const LOVE_ARR = rx([
@@ -322,7 +322,7 @@ const SETTLE_OR_TRIP = rx(['\\bpermanent\\b', '\\bjust for work\\b', '\\bsettle 
 const COUNTRY = rx(['\\bwhich country\\b', '\\bwhat country\\b', '\\b(?:us|usa|uk|canada|australia|germany) or (?:us|usa|uk|canada|australia|germany)\\b', 'कौन सा देश', 'কোন দেশ']);
 const VISA_LOAN = rx(['\\bvisa\\b', '\\bpr\\b', '\\bgreen card\\b', '\\bloan (?:pass|approv|sanction)', '\\b(?:home|car|education) loan\\b.*\\bapprov', '\\badmission\\b', '\\bloan pass\\b', 'वीज़ा', 'वीजा', 'लोन पास', 'ভিসা', 'লোন পাস', 'লোন হবে']);
 const PARTNERSHIP = rx(['\\bpartnership\\b', '\\bbusiness partner', '\\bwith my friend\\b.*\\bbusiness\\b', 'साझेदारी', 'पार्टनरशिप', 'অংশীদারি', 'পার্টনারশিপ']);
-const OWED = rx(['\\bowes? me\\b', '\\bget (?:it|my money) back\\b', '\\bdhar deoa\\b', '\\bdhaar deoa\\b', '\\bferot pabo\\b', '\\bpaise wapas\\b', 'उधार दिया', 'पैसे वापस', 'ধার দেওয়া', 'ফেরত পাব']);
+const OWED = rx(['\\bowes? me\\b', '\\bget (?:it|my money) back\\b', '\\bget back (?:the|my) money\\b', '\\b(?:money|amount) i (?:lent|gave)\\b', '\\bdhar deoa\\b', '\\bdhaar deoa\\b', '\\bferot pabo\\b', '\\bpaise wapas\\b', 'उधार दिया', 'पैसे वापस', 'ধার দেওয়া', 'ফেরত পাব']);
 const DIAGNOSIS = rx(['\\bwhich (?:disease|illness)', '\\bwhat (?:disease|illness)', '\\bis it (?:thyroid|cancer|diabetes|serious|bp|sugar)\\b', '\\bwill i get (?:cancer|diabetes)', '\\bkaunsi bimari\\b', '\\bkya bimari\\b', '\\bsugar ta ki\\b',
   'कौन सी बीमारी', 'कौनसी बीमारी', 'कौन-सी बीमारी', 'कौन सा रोग', 'কোন রোগ', 'কী রোগ', 'সুগার কি']);
 const STOP_TREATMENT = rx(['\\bstop (?:my |taking )?(?:\\w+ )?(?:medicine|medication|tablets?|treatment|insulin)', '\\binstead of (?:medicine|treatment)', '\\bdawai (?:band|chhod)', 'दवा बंद', 'दवाई बंद', 'ওষুধ বন্ধ']);
