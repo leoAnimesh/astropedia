@@ -1,0 +1,2098 @@
+{
+ "packages": [
+  {
+   "name": "@egjs/hammerjs",
+   "version": "2.0.17",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2018-present NAVER Corp.",
+    "Copyright (C) 2011-2017 by Jorik Tangelder (Eight Media)"
+   ],
+   "url": "http://naver.github.io/egjs"
+  },
+  {
+   "name": "@expo-google-fonts/geist",
+   "version": "0.4.2",
+   "license": "MIT AND OFL-1.1",
+   "copyright": [
+    "Copyright (c) 2020 Expo"
+   ],
+   "url": "https://github.com/expo/google-fonts/tree/master/font-packages/geist"
+  },
+  {
+   "name": "@expo-google-fonts/geist-mono",
+   "version": "0.4.2",
+   "license": "MIT AND OFL-1.1",
+   "copyright": [
+    "Copyright (c) 2020 Expo"
+   ],
+   "url": "https://github.com/expo/google-fonts/tree/master/font-packages/geist-mono"
+  },
+  {
+   "name": "@expo-google-fonts/instrument-serif",
+   "version": "0.4.1",
+   "license": "MIT AND OFL-1.1",
+   "copyright": [
+    "Copyright (c) 2020 Expo"
+   ],
+   "url": "https://github.com/expo/google-fonts/tree/master/font-packages/instrument-serif"
+  },
+  {
+   "name": "@expo-google-fonts/material-symbols",
+   "version": "0.4.48",
+   "license": "MIT AND Apache-2.0",
+   "copyright": [
+    "Copyright (c) 2020 Expo"
+   ],
+   "url": "https://github.com/expo/google-fonts/tree/master/font-packages/material-symbols"
+  },
+  {
+   "name": "@expo/dom-webview",
+   "version": "57.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://github.com/expo/expo/tree/main/packages/@expo/dom-webview"
+  },
+  {
+   "name": "@expo/ui",
+   "version": "57.0.21",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 650 Industries, Inc."
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/ui/"
+  },
+  {
+   "name": "@expo/vector-icons",
+   "version": "15.1.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Joel Arvidsson",
+    "Copyright (c) 2020 650 Industries"
+   ],
+   "url": "https://expo.github.io/vector-icons"
+  },
+  {
+   "name": "@gorhom/bottom-sheet",
+   "version": "5.2.14",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2020 Mo Gorhom"
+   ],
+   "url": "https://gorhom.dev/react-native-bottom-sheet/"
+  },
+  {
+   "name": "@gorhom/portal",
+   "version": "1.0.14",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2020 Mo Gorhom"
+   ],
+   "url": "https://github.com/gorhom/react-native-portal"
+  },
+  {
+   "name": "@huggingface/jinja",
+   "version": "0.5.10",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2023 Hugging Face"
+   ],
+   "url": "https://github.com/huggingface/huggingface.js"
+  },
+  {
+   "name": "@radix-ui/primitive",
+   "version": "1.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-collection",
+   "version": "1.1.7",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-compose-refs",
+   "version": "1.1.2",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-compose-refs",
+   "version": "1.1.5",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-context",
+   "version": "1.1.2",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-dialog",
+   "version": "1.1.15",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-direction",
+   "version": "1.1.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-dismissable-layer",
+   "version": "1.1.11",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-focus-guards",
+   "version": "1.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-focus-scope",
+   "version": "1.1.7",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-id",
+   "version": "1.1.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-portal",
+   "version": "1.1.9",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-presence",
+   "version": "1.1.5",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-primitive",
+   "version": "2.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-roving-focus",
+   "version": "1.1.11",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-slot",
+   "version": "1.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-slot",
+   "version": "1.3.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-tabs",
+   "version": "1.1.13",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-use-callback-ref",
+   "version": "1.1.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-use-controllable-state",
+   "version": "1.2.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-use-effect-event",
+   "version": "0.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 WorkOS"
+   ],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-use-escape-keydown",
+   "version": "1.1.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@radix-ui/react-use-layout-effect",
+   "version": "1.1.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://radix-ui.com/primitives"
+  },
+  {
+   "name": "@react-native-masked-view/masked-view",
+   "version": "0.3.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present, Facebook, Inc."
+   ],
+   "url": "https://github.com/react-native-masked-view/masked-view"
+  },
+  {
+   "name": "@react-native/assets-registry",
+   "version": "0.86.3",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://github.com/react/react-native/tree/HEAD/packages/assets"
+  },
+  {
+   "name": "@react-native/normalize-colors",
+   "version": "0.86.3",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://github.com/react/react-native/tree/HEAD/packages/normalize-color"
+  },
+  {
+   "name": "@react-native/virtualized-lists",
+   "version": "0.86.3",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://github.com/react/react-native/tree/HEAD/packages/virtualized-lists"
+  },
+  {
+   "name": "@react-navigation/bottom-tabs",
+   "version": "7.16.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 React Navigation Contributors"
+   ],
+   "url": "https://github.com/react-navigation/react-navigation"
+  },
+  {
+   "name": "@react-navigation/core",
+   "version": "7.17.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 React Navigation Contributors"
+   ],
+   "url": "https://reactnavigation.org"
+  },
+  {
+   "name": "@react-navigation/elements",
+   "version": "2.9.18",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 React Navigation Contributors"
+   ],
+   "url": "https://reactnavigation.org"
+  },
+  {
+   "name": "@react-navigation/native",
+   "version": "7.2.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 React Navigation Contributors"
+   ],
+   "url": "https://reactnavigation.org"
+  },
+  {
+   "name": "@react-navigation/routers",
+   "version": "7.5.5",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 React Navigation Contributors"
+   ],
+   "url": "https://reactnavigation.org/docs/custom-routers/"
+  },
+  {
+   "name": "@types/hammerjs",
+   "version": "2.0.46",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Microsoft Corporation."
+   ],
+   "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/hammerjs"
+  },
+  {
+   "name": "@types/react",
+   "version": "19.3.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Microsoft Corporation."
+   ],
+   "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react"
+  },
+  {
+   "name": "@types/react-test-renderer",
+   "version": "19.3.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Microsoft Corporation."
+   ],
+   "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-test-renderer"
+  },
+  {
+   "name": "@ungap/structured-clone",
+   "version": "1.3.1",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) 2021, Andrea Giammarchi, @WebReflection",
+    "copyright notice and this permission notice appear in all copies."
+   ],
+   "url": "https://github.com/ungap/structured-clone"
+  },
+  {
+   "name": "abort-controller",
+   "version": "3.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Toru Nagashima"
+   ],
+   "url": "https://github.com/mysticatea/abort-controller"
+  },
+  {
+   "name": "anser",
+   "version": "1.4.10",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2012-20 Ionică Bizău <bizauionica@gmail.com> (https://ionicabizau.net)"
+   ],
+   "url": "https://github.com/IonicaBizau/anser"
+  },
+  {
+   "name": "ansi-regex",
+   "version": "5.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "chalk/ansi-regex"
+  },
+  {
+   "name": "ansi-styles",
+   "version": "4.3.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "chalk/ansi-styles"
+  },
+  {
+   "name": "ansi-styles",
+   "version": "5.2.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "chalk/ansi-styles"
+  },
+  {
+   "name": "argparse",
+   "version": "1.0.10",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (C) 2012 by Vitaly Puzrin"
+   ],
+   "url": "nodeca/argparse"
+  },
+  {
+   "name": "aria-hidden",
+   "version": "1.2.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/aria-hidden"
+  },
+  {
+   "name": "asap",
+   "version": "2.0.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2009–2014 Contributors. All rights reserved."
+   ],
+   "url": "https://github.com/kriskowal/asap"
+  },
+  {
+   "name": "await-lock",
+   "version": "2.2.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present James Ide"
+   ],
+   "url": "https://github.com/ide/await-lock"
+  },
+  {
+   "name": "badgin",
+   "version": "1.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Julian Hundeloh"
+   ],
+   "url": "https://github.com/jaulz/badgin"
+  },
+  {
+   "name": "base-64",
+   "version": "1.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Mathias Bynens"
+   ],
+   "url": "https://mths.be/base64"
+  },
+  {
+   "name": "base64-arraybuffer",
+   "version": "1.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2012 Niklas von Hertzen"
+   ],
+   "url": "https://github.com/niklasvh/base64-arraybuffer"
+  },
+  {
+   "name": "base64-js",
+   "version": "1.5.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014 Jameson Little"
+   ],
+   "url": "https://github.com/beatgammit/base64-js"
+  },
+  {
+   "name": "boolbase",
+   "version": "1.0.0",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) Felix Boehm"
+   ],
+   "url": "https://github.com/fb55/boolbase"
+  },
+  {
+   "name": "camelize",
+   "version": "1.0.1",
+   "license": "MIT",
+   "copyright": [
+    "COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER"
+   ],
+   "url": "https://github.com/ljharb/camelize"
+  },
+  {
+   "name": "client-only",
+   "version": "0.0.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://reactjs.org/"
+  },
+  {
+   "name": "cliui",
+   "version": "8.0.1",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) 2015, Contributors"
+   ],
+   "url": "yargs/cliui"
+  },
+  {
+   "name": "color",
+   "version": "4.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2012 Heather Arthur"
+   ],
+   "url": "Qix-/color"
+  },
+  {
+   "name": "color-convert",
+   "version": "2.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2011-2016 Heather Arthur <fayearthur@gmail.com>"
+   ],
+   "url": "Qix-/color-convert"
+  },
+  {
+   "name": "color-name",
+   "version": "1.1.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Dmitry Ivanov"
+   ],
+   "url": "https://github.com/colorjs/color-name"
+  },
+  {
+   "name": "color-string",
+   "version": "1.9.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2011 Heather Arthur <fayearthur@gmail.com>"
+   ],
+   "url": "Qix-/color-string"
+  },
+  {
+   "name": "commander",
+   "version": "12.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2011 TJ Holowaychuk <tj@vision-media.ca>"
+   ],
+   "url": "https://github.com/tj/commander.js"
+  },
+  {
+   "name": "convert-source-map",
+   "version": "2.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2013 Thorsten Lorenz."
+   ],
+   "url": "https://github.com/thlorenz/convert-source-map"
+  },
+  {
+   "name": "country-state-city",
+   "version": "3.2.1",
+   "license": "GPL-3.0",
+   "copyright": [
+    "Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>",
+    "copyright on the Program, and are irrevocable provided the stated",
+    "copyright holder, and you cure the violation prior to 30 days after",
+    "Copyright (C) {year}  {name of author}"
+   ],
+   "url": "https://github.com/harpreetkhalsagtbit/country-state-city"
+  },
+  {
+   "name": "css-color-keywords",
+   "version": "1.0.0",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) 2017, Jakob Krigovsky",
+    "copyright notice and this permission notice appear in all copies."
+   ],
+   "url": "sonicdoe/css-color-keywords"
+  },
+  {
+   "name": "css-line-break",
+   "version": "2.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Niklas von Hertzen"
+   ],
+   "url": "https://github.com/niklasvh/css-line-break"
+  },
+  {
+   "name": "css-select",
+   "version": "5.2.2",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/css-select"
+  },
+  {
+   "name": "css-to-react-native",
+   "version": "3.2.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2016 Jacob Parker and Maximilian Stoiber"
+   ],
+   "url": "https://github.com/styled-components/css-to-react-native"
+  },
+  {
+   "name": "css-tree",
+   "version": "1.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (C) 2016-2019 by Roman Dvornov"
+   ],
+   "url": "csstree/csstree"
+  },
+  {
+   "name": "css-what",
+   "version": "6.2.2",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/css-what"
+  },
+  {
+   "name": "csstype",
+   "version": "3.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017-2018 Fredrik Nicol"
+   ],
+   "url": "https://github.com/frenic/csstype"
+  },
+  {
+   "name": "debug",
+   "version": "4.4.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014-2017 TJ Holowaychuk <tj@vision-media.ca>",
+    "Copyright (c) 2018-2021 Josh Junon"
+   ],
+   "url": "https://github.com/debug-js/debug"
+  },
+  {
+   "name": "decode-uri-component",
+   "version": "0.2.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017, Sam Verschueren <sam.verschueren@gmail.com> (github.com/SamVerschueren)"
+   ],
+   "url": "SamVerschueren/decode-uri-component"
+  },
+  {
+   "name": "detect-node-es",
+   "version": "1.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Ilya Kantor"
+   ],
+   "url": "https://github.com/thekashey/detect-node"
+  },
+  {
+   "name": "dom-serializer",
+   "version": "2.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014 The cheeriojs contributors"
+   ],
+   "url": "https://github.com/cheeriojs/dom-serializer"
+  },
+  {
+   "name": "domelementtype",
+   "version": "2.3.0",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/domelementtype"
+  },
+  {
+   "name": "domhandler",
+   "version": "5.0.3",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/domhandler"
+  },
+  {
+   "name": "domutils",
+   "version": "3.2.2",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/domutils"
+  },
+  {
+   "name": "emoji-regex",
+   "version": "8.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Mathias Bynens"
+   ],
+   "url": "https://mths.be/emoji-regex"
+  },
+  {
+   "name": "entities",
+   "version": "2.0.3",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/entities"
+  },
+  {
+   "name": "entities",
+   "version": "4.5.0",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/entities"
+  },
+  {
+   "name": "escalade",
+   "version": "3.2.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)"
+   ],
+   "url": "lukeed/escalade"
+  },
+  {
+   "name": "escape-string-regexp",
+   "version": "4.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)"
+   ],
+   "url": "sindresorhus/escape-string-regexp"
+  },
+  {
+   "name": "event-target-shim",
+   "version": "5.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Toru Nagashima"
+   ],
+   "url": "https://github.com/mysticatea/event-target-shim"
+  },
+  {
+   "name": "ExecuTorch",
+   "version": "1.4.1",
+   "license": "BSD-3-Clause",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://github.com/pytorch/executorch"
+  },
+  {
+   "name": "expo",
+   "version": "57.0.26",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://github.com/expo/expo/tree/main/packages/expo"
+  },
+  {
+   "name": "expo-application",
+   "version": "57.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/application/"
+  },
+  {
+   "name": "expo-asset",
+   "version": "57.0.18",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/asset/"
+  },
+  {
+   "name": "expo-constants",
+   "version": "57.0.20",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/constants/"
+  },
+  {
+   "name": "expo-device",
+   "version": "57.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/device/"
+  },
+  {
+   "name": "expo-file-system",
+   "version": "57.0.7",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/filesystem/"
+  },
+  {
+   "name": "expo-font",
+   "version": "57.0.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/font/"
+  },
+  {
+   "name": "expo-glass-effect",
+   "version": "57.0.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/glass-effect/"
+  },
+  {
+   "name": "expo-haptics",
+   "version": "57.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/haptics/"
+  },
+  {
+   "name": "expo-image",
+   "version": "57.0.5",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/image/"
+  },
+  {
+   "name": "expo-keep-awake",
+   "version": "57.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/keep-awake/"
+  },
+  {
+   "name": "expo-linking",
+   "version": "57.0.11",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/linking"
+  },
+  {
+   "name": "expo-modules-core",
+   "version": "57.0.20",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://github.com/expo/expo/tree/main/packages/expo-modules-core"
+  },
+  {
+   "name": "expo-modules-jsi",
+   "version": "57.1.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://github.com/expo/expo/tree/main/packages/expo-modules-jsi"
+  },
+  {
+   "name": "expo-notifications",
+   "version": "57.0.21",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/notifications/"
+  },
+  {
+   "name": "expo-print",
+   "version": "57.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/print/"
+  },
+  {
+   "name": "expo-router",
+   "version": "57.0.24",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 650 Industries, Inc."
+   ],
+   "url": "https://docs.expo.dev/routing/introduction/"
+  },
+  {
+   "name": "expo-server",
+   "version": "57.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://github.com/expo/expo/tree/main/packages/expo-server"
+  },
+  {
+   "name": "expo-sharing",
+   "version": "57.0.22",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/sharing/"
+  },
+  {
+   "name": "expo-splash-screen",
+   "version": "57.0.9",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/splash-screen/"
+  },
+  {
+   "name": "expo-sqlite",
+   "version": "57.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/sqlite/"
+  },
+  {
+   "name": "expo-status-bar",
+   "version": "57.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/status-bar/"
+  },
+  {
+   "name": "expo-symbols",
+   "version": "57.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/symbols/"
+  },
+  {
+   "name": "expo-system-ui",
+   "version": "57.0.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/system-ui"
+  },
+  {
+   "name": "expo-web-browser",
+   "version": "57.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present 650 Industries, Inc. (aka Expo)"
+   ],
+   "url": "https://docs.expo.dev/versions/latest/sdk/webbrowser/"
+  },
+  {
+   "name": "fast-deep-equal",
+   "version": "3.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Evgeny Poberezkin"
+   ],
+   "url": "https://github.com/epoberezkin/fast-deep-equal"
+  },
+  {
+   "name": "fdir",
+   "version": "6.5.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2023 Abdullah Atta"
+   ],
+   "url": "https://github.com/thecodrr/fdir"
+  },
+  {
+   "name": "filter-obj",
+   "version": "1.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "sindresorhus/filter-obj"
+  },
+  {
+   "name": "flow-enums-runtime",
+   "version": "0.0.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Facebook, Inc. and its affiliates."
+   ],
+   "url": "https://github.com/facebook/flow"
+  },
+  {
+   "name": "fontfaceobserver",
+   "version": "2.3.0",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) 2014 - Bram Stein"
+   ],
+   "url": "https://fontfaceobserver.com/"
+  },
+  {
+   "name": "fuse.js",
+   "version": "7.3.0",
+   "license": "Apache-2.0",
+   "copyright": [
+    "copyright notice that is included in or attached to the work",
+    "copyright license to reproduce, prepare Derivative Works of,",
+    "Copyright 2017 Kirollos Risk"
+   ],
+   "url": "http://fusejs.io"
+  },
+  {
+   "name": "Geist and Geist Mono fonts",
+   "version": "",
+   "license": "OFL-1.1",
+   "copyright": [
+    "Copyright 2024 The Geist Project Authors"
+   ],
+   "url": "https://github.com/vercel/geist-font"
+  },
+  {
+   "name": "get-caller-file",
+   "version": "2.0.5",
+   "license": "ISC",
+   "copyright": [
+    "Copyright 2018 Stefan Penner"
+   ],
+   "url": "https://github.com/stefanpenner/get-caller-file"
+  },
+  {
+   "name": "get-nonce",
+   "version": "1.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2020 Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/get-nonce"
+  },
+  {
+   "name": "Hermes",
+   "version": "",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://github.com/facebook/hermes"
+  },
+  {
+   "name": "hoist-non-react-statics",
+   "version": "3.3.2",
+   "license": "BSD-3-Clause",
+   "copyright": [
+    "Copyright (c) 2015, Yahoo! Inc. All rights reserved."
+   ],
+   "url": "https://github.com/mridgway/hoist-non-react-statics"
+  },
+  {
+   "name": "html-parse-stringify",
+   "version": "4.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2025 Henrik Joreteg <henrik@joreteg.com>",
+    "Copyright (c) 2026-present i18next (https://github.com/i18next)"
+   ],
+   "url": "https://github.com/i18next/html-parse-stringify"
+  },
+  {
+   "name": "html2canvas",
+   "version": "1.4.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2012 Niklas von Hertzen"
+   ],
+   "url": "https://html2canvas.hertzen.com"
+  },
+  {
+   "name": "i18next",
+   "version": "26.4.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2011-present i18next"
+   ],
+   "url": "https://www.i18next.com"
+  },
+  {
+   "name": "Instrument Serif font",
+   "version": "",
+   "license": "OFL-1.1",
+   "copyright": [
+    "Copyright 2022 The Instrument Serif Project Authors"
+   ],
+   "url": "https://github.com/Instrument/instrument-serif"
+  },
+  {
+   "name": "invariant",
+   "version": "2.2.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2013-present, Facebook, Inc."
+   ],
+   "url": "https://github.com/zertosh/invariant"
+  },
+  {
+   "name": "is-arrayish",
+   "version": "0.3.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 JD Ballard"
+   ],
+   "url": "https://github.com/qix-/node-is-arrayish"
+  },
+  {
+   "name": "is-fullwidth-code-point",
+   "version": "3.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "sindresorhus/is-fullwidth-code-point"
+  },
+  {
+   "name": "js-tokens",
+   "version": "4.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014, 2015, 2016, 2017, 2018 Simon Lydell"
+   ],
+   "url": "lydell/js-tokens"
+  },
+  {
+   "name": "jsonrepair",
+   "version": "3.14.0",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) 2020-2026 by Jos de Jong"
+   ],
+   "url": "https://github.com/josdejong/jsonrepair"
+  },
+  {
+   "name": "jsonschema",
+   "version": "1.5.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (C) 2012-2015 Tom de Grunt <tom@degrunt.nl>"
+   ],
+   "url": "https://github.com/tdegrunt/jsonschema"
+  },
+  {
+   "name": "linkify-it",
+   "version": "2.2.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Vitaly Puzrin."
+   ],
+   "url": "markdown-it/linkify-it"
+  },
+  {
+   "name": "loose-envify",
+   "version": "1.4.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Andres Suarez <zertosh@gmail.com>"
+   ],
+   "url": "https://github.com/zertosh/loose-envify"
+  },
+  {
+   "name": "markdown-it",
+   "version": "10.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin."
+   ],
+   "url": "markdown-it/markdown-it"
+  },
+  {
+   "name": "mdn-data",
+   "version": "2.0.14",
+   "license": "CC0-1.0",
+   "copyright": [
+    "Copyright and Related Rights in the Work and the meaning and intended legal",
+    "Copyright and Related Rights in the Work or (ii) assert any associated claims"
+   ],
+   "url": "https://developer.mozilla.org"
+  },
+  {
+   "name": "mdurl",
+   "version": "1.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Vitaly Puzrin, Alex Kocharin.",
+    "Copyright Joyent, Inc. and other Node contributors. All rights reserved."
+   ],
+   "url": "markdown-it/mdurl"
+  },
+  {
+   "name": "memoize-one",
+   "version": "5.2.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2019 Alexander Reardon"
+   ],
+   "url": "https://github.com/alexreardon/memoize-one"
+  },
+  {
+   "name": "MMKV",
+   "version": "",
+   "license": "BSD-3-Clause",
+   "copyright": [
+    "Copyright (C) 2018 THL A29 Limited, a Tencent company."
+   ],
+   "url": "https://github.com/Tencent/MMKV"
+  },
+  {
+   "name": "ms",
+   "version": "2.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2020 Vercel, Inc."
+   ],
+   "url": "vercel/ms"
+  },
+  {
+   "name": "nanoid",
+   "version": "3.3.12",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2017 Andrey Sitnik <andrey@sitnik.ru>",
+    "COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER"
+   ],
+   "url": "ai/nanoid"
+  },
+  {
+   "name": "nanoid",
+   "version": "3.3.19",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2017 Andrey Sitnik <andrey@sitnik.ru>",
+    "COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER"
+   ],
+   "url": "ai/nanoid"
+  },
+  {
+   "name": "nth-check",
+   "version": "2.1.1",
+   "license": "BSD-2-Clause",
+   "copyright": [
+    "Copyright (c) Felix Böhm"
+   ],
+   "url": "https://github.com/fb55/nth-check"
+  },
+  {
+   "name": "nullthrows",
+   "version": "1.1.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2016 Andres Suarez"
+   ],
+   "url": "https://github.com/zertosh/nullthrows"
+  },
+  {
+   "name": "object-assign",
+   "version": "4.1.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "sindresorhus/object-assign"
+  },
+  {
+   "name": "picomatch",
+   "version": "4.0.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017-present, Jon Schlinkert."
+   ],
+   "url": "https://github.com/micromatch/picomatch"
+  },
+  {
+   "name": "postcss-value-parser",
+   "version": "4.2.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Bogdan Chadkin <trysound@yandex.ru>"
+   ],
+   "url": "https://github.com/TrySound/postcss-value-parser"
+  },
+  {
+   "name": "pretty-format",
+   "version": "29.7.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://github.com/jestjs/jest"
+  },
+  {
+   "name": "promise",
+   "version": "8.3.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014 Forbes Lindesay"
+   ],
+   "url": "https://github.com/then/promise"
+  },
+  {
+   "name": "prop-types",
+   "version": "15.8.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2013-present, Facebook, Inc."
+   ],
+   "url": "https://facebook.github.io/react/"
+  },
+  {
+   "name": "query-string",
+   "version": "7.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (http://sindresorhus.com)"
+   ],
+   "url": "sindresorhus/query-string"
+  },
+  {
+   "name": "react",
+   "version": "19.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://react.dev/"
+  },
+  {
+   "name": "react-devtools-core",
+   "version": "6.1.5",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://github.com/facebook/react"
+  },
+  {
+   "name": "react-fast-compare",
+   "version": "3.2.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2018 Formidable Labs",
+    "Copyright (c) 2017 Evgeny Poberezkin"
+   ],
+   "url": "https://github.com/FormidableLabs/react-fast-compare"
+  },
+  {
+   "name": "react-freeze",
+   "version": "1.0.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2021 Software Mansion"
+   ],
+   "url": "software-mansion/react-freeze"
+  },
+  {
+   "name": "react-i18next",
+   "version": "17.0.15",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015-present i18next"
+   ],
+   "url": "https://github.com/i18next/react-i18next"
+  },
+  {
+   "name": "react-is",
+   "version": "16.13.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Facebook, Inc. and its affiliates."
+   ],
+   "url": "https://reactjs.org/"
+  },
+  {
+   "name": "react-is",
+   "version": "18.3.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Facebook, Inc. and its affiliates."
+   ],
+   "url": "https://reactjs.org/"
+  },
+  {
+   "name": "react-is",
+   "version": "19.2.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://react.dev/"
+  },
+  {
+   "name": "react-native",
+   "version": "0.86.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://reactnative.dev/"
+  },
+  {
+   "name": "react-native-blob-util",
+   "version": "0.24.12",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Ron Radtke (dev@ikascrips.de, ron.radtke@hawk-intech.com)"
+   ],
+   "url": "https://github.com/RonRadtke/react-native-blob-util"
+  },
+  {
+   "name": "react-native-device-info",
+   "version": "15.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Rebecca Hughes"
+   ],
+   "url": "https://github.com/react-native-device-info/react-native-device-info"
+  },
+  {
+   "name": "react-native-drawer-layout",
+   "version": "4.2.11",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 React Native Community"
+   ],
+   "url": "https://reactnavigation.org/docs/drawer-layout/"
+  },
+  {
+   "name": "react-native-executorch",
+   "version": "0.10.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2024 Software Mansion",
+    "Copyright (c) Meta Platforms, Inc. and affiliates.",
+    "Copyright 2023 Arm Limited and/or its affiliates.",
+    "Copyright (c) Qualcomm Innovation Center, Inc."
+   ],
+   "url": "https://docs.swmansion.com/react-native-executorch"
+  },
+  {
+   "name": "react-native-fit-image",
+   "version": "1.5.5",
+   "license": "Beerware",
+   "copyright": [
+    "Copyright (c) Jitae Kim"
+   ],
+   "url": "https://github.com/huiseoul/react-native-fit-image"
+  },
+  {
+   "name": "react-native-gesture-handler",
+   "version": "2.32.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2016 Software Mansion <swmansion.com>"
+   ],
+   "url": "https://docs.swmansion.com/react-native-gesture-handler/"
+  },
+  {
+   "name": "react-native-is-edge-to-edge",
+   "version": "1.3.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2024 Mathieu Acthernoene"
+   ],
+   "url": "https://github.com/zoontek/react-native-edge-to-edge"
+  },
+  {
+   "name": "react-native-markdown-display",
+   "version": "7.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2018 - 2019 Mient-jan Stelling and Tom Pickard"
+   ],
+   "url": "https://github.com/iamacup/react-native-markdown-display/"
+  },
+  {
+   "name": "react-native-mmkv",
+   "version": "4.3.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Marc Rousavy"
+   ],
+   "url": "https://github.com/mrousavy/react-native-mmkv"
+  },
+  {
+   "name": "react-native-nitro-modules",
+   "version": "0.35.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Marc Rousavy"
+   ],
+   "url": "https://github.com/mrousavy/nitro"
+  },
+  {
+   "name": "react-native-reanimated",
+   "version": "4.5.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2016 Software Mansion <swmansion.com>"
+   ],
+   "url": "https://docs.swmansion.com/react-native-reanimated"
+  },
+  {
+   "name": "react-native-safe-area-context",
+   "version": "5.7.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2019 Th3rd Wave"
+   ],
+   "url": "https://github.com/AppAndFlow/react-native-safe-area-context"
+  },
+  {
+   "name": "react-native-screens",
+   "version": "4.26.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2018 Software Mansion <swmansion.com>"
+   ],
+   "url": "https://github.com/software-mansion/react-native-screens"
+  },
+  {
+   "name": "react-native-svg",
+   "version": "15.15.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) [2015-2016] [Horcrux]"
+   ],
+   "url": "https://github.com/react-native-community/react-native-svg"
+  },
+  {
+   "name": "react-native-view-shot",
+   "version": "5.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2016 Gaëtan Renaudeau"
+   ],
+   "url": "https://github.com/gre/react-native-view-shot"
+  },
+  {
+   "name": "react-native-worklets",
+   "version": "0.10.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2024 nobody"
+   ],
+   "url": "https://docs.swmansion.com/react-native-worklets"
+  },
+  {
+   "name": "react-remove-scroll",
+   "version": "2.7.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/react-remove-scroll"
+  },
+  {
+   "name": "react-remove-scroll-bar",
+   "version": "2.3.8",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/react-remove-scroll-bar"
+  },
+  {
+   "name": "react-style-singleton",
+   "version": "2.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/react-style-singleton"
+  },
+  {
+   "name": "regenerator-runtime",
+   "version": "0.13.11",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014-present, Facebook, Inc."
+   ],
+   "url": "https://github.com/facebook/regenerator/tree/main/packages/runtime"
+  },
+  {
+   "name": "require-directory",
+   "version": "2.1.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2011 Troy Goode <troygoode@gmail.com>"
+   ],
+   "url": "https://github.com/troygoode/node-require-directory/"
+  },
+  {
+   "name": "sax",
+   "version": "1.6.0",
+   "license": "BlueOak-1.0.0",
+   "copyright": [
+    "copyright in it."
+   ],
+   "url": "ssh://git@github.com/isaacs/sax-js"
+  },
+  {
+   "name": "scheduler",
+   "version": "0.27.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://react.dev/"
+  },
+  {
+   "name": "semver",
+   "version": "7.8.0",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) Isaac Z. Schlueter and Contributors",
+    "copyright notice and this permission notice appear in all copies."
+   ],
+   "url": "https://github.com/npm/node-semver"
+  },
+  {
+   "name": "semver",
+   "version": "7.8.5",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) Isaac Z. Schlueter and Contributors",
+    "copyright notice and this permission notice appear in all copies."
+   ],
+   "url": "https://github.com/npm/node-semver"
+  },
+  {
+   "name": "server-only",
+   "version": "0.0.1",
+   "license": "MIT",
+   "copyright": [],
+   "url": "https://reactjs.org/"
+  },
+  {
+   "name": "sf-symbols-typescript",
+   "version": "2.2.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2023 Fernando Rojo"
+   ],
+   "url": "https://github.com/nandorojo/typescript-sf-symbols"
+  },
+  {
+   "name": "shallowequal",
+   "version": "1.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Alberto Leal <mailforalberto@gmail.com> (github.com/dashed)"
+   ],
+   "url": "dashed/shallowequal"
+  },
+  {
+   "name": "shell-quote",
+   "version": "1.8.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2013 James Halliday (mail@substack.net)"
+   ],
+   "url": "https://github.com/ljharb/shell-quote"
+  },
+  {
+   "name": "simple-swizzle",
+   "version": "0.2.4",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2015 Josh Junon"
+   ],
+   "url": "qix-/node-simple-swizzle"
+  },
+  {
+   "name": "source-map",
+   "version": "0.6.1",
+   "license": "BSD-3-Clause",
+   "copyright": [
+    "Copyright (c) 2009-2011, Mozilla Foundation and contributors"
+   ],
+   "url": "https://github.com/mozilla/source-map"
+  },
+  {
+   "name": "split-on-first",
+   "version": "1.1.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "sindresorhus/split-on-first"
+  },
+  {
+   "name": "sprintf-js",
+   "version": "1.0.3",
+   "license": "BSD-3-Clause",
+   "copyright": [
+    "Copyright (c) 2007-2014, Alexandru Marasteanu <hello [at) alexei (dot] ro>"
+   ],
+   "url": "https://github.com/alexei/sprintf.js"
+  },
+  {
+   "name": "SQLite",
+   "version": "",
+   "license": "blessing",
+   "copyright": [
+    "The SQLite source code is in the public domain."
+   ],
+   "url": "https://sqlite.org/copyright.html"
+  },
+  {
+   "name": "stacktrace-parser",
+   "version": "0.1.11",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014-2019 Georg Tavonius"
+   ],
+   "url": "https://github.com/errwischt/stacktrace-parser"
+  },
+  {
+   "name": "standard-navigation",
+   "version": "0.0.5",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Satyajit Sahoo"
+   ],
+   "url": "https://github.com/react-navigation/standard-navigation"
+  },
+  {
+   "name": "strict-uri-encode",
+   "version": "2.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Kevin Martensson <kevinmartensson@gmail.com> (github.com/kevva)"
+   ],
+   "url": "kevva/strict-uri-encode"
+  },
+  {
+   "name": "string-width",
+   "version": "4.2.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "sindresorhus/string-width"
+  },
+  {
+   "name": "strip-ansi",
+   "version": "6.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "chalk/strip-ansi"
+  },
+  {
+   "name": "text-segmentation",
+   "version": "1.0.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2021 Niklas von Hertzen"
+   ],
+   "url": "https://github.com/niklasvh/text-segmentation"
+  },
+  {
+   "name": "tinyglobby",
+   "version": "0.2.16",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2024 Madeline Gurriarán"
+   ],
+   "url": "https://superchupu.dev/tinyglobby"
+  },
+  {
+   "name": "tslib",
+   "version": "2.8.1",
+   "license": "0BSD",
+   "copyright": [
+    "Copyright (c) Microsoft Corporation."
+   ],
+   "url": "https://www.typescriptlang.org/"
+  },
+  {
+   "name": "type-fest",
+   "version": "0.7.1",
+   "license": "(MIT OR CC0-1.0)",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)"
+   ],
+   "url": "sindresorhus/type-fest"
+  },
+  {
+   "name": "ua-parser-js",
+   "version": "0.7.41",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2012-2025 Faisal Salman <<f@faisalman.com>>"
+   ],
+   "url": "https://uaparser.dev"
+  },
+  {
+   "name": "uc.micro",
+   "version": "1.0.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright Mathias Bynens <https://mathiasbynens.be/>"
+   ],
+   "url": "markdown-it/uc.micro"
+  },
+  {
+   "name": "use-callback-ref",
+   "version": "1.3.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/use-callback-ref/"
+  },
+  {
+   "name": "use-latest-callback",
+   "version": "0.2.6",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2023 Satyajit Sahoo"
+   ],
+   "url": "https://github.com/satya164/use-latest-callback"
+  },
+  {
+   "name": "use-sidecar",
+   "version": "1.1.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2017 Anton Korzunov"
+   ],
+   "url": "https://github.com/theKashey/use-sidecar"
+  },
+  {
+   "name": "use-sync-external-store",
+   "version": "1.6.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://github.com/facebook/react"
+  },
+  {
+   "name": "use-sync-external-store",
+   "version": "1.7.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Meta Platforms, Inc. and affiliates."
+   ],
+   "url": "https://github.com/react/react"
+  },
+  {
+   "name": "utrie",
+   "version": "1.0.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2021 Niklas von Hertzen"
+   ],
+   "url": "https://github.com/niklasvh/utrie"
+  },
+  {
+   "name": "vaul",
+   "version": "1.1.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2023 Emil Kowalski"
+   ],
+   "url": "https://vaul.emilkowal.ski/"
+  },
+  {
+   "name": "warn-once",
+   "version": "0.1.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2022 Satyajit Sahoo"
+   ],
+   "url": "https://github.com/satya164/warn-once"
+  },
+  {
+   "name": "whatwg-fetch",
+   "version": "3.6.20",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2014-2023 GitHub, Inc."
+   ],
+   "url": "github/fetch"
+  },
+  {
+   "name": "whatwg-url-minimum",
+   "version": "0.1.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Phil Pluckthun,",
+    "Copyright (c) 650 Industries, Inc. (aka Expo),",
+    "Copyright (c) Sebastian Mayr"
+   ],
+   "url": "https://github.com/kitten/whatwg-url-minimum"
+  },
+  {
+   "name": "wrap-ansi",
+   "version": "7.0.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)"
+   ],
+   "url": "chalk/wrap-ansi"
+  },
+  {
+   "name": "ws",
+   "version": "7.5.10",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>"
+   ],
+   "url": "https://github.com/websockets/ws"
+  },
+  {
+   "name": "xml2js",
+   "version": "0.6.0",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2010, 2011, 2012, 2013. All rights reserved."
+   ],
+   "url": "https://github.com/Leonidas-from-XIV/node-xml2js"
+  },
+  {
+   "name": "xmlbuilder",
+   "version": "11.0.1",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2013 Ozgur Ozcitak"
+   ],
+   "url": "http://github.com/oozcitak/xmlbuilder-js"
+  },
+  {
+   "name": "XNNPACK",
+   "version": "",
+   "license": "BSD-3-Clause",
+   "copyright": [
+    "Copyright (c) Facebook, Inc. and its affiliates.",
+    "Copyright 2019 Google LLC"
+   ],
+   "url": "https://github.com/google/XNNPACK"
+  },
+  {
+   "name": "y18n",
+   "version": "5.0.8",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) 2015, Contributors"
+   ],
+   "url": "https://github.com/yargs/y18n"
+  },
+  {
+   "name": "yargs",
+   "version": "17.7.2",
+   "license": "MIT",
+   "copyright": [
+    "Copyright 2010 James Halliday (mail@substack.net); Modified work Copyright 2014 Contributors (ben@npmjs.com)"
+   ],
+   "url": "https://yargs.js.org/"
+  },
+  {
+   "name": "yargs-parser",
+   "version": "21.1.1",
+   "license": "ISC",
+   "copyright": [
+    "Copyright (c) 2016, Contributors"
+   ],
+   "url": "https://github.com/yargs/yargs-parser"
+  },
+  {
+   "name": "zod",
+   "version": "4.4.3",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2025 Colin McDonnell"
+   ],
+   "url": "https://zod.dev"
+  },
+  {
+   "name": "zustand",
+   "version": "5.0.13",
+   "license": "MIT",
+   "copyright": [
+    "Copyright (c) 2019 Paul Henschel"
+   ],
+   "url": "https://github.com/pmndrs/zustand"
+  }
+ ],
+ "texts": {
+  "(MIT OR CC0-1.0)": "MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+  "0BSD": "Permission to use, copy, modify, and/or distribute this software for any\r\npurpose with or without fee is hereby granted.\r\n\r\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\r\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY\r\nAND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\r\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\r\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR\r\nOTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\r\nPERFORMANCE OF THIS SOFTWARE.",
+  "Apache-2.0": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"{}\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.",
+  "Beerware": "/*\n * ----------------------------------------------------------------------------\n * \"THE BEER-WARE LICENSE\" (Revision 42):\n * <originerd@gmail.com> wrote this file. As long as you retain this notice you\n * can do whatever you want with this stuff. If we meet some day, and you think\n * this stuff is worth it, you can buy me a beer in return.           Jitae Kim\n * ----------------------------------------------------------------------------\n */",
+  "blessing": "The author disclaims copyright to this source code. In place of a legal notice, here is a blessing: May you do good and not evil. May you find forgiveness for yourself and forgive others. May you share freely, never taking more than you give.",
+  "BlueOak-1.0.0": "# Blue Oak Model License\n\nVersion 1.0.0\n\n## Purpose\n\nThis license gives everyone as much permission to work with\nthis software as possible, while protecting contributors\nfrom liability.\n\n## Acceptance\n\nIn order to receive this license, you must agree to its\nrules.  The rules of this license are both obligations\nunder that agreement and conditions to your license.\nYou must not do anything with this software that triggers\na rule that you cannot or will not follow.\n\n## Copyright\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe that contributor's\n\n## Notices\n\nYou must ensure that everyone who gets a copy of\nany part of this software from you, with or without\nchanges, also gets the text of this license or a link to\n<https://blueoakcouncil.org/license/1.0.0>.\n\n## Excuse\n\nIf anyone notifies you in writing that you have not\ncomplied with [Notices](#notices), you can keep your\nlicense by taking all practical steps to comply within 30\ndays after the notice.  If you do not do so, your license\nends immediately.\n\n## Patent\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe any patent claims\nthey can license or become able to license.\n\n## Reliability\n\nNo contributor can revoke this license.\n\n## No Liability\n\n***As far as the law allows, this software comes as is,\nwithout any warranty or condition, and no contributor\nwill be liable to anyone for any damages related to this\nsoftware or this license, under any kind of legal claim.***",
+  "BSD-2-Clause": "Redistribution and use in source and binary forms, with or without\r\nmodification, are permitted provided that the following conditions are met:\r\n\r\n1. Redistributions of source code must retain the above copyright notice, this\r\n   list of conditions and the following disclaimer.\r\n2. Redistributions in binary form must reproduce the above copyright notice,\r\n   this list of conditions and the following disclaimer in the documentation\r\n   and/or other materials provided with the distribution.\r\n\r\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\r\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\r\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\r\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR\r\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\r\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\r\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\r\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\r\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\r\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+  "BSD-3-Clause": "Software License Agreement (BSD License)\n========================================\n\n----------------------------------------------------\n\nRedistribution and use of this software in source and binary forms, with or\nwithout modification, are permitted provided that the following conditions are\nmet:\n\n  * Redistributions of source code must retain the above copyright notice, this\n    list of conditions and the following disclaimer.\n  * Redistributions in binary form must reproduce the above copyright notice,\n    this list of conditions and the following disclaimer in the documentation\n    and/or other materials provided with the distribution.\n  * Neither the name of Yahoo! Inc. nor the names of YUI's contributors may be\n    used to endorse or promote products derived from this software without\n    specific prior written permission of Yahoo! Inc.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\nANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+  "CC0-1.0": "CC0 1.0 Universal\n\nStatement of Purpose\n\nThe laws of most jurisdictions throughout the world automatically confer\nexclusive Copyright and Related Rights (defined below) upon the creator and\nsubsequent owner(s) (each and all, an \"owner\") of an original work of\nauthorship and/or a database (each, a \"Work\").\n\nCertain owners wish to permanently relinquish those rights to a Work for the\npurpose of contributing to a commons of creative, cultural and scientific\nworks (\"Commons\") that the public can reliably and without fear of later\nclaims of infringement build upon, modify, incorporate in other works, reuse\nand redistribute as freely as possible in any form whatsoever and for any\npurposes, including without limitation commercial purposes. These owners may\ncontribute to the Commons to promote the ideal of a free culture and the\nfurther production of creative, cultural and scientific works, or to gain\nreputation or greater distribution for their Work in part through the use and\nefforts of others.\n\nFor these and/or other purposes and motivations, and without any expectation\nof additional consideration or compensation, the person associating CC0 with a\nWork (the \"Affirmer\"), to the extent that he or she is an owner of Copyright\nand Related Rights in the Work, voluntarily elects to apply CC0 to the Work\nand publicly distribute the Work under its terms, with knowledge of his or her\n\neffect of CC0 on those rights.\n\n1. Copyright and Related Rights. A Work made available under CC0 may be\nprotected by copyright and related or neighboring rights (\"Copyright and\nRelated Rights\"). Copyright and Related Rights include, but are not limited\nto, the following:\n\n  i. the right to reproduce, adapt, distribute, perform, display, communicate,\n  and translate a Work;\n\n  ii. moral rights retained by the original author(s) and/or performer(s);\n\n  iii. publicity and privacy rights pertaining to a person's image or likeness\n  depicted in a Work;\n\n  iv. rights protecting against unfair competition in regards to a Work,\n  subject to the limitations in paragraph 4(a), below;\n\n  v. rights protecting the extraction, dissemination, use and reuse of data in\n  a Work;\n\n  vi. database rights (such as those arising under Directive 96/9/EC of the\n  European Parliament and of the Council of 11 March 1996 on the legal\n  protection of databases, and under any national implementation thereof,\n  including any amended or successor version of such directive); and\n\n  vii. other similar, equivalent or corresponding rights throughout the world\n  based on applicable law or treaty, and any national implementations thereof.\n\n2. Waiver. To the greatest extent permitted by, but not in contravention of,\napplicable law, Affirmer hereby overtly, fully, permanently, irrevocably and\nunconditionally waives, abandons, and surrenders all of Affirmer's Copyright\nand Related Rights and associated claims and causes of action, whether now\nknown or unknown (including existing as well as future claims and causes of\naction), in the Work (i) in all territories worldwide, (ii) for the maximum\nduration provided by applicable law or treaty (including future time\nextensions), (iii) in any current or future medium and for any number of\ncopies, and (iv) for any purpose whatsoever, including without limitation\ncommercial, advertising or promotional purposes (the \"Waiver\"). Affirmer makes\nthe Waiver for the benefit of each member of the public at large and to the\ndetriment of Affirmer's heirs and successors, fully intending that such Waiver\nshall not be subject to revocation, rescission, cancellation, termination, or\nany other legal or equitable action to disrupt the quiet enjoyment of the Work\nby the public as contemplated by Affirmer's express Statement of Purpose.\n\n3. Public License Fallback. Should any part of the Waiver for any reason be\njudged legally invalid or ineffective under applicable law, then the Waiver\nshall be preserved to the maximum extent permitted taking into account\nAffirmer's express Statement of Purpose. In addition, to the extent the Waiver\nis so judged Affirmer hereby grants to each affected person a royalty-free,\nnon transferable, non sublicensable, non exclusive, irrevocable and\nunconditional license to exercise Affirmer's Copyright and Related Rights in\nthe Work (i) in all territories worldwide, (ii) for the maximum duration\nprovided by applicable law or treaty (including future time extensions), (iii)\nin any current or future medium and for any number of copies, and (iv) for any\npurpose whatsoever, including without limitation commercial, advertising or\npromotional purposes (the \"License\"). The License shall be deemed effective as\nof the date CC0 was applied by Affirmer to the Work. Should any part of the\nLicense for any reason be judged legally invalid or ineffective under\napplicable law, such partial invalidity or ineffectiveness shall not\ninvalidate the remainder of the License, and in such case Affirmer hereby\naffirms that he or she will not (i) exercise any of his or her remaining\n\nand causes of action with respect to the Work, in either case contrary to\nAffirmer's express Statement of Purpose.\n\n4. Limitations and Disclaimers.\n\n  a. No trademark or patent rights held by Affirmer are waived, abandoned,\n  surrendered, licensed or otherwise affected by this document.\n\n  b. Affirmer offers the Work as-is and makes no representations or warranties\n  of any kind concerning the Work, express, implied, statutory or otherwise,\n  including without limitation warranties of title, merchantability, fitness\n  for a particular purpose, non infringement, or the absence of latent or\n  other defects, accuracy, or the present or absence of errors, whether or not\n  discoverable, all to the greatest extent permissible under applicable law.\n\n  c. Affirmer disclaims responsibility for clearing rights of other persons\n  that may apply to the Work or any use thereof, including without limitation\n  any person's Copyright and Related Rights in the Work. Further, Affirmer\n  disclaims responsibility for obtaining any necessary consents, permissions\n  or other rights required for any use of the Work.\n\n  d. Affirmer understands and acknowledges that Creative Commons is not a\n  party to this document and has no duty or obligation with respect to this\n  CC0 or use of the Work.\n\nFor more information, please see\n<http://creativecommons.org/publicdomain/zero/1.0/>",
+  "GPL-3.0": "GNU GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007\n\n Everyone is permitted to copy and distribute verbatim copies\n of this license document, but changing it is not allowed.\n\n                            Preamble\n\n  The GNU General Public License is a free, copyleft license for\nsoftware and other kinds of works.\n\n  The licenses for most software and other practical works are designed\nto take away your freedom to share and change the works.  By contrast,\nthe GNU General Public License is intended to guarantee your freedom to\nshare and change all versions of a program--to make sure it remains free\nsoftware for all its users.  We, the Free Software Foundation, use the\nGNU General Public License for most of our software; it applies also to\nany other work released this way by its authors.  You can apply it to\nyour programs, too.\n\n  When we speak of free software, we are referring to freedom, not\nprice.  Our General Public Licenses are designed to make sure that you\nhave the freedom to distribute copies of free software (and charge for\nthem if you wish), that you receive source code or can get it if you\nwant it, that you can change the software or use pieces of it in new\nfree programs, and that you know you can do these things.\n\n  To protect your rights, we need to prevent others from denying you\nthese rights or asking you to surrender the rights.  Therefore, you have\ncertain responsibilities if you distribute copies of the software, or if\nyou modify it: responsibilities to respect the freedom of others.\n\n  For example, if you distribute copies of such a program, whether\ngratis or for a fee, you must pass on to the recipients the same\nfreedoms that you received.  You must make sure that they, too, receive\nor can get the source code.  And you must show them these terms so they\nknow their rights.\n\n  Developers that use the GNU GPL protect your rights with two steps:\n(1) assert copyright on the software, and (2) offer you this License\ngiving you legal permission to copy, distribute and/or modify it.\n\n  For the developers' and authors' protection, the GPL clearly explains\nthat there is no warranty for this free software.  For both users' and\nauthors' sake, the GPL requires that modified versions be marked as\nchanged, so that their problems will not be attributed erroneously to\nauthors of previous versions.\n\n  Some devices are designed to deny users access to install or run\nmodified versions of the software inside them, although the manufacturer\ncan do so.  This is fundamentally incompatible with the aim of\nprotecting users' freedom to change the software.  The systematic\npattern of such abuse occurs in the area of products for individuals to\nuse, which is precisely where it is most unacceptable.  Therefore, we\nhave designed this version of the GPL to prohibit the practice for those\nproducts.  If such problems arise substantially in other domains, we\nstand ready to extend this provision to those domains in future versions\nof the GPL, as needed to protect the freedom of users.\n\n  Finally, every program is threatened constantly by software patents.\nStates should not allow patents to restrict development and use of\nsoftware on general-purpose computers, but in those that do, we wish to\navoid the special danger that patents applied to a free program could\nmake it effectively proprietary.  To prevent this, the GPL assures that\npatents cannot be used to render the program non-free.\n\n  The precise terms and conditions for copying, distribution and\nmodification follow.\n\n                       TERMS AND CONDITIONS\n\n  0. Definitions.\n\n  \"This License\" refers to version 3 of the GNU General Public License.\n\n  \"Copyright\" also means copyright-like laws that apply to other kinds of\nworks, such as semiconductor masks.\n\n  \"The Program\" refers to any copyrightable work licensed under this\nLicense.  Each licensee is addressed as \"you\".  \"Licensees\" and\n\"recipients\" may be individuals or organizations.\n\n  To \"modify\" a work means to copy from or adapt all or part of the work\nin a fashion requiring copyright permission, other than the making of an\nexact copy.  The resulting work is called a \"modified version\" of the\nearlier work or a work \"based on\" the earlier work.\n\n  A \"covered work\" means either the unmodified Program or a work based\non the Program.\n\n  To \"propagate\" a work means to do anything with it that, without\npermission, would make you directly or secondarily liable for\ninfringement under applicable copyright law, except executing it on a\ncomputer or modifying a private copy.  Propagation includes copying,\ndistribution (with or without modification), making available to the\npublic, and in some countries other activities as well.\n\n  To \"convey\" a work means any kind of propagation that enables other\nparties to make or receive copies.  Mere interaction with a user through\na computer network, with no transfer of a copy, is not conveying.\n\n  An interactive user interface displays \"Appropriate Legal Notices\"\nto the extent that it includes a convenient and prominently visible\nfeature that (1) displays an appropriate copyright notice, and (2)\ntells the user that there is no warranty for the work (except to the\nextent that warranties are provided), that licensees may convey the\nwork under this License, and how to view a copy of this License.  If\nthe interface presents a list of user commands or options, such as a\nmenu, a prominent item in the list meets this criterion.\n\n  1. Source Code.\n\n  The \"source code\" for a work means the preferred form of the work\nfor making modifications to it.  \"Object code\" means any non-source\nform of a work.\n\n  A \"Standard Interface\" means an interface that either is an official\nstandard defined by a recognized standards body, or, in the case of\ninterfaces specified for a particular programming language, one that\nis widely used among developers working in that language.\n\n  The \"System Libraries\" of an executable work include anything, other\nthan the work as a whole, that (a) is included in the normal form of\npackaging a Major Component, but which is not part of that Major\nComponent, and (b) serves only to enable use of the work with that\nMajor Component, or to implement a Standard Interface for which an\nimplementation is available to the public in source code form.  A\n\"Major Component\", in this context, means a major essential component\n(kernel, window system, and so on) of the specific operating system\n(if any) on which the executable work runs, or a compiler used to\nproduce the work, or an object code interpreter used to run it.\n\n  The \"Corresponding Source\" for a work in object code form means all\nthe source code needed to generate, install, and (for an executable\nwork) run the object code and to modify the work, including scripts to\ncontrol those activities.  However, it does not include the work's\nSystem Libraries, or general-purpose tools or generally available free\nprograms which are used unmodified in performing those activities but\nwhich are not part of the work.  For example, Corresponding Source\nincludes interface definition files associated with source files for\nthe work, and the source code for shared libraries and dynamically\nlinked subprograms that the work is specifically designed to require,\nsuch as by intimate data communication or control flow between those\nsubprograms and other parts of the work.\n\n  The Corresponding Source need not include anything that users\ncan regenerate automatically from other parts of the Corresponding\nSource.\n\n  The Corresponding Source for a work in source code form is that\nsame work.\n\n  2. Basic Permissions.\n\n  All rights granted under this License are granted for the term of\n\nconditions are met.  This License explicitly affirms your unlimited\npermission to run the unmodified Program.  The output from running a\ncovered work is covered by this License only if the output, given its\ncontent, constitutes a covered work.  This License acknowledges your\nrights of fair use or other equivalent, as provided by copyright law.\n\n  You may make, run and propagate covered works that you do not\nconvey, without conditions so long as your license otherwise remains\nin force.  You may convey covered works to others for the sole purpose\nof having them make modifications exclusively for you, or provide you\nwith facilities for running those works, provided that you comply with\nthe terms of this License in conveying all material for which you do\nnot control copyright.  Those thus making or running the covered works\nfor you must do so exclusively on your behalf, under your direction\nand control, on terms that prohibit them from making any copies of\nyour copyrighted material outside their relationship with you.\n\n  Conveying under any other circumstances is permitted solely under\nthe conditions stated below.  Sublicensing is not allowed; section 10\nmakes it unnecessary.\n\n  3. Protecting Users' Legal Rights From Anti-Circumvention Law.\n\n  No covered work shall be deemed part of an effective technological\nmeasure under any applicable law fulfilling obligations under article\n11 of the WIPO copyright treaty adopted on 20 December 1996, or\nsimilar laws prohibiting or restricting circumvention of such\nmeasures.\n\n  When you convey a covered work, you waive any legal power to forbid\ncircumvention of technological measures to the extent such circumvention\nis effected by exercising rights under this License with respect to\nthe covered work, and you disclaim any intention to limit operation or\nmodification of the work as a means of enforcing, against the work's\nusers, your or third parties' legal rights to forbid circumvention of\ntechnological measures.\n\n  4. Conveying Verbatim Copies.\n\n  You may convey verbatim copies of the Program's source code as you\nreceive it, in any medium, provided that you conspicuously and\nappropriately publish on each copy an appropriate copyright notice;\nkeep intact all notices stating that this License and any\nnon-permissive terms added in accord with section 7 apply to the code;\nkeep intact all notices of the absence of any warranty; and give all\nrecipients a copy of this License along with the Program.\n\n  You may charge any price or no price for each copy that you convey,\nand you may offer support or warranty protection for a fee.\n\n  5. Conveying Modified Source Versions.\n\n  You may convey a work based on the Program, or the modifications to\nproduce it from the Program, in the form of source code under the\nterms of section 4, provided that you also meet all of these conditions:\n\n    a) The work must carry prominent notices stating that you modified\n    it, and giving a relevant date.\n\n    b) The work must carry prominent notices stating that it is\n    released under this License and any conditions added under section\n    7.  This requirement modifies the requirement in section 4 to\n    \"keep intact all notices\".\n\n    c) You must license the entire work, as a whole, under this\n    License to anyone who comes into possession of a copy.  This\n    License will therefore apply, along with any applicable section 7\n    additional terms, to the whole of the work, and all its parts,\n    regardless of how they are packaged.  This License gives no\n    permission to license the work in any other way, but it does not\n    invalidate such permission if you have separately received it.\n\n    d) If the work has interactive user interfaces, each must display\n    Appropriate Legal Notices; however, if the Program has interactive\n    interfaces that do not display Appropriate Legal Notices, your\n    work need not make them do so.\n\n  A compilation of a covered work with other separate and independent\nworks, which are not by their nature extensions of the covered work,\nand which are not combined with it such as to form a larger program,\nin or on a volume of a storage or distribution medium, is called an\n\"aggregate\" if the compilation and its resulting copyright are not\nused to limit the access or legal rights of the compilation's users\nbeyond what the individual works permit.  Inclusion of a covered work\nin an aggregate does not cause this License to apply to the other\nparts of the aggregate.\n\n  6. Conveying Non-Source Forms.\n\n  You may convey a covered work in object code form under the terms\nof sections 4 and 5, provided that you also convey the\nmachine-readable Corresponding Source under the terms of this License,\nin one of these ways:\n\n    a) Convey the object code in, or embodied in, a physical product\n    (including a physical distribution medium), accompanied by the\n    Corresponding Source fixed on a durable physical medium\n    customarily used for software interchange.\n\n    b) Convey the object code in, or embodied in, a physical product\n    (including a physical distribution medium), accompanied by a\n    written offer, valid for at least three years and valid for as\n    long as you offer spare parts or customer support for that product\n    model, to give anyone who possesses the object code either (1) a\n    copy of the Corresponding Source for all the software in the\n    product that is covered by this License, on a durable physical\n    medium customarily used for software interchange, for a price no\n    more than your reasonable cost of physically performing this\n    conveying of source, or (2) access to copy the\n    Corresponding Source from a network server at no charge.\n\n    c) Convey individual copies of the object code with a copy of the\n    written offer to provide the Corresponding Source.  This\n    alternative is allowed only occasionally and noncommercially, and\n    only if you received the object code with such an offer, in accord\n    with subsection 6b.\n\n    d) Convey the object code by offering access from a designated\n    place (gratis or for a charge), and offer equivalent access to the\n    Corresponding Source in the same way through the same place at no\n    further charge.  You need not require recipients to copy the\n    Corresponding Source along with the object code.  If the place to\n    copy the object code is a network server, the Corresponding Source\n    may be on a different server (operated by you or a third party)\n    that supports equivalent copying facilities, provided you maintain\n    clear directions next to the object code saying where to find the\n    Corresponding Source.  Regardless of what server hosts the\n    Corresponding Source, you remain obligated to ensure that it is\n    available for as long as needed to satisfy these requirements.\n\n    e) Convey the object code using peer-to-peer transmission, provided\n    you inform other peers where the object code and Corresponding\n    Source of the work are being offered to the general public at no\n    charge under subsection 6d.\n\n  A separable portion of the object code, whose source code is excluded\nfrom the Corresponding Source as a System Library, need not be\nincluded in conveying the object code work.\n\n  A \"User Product\" is either (1) a \"consumer product\", which means any\ntangible personal property which is normally used for personal, family,\nor household purposes, or (2) anything designed or sold for incorporation\ninto a dwelling.  In determining whether a product is a consumer product,\ndoubtful cases shall be resolved in favor of coverage.  For a particular\nproduct received by a particular user, \"normally used\" refers to a\ntypical or common use of that class of product, regardless of the status\nof the particular user or of the way in which the particular user\nactually uses, or expects or is expected to use, the product.  A product\nis a consumer product regardless of whether the product has substantial\ncommercial, industrial or non-consumer uses, unless such uses represent\nthe only significant mode of use of the product.\n\n  \"Installation Information\" for a User Product means any methods,\nprocedures, authorization keys, or other information required to install\nand execute modified versions of a covered work in that User Product from\na modified version of its Corresponding Source.  The information must\nsuffice to ensure that the continued functioning of the modified object\ncode is in no case prevented or interfered with solely because\nmodification has been made.\n\n  If you convey an object code work under this section in, or with, or\nspecifically for use in, a User Product, and the conveying occurs as\npart of a transaction in which the right of possession and use of the\nUser Product is transferred to the recipient in perpetuity or for a\nfixed term (regardless of how the transaction is characterized), the\nCorresponding Source conveyed under this section must be accompanied\nby the Installation Information.  But this requirement does not apply\nif neither you nor any third party retains the ability to install\nmodified object code on the User Product (for example, the work has\nbeen installed in ROM).\n\n  The requirement to provide Installation Information does not include a\nrequirement to continue to provide support service, warranty, or updates\nfor a work that has been modified or installed by the recipient, or for\nthe User Product in which it has been modified or installed.  Access to a\nnetwork may be denied when the modification itself materially and\nadversely affects the operation of the network or violates the rules and\nprotocols for communication across the network.\n\n  Corresponding Source conveyed, and Installation Information provided,\nin accord with this section must be in a format that is publicly\ndocumented (and with an implementation available to the public in\nsource code form), and must require no special password or key for\nunpacking, reading or copying.\n\n  7. Additional Terms.\n\n  \"Additional permissions\" are terms that supplement the terms of this\nLicense by making exceptions from one or more of its conditions.\nAdditional permissions that are applicable to the entire Program shall\nbe treated as though they were included in this License, to the extent\nthat they are valid under applicable law.  If additional permissions\napply only to part of the Program, that part may be used separately\nunder those permissions, but the entire Program remains governed by\nthis License without regard to the additional permissions.\n\n  When you convey a copy of a covered work, you may at your option\nremove any additional permissions from that copy, or from any part of\nit.  (Additional permissions may be written to require their own\nremoval in certain cases when you modify the work.)  You may place\nadditional permissions on material, added by you to a covered work,\nfor which you have or can give appropriate copyright permission.\n\n  Notwithstanding any other provision of this License, for material you\nadd to a covered work, you may (if authorized by the copyright holders of\nthat material) supplement the terms of this License with terms:\n\n    a) Disclaiming warranty or limiting liability differently from the\n    terms of sections 15 and 16 of this License; or\n\n    b) Requiring preservation of specified reasonable legal notices or\n    author attributions in that material or in the Appropriate Legal\n    Notices displayed by works containing it; or\n\n    c) Prohibiting misrepresentation of the origin of that material, or\n    requiring that modified versions of such material be marked in\n    reasonable ways as different from the original version; or\n\n    d) Limiting the use for publicity purposes of names of licensors or\n    authors of the material; or\n\n    e) Declining to grant rights under trademark law for use of some\n    trade names, trademarks, or service marks; or\n\n    f) Requiring indemnification of licensors and authors of that\n    material by anyone who conveys the material (or modified versions of\n    it) with contractual assumptions of liability to the recipient, for\n    any liability that these contractual assumptions directly impose on\n    those licensors and authors.\n\n  All other non-permissive additional terms are considered \"further\nrestrictions\" within the meaning of section 10.  If the Program as you\nreceived it, or any part of it, contains a notice stating that it is\ngoverned by this License along with a term that is a further\nrestriction, you may remove that term.  If a license document contains\na further restriction but permits relicensing or conveying under this\nLicense, you may add to a covered work material governed by the terms\nof that license document, provided that the further restriction does\nnot survive such relicensing or conveying.\n\n  If you add terms to a covered work in accord with this section, you\nmust place, in the relevant source files, a statement of the\nadditional terms that apply to those files, or a notice indicating\nwhere to find the applicable terms.\n\n  Additional terms, permissive or non-permissive, may be stated in the\nform of a separately written license, or stated as exceptions;\nthe above requirements apply either way.\n\n  8. Termination.\n\n  You may not propagate or modify a covered work except as expressly\nprovided under this License.  Any attempt otherwise to propagate or\nmodify it is void, and will automatically terminate your rights under\nthis License (including any patent licenses granted under the third\nparagraph of section 11).\n\n  However, if you cease all violation of this License, then your\nlicense from a particular copyright holder is reinstated (a)\nprovisionally, unless and until the copyright holder explicitly and\nfinally terminates your license, and (b) permanently, if the copyright\nholder fails to notify you of the violation by some reasonable means\nprior to 60 days after the cessation.\n\n  Moreover, your license from a particular copyright holder is\nreinstated permanently if the copyright holder notifies you of the\nviolation by some reasonable means, this is the first time you have\nreceived notice of violation of this License (for any work) from that\n\nyour receipt of the notice.\n\n  Termination of your rights under this section does not terminate the\nlicenses of parties who have received copies or rights from you under\nthis License.  If your rights have been terminated and not permanently\nreinstated, you do not qualify to receive new licenses for the same\nmaterial under section 10.\n\n  9. Acceptance Not Required for Having Copies.\n\n  You are not required to accept this License in order to receive or\nrun a copy of the Program.  Ancillary propagation of a covered work\noccurring solely as a consequence of using peer-to-peer transmission\nto receive a copy likewise does not require acceptance.  However,\nnothing other than this License grants you permission to propagate or\nmodify any covered work.  These actions infringe copyright if you do\nnot accept this License.  Therefore, by modifying or propagating a\ncovered work, you indicate your acceptance of this License to do so.\n\n  10. Automatic Licensing of Downstream Recipients.\n\n  Each time you convey a covered work, the recipient automatically\nreceives a license from the original licensors, to run, modify and\npropagate that work, subject to this License.  You are not responsible\nfor enforcing compliance by third parties with this License.\n\n  An \"entity transaction\" is a transaction transferring control of an\norganization, or substantially all assets of one, or subdividing an\norganization, or merging organizations.  If propagation of a covered\nwork results from an entity transaction, each party to that\ntransaction who receives a copy of the work also receives whatever\nlicenses to the work the party's predecessor in interest had or could\ngive under the previous paragraph, plus a right to possession of the\nCorresponding Source of the work from the predecessor in interest, if\nthe predecessor has it or can get it with reasonable efforts.\n\n  You may not impose any further restrictions on the exercise of the\nrights granted or affirmed under this License.  For example, you may\nnot impose a license fee, royalty, or other charge for exercise of\nrights granted under this License, and you may not initiate litigation\n(including a cross-claim or counterclaim in a lawsuit) alleging that\nany patent claim is infringed by making, using, selling, offering for\nsale, or importing the Program or any portion of it.\n\n  11. Patents.\n\n  A \"contributor\" is a copyright holder who authorizes use under this\nLicense of the Program or a work on which the Program is based.  The\nwork thus licensed is called the contributor's \"contributor version\".\n\n  A contributor's \"essential patent claims\" are all patent claims\nowned or controlled by the contributor, whether already acquired or\nhereafter acquired, that would be infringed by some manner, permitted\nby this License, of making, using, or selling its contributor version,\nbut do not include claims that would be infringed only as a\nconsequence of further modification of the contributor version.  For\npurposes of this definition, \"control\" includes the right to grant\npatent sublicenses in a manner consistent with the requirements of\nthis License.\n\n  Each contributor grants you a non-exclusive, worldwide, royalty-free\npatent license under the contributor's essential patent claims, to\nmake, use, sell, offer for sale, import and otherwise run, modify and\npropagate the contents of its contributor version.\n\n  In the following three paragraphs, a \"patent license\" is any express\nagreement or commitment, however denominated, not to enforce a patent\n(such as an express permission to practice a patent or covenant not to\nsue for patent infringement).  To \"grant\" such a patent license to a\nparty means to make such an agreement or commitment not to enforce a\npatent against the party.\n\n  If you convey a covered work, knowingly relying on a patent license,\nand the Corresponding Source of the work is not available for anyone\nto copy, free of charge and under the terms of this License, through a\npublicly available network server or other readily accessible means,\nthen you must either (1) cause the Corresponding Source to be so\navailable, or (2) arrange to deprive yourself of the benefit of the\npatent license for this particular work, or (3) arrange, in a manner\nconsistent with the requirements of this License, to extend the patent\nlicense to downstream recipients.  \"Knowingly relying\" means you have\nactual knowledge that, but for the patent license, your conveying the\ncovered work in a country, or your recipient's use of the covered work\nin a country, would infringe one or more identifiable patents in that\ncountry that you have reason to believe are valid.\n\n  If, pursuant to or in connection with a single transaction or\narrangement, you convey, or propagate by procuring conveyance of, a\ncovered work, and grant a patent license to some of the parties\nreceiving the covered work authorizing them to use, propagate, modify\nor convey a specific copy of the covered work, then the patent license\nyou grant is automatically extended to all recipients of the covered\nwork and works based on it.\n\n  A patent license is \"discriminatory\" if it does not include within\nthe scope of its coverage, prohibits the exercise of, or is\nconditioned on the non-exercise of one or more of the rights that are\nspecifically granted under this License.  You may not convey a covered\nwork if you are a party to an arrangement with a third party that is\nin the business of distributing software, under which you make payment\nto the third party based on the extent of your activity of conveying\nthe work, and under which the third party grants, to any of the\nparties who would receive the covered work from you, a discriminatory\npatent license (a) in connection with copies of the covered work\nconveyed by you (or copies made from those copies), or (b) primarily\nfor and in connection with specific products or compilations that\ncontain the covered work, unless you entered into that arrangement,\nor that patent license was granted, prior to 28 March 2007.\n\n  Nothing in this License shall be construed as excluding or limiting\nany implied license or other defenses to infringement that may\notherwise be available to you under applicable patent law.\n\n  12. No Surrender of Others' Freedom.\n\n  If conditions are imposed on you (whether by court order, agreement or\notherwise) that contradict the conditions of this License, they do not\nexcuse you from the conditions of this License.  If you cannot convey a\ncovered work so as to satisfy simultaneously your obligations under this\nLicense and any other pertinent obligations, then as a consequence you may\nnot convey it at all.  For example, if you agree to terms that obligate you\nto collect a royalty for further conveying from those to whom you convey\nthe Program, the only way you could satisfy both those terms and this\nLicense would be to refrain entirely from conveying the Program.\n\n  13. Use with the GNU Affero General Public License.\n\n  Notwithstanding any other provision of this License, you have\npermission to link or combine any covered work with a work licensed\nunder version 3 of the GNU Affero General Public License into a single\ncombined work, and to convey the resulting work.  The terms of this\nLicense will continue to apply to the part which is the covered work,\nbut the special requirements of the GNU Affero General Public License,\nsection 13, concerning interaction through a network will apply to the\ncombination as such.\n\n  14. Revised Versions of this License.\n\n  The Free Software Foundation may publish revised and/or new versions of\nthe GNU General Public License from time to time.  Such new versions will\nbe similar in spirit to the present version, but may differ in detail to\naddress new problems or concerns.\n\n  Each version is given a distinguishing version number.  If the\nProgram specifies that a certain numbered version of the GNU General\nPublic License \"or any later version\" applies to it, you have the\noption of following the terms and conditions either of that numbered\nversion or of any later version published by the Free Software\nFoundation.  If the Program does not specify a version number of the\nGNU General Public License, you may choose any version ever published\nby the Free Software Foundation.\n\n  If the Program specifies that a proxy can decide which future\nversions of the GNU General Public License can be used, that proxy's\npublic statement of acceptance of a version permanently authorizes you\nto choose that version for the Program.\n\n  Later license versions may give you additional or different\npermissions.  However, no additional obligations are imposed on any\nauthor or copyright holder as a result of your choosing to follow a\nlater version.\n\n  15. Disclaimer of Warranty.\n\n  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY\nAPPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT\nHOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY\nOF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,\nTHE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR\nPURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM\nIS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF\nALL NECESSARY SERVICING, REPAIR OR CORRECTION.\n\n  16. Limitation of Liability.\n\n  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING\nWILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS\nTHE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY\nGENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE\nUSE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF\nDATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD\nPARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),\nEVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF\nSUCH DAMAGES.\n\n  17. Interpretation of Sections 15 and 16.\n\n  If the disclaimer of warranty and limitation of liability provided\nabove cannot be given local legal effect according to their terms,\nreviewing courts shall apply local law that most closely approximates\nan absolute waiver of all civil liability in connection with the\nProgram, unless a warranty or assumption of liability accompanies a\ncopy of the Program in return for a fee.\n\n                     END OF TERMS AND CONDITIONS\n\n            How to Apply These Terms to Your New Programs\n\n  If you develop a new program, and you want it to be of the greatest\npossible use to the public, the best way to achieve this is to make it\nfree software which everyone can redistribute and change under these terms.\n\n  To do so, attach the following notices to the program.  It is safest\nto attach them to the start of each source file to most effectively\nstate the exclusion of warranty; and each file should have at least\nthe \"copyright\" line and a pointer to where the full notice is found.\n\n    {one line to give the program's name and a brief idea of what it does.}\n\n    This program is free software: you can redistribute it and/or modify\n    it under the terms of the GNU General Public License as published by\n    the Free Software Foundation, either version 3 of the License, or\n    (at your option) any later version.\n\n    This program is distributed in the hope that it will be useful,\n    but WITHOUT ANY WARRANTY; without even the implied warranty of\n    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n    GNU General Public License for more details.\n\n    You should have received a copy of the GNU General Public License\n    along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\nAlso add information on how to contact you by electronic and paper mail.\n\n  If the program does terminal interaction, make it output a short\nnotice like this when it starts in an interactive mode:\n\n    {project}  Copyright (C) {year}  {fullname}\n    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.\n    This is free software, and you are welcome to redistribute it\n    under certain conditions; type `show c' for details.\n\nThe hypothetical commands `show w' and `show c' should show the appropriate\nparts of the General Public License.  Of course, your program's commands\nmight be different; for a GUI interface, you would use an \"about box\".\n\n  You should also get your employer (if you work as a programmer) or school,\nif any, to sign a \"copyright disclaimer\" for the program, if necessary.\nFor more information on this, and how to apply and follow the GNU GPL, see\n<http://www.gnu.org/licenses/>.\n\n  The GNU General Public License does not permit incorporating your program\ninto proprietary programs.  If your program is a subroutine library, you\nmay consider it more useful to permit linking proprietary applications with\nthe library.  If this is what you want to do, use the GNU Lesser General\nPublic License instead of this License.  But first, please read\n<http://www.gnu.org/philosophy/why-not-lgpl.html>.",
+  "ISC": "ISC License\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY\nAND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE\nOR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\nPERFORMANCE OF THIS SOFTWARE.",
+  "MIT": "The MIT License (MIT)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+  "MIT AND Apache-2.0": "MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+  "MIT AND OFL-1.1": "MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+  "OFL-1.1": "This Font Software is licensed under the SIL Open Font License, Version 1.1. The full licence is available at https://openfontlicense.org/open-font-license-official-text/"
+ }
+}

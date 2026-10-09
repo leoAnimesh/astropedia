@@ -70,6 +70,7 @@ export default function SettingsScreen() {
   const styles = useIndicStyles(baseStyles);
   const danger = overlayPalette(theme, isDark).destructive;
   const { t } = useTranslation('settings');
+  const { t: tAbout } = useTranslation('about');
   const { profiles } = useProfiles();
   const setDark = useSettingsStore((s) => s.setDarkModeOverride);
   const darkOverride = useSettingsStore((s) => s.darkModeOverride);
@@ -507,13 +508,17 @@ export default function SettingsScreen() {
         {/* About */}
         <EyebrowLabel style={[styles.sectionLabel, styles.sectionGap]}>{t('about.section')}</EyebrowLabel>
         <View style={[styles.listCard, { backgroundColor: theme.surface, borderColor: theme.hairline }]}>
+          {navRow('sparkle', tAbout('settingsRow'), () => router.push('/about'), tAbout('settingsRowSub'))}
+          {divider}
+          {navRow('lock', t('about.privacy'), () => router.push('/legal/privacy'), t('about.privacySub'))}
+          {divider}
+          {navRow('book', tAbout('legal.licences'), () => router.push('/legal/licenses'))}
           {([
             ['methods', t('about.methods'), t('about.methodsSub')],
-            ['privacy', t('about.privacy'), t('about.privacySub')],
             ['version', t('about.version'), localizeDigits(appVersion)],
-          ] as const).map(([key, label, sub], i) => (
+          ] as const).map(([key, label, sub]) => (
             <View key={key}>
-              {i > 0 && divider}
+              {divider}
               <View style={[styles.cardRow, styles.infoRow]} accessible accessibilityLabel={`${label}, ${sub}`}>
                 <View style={styles.flex}>
                   <Text style={[styles.rowLabel, { color: theme.ink }]}>{label}</Text>

@@ -26,7 +26,7 @@ export const NAMESPACES = [
   'common', 'onboarding', 'home', 'chat', 'profile', 'horoscope', 'panchang',
   'compatibility', 'settings', 'phase', 'saved', 'muhurat', 'forecast',
   'family', 'journal', 'alerts', 'astro', 'keyboard',
-  'festivals', 'sadesati', 'dasha', 'gita', 'reports',
+  'festivals', 'sadesati', 'dasha', 'gita', 'reports', 'about',
 ] as const;
 
 // Metro needs static requires, so each file is listed explicitly.
@@ -55,6 +55,7 @@ const resources = {
     dasha:         require('../locales/en/dasha.json'),
     gita:          require('../locales/en/gita.json'),
     reports:       require('../locales/en/reports.json'),
+    about:         require('../locales/en/about.json'),
   },
   hi: {
     common:        require('../locales/hi/common.json'),
@@ -80,6 +81,7 @@ const resources = {
     dasha:         require('../locales/hi/dasha.json'),
     gita:          require('../locales/hi/gita.json'),
     reports:       require('../locales/hi/reports.json'),
+    about:         require('../locales/hi/about.json'),
   },
   bn: {
     common:        require('../locales/bn/common.json'),
@@ -105,6 +107,7 @@ const resources = {
     dasha:         require('../locales/bn/dasha.json'),
     gita:          require('../locales/bn/gita.json'),
     reports:       require('../locales/bn/reports.json'),
+    about:         require('../locales/bn/about.json'),
   },
 };
 
