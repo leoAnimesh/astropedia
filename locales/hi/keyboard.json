@@ -9,6 +9,27 @@
   "a11y": {
     "textField": "टेक्स्ट फ़ील्ड",
     "appKeyboard": "ऐप का कीबोर्ड इस्तेमाल करें",
-    "clear": "साफ़ करें"
+    "clear": "साफ़ करें",
+    "shift": "शिफ़्ट",
+    "capsLock": "कैप्स लॉक",
+    "delete": "मिटाएँ",
+    "space": "स्पेस",
+    "return": "रिटर्न",
+    "nextLanguage": "कीबोर्ड की अगली भाषा",
+    "systemKeyboard": "फ़ोन का कीबोर्ड इस्तेमाल करें",
+    "digits": "अंक बदलें",
+    "suggestion": "शब्द सुझाव",
+    "page": {
+      "letters": "अक्षर",
+      "vowels": "स्वर",
+      "numbers": "अंक",
+      "symbols": "और चिह्न"
+    }
+  },
+  "menu": {
+    "selectAll": "सब चुनें",
+    "cut": "काटें",
+    "copy": "कॉपी करें",
+    "paste": "पेस्ट करें"
   }
 }
