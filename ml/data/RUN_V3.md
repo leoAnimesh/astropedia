@@ -276,3 +276,65 @@ line + history kept 52.1% (chosen), line + every which/what question rewritten t
 phrasing 41.7%. Timing questions: prompts byte-identical (276/276), repaired timing answers identical.
 v2.1 rarely writes a usable domain / trait answer on its own, hence the high template share: the next data
 pass should add answer-type SFT rows built from these plans (the `best fits:` line as input).
+
+## Saga v2.2 data plan, Stage 3 additions (written 2026-10-09; not run)
+
+**Why.** Stage 3 judged 462 real-pipeline answers (46 categories x en/hi/bn incl. Hinglish/Banglish, 6
+profiles, 62 two-profile threads) with `ml/astro-kb/judge_rubric.md`. The v2.1 model was shown on 10 of
+them and scored 10.4-11.2/16 (model, repaired) against 13.8 for the template; after the Stage 3 template
+fixes the template passes 100% (mean 15.5/16). `GEMMA21_MODEL_CATEGORIES` is now empty: every answer is the
+template. v2.2 is worth shipping only if it matches the template per category, so the data pass teaches
+the template's answer shape from the same plan, and adds what the template cannot do (Latin-script
+Hinglish/Banglish, freer phrasing).
+
+**1. Inputs the student sees (extends steps 1-3 of the v2.2 timing plan above).** The `- Best window …`
+line also carries the reason the template uses, so the model can give a concrete one instead of a generic
+"the planets support you":
+`- Best window for marriage: Mar 2028 to Nov 2028 (peak Jul 2028; Venus sub-period, Venus rules your 7th; Jupiter and Saturn both support)`.
+Add `reason` (sub-period lord + its link to the topic house: occupant / lord / aspect / with-lord /
+karaka, from `timing-engine` `antarLinks`) and `alt` (one alternative: a nearer smaller opening, or the next
+strong stretch, or "steady not strong") to `windows[topic]` in `gen_profiles.ts --windows`, and render the
+same text in `gemma21-prompt.ts` (byte-identical test). Non-timing asks keep the `Life areas` items line.
+
+**2. Rows (≈ 9,200 new Saga turns).**
+
+| Slice | Rows | Notes |
+|---|---|---|
+| Timing categories (marriage, job change, promotion, money, debt, property/vehicle, foreign, children, exams, govt job, legal, health, general luck, education timing, divorce) | 3,600 | 240 per category; 20% "this year / soon?" (plain yes or not-yet first), 15% with feelings shown (one validation line first), 15% no birth time |
+| Choice / description asks (career field, education field, business vs job, love vs arranged, partner traits/meeting, personality, spirituality, remedies, money sources) | 2,400 | 270 per ask; X-or-Y questions get the leaning first and it must agree with the first item |
+| Why-now / distress / family / relationship problems | 1,200 | Saturn transit named first when it runs; counsellor + Tele-MANAS for distress; no doctor line for family tension |
+| Safety forms (death/accident, surgery, ex-back, mind-reading, minors, crisis, sensitive identity, partner name, baby sex) | 900 | 100 each; targets are the Stage 3 decisions (judge_rubric.md 3.9), never a likelihood or date |
+| Follow-ups in threads (which domain, be specific, when exactly, why this time, too far, pick one, permanent or work, corrections) | 1,100 | 3-turn threads; each turn must add something new; the model must not repeat an earlier sentence |
+
+Languages: en 40%, hi 30%, bn 30%. Within hi and bn, 30% of questions are Hinglish / Banglish **and the
+target answer is in Latin script** (new: the template answers these in Devanagari / Bengali script, the
+main remaining language-score loss: 118 of 462 Stage 3 answers). Profiles: the dated v2 mix plus ≥ 15%
+minors, ≥ 10% over 70, ≥ 15% no birth time, ≥ 10% southern-hemisphere / non-IST births.
+
+**3. Teacher prompt changes (`teacher_prompts.py`, Saga system and per-call notes).**
+- Answer first. A timing answer's first sentence is the window ("For marriage, the best window is Mar 2028
+  to Nov 2028, peaking around Jul 2028."); a choice's first sentence is the leaning; a yes/no's is the
+  plain answer. Only a one-line validation may come before it, and only when the user shows feelings.
+- One concrete reason from the line: name the sub-period planet and what it does in this chart, in plain
+  words ("This window falls in your Venus phase, and Venus rules your partnership side"). No house numbers,
+  no "dasha / antardasha", no reason that the line does not give.
+- One alternative at most (the `alt` text). Never two windows in reverse order; never "nothing strong in
+  five years" when a window is listed.
+- One practical step tied to the topic, then stop. One professional pointer when the category needs it
+  (doctor, lawyer, counsellor, adviser), never twice.
+- Length: en 50-90 words, hi 55-105, bn 45-85 (Stage 3 template medians: 56 / 63 / 53).
+- Script: answer Hinglish in Hinglish and Banglish in Banglish (Latin script, planet names in English);
+  Devanagari / Bengali questions in their script. आप / আপনি always.
+- Safety forms follow judge_rubric.md 3.9 exactly (the teacher gets the table as a per-call note for
+  those categories).
+
+**4. Validator (`validate_answer.py`).** Add: `window_first` (first non-validation sentence contains a
+window date for timing asks), `one_alt` (at most two date ranges), `length_band` per language, `latin_ok`
+(Hinglish/Banglish answers ≥ 90% Latin letters), `lean_agrees` (leaning option appears in or matches the
+first item), `pointer_once`. Keep `date_misattributed` from the v2.2 timing plan.
+
+**5. Gate before any category returns to the model.** Re-run the Stage 3 harness (scratchpad
+`stage3/gen.ts` + `summary.py`, or its port into `ml/scripts/`) with the new `.pte`. A category goes back into
+`GEMMA21_MODEL_CATEGORIES` only when its model pass rate is ≥ 95% and its mean is within 0.5/16 of the
+template's on the same sample, and the bank (`agent/bank.test.ts`, 2,628 rows x profiles) still passes
+through the model path with verify on.
