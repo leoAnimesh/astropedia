@@ -63,7 +63,8 @@
     "save": "Save answer",
     "remove": "Remove from saved",
     "share": "Share as card",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "report": "Report this answer"
   },
   "bubble": {
     "waking": "{{persona}} is waking up…",
@@ -73,7 +74,10 @@
     "share": "Share",
     "a11ySave": "Save answer",
     "a11yRemove": "Remove from saved answers",
-    "a11yShare": "Share answer"
+    "a11yShare": "Share answer",
+    "report": "Report",
+    "reported": "Reported",
+    "a11yReport": "Report this answer"
   },
   "composer": {
     "placeholder": "Ask Saga anything…",
@@ -414,5 +418,23 @@
         "anon": "I'm here. Tell me what's on your mind, and we'll look at it together, with the Gita."
       }
     }
+  },
+  "report": {
+    "title": "Report this answer?",
+    "message": "If this answer is offensive, harmful or inappropriate, let us know. Your email app opens with the question and answer filled in, so you can add what's wrong. Nothing is sent unless you send it.\n\nThe answer will be hidden on this phone.",
+    "confirm": "Report",
+    "cancel": "Cancel",
+    "hidden": "You reported this answer.",
+    "show": "Show",
+    "a11yShow": "Show the reported answer",
+    "mailSubject": "Astropedia: reported answer",
+    "mailIntro": "I'm reporting an AI-generated answer in Astropedia.",
+    "mailReason": "What's wrong with it (optional):",
+    "mailQuestion": "Question",
+    "mailAnswer": "Answer",
+    "mailGuide": "Guide",
+    "mailModel": "Model",
+    "mailNoModel": "none (built-in answers)",
+    "shareTo": "Please send to:"
   }
 }

@@ -175,6 +175,13 @@ export const Storage = {
   setFollowUps: (messageId: string, chips: string[]): void =>
     getStorage().set(`followups_v1_${messageId}`, JSON.stringify(chips)),
 
+  // Answers the user reported (Report this answer): ISO time per assistant
+  // message id. Only on this phone; the chat hides them behind a notice.
+  getAnswerReported: (messageId: string): string | null =>
+    getStorage().getString(`reported_v1_${messageId}`) ?? null,
+  setAnswerReported: (messageId: string, at: string): void =>
+    getStorage().set(`reported_v1_${messageId}`, at),
+
   // In-app keyboard: 'custom' (the app's own keyboard) or 'system' (the
   // phone's keyboard, chosen with the 🌐 key). Remembered until changed.
   getKeyboardMode: (): 'custom' | 'system' =>

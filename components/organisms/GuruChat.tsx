@@ -54,6 +54,8 @@ import {
 import { guruLocked, nudgeTarget } from '@/utils/guru-context';
 import { openGuruChat, replaceWithGuruChat } from '@/utils/guru-nav';
 import { useIndicStyles } from '@/hooks/use-indic-styles';
+import { isAnswerReported, markAnswerReported, sendAnswerReport } from '@/utils/report-answer';
+import { getInstallMarker } from '@/utils/model-download';
 
 // Model-written chips per assistant message id (adapter 'followups' task); MMKV behind it.
 const modelChipCache = new Map<string, string[]>();
@@ -275,19 +277,61 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
     [questionFor, guru.mode, isKrishna, activeProfile?.name, profile?.name],
   );
 
+  // ─── Reported answers (Report this answer; utils/report-answer.ts) ────────
+  // Reported replies are hidden behind a notice; `revealed` holds the ones
+  // the user chose to show again this session.
+  const [reportVersion, setReportVersion] = useState(0);
+  const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+
+  const reportAnswer = useCallback(
+    (msg: Message) => {
+      showDialog({
+        title:   t('report.title'),
+        message: t('report.message'),
+        actions: [
+          { label: t('report.cancel'), style: 'cancel' },
+          {
+            label: t('report.confirm'),
+            onPress: async () => {
+              const opened = await sendAnswerReport({
+                question: questionFor(msg.id),
+                answer:   stripMarkdown(msg.content),
+                guide:    guruName,
+                model:    getInstallMarker()?.version ?? null,
+              });
+              if (!opened) return;
+              markAnswerReported(msg.id);
+              setRevealed((prev) => {
+                if (!prev.has(msg.id)) return prev;
+                const next = new Set(prev);
+                next.delete(msg.id);
+                return next;
+              });
+              setReportVersion((v) => v + 1);
+            },
+          },
+        ],
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [questionFor, guruName, inst.language],
+  );
+
   const openAnswerMenu = useCallback(
     (msg: Message) => {
       const saved = savedIds.has(msg.id);
+      const reported = isAnswerReported(msg.id);
       showActionSheet({
         options: [
           { label: saved ? t('menu.remove') : t('menu.save'), icon: saved ? 'bookmark-filled' : 'bookmark', onPress: () => toggleSave(msg) },
           { label: t('menu.share'), icon: 'share', onPress: () => shareAnswer(msg) },
+          ...(reported ? [] : [{ label: t('menu.report'), icon: 'flag' as const, onPress: () => reportAnswer(msg) }]),
         ],
         cancelLabel: t('menu.cancel'),
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [savedIds, toggleSave, shareAnswer, inst.language],
+    [savedIds, toggleSave, shareAnswer, reportAnswer, inst.language, reportVersion],
   );
 
   // ─── ⋯ menu: Start over, Share this chat ───────────────────────────────────
@@ -314,7 +358,7 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
 
   const shareChat = () => {
     const lines = messages
-      .filter((m) => !isChatErrorMessage(m))
+      .filter((m) => !isChatErrorMessage(m) && !(m.role === 'assistant' && isAnswerReported(m.id)))
       .map((m) => `${m.role === 'user' ? t('guruMenu.you') : guruName}: ${stripMarkdown(m.content)}`);
     if (lines.length === 0) return;
     Share.share({ message: `${lines.join('\n\n')}\n\n— ${t('guruMenu.signature')}` }).catch(() => {});
@@ -329,6 +373,9 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
       cancelLabel: t('guruMenu.cancel'),
     });
   };
+
+  // Rows re-render when saves, reports or revealed answers change.
+  const listExtra = useMemo(() => ({ savedIds, reportVersion, revealed }), [savedIds, reportVersion, revealed]);
 
   // ─── Rows ──────────────────────────────────────────────────────────────────
   const renderMessage = ({ item }: { item: Message }) => {
@@ -347,6 +394,16 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
       return <ChatBubble role="assistant" content={item.content} />;
     }
     if (item.role === 'assistant') {
+      const reported = isAnswerReported(item.id);
+      if (reported && !revealed.has(item.id)) {
+        return (
+          <ChatBubble
+            role="assistant"
+            content=""
+            hiddenAsReported={{ onShow: () => setRevealed((prev) => new Set(prev).add(item.id)) }}
+          />
+        );
+      }
       return (
         <ChatBubble
           role="assistant"
@@ -355,6 +412,8 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
             saved:        savedIds.has(item.id),
             onToggleSave: () => toggleSave(item),
             onShare:      () => shareAnswer(item),
+            onReport:     () => reportAnswer(item),
+            reported,
           }}
           onLongPress={() => openAnswerMenu(item)}
         />
@@ -579,7 +638,7 @@ export function GuruChat({ agent, profileId, threadId: fixedThreadId, ask, onAsk
             data={reversedMessages}
             keyExtractor={(m) => m.id}
             renderItem={renderMessage}
-            extraData={savedIds}
+            extraData={listExtra}
             contentContainerStyle={styles.messageList}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"

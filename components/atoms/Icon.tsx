@@ -52,7 +52,8 @@ export type IconName =
   | 'money'
   | 'timeline'
   | 'lock'
-  | 'pdf';
+  | 'pdf'
+  | 'flag';
 
 type IOSMap = Record<IconName, SymbolViewProps['name']>;
 type AndroidMap = Record<IconName, string>;
@@ -108,6 +109,7 @@ const IOS_MAP: IOSMap = {
   timeline:          'chart.bar.xaxis',
   lock:              'lock',
   pdf:               'doc.richtext',
+  flag:              'flag',
 };
 
 const ANDROID_MAP: AndroidMap = {
@@ -161,6 +163,7 @@ const ANDROID_MAP: AndroidMap = {
   timeline:          'timeline',
   lock:              'lock-outline',
   pdf:               'picture-as-pdf',
+  flag:              'outlined-flag',
 };
 
 type Props = {

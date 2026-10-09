@@ -17,19 +17,27 @@ type Props = {
   status?: ChatStatus;
   /** Display name for the assistant — used in the loading/thinking labels. */
   persona?: string;
-  /** Save / Share row under a finished assistant reply. Omit to hide it. */
+  /** Save / Share / Report row under a finished assistant reply. Omit to hide it. */
   actions?: {
     saved:        boolean;
     onToggleSave: () => void;
     onShare:      () => void;
+    /** Report this answer (utils/report-answer.ts); omit to hide the button. */
+    onReport?:    () => void;
+    reported?:    boolean;
   };
   /** Long-press on the bubble (assistant replies open a save/share menu). */
   onLongPress?: () => void;
+  /**
+   * A reported answer: shown as a one-line notice with a Show button instead
+   * of the reply (onShow reveals it).
+   */
+  hiddenAsReported?: { onShow: () => void };
 };
 
 
 export function ChatBubble({
-  role, content, isStreaming, streamText, status, persona = 'Saga', actions, onLongPress,
+  role, content, isStreaming, streamText, status, persona = 'Saga', actions, onLongPress, hiddenAsReported,
 }: Props) {
   const styles = useIndicStyles(baseStyles);
   const indic  = useIsIndic();
@@ -57,6 +65,25 @@ export function ChatBubble({
   const textColor = isUser ? theme.bg : theme.ink;
   const linkColor = isUser ? theme.bg : theme.accent;
   const mdStyles  = useMemo(() => buildMarkdownStyles(textColor, linkColor, indic), [textColor, linkColor, indic]);
+
+  if (hiddenAsReported) {
+    return (
+      <View style={[styles.wrapper, styles.wrapperAI]}>
+        <View style={[styles.reportedNote, { borderColor: theme.hairline }]}>
+          <Icon name="flag" size={14} color={theme.muted} />
+          <Text style={[styles.reportedText, { color: theme.muted }]}>{t('report.hidden')}</Text>
+          <TouchableOpacity
+            onPress={hiddenAsReported.onShow}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('report.a11yShow')}
+          >
+            <Text style={[styles.actionLabel, { color: theme.accent }]}>{t('report.show')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperAI]}>
@@ -119,6 +146,22 @@ export function ChatBubble({
             <Icon name="share" size={14} color={theme.muted} />
             <Text style={[styles.actionLabel, { color: theme.muted }]}>{t('bubble.share')}</Text>
           </TouchableOpacity>
+          {actions.onReport ? (
+            <TouchableOpacity
+              onPress={actions.onReport}
+              disabled={actions.reported}
+              style={styles.actionBtn}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={actions.reported ? t('bubble.reported') : t('bubble.a11yReport')}
+              accessibilityState={{ disabled: !!actions.reported }}
+            >
+              <Icon name="flag" size={14} color={theme.muted} />
+              <Text style={[styles.actionLabel, { color: theme.muted }]}>
+                {actions.reported ? t('bubble.reported') : t('bubble.report')}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -198,6 +241,22 @@ const baseStyles = StyleSheet.create({
     fontSize:      10.5,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
+  },
+  reportedNote: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               8,
+    paddingVertical:   10,
+    paddingHorizontal: 14,
+    borderRadius:      18,
+    borderWidth:       StyleSheet.hairlineWidth,
+    borderStyle:       'dashed',
+  },
+  reportedText: {
+    fontFamily: FONTS.sansRegular,
+    fontSize:   13.5,
+    fontStyle:  'italic',
+    flexShrink: 1,
   },
   statusRow: {
     flexDirection: 'row',
