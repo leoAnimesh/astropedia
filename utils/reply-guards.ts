@@ -338,7 +338,7 @@ const KIND_EN = '(?<!\\b(?:kaisa|kaisi|kaise|kaun sa|kaun si|kaunsa|kaunsi|wala|
 
 const CHILD_SEX = new RegExp(nfc([
   // English
-  '\\b(?:boy|girl|son|daughter) or (?:a )?(?:boy|girl|son|daughter)\\b',
+  '\\b(?:boy|girl|son|daughter) or (?:a )?(?:boy|girl|son|daughter)\\b', '\\bis there a son in my (?:chart|kundli|horoscope)\\b', '\\bson yog',
   "\\b(?:baby|child|kid|f(?:o)?etus)(?:'s)? (?:gender|sex)\\b",
   '\\b(?:gender|sex) of (?:my|our|the|her) (?:first |next |second |third |unborn )?(?:baby|child|kid)',
   '\\b(?:will|would) (?:it|he or she|my (?:first |next |second |third )?(?:baby|child|kid)|our (?:first |next |second )?(?:baby|child|kid)) be a (?:baby )?(?:boy|girl|son|daughter)\\b',
@@ -402,7 +402,7 @@ export function cannedQuestion(question: string): 'childSex' | 'partnerName' | n
 // Deliberately broad: a false positive costs one gentle helpline message.
 
 const CRISIS_EN = [
-  'suicid(?:e|al)', 'kill(?:ing)? my ?self', 'end(?:ing)? (?:my|it) (?:life|all)', 'end it all',
+  'suicid(?:e|al)', 'kill(?:ing)? my ?self', 'end(?:ing)? (?:my|it) (?:life|all)', 'end it all', '(?:want to|wanna) end everything',
   'take my (?:own )?life', 'taking my (?:own )?life', "(?<!(?:don'?t|do not|never) )(?:want(?:na)? to|wanna) die", 'wish i (?:was|were) dead',
   "(?:don'?t|do not|dont) want to (?:live|be alive|exist)", 'no reason to live', 'better off dead',
   'self[- ]?harm', '(?:hurt|harm|cut)(?:ting)? my ?self', 'overdose',
@@ -410,15 +410,15 @@ const CRISIS_EN = [
   'khud ?kushi', 'aatma ?hatya', 'atma ?hatya', 'marna chaht[aie]', 'mar ?ja(?:a)?na chaht[aie]',
   'jee?na nahi(?:n)? chaht[aie]', 'zind[ae]gi khatam', 'jaan de d[ou]o?n?',
   // Banglish
-  'atm[ao] ?hott?(?:y)?a', 'more jete chai', 'morte chai', 'bachte chai ?na', 'banchte chai ?na',
+  'atm[ao] ?hott?(?:y)?a', 'more jete chai', 'more jete ichh?e', 'morte chai', 'morte ichh?e', 'bachte chai ?na', 'banchte chai ?na', 'bachte ichh?e kore na',
 ];
 const CRISIS_HI = [
-  'आत्महत्या', 'ख़ुदकुशी', 'खुदकुशी', 'मरना चाहत', 'मर जाना चाहत', 'मर जाऊं', 'मर जाऊँ',
+  'आत्महत्या', 'ख़ुदकुशी', 'खुदकुशी', 'मरना चाहत', 'मर जाना चाहत', 'मर जाऊं', 'मर जाऊँ', 'मरने का मन', 'मरने को जी',
   'जीना नहीं चाहत', 'जीने का मन नहीं', 'जान दे दूं', 'जान दे दूँ', 'अपनी जान ले',
   'ज़िंदगी ख़त्म', 'जिंदगी खत्म', 'ज़िन्दगी ख़त्म', 'जिन्दगी खत्म', 'खुद को नुकसान', 'ख़ुद को नुक़सान', 'खुद को चोट',
 ];
 const CRISIS_BN = [
-  'আত্মহত্যা', 'মরে যেতে চাই', 'মরতে চাই', 'বাঁচতে চাই না', 'বাঁচতে ইচ্ছে করে না', 'বাঁচার ইচ্ছে নেই',
+  'আত্মহত্যা', 'মরে যেতে চাই', 'মরে যেতে ইচ্ছে', 'মরতে চাই', 'বাঁচতে চাই না', 'বাঁচতে ইচ্ছে করে না', 'বাঁচার ইচ্ছে নেই',
   'নিজেকে শেষ করে', 'নিজেকে আঘাত', 'নিজের ক্ষতি করতে', 'জীবন শেষ করে দি', 'সুইসাইড',
 ];
 const CRISIS = new RegExp(nfc([

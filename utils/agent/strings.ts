@@ -46,6 +46,12 @@ export const S = {
     hi: '{who}{area} के लिए सबसे अच्छा समय {start} से {end} तक है, खासकर {peak} के आसपास।',
     bn: '{who}{areaGen} জন্য সবচেয়ে ভালো সময় {start} থেকে {end}, বিশেষ করে {peak} নাগাদ।',
   } as Table,
+  /** The main timing sentence for 'general' (luck): "things look up" rather than "for luck". */
+  windowGeneral: {
+    en: '{who}Things look up most from {start} to {end}, peaking around {peak}.',
+    hi: '{who}हालात सबसे ज़्यादा {start} से {end} तक सुधरते हैं, खासकर {peak} के आसपास।',
+    bn: '{who}পরিস্থিতি সবচেয়ে ভালো হয় {start} থেকে {end}, বিশেষ করে {peak} নাগাদ।',
+  } as Table,
   pastWindow: {
     en: '{who}Looking back, the strongest stretch for {area} was {start} to {end}.',
     hi: '{who}पीछे देखें तो {area} के लिए सबसे मज़बूत समय {start} से {end} तक था।',

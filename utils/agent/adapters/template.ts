@@ -11,9 +11,10 @@ import type { AnswerPlan } from '../plan';
 import { AREA, AREA_GEN_BN, HELPS, S, fill, localText, monthLabel, relationWord, type Lang } from '../strings';
 import { dateInWindows, type TimingTopic, type TimingWindow } from '../../timing-engine';
 import { formatGitaQuote, pickGitaVerse } from '../../gita';
-import { findDates, replyOverlap } from '../../reply-guards';
+import { findDates, replyOverlap, westernDigits } from '../../reply-guards';
 import type { AnswerContent } from '../astrologer';
 import {
+  FOLLOW_LEAD_ASK, NEXT_ITEM_ASK,
   AND, ASK_MORE, BECAUSE, COMMA, DOCTOR_LINE, EXAMPLES, EXAMPLES_MORE, FIELD_LINE, FOLLOW_LEAD, FOLLOW_LEAD_NEXT, LEAD, MEET_LINE, NEXT_ITEM, PLACE_LINE, TIP, TIP2,
   WEAK_LINE, WINDOW_LINE,
 } from '../ask-strings';
@@ -44,7 +45,7 @@ export function timingSentences(plan: AnswerPlan, { withHelps = true } = {}): st
   const out: string[] = [];
   const other = plan.subject.isYou === false && plan.decline !== 'minorRomance';
   const who = other ? fill(S.whoOther[lang], { name: firstName(plan.subject.name) }) : '';
-  out.push(fill((t.result.past ? S.pastWindow : S.window)[lang], { ...v, who }));
+  out.push(fill((t.result.past ? S.pastWindow : t.topic === 'general' ? S.windowGeneral : S.window)[lang], { ...v, who }));
   if (plan.notes.includes('narrow')) out.push(fill(S.repairPeak[lang], v));
   if (!t.result.past) {
     if (t.best.reasons.some(r => r.kind === 'dasha')) out.push(fill(S.reasonDasha[lang], v));
@@ -74,8 +75,8 @@ export function renderTemplate(plan: AnswerPlan, previous: string[] = []): strin
   const lang = plan.lang;
   if (plan.route === 'decline') {
     switch (plan.decline) {
-      case 'death': return S.death[lang];
-      case 'elderChildren': return S.elderChildren[lang];
+      case 'death': return withLines(plan, S.death[lang], previous);
+      case 'elderChildren': return withLines(plan, S.elderChildren[lang], previous);
       case 'otherMissing': {
         const owner = plan.subject.isYou === false
           ? fill(S.ownerOther[lang], { name: firstName(plan.subject.name) }) : S.ownerSelf[lang];
@@ -86,18 +87,75 @@ export function renderTemplate(plan: AnswerPlan, previous: string[] = []): strin
         if (plan.timing) parts.push(...timingSentences(plan));
         return localText(parts.join(' '), lang);
       }
+      case 'emergency': case 'abuse': case 'identity': case 'childSexWhy': case 'askWhich':
+        return withLines(plan, '', previous);
       default: return null;
     }
   }
   if (plan.route !== 'answer') return null;
-  if (plan.content && !plan.intent.timing) return renderContent(plan, previous);
-  if (!plan.timing) return null;
   const t = plan.timing;
-  const parts: string[] = [];
-  const fact = plan.facts[0];
-  if (fact && !t.result.past) parts.push(fill(S[fact.code][lang], vars(lang, t.topic)));
-  parts.push(...timingSentences(plan));
-  return localText(parts.join(' '), lang);
+  let core = '';
+  if (!plan.coreOff) {
+    if (plan.content && !plan.intent.timing) core = renderContent(plan, previous);
+    else if (t) {
+      // The window answers the question, so it comes first; the promise is its first reason.
+      const parts = timingSentences(plan);
+      const fact = plan.facts[0];
+      if (fact && !t.result.past) parts.splice(1, 0, localText(fill(S[fact.code][lang], vars(lang, t.topic)), lang));
+      core = localText(parts.join(' '), lang);
+    }
+  }
+  if (!core && !plan.say.length) return null;
+  return withLines(plan, core, previous);
+}
+
+/** Soft word budget for a whole template answer (first answers 60-140 words, follow-ups 30-90: rules.md §1.6). */
+const BUDGET: Record<Lang, number> = { en: 135, hi: 150, bn: 120 };
+
+/**
+ * The plan's lines around the core paragraph: lead lines first, then the
+ * core, body and end lines. Lines already said in an earlier reply are left
+ * out (unless required), and optional body lines stop at the word budget.
+ */
+function withLines(plan: AnswerPlan, core: string, previous: string[]): string {
+  const lang = plan.lang;
+  const said = (x: string) => previous.some(p => replyOverlap(westernDigits(x), p) >= SAID_MAX);
+  const pick = (pos: 'lead' | 'body' | 'end') => plan.say.filter(l => l.pos === pos).map(l => ({ l, text: l.text[lang] }))
+    .filter(({ l, text }) => l.required || !said(text));
+  const lead = pick('lead'), body = pick('body'), end = pick('end');
+  const count = (x: string) => x.split(/\s+/).filter(Boolean).length;
+  let n = count(core) + [...lead, ...end].reduce((a, x) => a + count(x.text), 0);
+  const keptBody: string[] = [];
+  for (const b of body) {
+    if (!b.l.required && n + count(b.text) > BUDGET[lang] && keptBody.length >= 1) continue;
+    keptBody.push(b.text);
+    n += count(b.text);
+  }
+  const coreSentences = core ? core.split(/(?<=[.!?।])\s+/) : [];
+  // Answer first (rules.md §1.1): a timing core's window sentence (after a yes/no likelihood line) comes before
+  // feelings and context lines; feelings-first categories (distress, why-now) keep their order.
+  const DIRECT = new Set(['likelihood', 'compat_score', 'lucky_values', 'muhurat_days', 'computed_fact', 'leaning', 'decline_name', 'decline_sex', 'no_exact_day', 'peak', 'window', 'emergency', 'safety_resources']);
+  // The core (a window, or a "which / what" answer's items) leads unless the category starts with feelings.
+  const timingFirst = !plan.coreOff && !!core && !['mental_health_distress', 'why_now_current_phase', 'family_parents_siblings', 'relationship_problems'].includes(plan.resolved);
+  let head: string[] = lead.map(x => x.text);
+  let coreRest = coreSentences;
+  if (timingFirst && coreSentences.length) {
+    const direct = lead.filter(x => DIRECT.has(x.l.code)).map(x => x.text);
+    const rest = lead.filter(x => !DIRECT.has(x.l.code)).map(x => x.text);
+    head = [...direct, coreSentences[0], ...rest];
+    coreRest = coreSentences.slice(1);
+  }
+  const parts = [...head, ...coreRest, ...keptBody, ...end.map(x => x.text)].filter(x => x && x.trim());
+  // Never the same sentence twice (a line and the core can share one).
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of parts) {
+    const k = westernDigits(x).trim();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(capFirst(x));
+  }
+  return localText(out.join(' '), lang);
 }
 
 /** "a, b and c" in `lang`. */
@@ -121,7 +179,8 @@ export function contentLead(content: AnswerContent, lang: Lang, variant = 0): st
   const lead = leads[variant % leads.length];
   // Career names its top three fields; other asks their top two (the third is kept for follow-ups).
   const n = content.ask === 'careerField' ? 3 : 2;
-  return localText(fill(lead[lang], { items: joinList(content.items.slice(0, n).map(i => (i.text.short ?? i.text.label)[lang]), lang) }), lang);
+  const extra = Object.fromEntries(Object.entries(content.vars ?? {}).map(([k, v]) => [k, v[lang]]));
+  return localText(fill(lead[lang], { ...extra, items: joinList(content.items.slice(0, n).map(i => (i.text.short ?? i.text.label)[lang]), lang) }), lang);
 }
 
 /** Sentences of an earlier reply count as said when they overlap a candidate this much. */
@@ -152,7 +211,7 @@ export function renderContent(plan: AnswerPlan, previous: string[] = []): string
     const items = v % 2 === 1 && c.items.length > 1 ? [...c.items.slice(1), c.items[0]] : c.items;
     return contentLead({ ...c, items }, lang, v);
   });
-  const followLeads = [fill(FOLLOW_LEAD[lang], { item: label(0) }), ...(label(1) ? [fill(FOLLOW_LEAD_NEXT[lang], { item: label(1) })] : [])];
+  const followLeads = [fill((FOLLOW_LEAD_ASK[c.ask] ?? FOLLOW_LEAD)[lang], { item: label(0) }), ...(label(1) ? [fill(FOLLOW_LEAD_NEXT[lang], { item: label(1) })] : [])];
   const lead = followUp
     ? followLeads.find(l => !said(l)) ?? followLeads[followLeads.length - 1]
     : leads.find(l => !said(l)) ?? (plan.intent.clarifies ? leads[1] : leads[0]);
@@ -164,7 +223,7 @@ export function renderContent(plan: AnswerPlan, previous: string[] = []): string
     // Items the thread hasn't named yet come first in a follow-up.
     for (const it of c.items.slice(1)) {
       const named = previous.some(p => new RegExp(it.text.terms, 'iu').test(p));
-      if (!named && it.why) optional.unshift(fill(NEXT_ITEM[lang], { item: (it.text.short ?? it.text.label)[lang], why: it.why[lang] }));
+      if (!named && it.why) optional.unshift(fill((NEXT_ITEM_ASK[c.ask] ?? NEXT_ITEM)[lang], { item: (it.text.short ?? it.text.label)[lang], why: it.why[lang] }));
     }
   }
   const exampleList = (i: number, n: number) => c.items[i]?.text.examples?.[lang].split(/,\s*/).slice(0, n).join(COMMA[lang]);
@@ -195,13 +254,14 @@ export function renderContent(plan: AnswerPlan, previous: string[] = []): string
     if (said(o)) continue;
     const isTip = tips.includes(o);
     if (isTip && tipped) continue;
-    if (n + count(o) > MAX_WORDS[lang] && parts.length >= 3) continue;
+    // One practical tip always fits (rules.md §1.4); other extras stop at the word budget.
+    if (n + count(o) > MAX_WORDS[lang] && parts.length >= 3 && !isTip) continue;
     parts.push(o);
     n += count(o);
     if (isTip) tipped = true;
   }
   if (parts.length < 3 && !said(ASK_MORE[lang])) parts.push(ASK_MORE[lang]);
-  if (c.ask === 'wellbeing' || plan.intent.topic === 'health') parts.push(DOCTOR_LINE[lang]);
+  if (c.ask === 'wellbeing' || plan.resolved === 'health_wellbeing') parts.push(DOCTOR_LINE[lang]);
   return localText(parts.map(capFirst).join(' '), lang);
 }
 

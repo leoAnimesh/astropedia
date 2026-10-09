@@ -25,12 +25,13 @@ import { dateInWindows } from '../timing-engine';
 import type { Profile } from '../database';
 import type { AgentId } from '../../constants/gurus';
 import { buildPlan, type AnswerPlan } from './plan';
-import { localizeDigitsStream, previousReplies, verifyStream } from './verify';
+import { localizeDigitsStream, previousReplies, requiredTail, verifyStream } from './verify';
 import { krishnaTemplate, renderTemplate } from './adapters/template';
 import { templateReading } from './adapters/template-reading';
 import { activeAdapter, adapterSupports } from './adapters';
 import type { AdapterTask, ChatTurn, ReadingResult } from './adapters/types';
 import { questionTitle, type Lang } from './strings';
+import type { ThreadFacts } from './thread-facts';
 
 export type PipelineTier = 'executorch' | 'deterministic' | 'pending';
 
@@ -48,8 +49,11 @@ export type PipelineRequest = {
   waitMs: number;
   /** Shown when nothing can answer without the model. */
   offlineReply: string;
+  /** What the user told us earlier in this thread (threads.facts; utils/agent/thread-facts.ts). */
+  facts?: ThreadFacts | null;
 };
 
+/** `plan.thread` is the thread's facts after this message: the chat stores it with the thread. */
 export type PipelineResult = { stream: AsyncGenerator<string>; tier: PipelineTier; plan: AnswerPlan };
 
 async function* once(text: string): AsyncGenerator<string> {
@@ -79,7 +83,7 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
   const { lang } = req;
   const plan = buildPlan({
     question: req.question, history: req.history, profile: req.profile, people: req.people,
-    lang, agent: req.agent, mode: req.mode,
+    lang, agent: req.agent, mode: req.mode, facts: req.facts,
   });
 
   switch (plan.route) {
@@ -102,6 +106,13 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
     }
   }
 
+  // Categories answered from the plan alone (feature data, sensitive wording, safety): the template,
+  // also when a model is installed. Their lines carry the required professional / policy wording.
+  if (plan.deterministic && plan.mode === 'saga') {
+    const text = renderTemplate(plan, previousReplies(req.history));
+    if (text) return { stream: once(text), tier: 'deterministic', plan };
+  }
+
   // L0: single-answer lookups (sun sign, nakshatra, current dasha …), English templates.
   // A life-topic "when" question ("which dasha am I in and when will I marry?")
   // belongs to the timing engine, not the lookup.
@@ -116,7 +127,10 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
     const kinds = missingAdvice(req.question, reply);
     // "Why am I always tired?" / "how do I reduce stress?" are health questions too.
     if (plan.intent.topic === 'health' && !kinds.includes('doctor') && !mentionsDoctor(reply)) kinds.push('doctor');
-    return kinds.map(kind => `\n\n${i18n.t(`chat:safety.${kind}`, { lng: lang })}`).join('');
+    const fixed = kinds.map(kind => `\n\n${i18n.t(`chat:safety.${kind}`, { lng: lang })}`).join('');
+    // The plan's required lines (counsellor, helpline, documents, lawyer …) a reply leaves out.
+    const lines = requiredTail(plan, reply + fixed);
+    return fixed + (lines ? `\n\n${lines}` : '');
   };
   const template = plan.mode === 'saga' ? renderTemplate(plan, previousReplies(req.history)) : null;
   const adapter = activeAdapter();

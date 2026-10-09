@@ -29,6 +29,8 @@
  */
 import type { TimingTopic } from '../timing-engine';
 import { cannedQuestion, isCrisisMessage, isTimingQuestion, adviceNeeded, words } from '../reply-guards';
+import { categorize, type Category, type CategoryFlags, type FollowUp, type PrevTurn } from './categories';
+import { factsFromMessage, EMPTY_FACTS, type ThreadFacts } from './thread-facts';
 
 export type IntentTopic = TimingTopic | 'chart';
 
@@ -74,6 +76,18 @@ export type Intent = {
    * re-read with the previous question, not answered as a new generic one.
    */
   clarifies: boolean;
+  /** One of the 46 rules.md categories: the message's form (follow-up, correction, yes/no …). */
+  category: Category;
+  /** The content category the answer follows (= category for plain questions). */
+  resolved: Category;
+  /** What a follow-up asks of the previous answer. */
+  followUp: FollowUp | null;
+  /** Category details (emergency, gem, two options, muhurat activity …). */
+  flags: CategoryFlags;
+  /** Facts this message states about the user ("I'm already married", "I meant my sister"). */
+  stated: Partial<ThreadFacts>;
+  /** The previous user question's intent essentials (null for a first question). */
+  prev: PrevTurn | null;
 };
 
 /**
@@ -89,10 +103,13 @@ export type AnswerKind = 'timing' | 'choice' | 'nature' | 'advice' | 'yesno' | '
 /** Non-timing questions plan.ts has a deterministic astrologer's method for. */
 export type Ask =
   | 'careerField' | 'businessVsJob' | 'partner' | 'moneySources' | 'studyField' | 'relocation'
-  | 'strengths' | 'wellbeing' | 'whyNow';
+  | 'strengths' | 'wellbeing' | 'whyNow'
+  // Stage 2 planners (plan.ts picks them from the category, not from words).
+  | 'family' | 'relationship' | 'purpose' | 'remedies' | 'loveArranged';
 
 export const ASKS: readonly Ask[] = [
   'careerField', 'businessVsJob', 'partner', 'moneySources', 'studyField', 'relocation', 'strengths', 'wellbeing', 'whyNow',
+  'family', 'relationship', 'purpose', 'remedies', 'loveArranged',
 ];
 
 const nfc = (s: string) => s.normalize('NFC').toLowerCase().replace(/[’`]/g, "'");
@@ -106,18 +123,18 @@ type Lex = [string, number][];
 const LATIN: Record<IntentTopic, Lex> = {
   marriage: [['marr(?:y|ied|iage|ying)', 3], ['wed(?:ding)?\\b', 3], ['spouse', 2], ['husband', 2], ['wife', 2], ['bride', 2],
     ['groom', 2], ['life ?partner', 3], ['settle down', 2], ['shaa?di', 3], ['vivaa?h', 3], ['byaa?h', 3], ['biy[ae]h?\\b', 3],
-    ['bie\\b', 3], ['bibaho?', 3], ['rishta', 1.5], ['patni', 2], ['pati\\b', 2], ['bou\\b', 2], ['swami', 1.5], ['proposal', 1.5]],
+    ['bie\\b', 3], ['bibaho?', 3], ['rishta', 1.5], ['patni', 2], ['pati\\b', 2], ['bou\\b', 2], ['bor\\b', 1.5], ['swami', 1.5], ['proposal', 1.5]],
   love: [['love', 3], ['relationship', 2.5], ['girl ?friend', 2.5], ['boy ?friend', 2.5], ['\\bgf\\b', 2], ['\\bbf\\b', 2],
     ['crush', 2.5], ['dating', 2.5], ['romance', 2.5], ['romantic', 2.5], ['soul ?mate', 2.5], ['break ?up', 2], ['my ex\\b', 2],
     ['pyaa?r', 3], ['prem\\b', 3], ['premik', 3], ['mohabb?at', 3], ['bhalob[ae]sh?a', 3], ['partner', 1]],
   job: [['jobs?\\b', 3], ['employ', 2.5], ['hired', 2.5], ['hiring', 2], ['offer letter', 3], ['interview', 2.5], ['placement', 2.5],
     ['naukri', 3], ['naukari', 3], ['nokri', 3], ['chakri', 3], ['chakori', 3], ['sarkari', 2], ['government post', 3],
-    ['career', 1.5], ['work\\b', 0.8], ['kaam\\b', 0.8], ['kaj\\b', 0.8], ['unemploy', 3], ['switch', 1.5], ['resign', 1.5],
+    ['career', 1.5], ['resign', 3], ['better company', 2.5], ['work\\b', 0.8], ['kaam\\b', 0.8], ['kaj\\b', 0.8], ['unemploy', 3], ['switch', 1.5],
     // "Which roles should I apply for / which domain / what profession"
     ['roles?\\b', 2], ['apply\\b', 1.5], ['applying', 1.5], ['domains?\\b', 2], ['professions?', 2.5], ['occupation', 2.5],
     ['sectors?\\b', 2], ['industr(?:y|ies)', 2], ['line of work', 3], ['(?:which|what|right|best) fields?\\b', 2], ['fields? of work', 3],
     ['pesha', 2.5], ['kshetra', 1.5]],
-  promotion: [['promot', 4], ['raise\\b', 2.5], ['hike', 3], ['increment', 3], ['appraisal', 3], ['higher post', 3],
+  promotion: [['promot', 4], ['my growth', 3], ['raise\\b', 2.5], ['hike', 3], ['increment', 3], ['appraisal', 3], ['higher post', 3],
     ['senior (?:role|position)', 3], ['career growth', 4], ['growth in (?:my )?(?:career|job|office)', 4], ['taraq?q?ee?', 3],
     ['tarakk?i', 3], ['padonn?ati', 4]],
   business: [['business', 3], ['start-?up', 3], ['venture', 2.5], ['entrepreneur', 3], ['own company', 3], ['self-?employ', 3],
@@ -125,7 +142,7 @@ const LATIN: Record<IntentTopic, Lex> = {
     ['bya?bsh?a', 3], ['babsa', 3], ['partnership firm', 3]],
   money: [['money', 3], ['wealth', 3], ['rich\\b', 2.5], ['financ', 2.5], ['income', 2], ['salary', 1.5], ['savings?', 2],
     ['debts?\\b', 2.5], ['loans?\\b', 2], ['invest', 2], ['profit', 2], ['paisa', 3], ['paise', 3], ['dhan\\b', 2.5],
-    ['kamai', 2.5], ['karz', 2.5], ['taka\\b', 3], ['poi?sa\\b', 2], ['dhon\\b', 2.5], ['arthik', 2.5], ['stock market', 2]],
+    ['kamai', 2.5], ['karz', 2.5], ['lakhs?\\b', 2], ['owes? me', 3], ['taka\\b', 3], ['poi?sa\\b', 2], ['dhon\\b', 2.5], ['arthik', 2.5], ['stock market', 2]],
   property: [['property', 3], ['real estate', 3], ['flat\\b', 2.5], ['apartment', 2.5], ['land\\b', 2.5], ['plot\\b', 2.5],
     ['(?:buy|own|purchase|build|get)(?:ing)? (?:a |my |our |my own |our own |new )?(?:house|home|flat|car|vehicle|bike)', 4],
     ['own (?:house|home)', 3], ['vehicle', 2.5], ['\\bcar\\b', 2], ['makaa?n', 3], ['zameen', 3], ['jameen', 3], ['jomi\\b', 3],
@@ -167,7 +184,7 @@ const INDIC: Record<IntentTopic, Lex> = {
     ['প্রমোশন', 4], ['পদোন্নতি', 4], ['ইনক্রিমেন্ট', 3], ['বেতন বৃদ্ধি', 3]],
   business: [['व्यापार', 3], ['व्यवसाय', 3], ['बिज़नेस', 3], ['बिजनेस', 3], ['धंधा', 3], ['दुकान', 2], ['स्टार्टअप', 3],
     ['ব্যবসা', 3], ['ব্যবসায়', 3], ['ব্যবসায়', 3], ['দোকান', 2], ['স্টার্টআপ', 3]],
-  money: [['पैसा', 3], ['पैसे', 3], ['धन', 2.5], ['दौलत', 3], ['अमीर', 2.5], ['कमाई', 2.5], ['आमदनी', 2.5], ['कर्ज', 2.5], ['क़र्ज़', 2.5],
+  money: [['पैसा', 3], ['पैसे', 3], ['पैसों', 3], ['तंगी', 2], ['धन', 2.5], ['दौलत', 3], ['अमीर', 2.5], ['कमाई', 2.5], ['आमदनी', 2.5], ['कर्ज', 2.5], ['क़र्ज़', 2.5],
     ['लोन', 2], ['बचत', 2], ['निवेश', 2], ['आर्थिक', 2.5], ['सैलरी', 1.5],
     ['টাকা', 3], ['অর্থ', 2.5], ['ধন', 2.5], ['সম্পদ', 2.5], ['আয়', 2], ['আয়', 2], ['ঋণ', 2.5], ['লোন', 2], ['সঞ্চয়', 2], ['সঞ্চয়', 2],
     ['বিনিয়োগ', 2], ['বিনিয়োগ', 2], ['আর্থিক', 2.5], ['বড়লোক', 2.5], ['বেতন', 1.5]],
@@ -180,7 +197,7 @@ const INDIC: Record<IntentTopic, Lex> = {
   education: [['पढ़ाई', 3], ['पढ़ाई', 3], ['परीक्षा', 3], ['एग्जाम', 3], ['एग्ज़ाम', 3], ['एडमिशन', 3], ['दाखिला', 3], ['कॉलेज', 2.5],
     ['स्कूल', 2], ['डिग्री', 2.5], ['रिजल्ट', 2], ['पढ़ाई', 3], ['विषय', 1.5], ['पढ़ना', 2], ['पढ़ूँ', 2], ['कोर्स', 2.5],
     ['পড়াশোনা', 3], ['পড়াশোনা', 3], ['পড়াশুনা', 3], ['পড়াশুনা', 3], ['পরীক্ষা', 3], ['ভর্তি', 3], ['কলেজ', 2.5], ['স্কুল', 2],
-    ['ডিগ্রি', 2.5], ['রেজাল্ট', 2], ['বিষয়', 1.5], ['বিষয়', 1.5], ['পড়া উচিত', 2], ['কোর্স', 2.5]],
+    ['ডিগ্রি', 2.5], ['রেজাল্ট', 2], ['উচ্চশিক্ষা', 3], ['উচ্চ শিক্ষা', 3], ['उच्च शिक्षा', 3], ['বিষয়', 1.5], ['বিষয়', 1.5], ['পড়া উচিত', 2], ['কোর্স', 2.5]],
   foreign: [['विदेश', 4], ['परदेस', 3], ['वीज़ा', 3], ['वीजा', 3], ['अमेरिका', 2], ['कनाडा', 2], ['लंदन', 2],
     ['বিদেশ', 4], ['প্রবাস', 3], ['ভিসা', 3], ['আমেরিকা', 2], ['কানাডা', 2], ['লন্ডন', 2]],
   health: [['सेहत', 3], ['स्वास्थ्य', 3], ['तबीयत', 3], ['तबियत', 3], ['बीमारी', 3], ['ठीक हो', 2], ['स्वस्थ', 3], ['तनाव', 2], ['थकान', 2.5], ['आदत', 1],
@@ -265,7 +282,7 @@ const NEGATED = new RegExp([
 ].join('|'), 'i');
 
 const QUESTION_CUE = new RegExp([
-  '\\?', '\\b(?:when|will|how|what|which|kab|kobe|kokhon|kya|ki|is there)\\b', 'कब', 'क्या', 'कैसे', 'কবে', 'কখন', 'কি ', 'কী',
+  '\\?', '\\b(?:when|will|how|what|which|why|kab|kobe|kokhon|kya|ki|kyu|kyun|keno|is there)\\b', 'कब', 'क्या', 'कैसे', 'क्यों', 'কবে', 'কখন', 'কি ', 'কী', 'কেন',
 ].join('|'), 'i');
 
 // ─── Subject: whose question is it ───────────────────────────────────────────
@@ -301,6 +318,10 @@ function relationOfWord(w: string): Relation | undefined {
   return undefined;
 }
 
+const WITH = new Set(['with', 'from', 'against', 'se', 'sathe', 'shathe', 'sange', 'से', 'সঙ্গে', 'সাথে', 'থেকে']);
+const GENITIVE = new Set(['ki', 'ka', 'ke', 'की', 'का', 'के']);
+const GEN_WORD = new RegExp('^(?:cheler|meyer|boner|bhaier|bhaiyer|babar|mayer|dadar|didir|bouer|borer)$|(?:ের|র)$'.normalize('NFC'));
+
 function subjectOf(text: string, topic: IntentTopic | null): Intent['subject'] {
   const ws = words(text.replace(/'s\b/g, ''));
   let relAt = -1;
@@ -308,8 +329,13 @@ function subjectOf(text: string, topic: IntentTopic | null): Intent['subject'] {
   for (let i = 0; i < ws.length; i++) {
     const r = relationOfWord(ws[i]);
     if (!r) continue;
+    // "a dispute with my uncle", "भाई से झगड़ा": the relation is the other party, not whose chart.
+    if (WITH.has(ws[i - 1] ?? '') || WITH.has(ws[i - 2] ?? '') || WITH.has(ws[i + 1] ?? '') || (ws[i + 1] === 'के' && ws[i + 2] === 'साथ')) continue;
     // "my sister", "meri behen", "আমার বোনের" (the possessive within two words before)
     if ([ws[i - 1], ws[i - 2]].some(w => w && POSSESSIVE.has(w))) { rel = r; relAt = i; break; }
+    // "beti ki naukri", "cheler chakri", "দাদার বিদেশ": a genitive relation without "my".
+    const genitive = GENITIVE.has(ws[i + 1] ?? '') || GEN_WORD.test(ws[i]);
+    if (genitive && i <= 1) { rel = r; relAt = i; break; }
   }
   if (!rel) return { kind: 'self' };
   const meAt = ws.findIndex(w => FIRST_PERSON.has(w));
@@ -341,6 +367,8 @@ const EXTRA_TIMING = new RegExp([
 ].join('|'), 'i');
 
 const DEATH = new RegExp([
+  '\\bwill i (?:have|meet with) an? accident\\b', '\\baccident (?:yog|in my chart)\\b', '\\bhow long will (?:my |his |her )?\\w+ live\\b', '\\bkotodin banchben\\b', '\\bkotodin bachben\\b',
+  '\\bmaut kab likhi\\b', '\\bmeri maut\\b', '\\bayu kitni\\b', 'कब तक जीएंगे', 'कितने दिन जिएंगे', 'দুর্ঘটনা হবে', 'কতদিন বাঁচবেন', 'আর কতদিন বাঁচ',
   '\\bwhen will i die\\b', '\\bhow long will i live\\b', '\\b(?:my|his|her) (?:death|lifespan|life span)\\b', '\\bdeath (?:date|time|year)\\b',
   '\\bwhen will (?:my )?\\w+ die\\b', '\\bmaut kab\\b', '\\bmrityu\\b', '\\bkobe morbo\\b', '\\bkobe mara\\b',
   'मौत कब', 'मृत्यु कब', 'कब मरूंगा', 'कब मरूँगा', 'कब मरूंगी', 'आयु कितनी', 'कितने साल जीऊंगा', 'মৃত্যু কবে', 'কবে মারা', 'কবে মরব', 'আয়ু কত', 'আয়ু কত',
@@ -348,7 +376,7 @@ const DEATH = new RegExp([
 
 // ─── Answer kind, ask, clarification ─────────────────────────────────────────
 
-const rx = (parts: string[]) => new RegExp(parts.join('|'), 'i');
+const rx = (parts: string[]) => new RegExp(parts.join('|').normalize('NFC'), 'i');
 
 const WHY = rx(['\\bwhy\\b', '\\bkyu?o?n\\b', '\\bkyun\\b', '\\bkeno\\b', '\\bkeno\\b', 'क्यों', 'क्यूं', 'क्यूँ', 'কেন']);
 
@@ -439,6 +467,14 @@ const ASK_WORDS: [Ask, RegExp][] = [
   ])],
 ];
 
+/** A yes/no question form in any language ("Will I…?", "क्या …?", "… কি …?"), also when it asks "this year?". */
+const YESNO_ANY = rx(['(?:^|[.?!]\\s+)(?:is|will|can|should|am|are|do|does|would)\\b', '\\bkya\\b(?! kar)', '(?:^|\\s)কি\\s(?!কর)', '(?:^|\\s)कि\\s', 'क्या', '\\b(?:hobe|pabo|parbo) to\\b', '\\bya nahi\\b', 'হবে তো']);
+const WHAT_TO_DO = rx(['\\bki kor(?:bo|i)\\b', '\\bkya kar(?:u|un|oon|na)\\b', 'क्या करूँ', 'क्या करूं', 'क्या करना', 'কী করব', 'কি করব', 'কী করা', 'কি করা']);
+export function isYesNo(question: string): boolean {
+  const q = nfc(question);
+  return !WHAT_TO_DO.test(q) && (YESNO.test(q) || YESNO_ANY.test(q));
+}
+
 /** Kind of answer a message wants (`timing` comes from the timing cues). */
 export function answerKind(question: string, timing: boolean): AnswerKind {
   const q = nfc(question);
@@ -496,9 +532,56 @@ export function askOf(question: string, kind: AnswerKind, topic: IntentTopic | n
 
 /**
  * The intent of `question`. `previousQuestions` (oldest first) lets a
- * topic-less follow-up ("When exactly?", "আর কবে?") inherit the thread's topic.
+ * topic-less follow-up ("When exactly?", "আর কবে?") inherit the thread's topic;
+ * `facts` (thread-facts.ts) are what the user said earlier in the thread
+ * ("I'm already married", "I meant my sister").
  */
-export function classifyIntent(question: string, previousQuestions: string[] = []): Intent {
+export function classifyIntent(question: string, previousQuestions: string[] = [], facts: ThreadFacts = EMPTY_FACTS): Intent {
+  const base = classifyBase(question, previousQuestions);
+  const prevQ = previousQuestions[previousQuestions.length - 1];
+  let prev: PrevTurn | null = null;
+  if (prevQ) {
+    const p = classifyIntent(prevQ, previousQuestions.slice(0, -1), facts);
+    prev = { question: prevQ, category: p.category, resolved: p.resolved, topic: p.topic, safety: p.safety, kind: p.kind, chain: [p.resolved, ...(p.prev?.chain ?? [])] };
+  }
+  const stated = factsFromMessage(question, relationIn);
+  // A correction re-asks the previous question about someone else: "I was asking about my sister".
+  let subject = base.subject;
+  if (stated.subject && stated.subject !== 'self') subject = { kind: 'other', relation: stated.subject };
+  else if (stated.subject === 'self') subject = { kind: 'self' };
+  else if (facts.subject && facts.subject !== 'self' && subject.kind === 'self' && !FIRST_PERSON_RE.test(nfc(question))) {
+    subject = { kind: 'other', relation: facts.subject };
+  }
+  let topic = base.topic;
+  let inherited = base.inherited;
+  // "I was asking about my sister, not me" carries no topic of its own: the previous one.
+  if (stated.subject && prev?.topic && (!topic || inherited)) { topic = prev.topic; inherited = true; }
+  const cat = categorize({
+    question, topic, inherited, kind: base.kind, ask: base.ask, timing: base.timing, past: base.past, exactDate: base.exactDate,
+    subject, safety: base.safety, clarifies: base.clarifies, stated, prev, facts,
+  });
+  const past = base.past || cat.category === 'past_event_verification';
+  // A family-dynamics question ("will my brother support me?") reads the user's own chart (the sibling / parent houses).
+  if (cat.category === 'family_parents_siblings' || cat.resolved === 'family_parents_siblings') subject = { kind: 'self' };
+  return { ...base, topic, inherited, subject, past, category: cat.category, resolved: cat.resolved, followUp: cat.followUp, flags: cat.flags, stated, prev };
+}
+
+/** First-person words: an explicit "I / my / मैं / আমি" question is about the user even after a subject correction. */
+const FIRST_PERSON_RE = /\b(?:i|i'm|i'll|me|my|mine|main|mai|mujhe|mera|meri|mere|ami|amar|amake)\b|मैं|मुझे|मेरा|मेरी|मेरे|আমি|আমার|আমাকে/i;
+
+/** The relation a message names after "my" (for subject corrections). */
+export function relationIn(q: string): Relation | null {
+  const ws = words(nfc(q).replace(/'s\b/g, ''));
+  for (let k = 0; k < ws.length; k++) {
+    const r = relationOfWord(ws[k]);
+    if (r && [ws[k - 1], ws[k - 2]].some(w => w && POSSESSIVE.has(w))) return r;
+  }
+  return null;
+}
+
+type BaseIntent = Omit<Intent, 'category' | 'resolved' | 'followUp' | 'flags' | 'stated' | 'prev'>;
+
+function classifyBase(question: string, previousQuestions: string[] = []): BaseIntent {
   const q = nfc(question);
   const clauses = q.split(CLAUSE_SPLIT).map(c => c.trim()).filter(Boolean);
   const score = new Map<IntentTopic, { w: number; at: number }>();
@@ -534,7 +617,7 @@ export function classifyIntent(question: string, previousQuestions: string[] = [
   let inherited = false;
   if (!topic) {
     for (const prev of [...previousQuestions].reverse()) {
-      const p = classifyIntent(prev);
+      const p = classifyBase(prev);
       if (p.topic) { topic = p.topic; inherited = true; break; }
     }
   }
@@ -546,7 +629,7 @@ export function classifyIntent(question: string, previousQuestions: string[] = [
   const prevQ = previousQuestions[previousQuestions.length - 1];
   const clarifies = !!prevQ && isClarification(question);
   if (clarifies) {
-    const prev = classifyIntent(prevQ, previousQuestions.slice(0, -1));
+    const prev = classifyBase(prevQ, previousQuestions.slice(0, -1));
     if ((!topic || inherited) && prev.topic) { topic = prev.topic; inherited = true; }
     if ((kind === 'general' || kind === 'yesno') && prev.kind !== 'timing') kind = prev.kind;
     ask = askOf(question, kind, topic) ?? (kind === prev.kind || kind === 'general' ? prev.ask : null)

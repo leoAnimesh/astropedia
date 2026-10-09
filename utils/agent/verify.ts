@@ -30,7 +30,8 @@ import {
   type FoundDate, type ReplyGuard,
 } from '../reply-guards';
 import type { TimingWindow } from '../timing-engine';
-import type { AnswerPlan } from './plan';
+import { checkView, type AnswerPlan } from './plan';
+import { hasCode } from './checks';
 import { contentLead, renderTemplate, repairSentence } from './adapters/template';
 import { relevanceHits, relevanceTerms } from './astrologer';
 import { S, type Lang } from './strings';
@@ -59,8 +60,12 @@ export function judgeDate(d: FoundDate, windows: TimingWindow[], now: Date, past
     const k = d.month == null ? null : key(d.year, d.month);
     if (!past) {
       if (d.month == null ? d.year < now.getFullYear() : k! < nowKey) return 'ignore';
-      // "By October 2026" said in October 2026 answers nothing.
-      if (k === nowKey) return 'bad';
+      // "By October 2026" said in October 2026 answers nothing, unless it is a chart fact dated this month
+      // (a sub-period ending now: a point window the plan allows).
+      if (k === nowKey) {
+        const fact = windows.some(w => key(w.start.getFullYear(), w.start.getMonth() + 1) === nowKey && key(w.end.getFullYear(), w.end.getMonth() + 1) === nowKey);
+        return fact ? 'ok' : 'bad';
+      }
     } else if (d.month == null ? d.year > now.getFullYear() : k! > nowKey) {
       return 'bad';
     }
@@ -94,7 +99,8 @@ export function createTimingRepair(plan: AnswerPlan): TimingRepair {
   if (!t || !t.asked || plan.route !== 'answer') {
     return { transform: s => s, finish: () => '', changes: () => 0 };
   }
-  const windows = t.result.windows;
+  // The engine's windows, plus the plan's own dated chart facts (a sub-period ending now, a nearer window it names).
+  const windows = [...t.result.windows, ...planFactWindows(plan)];
   const past = t.result.past;
   let gave = false;
   let replaced = false;
@@ -173,8 +179,28 @@ export function allowedDateWindows(plan: AnswerPlan): TimingWindow[] | null {
   if (plan.intent.timing || plan.intent.topic === 'chart' || PLANET_WORD.test(plan.question)) return null;
   const out: TimingWindow[] = [...(plan.timing?.result.windows ?? [])];
   if (plan.content?.window) out.push(plan.content.window.best);
-  for (const d of plan.content?.allowedDates ?? []) {
-    out.push({ start: d, end: d, peak: d } as TimingWindow);
+  out.push(...planFactWindows(plan));
+  return out;
+}
+
+/**
+ * Dates the plan itself states and therefore trusts: content dates (a
+ * sub-period end), the check windows (a nearer / past window a route names),
+ * chart-fact dates, and every date in the plan's own lines (point windows).
+ */
+export function planFactWindows(plan: AnswerPlan): TimingWindow[] {
+  const out: TimingWindow[] = [];
+  const point = (d: Date) => out.push({ start: d, end: d, peak: d } as TimingWindow);
+  for (const d of plan.content?.allowedDates ?? []) point(d);
+  for (const w of [...(plan.checks?.windows ?? []), ...(plan.checks?.alt ?? [])]) out.push(w as TimingWindow);
+  for (const d of plan.checks?.factDates ?? []) point(d);
+  for (const l of plan.say ?? []) {
+    for (const fd of findDates(l.text.en)) {
+      if (fd.year == null) continue;
+      const d = new Date(fd.year, (fd.month ?? 7) - 1, 1);
+      if (fd.month == null) out.push({ start: new Date(fd.year, 0, 1), end: new Date(fd.year, 11, 31), peak: d } as TimingWindow);
+      else point(d);
+    }
   }
   return out;
 }
@@ -339,6 +365,24 @@ export async function* verifyStream(
   }
   tail += advice(reply);
   if (tail) yield tail;
+}
+
+/**
+ * The plan's required lines (rules.md §2: counsellor, helpline, lawyer,
+ * documents-decide, policy declines …) that a written reply does not cover,
+ * joined as one paragraph ('' when nothing is missing). Checked with the
+ * shared vocabulary (checks.ts), in any of the three languages.
+ */
+export function requiredTail(plan: AnswerPlan, reply: string): string {
+  if (plan.route !== 'answer' || plan.mode !== 'saga') return '';
+  const view = checkView(plan);
+  const add: string[] = [];
+  for (const l of plan.say) {
+    if (!l.required) continue;
+    if (hasCode(l.code, view, reply) || add.includes(l.text[plan.lang])) continue;
+    add.push(l.text[plan.lang]);
+  }
+  return add.join(' ');
 }
 
 /** Finalize for display: hi/bn replies in the language's own digits, token by token (a digit is one character). */

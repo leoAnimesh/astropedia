@@ -51,7 +51,15 @@ export const AREA_OF_HOUSE: Record<Lang, string[]> = {
 };
 
 /** How a planet is tied to an area, as a clause. {p} planet phrase, {pg} its bn genitive, {area}. */
-export const WHY: Record<'lord' | 'occupant' | 'aspect' | 'withLord' | 'amk' | 'strong' | 'karaka', L3> = {
+export const WHY: Record<'lord' | 'occupant' | 'aspect' | 'withLord' | 'amk' | 'strong' | 'karaka' | 'navamsa' | 'd10' | 'fromMoon' | 'fromSun' | 'dk' | 'd9' | 'varga' | 'yoga', L3> = {
+  navamsa: { en: '{p} guides your work side in the finer, ninth-part chart', hi: 'बारीक नवांश चार्ट में आपके काम वाले पहलू की दिशा {p} तय करता है', bn: 'সূক্ষ্ম নবাংশ চার্টে আপনার কাজের দিকটা চালায় {p}' },
+  d10: { en: 'your career chart puts {p} in charge of your work', hi: 'आपके करियर चार्ट में काम की बागडोर {p} के हाथ में है', bn: 'আপনার কেরিয়ার চার্টে কাজের দায়িত্ব {p}-এর হাতে' },
+  fromSun: { en: '{p} also leads your {area} side counted from your Sun', hi: 'आपके सूर्य से गिनने पर भी आपके {area} वाले पहलू की दिशा {p} तय करता है', bn: 'আপনার সূর্য থেকে গুনলেও আপনার {area} দিকটা চালায় {p}' },
+  fromMoon: { en: '{p} also leads your {area} side counted from your Moon', hi: 'आपके चंद्रमा से गिनने पर भी आपके {area} वाले पहलू की दिशा {p} तय करता है', bn: 'আপনার চাঁদ থেকে গুনলেও আপনার {area} দিকটা চালায় {p}' },
+  dk: { en: '{p} is the planet your chart picks out for your partner', hi: 'आपके चार्ट में जीवनसाथी का संकेत {p} देता है', bn: 'আপনার চার্টে সঙ্গীর ইঙ্গিত দেয় {p}' },
+  d9: { en: 'the marriage chart also points to {p}', hi: 'विवाह चार्ट भी {p} की ओर इशारा करता है', bn: 'বিয়ের চার্টও {p}-এর দিকে ইঙ্গিত করে' },
+  varga: { en: 'a finer division of your chart also points to {p}', hi: 'चार्ट का एक बारीक हिस्सा भी {p} की ओर इशारा करता है', bn: 'চার্টের একটা সূক্ষ্ম ভাগও {p}-এর দিকে ইঙ্গিত করে' },
+  yoga: { en: '{p} is part of a supportive combination in your chart', hi: '{p} आपके चार्ट के एक सहायक योग का हिस्सा है', bn: '{p} আপনার চার্টের একটা সহায়ক যোগের অংশ' },
   lord: { en: 'your {area} side is guided by {p}', hi: 'आपके {area} वाले पहलू की दिशा {p} तय करता है', bn: 'আপনার {area} দিকটা চালায় {p}' },
   occupant: { en: '{p} sits in your {area} side', hi: '{p} आपके {area} वाले पहलू में बैठा है', bn: '{p} আছে আপনার {area} দিকে' },
   aspect: { en: '{p} looks at your {area} side', hi: '{p} की नज़र आपके {area} वाले पहलू पर है', bn: '{pg} নজর আছে আপনার {area} দিকে' },
@@ -236,10 +244,94 @@ export const RELOCATE: Record<'abroad' | 'home' | 'mixed', ItemText> = {
   mixed: { label: { en: 'work stints or travel abroad, with your roots staying at home', hi: 'विदेश में काम के मौके या यात्राएँ, पर जड़ें घर पर', bn: 'বিদেশে কাজের সুযোগ বা ভ্রমণ, তবে শিকড় বাড়িতেই' }, model: 'work stints or travel abroad, with roots staying at home', terms: 'abroad|travel|stint|roots|विदेश|यात्रा|जड़ें|বিদেশ|ভ্রমণ|শিকড়' },
 };
 
+/** Why the chart leans to business / a job (the plain reason of the leaning). */
+export const BUSINESS_WHY: Record<'business' | 'job' | 'both', L3> = {
+  business: { en: 'your partnership and effort sides are strong, and the planet of trade backs them', hi: 'आपके साझेदारी और मेहनत वाले पहलू मज़बूत हैं, और व्यापार का ग्रह उनका साथ देता है', bn: 'আপনার অংশীদারি আর পরিশ্রমের দিক জোরালো, আর বাণিজ্যের গ্রহ তাদের পাশে আছে' },
+  job: { en: 'your daily-work and career sides are steadier than your trade side', hi: 'आपके रोज़ के काम और करियर वाले पहलू व्यापार वाले पहलू से ज़्यादा स्थिर हैं', bn: 'আপনার রোজকার কাজ আর কেরিয়ারের দিক ব্যবসার দিকের চেয়ে বেশি স্থির' },
+  both: { en: 'your career and trade sides are about equally strong', hi: 'आपके करियर और व्यापार वाले पहलू लगभग बराबर मज़बूत हैं', bn: 'আপনার কেরিয়ার আর ব্যবসার দিক প্রায় সমান জোরালো' },
+};
+
 export const BUSINESS: Record<'business' | 'job' | 'both', ItemText> = {
   business: { label: { en: 'your own business or independent work', hi: 'अपना व्यापार या स्वतंत्र काम', bn: 'নিজের ব্যবসা বা স্বাধীন কাজ' }, model: 'own business or independent work', terms: 'business|own venture|independent|entrepreneur|self-employ|व्यापार|बिज़नेस|बिजनेस|स्वतंत्र|ব্যবসা|স্বাধীন' },
   job: { label: { en: 'a job, growing steadily inside an organisation', hi: 'नौकरी, किसी संस्था में स्थिर तरक्की के साथ', bn: 'চাকরি, কোনো প্রতিষ্ঠানে স্থির উন্নতির সঙ্গে' }, model: 'a job with steady growth inside an organisation', terms: '\\bjob|employ|organi[sz]ation|company|नौकरी|संस्था|कंपनी|চাকরি|প্রতিষ্ঠান|সংস্থা' },
   both: { label: { en: 'a job first, with a side business you grow slowly', hi: 'पहले नौकरी, साथ में धीरे-धीरे बढ़ने वाला छोटा व्यापार', bn: 'আগে চাকরি, সঙ্গে ধীরে ধীরে বাড়ানো একটা পাশের ব্যবসা' }, model: 'a job first, with a side business grown slowly', terms: '\\bjob|side business|side venture|नौकरी|व्यापार|চাকরি|ব্যবসা' },
+};
+
+// ─── Family / relationship dynamics ──────────────────────────────────────────
+
+/** How a planet colours a bond (family member or partner), without blame. */
+export const DYNAMICS: Record<Planet, ItemText> = {
+  Sun: { label: { en: 'pride and different values, with respect that grows over time', hi: 'अहं और अलग सोच, जिसमें समय के साथ सम्मान बढ़ता है', bn: 'অহং আর ভিন্ন মূল্যবোধ, যেখানে সময়ের সঙ্গে সম্মান বাড়ে' }, model: 'pride and different values, with respect that grows over time', terms: 'pride|values|respect|अहं|सोच|सम्मान|অহং|মূল্যবোধ|সম্মান' },
+  Moon: { label: { en: 'deep care, with some emotional ups and downs', hi: 'गहरी परवाह, पर भावनाओं का कुछ उतार-चढ़ाव', bn: 'গভীর যত্ন, তবে আবেগের কিছু ওঠানামা' }, model: 'deep care with emotional ups and downs', terms: 'care|emotion|mood|परवाह|भावना|উদ্বেগ|যত্ন|আবেগ' },
+  Mars: { label: { en: 'quick tempers and strong opinions, with real loyalty underneath', hi: 'जल्दी गुस्सा और पक्की राय, पर भीतर सच्ची वफ़ादारी', bn: 'তাড়াতাড়ি রাগ আর জোরালো মত, তবে ভেতরে সত্যিকারের টান' }, model: 'quick tempers and strong opinions with loyalty underneath', terms: 'temper|opinion|heated|loyal|गुस्सा|राय|वफ़ादार|रাগ|রাগ|মত|টান' },
+  Mercury: { label: { en: 'lots of talking and debating, where clear words solve most of it', hi: 'बहुत बातें और बहस, जहाँ साफ़ शब्द ज़्यादातर बात सुलझा देते हैं', bn: 'অনেক কথা আর তর্ক, যেখানে স্পষ্ট কথাই বেশিরভাগ মিটিয়ে দেয়' }, model: 'lots of talking and debating; clear words solve most of it', terms: 'talk|debat|words|बातें|बहस|शब्द|কথা|তর্ক' },
+  Jupiter: { label: { en: 'warmth, guidance and real support', hi: 'अपनापन, मार्गदर्शन और सच्चा सहारा', bn: 'আন্তরিকতা, পথ দেখানো আর সত্যিকারের ভরসা' }, model: 'warmth, guidance and real support', terms: 'warmth|guidance|support|अपनापन|मार्गदर्शन|सहारा|আন্তরিক|পথ দেখানো|ভরসা' },
+  Venus: { label: { en: 'affection and a wish for harmony', hi: 'स्नेह और मेल-जोल की चाह', bn: 'স্নেহ আর মিলেমিশে থাকার ইচ্ছে' }, model: 'affection and a wish for harmony', terms: 'affection|harmony|स्नेह|मेल|স্নেহ|মিলেমিশে' },
+  Saturn: { label: { en: 'duty, some distance and heavy responsibilities, rather than lasting damage', hi: 'ज़िम्मेदारियाँ और थोड़ी दूरी, कोई स्थायी दरार नहीं', bn: 'দায়িত্ব আর খানিক দূরত্ব, কোনো স্থায়ী ফাটল নয়' }, model: 'duty, some distance and heavy responsibilities rather than lasting damage', terms: 'duty|distance|responsib|ज़िम्मेदारी|जिम्मेदारी|दूरी|দায়িত্ব|দূরত্ব' },
+  Rahu: { label: { en: 'mixed signals and restlessness, which settle with honesty', hi: 'उलझे संकेत और बेचैनी, जो ईमानदारी से शांत होती है', bn: 'জট পাকানো ইঙ্গিত আর অস্থিরতা, যা সততায় শান্ত হয়' }, model: 'mixed signals and restlessness that settle with honesty', terms: 'mixed signal|restless|उलझे|बेचैनी|জট|অস্থির' },
+  Ketu: { label: { en: 'some emotional distance, where giving each other space helps', hi: 'थोड़ी भावनात्मक दूरी, जहाँ एक-दूसरे को जगह देना मदद करता है', bn: 'খানিকটা মনের দূরত্ব, যেখানে একে অপরকে জায়গা দেওয়া কাজে দেয়' }, model: 'some emotional distance where space helps', terms: 'distance|space|दूरी|जगह|দূরত্ব|জায়গা|জায়গা' },
+};
+
+/** Whom a family question is about, in plain words. */
+export const FAMILY_WHO: Record<string, L3> = {
+  father: { en: 'your father', hi: 'पिता', bn: 'বাবার' }, mother: { en: 'your mother', hi: 'माँ', bn: 'মায়ের' },
+  parents: { en: 'your parents', hi: 'माता-पिता', bn: 'বাবা-মায়ের' }, siblings: { en: 'your brother or sister', hi: 'भाई-बहन', bn: 'ভাইবোনের' },
+  inlaws: { en: 'your in-laws', hi: 'ससुराल', bn: 'শ্বশুরবাড়ির' }, home: { en: 'home', hi: 'घर', bn: 'বাড়ির' },
+};
+
+// ─── Purpose / spiritual path ────────────────────────────────────────────────
+
+export const PURPOSE: Record<Planet, ItemText & { practice: L3 }> = {
+  Sun: { label: { en: 'leading by example and living by your principles', hi: 'अपने उदाहरण से राह दिखाना और उसूलों पर चलना', bn: 'নিজের উদাহরণে পথ দেখানো আর নীতিতে চলা' }, practice: { en: 'a quiet morning moment in sunlight to set your intention for the day', hi: 'सुबह की धूप में कुछ शांत पल, दिन का संकल्प लेने के लिए', bn: 'সকালের রোদে কয়েক মুহূর্ত শান্ত থেকে দিনের সংকল্প করা' }, model: 'leading by example and living by principles', terms: 'lead|principle|example|उसूल|उदाहरण|राह|নীতি|উদাহরণ|পথ' },
+  Moon: { label: { en: 'devotion and caring for others', hi: 'भक्ति और दूसरों की देखभाल', bn: 'ভক্তি আর অন্যের যত্ন' }, practice: { en: 'a few minutes of prayer, music or chanting each morning', hi: 'हर सुबह कुछ मिनट प्रार्थना, संगीत या जप', bn: 'প্রতিদিন সকালে কয়েক মিনিট প্রার্থনা, গান বা জপ' }, model: 'devotion and caring for others', terms: 'devotion|caring|bhakti|भक्ति|देखभाल|ভক্তি|যত্ন' },
+  Mars: { label: { en: 'disciplined practice and courage', hi: 'अनुशासित अभ्यास और साहस', bn: 'নিয়মিত অনুশীলন আর সাহস' }, practice: { en: 'yoga or a daily walk done as a practice, at the same time each day', hi: 'रोज़ एक ही समय पर योग या सैर, एक साधना की तरह', bn: 'রোজ একই সময়ে যোগ বা হাঁটা, সাধনার মতো করে' }, model: 'disciplined practice and courage', terms: 'disciplin|courage|practice|अनुशासन|साहस|अभ्यास|অনুশীলন|সাহস' },
+  Mercury: { label: { en: 'learning, writing and teaching', hi: 'सीखना, लिखना और सिखाना', bn: 'শেখা, লেখা আর শেখানো' }, practice: { en: 'ten minutes of journaling each night', hi: 'हर रात दस मिनट डायरी लिखना', bn: 'প্রতি রাতে দশ মিনিট ডায়েরি লেখা' }, model: 'learning, writing and teaching', terms: 'learning|writing|teach|सीखना|लिखना|सिखाना|শেখা|লেখা|শেখানো' },
+  Jupiter: { label: { en: 'knowledge and sharing wisdom', hi: 'ज्ञान और समझ बाँटना', bn: 'জ্ঞান আর বোধ ভাগ করে নেওয়া' }, practice: { en: 'reading a few lines of a wise book each day and passing on what you learn', hi: 'रोज़ किसी अच्छी किताब की कुछ पंक्तियाँ पढ़ना और सीखी बात बाँटना', bn: 'রোজ কোনো ভালো বইয়ের কয়েক লাইন পড়া আর শেখা কথা ভাগ করা' }, model: 'knowledge and sharing wisdom', terms: 'knowledge|wisdom|ज्ञान|समझ|জ্ঞান|বোধ' },
+  Venus: { label: { en: 'devotion through beauty, music and art', hi: 'सुंदरता, संगीत और कला के ज़रिए भक्ति', bn: 'সৌন্দর্য, গান আর শিল্পের মধ্য দিয়ে ভক্তি' }, practice: { en: 'singing, music or keeping a small, clean space for quiet time', hi: 'गाना, संगीत या शांत समय के लिए एक छोटी साफ़ जगह रखना', bn: 'গান, সংগীত বা শান্ত সময়ের জন্য একটা ছোট পরিচ্ছন্ন জায়গা রাখা' }, model: 'devotion through beauty, music and art', terms: 'devotion|music|art|beauty|भक्ति|संगीत|कला|ভক্তি|সংগীত|শিল্প' },
+  Saturn: { label: { en: 'service and steady, honest work', hi: 'सेवा और लगातार, ईमानदार काम', bn: 'সেবা আর নিয়মিত, সৎ কাজ' }, practice: { en: 'ten quiet minutes and one act of service each day', hi: 'हर दिन दस शांत मिनट और सेवा का एक काम', bn: 'প্রতিদিন দশ মিনিট শান্ত থাকা আর একটা সেবার কাজ' }, model: 'service and steady, honest work', terms: 'service|steady|सेवा|ईमानदार|সেবা|সৎ' },
+  Rahu: { label: { en: 'exploring new paths and ideas with an open mind', hi: 'खुले मन से नए रास्ते और विचार तलाशना', bn: 'খোলা মনে নতুন পথ আর ভাবনা খোঁজা' }, practice: { en: 'trying one practice for a full month before judging it', hi: 'किसी एक अभ्यास को पूरा एक महीना करके देखना, फिर परखना', bn: 'একটা অনুশীলন পুরো এক মাস করে দেখা, তারপর বিচার করা' }, model: 'exploring new paths with an open mind', terms: 'new path|explor|open mind|नए रास्ते|तलाश|नतुन पथ|নতুন পথ|খোঁজা' },
+  Ketu: { label: { en: 'meditation and inner quiet', hi: 'ध्यान और भीतर की शांति', bn: 'ধ্যান আর ভেতরের শান্তি' }, practice: { en: 'ten minutes of silent sitting, morning or night', hi: 'सुबह या रात दस मिनट चुपचाप बैठना', bn: 'সকালে বা রাতে দশ মিনিট চুপচাপ বসা' }, model: 'meditation and inner quiet', terms: 'meditat|inner quiet|silen|ध्यान|शांति|ধ্যান|শান্তি' },
+};
+
+// ─── Free remedies (rules.md §5.28; never paid) ──────────────────────────────
+
+export const REMEDY: Record<Planet, { practice: L3; secular: L3 }> = {
+  Sun: { practice: { en: 'waking early and sitting in morning light, respecting your father and elders, and the Gayatri or Aditya Hridayam if you like', hi: 'जल्दी उठकर सुबह की धूप में बैठना, पिता और बड़ों का सम्मान, और चाहें तो गायत्री मंत्र या आदित्य हृदय', bn: 'ভোরে উঠে সকালের রোদে বসা, বাবা আর গুরুজনদের সম্মান করা, আর চাইলে গায়ত্রী মন্ত্র বা আদিত্য হৃদয়' },
+    secular: { en: 'waking early, getting morning light and helping an elder each week', hi: 'जल्दी उठना, सुबह की धूप लेना और हर हफ़्ते किसी बुज़ुर्ग की मदद करना', bn: 'ভোরে ওঠা, সকালের রোদ নেওয়া আর প্রতি সপ্তাহে কোনো বয়স্ক মানুষকে সাহায্য করা' } },
+  Moon: { practice: { en: 'regular sleep, time near water, calling your mother, and Shiva prayers if you like; giving water or milk to someone in need', hi: 'नियमित नींद, पानी के पास कुछ समय, माँ से बात करना, और चाहें तो शिव की प्रार्थना; किसी ज़रूरतमंद को पानी या दूध देना', bn: 'নিয়মিত ঘুম, জলের কাছে কিছুটা সময়, মায়ের সঙ্গে কথা বলা, আর চাইলে শিবের প্রার্থনা; কোনো দরকারি মানুষকে জল বা দুধ দেওয়া' },
+    secular: { en: 'regular sleep, time near water and calling your mother', hi: 'नियमित नींद, पानी के पास समय और माँ से बात करना', bn: 'নিয়মিত ঘুম, জলের কাছে সময় আর মায়ের সঙ্গে কথা বলা' } },
+  Mars: { practice: { en: 'daily exercise, turning anger into sport, helping your siblings, and the Hanuman Chalisa if you like', hi: 'रोज़ व्यायाम, गुस्से को खेल में बदलना, भाई-बहनों की मदद, और चाहें तो हनुमान चालीसा', bn: 'রোজ ব্যায়াম, রাগকে খেলায় বদলানো, ভাইবোনদের সাহায্য, আর চাইলে হনুমান চালিসা' },
+    secular: { en: 'daily exercise, a sport for your energy and helping your siblings', hi: 'रोज़ व्यायाम, ऊर्जा के लिए कोई खेल और भाई-बहनों की मदद', bn: 'রোজ ব্যায়াম, শক্তির জন্য কোনো খেলা আর ভাইবোনদের সাহায্য' } },
+  Mercury: { practice: { en: 'learning something every day, keeping your accounts tidy, helping students, and the Vishnu Sahasranama if you like', hi: 'रोज़ कुछ नया सीखना, हिसाब साफ़ रखना, विद्यार्थियों की मदद, और चाहें तो विष्णु सहस्रनाम', bn: 'রোজ কিছু শেখা, হিসেব পরিষ্কার রাখা, ছাত্রছাত্রীদের সাহায্য, আর চাইলে বিষ্ণু সহস্রনাম' },
+    secular: { en: 'learning something daily, keeping accounts tidy and helping a student', hi: 'रोज़ कुछ सीखना, हिसाब साफ़ रखना और किसी विद्यार्थी की मदद', bn: 'রোজ কিছু শেখা, হিসেব পরিষ্কার রাখা আর কোনো ছাত্রকে সাহায্য' } },
+  Jupiter: { practice: { en: 'studying or teaching, respecting your teachers, giving books or food, and prayers on Thursdays if you like', hi: 'पढ़ना या पढ़ाना, गुरुओं का सम्मान, किताबें या भोजन दान, और चाहें तो गुरुवार की प्रार्थना', bn: 'পড়া বা পড়ানো, শিক্ষকদের সম্মান, বই বা খাবার দান, আর চাইলে বৃহস্পতিবারের প্রার্থনা' },
+    secular: { en: 'studying or teaching, thanking a mentor and donating books', hi: 'पढ़ना या पढ़ाना, किसी गुरु का धन्यवाद और किताबें दान', bn: 'পড়া বা পড়ানো, কোনো শিক্ষককে ধন্যবাদ আর বই দান' } },
+  Venus: { practice: { en: 'art or music, keeping your home clean and pleasant, respecting your partner, and Lakshmi prayers if you like', hi: 'कला या संगीत, घर साफ़ और सुंदर रखना, साथी का सम्मान, और चाहें तो लक्ष्मी पूजा', bn: 'শিল্প বা গান, ঘর পরিষ্কার আর সুন্দর রাখা, সঙ্গীকে সম্মান, আর চাইলে লক্ষ্মীর প্রার্থনা' },
+    secular: { en: 'art or music, a clean and pleasant home and kindness to your partner', hi: 'कला या संगीत, साफ़-सुथरा घर और साथी के प्रति नरमी', bn: 'শিল্প বা গান, পরিচ্ছন্ন ঘর আর সঙ্গীর প্রতি নরম ব্যবহার' } },
+  Saturn: { practice: { en: 'discipline and punctuality, serving elderly people or workers, and the Hanuman Chalisa on Saturdays if you like', hi: 'अनुशासन और समय की पाबंदी, बुज़ुर्गों या मज़दूरों की सेवा, और चाहें तो शनिवार को हनुमान चालीसा', bn: 'শৃঙ্খলা আর সময়ানুবর্তিতা, বয়স্ক মানুষ বা শ্রমিকদের সেবা, আর চাইলে শনিবার হনুমান চালিসা' },
+    secular: { en: 'a steady routine, being punctual and spending time helping elderly people or workers', hi: 'नियमित दिनचर्या, समय की पाबंदी और बुज़ुर्गों या मज़दूरों की मदद में समय देना', bn: 'নিয়মিত রুটিন, সময় মেনে চলা আর বয়স্ক মানুষ বা শ্রমিকদের সাহায্যে সময় দেওয়া' } },
+  Rahu: { practice: { en: 'cutting down screens and intoxicants, staying honest, helping animals, and Durga prayers if you like', hi: 'स्क्रीन और नशे से दूरी, ईमानदारी, जानवरों की मदद, और चाहें तो दुर्गा की प्रार्थना', bn: 'স্ক্রিন আর নেশা কমানো, সৎ থাকা, পশুদের সাহায্য, আর চাইলে দুর্গার প্রার্থনা' },
+    secular: { en: 'less screen time, staying honest and helping animals', hi: 'कम स्क्रीन टाइम, ईमानदारी और जानवरों की मदद', bn: 'কম স্ক্রিন টাইম, সততা আর পশুদের সাহায্য' } },
+  Ketu: { practice: { en: 'meditation, caring for stray animals, and Ganesha prayers if you like', hi: 'ध्यान, बेसहारा जानवरों की देखभाल, और चाहें तो गणेश वंदना', bn: 'ধ্যান, রাস্তার পশুদের যত্ন, আর চাইলে গণেশ বন্দনা' },
+    secular: { en: 'a few minutes of quiet sitting and caring for stray animals', hi: 'कुछ मिनट शांत बैठना और बेसहारा जानवरों की देखभाल', bn: 'কয়েক মিনিট শান্ত বসা আর রাস্তার পশুদের যত্ন' } },
+};
+
+export const REMEDY_TERMS = 'routine|exercise|sleep|service|serv|help|meditat|prayer|chalisa|mantra|light|study|teach|discipline|punctual|donat|honest|दिनचर्या|व्यायाम|नींद|सेवा|मदद|ध्यान|प्रार्थना|चालीसा|मंत्र|अनुशासन|दान|ईमानदारी|রুটিন|ব্যায়াম|ঘুম|সেবা|সাহায্য|ধ্যান|প্রার্থনা|চালিসা|মন্ত্র|শৃঙ্খলা|দান|সৎ';
+
+// ─── Love or arranged ────────────────────────────────────────────────────────
+
+export const LOVE_KIND: Record<'love' | 'arranged' | 'both', ItemText> = {
+  love: { label: { en: 'a love marriage', hi: 'लव मैरिज', bn: 'প্রেম করে বিয়ে' }, model: 'a love marriage', terms: 'love marriage|लव मैरिज|प्रेम विवाह|প্রেম করে বিয়ে|প্রেমের বিয়ে' },
+  arranged: { label: { en: 'an arranged marriage that grows into love', hi: 'अरेंज मैरिज, जिसमें प्यार धीरे-धीरे बढ़ता है', bn: 'দেখাশোনা করে বিয়ে, যেখানে ভালোবাসা ধীরে ধীরে বাড়ে' }, model: 'an arranged marriage that grows into love', terms: 'arranged|अरेंज|দেখাশোনা' },
+  both: { label: { en: "a love marriage with your family's blessing", hi: 'परिवार की रज़ामंदी वाली लव मैरिज', bn: 'পরিবারের সম্মতিতে প্রেমের বিয়ে' }, model: "a love marriage with the family's blessing", terms: 'love marriage|blessing|लव मैरिज|रज़ामंदी|रजामंदी|প্রেমের বিয়ে|সম্মতি' },
+};
+export const LOVE_WHY: Record<'link57' | 'venus5' | 'rahu' | 'link79' | 'jupiter7' | 'none', L3> = {
+  link57: { en: 'the guides of your romance side and your partnership side work together', hi: 'आपके प्रेम वाले और साझेदारी वाले पहलू को चलाने वाले ग्रह साथ काम करते हैं', bn: 'আপনার প্রেমের দিক আর সম্পর্কের দিক চালানো গ্রহেরা একসঙ্গে কাজ করে' },
+  venus5: { en: 'the planet of love sits with the guide of your romance side', hi: 'प्रेम का ग्रह आपके रोमांस वाले पहलू के ग्रह के साथ है', bn: 'প্রেমের গ্রহ আপনার রোমান্সের দিকের গ্রহের সঙ্গে আছে' },
+  rahu: { en: 'an unconventional streak touches your partnership side', hi: 'आपके साझेदारी वाले पहलू में अलग सोच की झलक है', bn: 'আপনার সম্পর্কের দিকে একটা অন্যরকম ছোঁয়া আছে' },
+  link79: { en: 'your partnership side is tied to family, tradition and blessings', hi: 'आपका साझेदारी वाला पहलू परिवार, परंपरा और आशीर्वाद से जुड़ा है', bn: 'আপনার সম্পর্কের দিক পরিবার, প্রথা আর আশীর্বাদের সঙ্গে যুক্ত' },
+  jupiter7: { en: 'the planet of wisdom watches over your partnership side', hi: 'ज्ञान का ग्रह आपके साझेदारी वाले पहलू पर नज़र रखता है', bn: 'জ্ঞানের গ্রহ আপনার সম্পর্কের দিকে নজর রাখে' },
+  none: { en: 'no single pull dominates, so how you meet is open', hi: 'कोई एक झुकाव हावी नहीं, इसलिए मुलाकात का तरीका खुला है', bn: 'কোনো একটা টান প্রবল নয়, তাই দেখা হওয়ার পথ খোলা' },
 };
 
 // ─── Answer sentences ────────────────────────────────────────────────────────
@@ -280,6 +372,26 @@ export const LEAD: Record<string, Table[]> = {
     { en: 'Your chart favours {items}.', hi: 'आपका चार्ट {items} का साथ देता है।', bn: 'আপনার চার্ট যেদিকে: {items}।' },
     { en: 'The better fit for you is {items}.', hi: 'आपके लिए बेहतर है: {items}।', bn: 'আপনার জন্য বেশি মানানসই হলো {items}।' },
   ],
+  family: [
+    { en: 'With {who}, your chart shows {items}.', hi: '{who} के साथ आपके चार्ट में दिखता है: {items}।', bn: '{who} সঙ্গে আপনার চার্টে দেখা যায়: {items}।' },
+    { en: 'The bond with {who} carries {items}.', hi: '{who} के साथ रिश्ते में है: {items}।', bn: '{who} সঙ্গে সম্পর্কে আছে: {items}।' },
+  ],
+  relationship: [
+    { en: 'Your chart shows {items} in your relationship, a pattern rather than an ending.', hi: 'आपके रिश्ते में चार्ट दिखाता है: {items}, यह एक दौर है, अंत नहीं।', bn: 'আপনার সম্পর্কে চার্ট দেখায়: {items}, এটা একটা ধরন, শেষ নয়।' },
+    { en: 'What runs through your relationships is {items}.', hi: 'आपके रिश्तों में बार-बार दिखता है: {items}।', bn: 'আপনার সম্পর্কগুলোয় বারবার দেখা যায়: {items}।' },
+  ],
+  purpose: [
+    { en: 'Your chart points to {items} as your path.', hi: 'आपका चार्ट आपकी राह के रूप में {items} की ओर इशारा करता है।', bn: 'আপনার চার্ট আপনার পথ হিসেবে দেখায়: {items}।' },
+    { en: 'The theme that gives your life meaning is {items}.', hi: 'आपके जीवन को अर्थ देने वाला विषय है: {items}।', bn: 'আপনার জীবনে অর্থ আনে এই বিষয়: {items}।' },
+  ],
+  remedies: [
+    { en: 'The kindest remedies for you are {items}.', hi: 'आपके लिए सबसे सरल उपाय हैं: {items}।', bn: 'আপনার জন্য সবচেয়ে সহজ প্রতিকার: {items}।' },
+    { en: 'What supports you most is {items}.', hi: 'आपको सबसे ज़्यादा सहारा देता है: {items}।', bn: 'আপনাকে সবচেয়ে বেশি সাহায্য করে: {items}।' },
+  ],
+  loveArranged: [
+    { en: 'Your chart leans toward {items}.', hi: 'आपका चार्ट {items} की ओर झुकता है।', bn: 'আপনার চার্ট {items}-এর দিকে টানে।' },
+    { en: 'The likelier path for you is {items}.', hi: 'आपके लिए ज़्यादा संभावित रास्ता है: {items}।', bn: 'আপনার জন্য বেশি সম্ভাব্য পথ: {items}।' },
+  ],
   whyNow: [
     { en: 'What you are feeling comes from where you are in your life cycles: {items}.', hi: 'आप जो महसूस कर रहे हैं, वह आपके जीवन के मौजूदा चक्र से आता है: {items}।', bn: 'আপনি যা অনুভব করছেন, তা আসে আপনার জীবনের এখনকার চক্র থেকে: {items}।' },
     { en: 'Here is why things feel this way right now: {items}.', hi: 'अभी ऐसा क्यों लग रहा है, इसकी वजह है: {items}।', bn: 'এখন কেন এমন লাগছে, তার কারণ: {items}।' },
@@ -314,11 +426,24 @@ export const TIP: Record<string, Table> = {
   wellbeing: { en: 'Small daily habits matter more than big changes.', hi: 'बड़े बदलावों से ज़्यादा रोज़ की छोटी आदतें मायने रखती हैं।', bn: 'বড় বদলের চেয়ে রোজকার ছোট অভ্যাসই বেশি কাজের।' },
   relocation: { en: 'Visit or take a short stint first, and decide once the move also makes sense for your work.', hi: 'पहले कुछ समय जाकर देखें, और फ़ैसला तब करें जब यह कदम आपके काम के लिए भी सही लगे।', bn: 'আগে কিছুদিন গিয়ে দেখুন, আর সিদ্ধান্ত নিন যখন কাজের দিক থেকেও সেটা ঠিক মনে হয়।' },
   businessVsJob: { en: 'Test the idea on a small scale before you put in big money.', hi: 'बड़ा पैसा लगाने से पहले छोटे स्तर पर आज़माकर देखें।', bn: 'বড় টাকা ঢালার আগে ছোট করে চেষ্টা করে দেখুন।' },
+  family: { en: 'Try small routines: one shared meal a week, and clear, kind words about who does what.', hi: 'छोटी आदतें अपनाएँ: हफ़्ते में एक बार साथ खाना, और कौन क्या करेगा इस पर साफ़ और नरम बात।', bn: 'ছোট অভ্যাস গড়ুন: সপ্তাহে একবার একসঙ্গে খাওয়া, আর কে কী করবে তা নিয়ে স্পষ্ট, নরম কথা বলা।' },
+  relationship: { en: 'Pick one calm time each week to talk, listen first, and avoid big decisions in the middle of an argument.', hi: 'हर हफ़्ते बात करने का एक शांत समय तय करें, पहले सुनें, और झगड़े के बीच बड़े फ़ैसले न लें।', bn: 'প্রতি সপ্তাহে কথা বলার একটা শান্ত সময় ঠিক করুন, আগে শুনুন, আর ঝগড়ার মাঝে বড় সিদ্ধান্ত নেবেন না।' },
+  purpose: { en: 'Start small and keep it daily; meaning grows from practice more than from big decisions.', hi: 'छोटी शुरुआत करें और इसे रोज़ करें; अर्थ बड़े फ़ैसलों से ज़्यादा अभ्यास से आता है।', bn: 'ছোট করে শুরু করুন আর রোজ করুন; বড় সিদ্ধান্তের চেয়ে অনুশীলন থেকেই অর্থ আসে।' },
+  remedies: { en: 'These are optional and free; take up the ones that fit your beliefs, and your own effort does the rest.', hi: 'ये सब मुफ़्त और वैकल्पिक हैं; जो आपकी आस्था से मेल खाएँ, वही अपनाएँ, बाकी आपकी मेहनत करेगी।', bn: 'এগুলো বিনামূল্যে আর ঐচ্ছিক; যেগুলো আপনার বিশ্বাসের সঙ্গে মেলে সেগুলো নিন, বাকিটা আপনার চেষ্টাই করবে।' },
+  loveArranged: { en: 'Talk openly with your family early; that helps whichever way it goes.', hi: 'परिवार से जल्दी और खुलकर बात करें; रास्ता जो भी हो, इससे मदद मिलती है।', bn: 'পরিবারের সঙ্গে আগেভাগে খোলাখুলি কথা বলুন; পথ যেটাই হোক, এতে সাহায্য হয়।' },
   whyNow: { en: 'Slow progress now is preparation, not failure; keep a steady routine and finish what you start.', hi: 'अभी की धीमी चाल नाकामी नहीं, तैयारी है; नियमित रहें और जो शुरू करें उसे पूरा करें।', bn: 'এখনকার ধীর গতি ব্যর্থতা নয়, প্রস্তুতি; নিয়ম মেনে চলুন আর যা শুরু করেন তা শেষ করুন।' },
 };
 
 /** whyNow items. {area} plain area; {end} month label. */
-export const WHY_NOW: Record<'maha' | 'antar' | 'sadeSati' | 'ashtama' | 'kantaka' | 'notLinked' | 'linked', Table> = {
+export const WHY_NOW: Record<'maha' | 'antar' | 'sadeSati' | 'ashtama' | 'kantaka' | 'notLinked' | 'linked'
+  | 'supportive' | 'effortful' | 'friction' | 'cost' | 'nextLinked' | 'nextOther' | 'rules', Table> = {
+  supportive: { en: 'a supportive cycle for you overall', hi: 'कुल मिलाकर आपके लिए सहायक चक्र', bn: 'সব মিলিয়ে আপনার জন্য সহায়ক চক্র' },
+  effortful: { en: 'a cycle that asks for effort more than it gives', hi: 'ऐसा चक्र जो देता कम और मेहनत ज़्यादा माँगता है', bn: 'এমন চক্র যা দেয় কম, পরিশ্রম চায় বেশি' },
+  friction: { en: 'The long and the short cycle pull in different directions now, which adds friction.', hi: 'अभी लंबा और छोटा चक्र अलग-अलग दिशाओं में खींचते हैं, इसलिए खिंचाव ज़्यादा है।', bn: 'এখন বড় আর ছোট চক্র দুদিকে টানে, তাই টানাপোড়েন বেশি।' },
+  cost: { en: 'The two cycles together bring extra expenses and effort.', hi: 'दोनों चक्र मिलकर खर्च और मेहनत बढ़ाते हैं।', bn: 'দুটো চক্র মিলে খরচ আর পরিশ্রম বাড়ায়।' },
+  nextLinked: { en: 'The next shorter cycle, from {start}, is tied to {topic}, so things open up then.', hi: '{start} से शुरू होने वाला अगला छोटा चक्र {topic} से जुड़ा है, इसलिए तब रास्ते खुलते हैं।', bn: '{start} থেকে শুরু হওয়া পরের ছোট চক্র {topic} সঙ্গে যুক্ত, তাই তখন পথ খোলে।' },
+  nextOther: { en: 'The next shorter cycle begins in {start} and changes the focus again.', hi: 'अगला छोटा चक्र {start} में शुरू होता है और ध्यान फिर बदलता है।', bn: 'পরের ছোট চক্র শুরু হয় {start}-এ আর মন আবার অন্য দিকে যায়।' },
+  rules: { en: '{area}', hi: '{area}', bn: '{area}' },
   maha: { en: 'a long cycle that centres your life on {area}', hi: 'एक लंबा चक्र जो आपके जीवन का ध्यान {area} पर रखता है', bn: 'একটা লম্বা চক্র, যা জীবনের মন টানে {area} দিকে' },
   antar: { en: 'a shorter cycle inside it, focused on {area}, until {end}', hi: 'उसके भीतर {end} तक एक छोटा चक्र, जिसका ध्यान {area} पर है', bn: 'তার ভেতরে {end} পর্যন্ত একটা ছোট চক্র, যার মন {area} দিকে' },
   sadeSati: { en: 'a slow, testing time over your mind that eases around {end}', hi: 'मन पर एक धीमा, परखने वाला समय, जो {end} के आसपास हल्का होता है', bn: 'মনের ওপর একটা ধীর, পরীক্ষার সময়, যা {end} নাগাদ হালকা হয়' },
@@ -343,6 +468,11 @@ export const ASK_QUESTION: Record<string, Table> = {
   relocation: { en: 'Will I settle abroad?', hi: 'क्या मेरा विदेश में बसना होगा?', bn: 'আমি কি বিদেশে থিতু হব?' },
   businessVsJob: { en: 'Is business or a job better for me?', hi: 'मेरे लिए व्यापार बेहतर है या नौकरी?', bn: 'আমার জন্য ব্যবসা ভালো, নাকি চাকরি?' },
   whyNow: { en: 'Why is everything so hard right now?', hi: 'अभी सब कुछ इतना मुश्किल क्यों है?', bn: 'এখন সবকিছু এত কঠিন কেন?' },
+  family: { en: 'How is my relationship with my parents going to be?', hi: 'माता-पिता से मेरा रिश्ता कैसा रहेगा?', bn: 'বাবা-মায়ের সঙ্গে আমার সম্পর্ক কেমন থাকবে?' },
+  relationship: { en: 'Why do my relationships keep failing?', hi: 'मेरे रिश्ते बार-बार क्यों टूटते हैं?', bn: 'আমার সম্পর্কগুলো বারবার কেন ভেঙে যায়?' },
+  purpose: { en: 'What kind of person am I really?', hi: 'मैं असल में कैसा इंसान हूँ?', bn: 'আমি আসলে কেমন মানুষ?' },
+  remedies: { en: 'Is there anything I can do to improve my luck?', hi: 'क्या मैं अपना भाग्य सुधारने के लिए कुछ कर सकता हूँ?', bn: 'ভাগ্য ভালো করতে আমি কি কিছু করতে পারি?' },
+  loveArranged: { en: 'Will my marriage be love or arranged?', hi: 'मेरी शादी लव होगी या अरेंज?', bn: 'আমার বিয়ে প্রেমের হবে না দেখাশোনা করে?' },
 };
 
 /** Topic nouns for whyNow ("…does not light up {topic}"). */
@@ -368,6 +498,17 @@ export const FOLLOW_LEAD: Table = {
   hi: 'जैसा बताया, आपकी सबसे मज़बूत दिशा है: {item}।',
   bn: 'যেমন বললাম, আপনার সবচেয়ে জোরালো দিক হলো {item}।',
 };
+/** FOLLOW_LEAD / NEXT_ITEM for asks whose items aren't "directions" (partner traits, money sources …). */
+export const FOLLOW_LEAD_ASK: Partial<Record<string, Table>> = {
+  partner: { en: 'As I said, the partner your chart describes is {item}.', hi: 'जैसा बताया, आपका चार्ट ऐसे साथी की ओर इशारा करता है जो {item} हो।', bn: 'যেমন বললাম, আপনার চার্ট এমন সঙ্গীর কথা বলে, যিনি {item}।' },
+  moneySources: { en: 'As I said, your money comes most naturally from {item}.', hi: 'जैसा बताया, आपका पैसा सबसे सहज रूप से {item} से आता है।', bn: 'যেমন বললাম, আপনার টাকা সবচেয়ে সহজে আসে {item} থেকে।' },
+  strengths: { en: 'As I said, your biggest strength is {item}.', hi: 'जैसा बताया, आपकी सबसे बड़ी ताकत है: {item}।', bn: 'যেমন বললাম, আপনার সবচেয়ে বড় শক্তি হলো {item}।' },
+};
+export const NEXT_ITEM_ASK: Partial<Record<string, Table>> = {
+  partner: { en: 'They may also be {item}, because {why}.', hi: 'वे {item} भी हो सकते हैं, क्योंकि {why}।', bn: 'তিনি {item}ও হতে পারেন, কারণ {why}।' },
+  strengths: { en: 'Another strength is {item}, because {why}.', hi: 'एक और ताकत है {item}, क्योंकि {why}।', bn: 'আরেকটা শক্তি হলো {item}, কারণ {why}।' },
+};
+
 /** More examples (the second item's). */
 export const EXAMPLES_MORE: Table = { en: 'Also worth a look: {examples}.', hi: 'इन पर भी नज़र डालें: {examples}।', bn: 'এগুলোও দেখে নিতে পারেন: {examples}।' };
 
@@ -381,6 +522,11 @@ export const TIP2: Record<string, Table> = {
   wellbeing: { en: 'Pick one habit and keep it for three weeks before adding another.', hi: 'एक आदत चुनें और दूसरी जोड़ने से पहले तीन हफ़्ते तक उसे निभाएँ।', bn: 'একটা অভ্যাস বেছে নিন, আরেকটা যোগ করার আগে তিন সপ্তাহ সেটা ধরে রাখুন।' },
   relocation: { en: 'Compare the work you would get there with what you have now before you decide.', hi: 'फ़ैसले से पहले वहाँ मिलने वाले काम की तुलना अभी के काम से करें।', bn: 'সিদ্ধান্তের আগে সেখানে যে কাজ পাবেন তার সঙ্গে এখনকার কাজের তুলনা করুন।' },
   businessVsJob: { en: 'Keep a steady income while you test the idea, and grow it only once it pays for itself.', hi: 'आइडिया आज़माते समय स्थिर आमदनी बनाए रखें, और उसे तभी बढ़ाएँ जब वह अपना खर्च खुद निकालने लगे।', bn: 'ভাবনাটা যাচাই করার সময় স্থির আয় বজায় রাখুন, আর সেটা নিজের খরচ তুলতে পারলে তবেই বাড়ান।' },
+  family: { en: 'Choose one thing you can do for them this week, without waiting for them to go first.', hi: 'इस हफ़्ते उनके लिए एक काम चुनें, उनके पहल करने का इंतज़ार किए बिना।', bn: 'এই সপ্তাহে ওঁদের জন্য একটা কাজ বেছে নিন, ওঁরা আগে এগোবেন সেই অপেক্ষা না করে।' },
+  relationship: { en: 'Write down what you each need most, and talk about one item at a time.', hi: 'दोनों अपनी सबसे बड़ी ज़रूरत लिखें, और एक बार में एक बात पर बात करें।', bn: 'দুজনেই নিজের সবচেয়ে বড় প্রয়োজন লিখুন, আর একবারে একটা বিষয় নিয়ে কথা বলুন।' },
+  purpose: { en: 'Keep a note of what made a day feel meaningful; the pattern shows your path.', hi: 'लिखते रहें कि किस बात से दिन सार्थक लगा; उसी में आपकी राह दिखेगी।', bn: 'লিখে রাখুন কোন জিনিসে দিনটা অর্থপূর্ণ লাগল; সেখানেই আপনার পথ দেখা যাবে।' },
+  remedies: { en: 'Pick one practice and keep it for forty days before adding another.', hi: 'एक अभ्यास चुनें और दूसरा जोड़ने से पहले उसे चालीस दिन निभाएँ।', bn: 'একটা অনুশীলন বেছে নিন, আরেকটা যোগ করার আগে চল্লিশ দিন সেটা ধরে রাখুন।' },
+  loveArranged: { en: 'Let the person meet your family early, so trust builds on both sides.', hi: 'उस व्यक्ति को जल्दी परिवार से मिलवाएँ, ताकि दोनों तरफ़ भरोसा बने।', bn: 'মানুষটিকে আগেভাগে পরিবারের সঙ্গে আলাপ করান, যাতে দুদিকেই ভরসা তৈরি হয়।' },
   whyNow: { en: 'Use this time to build skills and savings; the next cycle rewards what you prepare now.', hi: 'इस समय में हुनर और बचत बढ़ाएँ; अगला चक्र अभी की तैयारी का फल देता है।', bn: 'এই সময়টায় দক্ষতা আর সঞ্চয় বাড়ান; পরের চক্র এখনকার প্রস্তুতির ফল দেয়।' },
 };
 
