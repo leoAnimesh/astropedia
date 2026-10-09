@@ -13,7 +13,7 @@ import type { ContextProfile } from '../astrology';
 import { isPureGreeting } from '../reply-guards';
 import { ageOn, type ContextFocus } from '../guru-context';
 import {
-  lordOfHouse, natalChart, timingWindows, topicLinks, TOPIC_RULES, yearsAway,
+  lordOfHouse, natalChart, nearerStretch, timingWindows, topicLinks, TOPIC_RULES, yearsAway,
   type TimingResult, type TimingTopic, type TimingWindow, type Planet,
 } from '../timing-engine';
 import { classifyIntent, relationIn, relationMatches, type Ask, type Intent, type Relation } from './intent';
@@ -22,7 +22,7 @@ import { ASK_QUESTION } from './ask-strings';
 import type { Lang } from './strings';
 import type { Category, FollowUp } from './categories';
 import { threadFacts, type ThreadFacts } from './thread-facts';
-import { applyCategory, line } from './routes';
+import { applyCategory, line, CATEGORY_TOPIC, PERMANENT_RE } from './routes';
 import type { CheckPlan, PlanCode, PlanLine } from './checks';
 
 export type PlanProfile = ContextProfile & { id?: string };
@@ -229,7 +229,7 @@ export function buildPlan(input: PlanInput): AnswerPlan {
   const history = input.history ?? [];
   const previous = history.filter(m => m.role === 'user').map(m => m.content);
   const thread = threadFacts(previous, input.facts, relationIn);
-  const intent = classifyIntent(input.question, previous, thread);
+  let intent = classifyIntent(input.question, previous, thread);
   // The thread's facts include what this message states ("I'm already married").
   const facts: ThreadFacts = { ...thread, ...intent.stated };
   const { subject, switched, missing, several } = findSubject(input, intent);
@@ -241,6 +241,10 @@ export function buildPlan(input: PlanInput): AnswerPlan {
     try {
       prevPlan = buildPlan({ ...input, question: previous[previous.length - 1], history: history.slice(0, lastUser), noPrev: true });
     } catch { prevPlan = null; }
+  }
+  // "Will it be permanent or just for work?" right after an abroad answer is about settling abroad, not a job.
+  if (prevPlan && (prevPlan.resolved === 'foreign_settlement' || prevPlan.timing?.topic === 'foreign') && PERMANENT_RE.test(input.question) && intent.topic !== 'foreign') {
+    intent = { ...intent, topic: 'foreign', resolved: 'foreign_settlement', kind: 'choice', timing: false, ask: 'relocation' };
   }
   const plan: AnswerPlan = {
     question: input.question, lang: input.lang, agent, mode, now, intent, subject,
@@ -267,7 +271,8 @@ export function buildPlan(input: PlanInput): AnswerPlan {
   if (intent.safety === 'childSex') return { ...plan, route: 'canned', canned: 'childSex', must: ['decline_sex'], deterministic: true };
   if (intent.safety === 'death') {
     const ill = intent.subject.kind === 'other' || intent.flags.feelings || /\b(?:father|mother|papa|baba|maa|mom|dad)\b|पिता|पापा|माँ|মা\b|বাবা/i.test(input.question);
-    return decline('death', ill ? [line('validation', 'deathSorry', 'lead')] : [], ['decline_death', ...(ill ? ['validation' as PlanCode] : [])]);
+    // An ill parent: sympathy first, then their doctors and the asker's own rest (never "ask me about the coming years").
+    return decline('death', ill ? [line('validation', 'deathSorry', 'lead'), line('doctor', 'deathCare', 'end')] : [], ['decline_death', ...(ill ? ['validation' as PlanCode] : [])]);
   }
   if (intent.category === 'sensitive_identity') {
     const self = /\b(?:gay|lesbian|bisexual|sexuality|orientation)\b|समलैंगिक|সমকামী/i.test(input.question);
@@ -290,7 +295,11 @@ export function buildPlan(input: PlanInput): AnswerPlan {
   if (missing) return decline('otherMissing', [], ['ask_profile']);
 
   let topic: TimingTopic | null = intent.topic && intent.topic !== 'chart' ? intent.topic : null;
-  if (!topic && intent.timing && intent.topic !== 'chart') topic = GURU_DEFAULT_TOPIC[agent] ?? 'general';
+  // A "when" without a topic word reads the category's own topic first ("WBCS kobe clear hobe?" → job, not luck).
+  if (!topic && intent.timing && intent.topic !== 'chart') {
+    topic = (agent !== 'saga' ? GURU_DEFAULT_TOPIC[agent] : undefined) ?? (intent.flags.grandchildren ? undefined : CATEGORY_TOPIC[intent.resolved])
+      ?? GURU_DEFAULT_TOPIC[agent] ?? 'general';
+  }
   // The thread's facts re-route a topic: "I already have a job" + job → career growth.
   if (topic === 'job' && facts.employed && !/\b(?:switch|change|new job|resign|quit)\b|बदल|বদল/i.test(input.question)) topic = 'promotion';
 
@@ -330,6 +339,11 @@ function finishChecks(p: AnswerPlan): void {
   const c = p.checks;
   if (p.timing) c.windows.unshift(...p.timing.result.windows);
   if (p.timing?.result.nextStrong) c.alt.push(p.timing.result.nextStrong);
+  // The nearer, softer stretch the template may offer before a far window (template.ts altSentence).
+  if (p.timing && !p.timing.result.past) {
+    const n = nearerStretch(p.timing.result, p.timing.best);
+    if (n) c.alt.push({ ...n, peak: n.start } as TimingWindow);
+  }
   if (p.timing?.second) c.alt.push(p.timing.second);
   if (p.content) {
     c.itemTerms.push(...p.content.items.map(i => i.text.terms));

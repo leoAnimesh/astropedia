@@ -17,14 +17,14 @@ import type { L3 } from './ask-strings';
 export const C = {
   // ─── Feelings, likelihood, professionals ──────────────────────────────────
   validation: {
-    en: "I understand this has been hard, and it's natural to feel that way.",
-    hi: 'मैं समझ सकता हूँ कि यह समय मुश्किल रहा है, और ऐसा महसूस होना स्वाभाविक है।',
-    bn: 'বুঝতে পারছি সময়টা কঠিন যাচ্ছে, আর এমন লাগা খুবই স্বাভাবিক।',
+    en: 'I know this has been a hard time.',
+    hi: 'मैं समझ सकता हूँ, यह समय आसान नहीं रहा।',
+    bn: 'বুঝতে পারছি, সময়টা সহজ যাচ্ছে না।',
   },
   validationWait: {
-    en: "Waiting this long is frustrating, and that's completely understandable.",
-    hi: 'इतना इंतज़ार करना थका देता है, और यह पूरी तरह समझ में आता है।',
-    bn: 'এতদিন অপেক্ষা করা সত্যিই কঠিন, আর সেটা খুবই বোঝা যায়।',
+    en: 'I know the wait has been hard.',
+    hi: 'मैं समझ सकता हूँ, इतना इंतज़ार आसान नहीं।',
+    bn: 'বুঝতে পারছি, এতদিনের অপেক্ষা সহজ নয়।',
   },
   likelyStrong: {
     en: 'The chart gives this a strong chance, though nothing is guaranteed.',
@@ -37,9 +37,58 @@ export const C = {
     bn: 'চার্টে এর ভালো সম্ভাবনা আছে, আর টানা চেষ্টায় তা আরও বাড়ে।',
   },
   likelyWeak: {
-    en: 'This looks slower in the chart: steady effort matters more, and the stronger period comes later.',
-    hi: 'चार्ट में यह थोड़ा धीमा दिखता है: यहाँ लगातार मेहनत ज़्यादा काम आएगी, और मज़बूत समय बाद में आता है।',
-    bn: 'চার্টে এটা একটু ধীর দেখায়: এখানে টানা চেষ্টাই বেশি কাজে দেবে, আর জোরালো সময় আসে পরে।',
+    en: 'This comes slowly rather than quickly in your chart, so steady effort matters more here.',
+    hi: 'आपके चार्ट में यह जल्दी नहीं, धीरे-धीरे होता दिखता है, इसलिए यहाँ लगातार मेहनत ज़्यादा काम आएगी।',
+    bn: 'আপনার চার্টে এটা তাড়াতাড়ি নয়, ধীরে ধীরে হতে দেখা যায়, তাই এখানে টানা চেষ্টাই বেশি কাজে দেবে।',
+  },
+  deathCare: {
+    en: 'Please stay close to their doctors, and look after your own rest too.',
+    hi: 'उनके डॉक्टरों के संपर्क में रहें, और अपनी नींद व आराम का भी ध्यान रखें।',
+    bn: 'ওঁর ডাক্তারদের সঙ্গে যোগাযোগ রাখুন, আর নিজের ঘুম ও বিশ্রামের দিকেও খেয়াল রাখুন।',
+  },
+  /** Legal yes/no (rules.md §5.23: a supportive period for the case, never the verdict). */
+  legalStrong: {
+    en: 'Your chart shows a supportive period for the case, though the outcome rests on the facts and your lawyer.',
+    hi: 'आपके चार्ट में इस मामले के लिए सहायक समय दिखता है, हालाँकि फ़ैसला तथ्यों और आपके वकील की तैयारी पर टिका है।',
+    bn: 'আপনার চার্টে মামলার জন্য সহায়ক সময় দেখা যায়, যদিও রায় নির্ভর করে তথ্য আর আপনার উকিলের প্রস্তুতির ওপর।',
+  },
+  legalModerate: {
+    en: 'Your chart shows reasonable support for the case; the facts and a good lawyer matter most.',
+    hi: 'आपके चार्ट में इस मामले को ठीक-ठाक साथ मिलता दिखता है; सबसे ज़्यादा मायने तथ्यों और अच्छे वकील के हैं।',
+    bn: 'আপনার চার্টে মামলার জন্য মোটামুটি সমর্থন দেখা যায়; সবচেয়ে জরুরি তথ্য আর একজন ভালো উকিল।',
+  },
+  legalWeak: {
+    en: 'Your chart shows a slower stretch for the case, so patience and a good lawyer matter most.',
+    hi: 'आपके चार्ट में इस मामले के लिए धीमा समय दिखता है, इसलिए धैर्य और अच्छे वकील की सबसे ज़्यादा ज़रूरत है।',
+    bn: 'আপনার চার্টে মামলার জন্য ধীর সময় দেখা যায়, তাই ধৈর্য আর একজন ভালো উকিলই সবচেয়ে জরুরি।',
+  },
+  /** "Is medicine right for me?": how the named field sits among the chart's study fits. */
+  fitStrong: {
+    en: 'Yes, {option} is among the strongest fits in your chart.',
+    hi: 'हाँ, {option} आपके चार्ट के सबसे अच्छे विकल्पों में से है।',
+    bn: 'হ্যাঁ, {option} আপনার চার্টের সবচেয়ে মানানসই বিষয়গুলোর মধ্যে পড়ে।',
+  },
+  fitModerate: {
+    en: '{option} can work for you, though it is not your chart\'s first pick.',
+    hi: '{option} आपके लिए ठीक रह सकता है, हालाँकि यह आपके चार्ट की पहली पसंद नहीं है।',
+    bn: '{option} আপনার জন্য চলতে পারে, যদিও এটা আপনার চার্টের প্রথম পছন্দ নয়।',
+  },
+  fitWeak: {
+    en: '{option} is not among the stronger fits in your chart; other fields come out ahead.',
+    hi: '{option} आपके चार्ट के मज़बूत विकल्पों में नहीं है; दूसरे क्षेत्र आगे दिखते हैं।',
+    bn: '{option} আপনার চার্টের জোরালো বিষয়গুলোর মধ্যে নেই; অন্য বিষয়গুলো এগিয়ে।',
+  },
+  /** A yes/no answer's window in one short sentence (when the full timing paragraph is off). */
+  windowShort: {
+    en: 'The most supportive stretch is {start} to {end}.',
+    hi: 'सबसे सहायक समय {start} से {end} तक है।',
+    bn: 'সবচেয়ে সহায়ক সময় {start} থেকে {end}।',
+  },
+  /** "That's too far / why so late?" when the window is actually near. */
+  fuNotFar: {
+    en: "It's actually close: the window opens in {start}, so start preparing now.",
+    hi: 'असल में यह दूर नहीं है: अच्छा समय {start} में शुरू हो रहा है, इसलिए अभी से तैयारी शुरू करें।',
+    bn: 'আসলে এটা দূরে নয়: ভালো সময় শুরু হচ্ছে {start}-এ, তাই এখন থেকেই প্রস্তুতি শুরু করুন।',
   },
   documents: {
     en: 'The final decision rests on your documents and the rules, so keep them complete and consistent.',
@@ -133,6 +182,17 @@ export const C = {
     en: "Sorry that didn't help. Tell me what you'd like to know, for example which career fits you or when a change is likely, and I'll be specific.",
     hi: 'माफ़ कीजिए, यह जवाब काम नहीं आया। बताइए आप क्या जानना चाहते हैं, जैसे कौन सा करियर आपके लिए सही है या बदलाव कब संभव है, मैं साफ़-साफ़ बताऊँगा।',
     bn: 'দুঃখিত, উত্তরটা কাজে লাগল না। বলুন কী জানতে চান, যেমন কোন কাজ আপনার জন্য ঠিক বা পরিবর্তন কবে হতে পারে, আমি স্পষ্ট করে বলব।',
+  },
+  calmAsk: {
+    en: "I'm here to help. Ask me anything about your chart, for example which career fits you or when a change is likely.",
+    hi: 'मैं मदद के लिए हूँ। अपनी कुंडली के बारे में कुछ भी पूछिए, जैसे कौन सा करियर आपके लिए सही है या बदलाव कब संभव है।',
+    bn: 'আমি সাহায্য করতে আছি। আপনার কুষ্ঠি নিয়ে যা খুশি জিজ্ঞেস করুন, যেমন কোন কাজ আপনার জন্য ঠিক বা পরিবর্তন কবে হতে পারে।',
+  },
+  /** "Is marriage even in my chart?": yes first (the engine always finds a window; never "not in your chart"). */
+  marriageYes: {
+    en: 'Yes, marriage is clearly shown in your chart; the question is timing, not whether.',
+    hi: 'हाँ, आपके चार्ट में शादी साफ़ दिखती है; सवाल सिर्फ़ समय का है, होने या न होने का नहीं।',
+    bn: 'হ্যাঁ, আপনার চার্টে বিয়ে স্পষ্ট দেখা যায়; প্রশ্নটা শুধু সময়ের, হবে কি না তার নয়।',
   },
   calmShort: {
     en: "Sorry if that wasn't clear; here it is more simply.",
@@ -255,8 +315,8 @@ export const C = {
   },
   stillRead: {
     en: 'Even without the birth time, the chart still gives a useful answer.',
-    hi: 'जन्म समय के बिना भी चार्ट से फिर भी काम का जवाब मिल जाता है।',
-    bn: 'জন্মসময় ছাড়াও চার্ট থেকে তবুও কাজের উত্তর পাওয়া যায়।',
+    hi: 'जन्म समय के बिना भी चार्ट से काम का जवाब मिल जाता है।',
+    bn: 'জন্মসময় ছাড়াও চার্ট থেকে কাজের উত্তর পাওয়া যায়।',
   },
   recovery: {
     en: 'For recovery and energy afterwards, your chart shows a {kind} period from {start} to {end}.',
@@ -265,8 +325,8 @@ export const C = {
   },
   noTimeHow: {
     en: 'Without a birth time I read your houses from your Moon sign, which still gives a useful picture, though timing is approximate.',
-    hi: 'जन्म समय के बिना मैं आपकी चंद्र राशि से घर गिनता हूँ, जिससे काफ़ी काम की तस्वीर मिलती है, बस समय अनुमानित रहता है।',
-    bn: 'জন্মসময় ছাড়া আমি আপনার চন্দ্ররাশি থেকে ঘর গুনি, তাতেও কাজের ছবি পাওয়া যায়, শুধু সময়টা আনুমানিক থাকে।',
+    hi: 'जन्म समय के बिना मैं आपकी चंद्र राशि से घर गिनता हूँ; इससे भी काफ़ी काम की तस्वीर मिलती है, बस समय अनुमानित रहता है।',
+    bn: 'জন্মসময় ছাড়া আমি আপনার চন্দ্ররাশি থেকে ঘর গুনি; তাতেও কাজের ছবি পাওয়া যায়, শুধু সময়টা আনুমানিক থাকে।',
   },
   addTime: {
     en: "If you can find the time (a birth certificate, a hospital record or a family member's memory), add it to your profile for sharper answers.",

@@ -44,6 +44,7 @@ import { linked, naturalRelation, strengthFactor, yogasFor, type ChartAnalysis, 
 import { vargaUsable, vargaLord, vargaOccupants, type Varga } from '../vargas';
 import { splitPeriod } from '../timing-engine';
 import type { AnswerKind, Ask } from './intent';
+import { PLANET_PLAIN } from './category-strings';
 import {
   AREA_OF_HOUSE, BUSINESS, BUSINESS_WHY, CAREER, DYNAMICS, LOVE_KIND, LOVE_WHY, MEET, MONEY, PARTNER, PLACE, PURPOSE, RELOCATE, REMEDY, REMEDY_TERMS,
   STRENGTH, STUDY, WELLBEING, WHY, WHY_NOW, TOPIC_NOUN, PLANET_NAME, type ItemText, type L3,
@@ -151,7 +152,17 @@ function scorePlanets(
 const fill = (t: string, v: Record<string, string>) => t.replace(/\{(\w+)\}/g, (m, k: string) => v[k] ?? m);
 
 /** The plain "why" clause of a planet's strongest link. */
-function whyOf(c: NatalChart, s: Score): { why: L3; source: string } {
+/**
+ * House words that read better for an ask than the general AREA_OF_HOUSE ones (Stage 3: "your home side
+ * is guided by …" as a reason for subjects, "your creativity and study side" for a relationship).
+ */
+const AREA_FOR: Record<string, Partial<Record<number, L3>>> = {
+  study: { 4: { en: 'schooling', hi: 'शिक्षा', bn: 'শিক্ষার' }, 5: { en: 'learning', hi: 'पढ़ाई', bn: 'পড়াশোনার' } },
+  relationship: { 5: { en: 'romance', hi: 'प्रेम', bn: 'প্রেমের' } },
+  partner: { 5: { en: 'romance', hi: 'प्रेम', bn: 'প্রেমের' } },
+};
+
+function whyOf(c: NatalChart, s: Score, key = ''): { why: L3; source: string } {
   const order: LinkWhy[] = ['occupant', 'lord', 'amk', 'navamsa', 'd10', 'dk', 'd9', 'withLord', 'fromMoon', 'fromSun', 'aspect', 'varga', 'yoga', 'karaka'];
   const best = [...s.links].sort((a, b) => order.indexOf(a.why) - order.indexOf(b.why) || b.w - a.w)[0];
   const kind = best?.why ?? 'strong';
@@ -159,7 +170,8 @@ function whyOf(c: NatalChart, s: Score): { why: L3; source: string } {
   const why = {} as L3;
   for (const lang of ['en', 'hi', 'bn'] as Lang[]) {
     const p = PLANET_NAME[s.planet][lang];
-    why[lang] = fill(WHY[kind][lang], { p, pg: lang === 'bn' ? `${p}ের` : p, area: h ? AREA_OF_HOUSE[lang][h] : '' });
+    const area = h ? (AREA_FOR[key.split(':')[0]]?.[h]?.[lang] ?? AREA_OF_HOUSE[lang][h]) : '';
+    why[lang] = fill(WHY[kind][lang], { p, pg: lang === 'bn' ? `${p}ের` : p, area });
   }
   const dig = c.planets[s.planet].dignity;
   const source = `${s.planet} ${kind}${h ? ` ${h}` : ''} (in house ${houseOf(c, s.planet)}${dig !== 'neutral' ? `, ${dig}` : ''}; score ${s.score.toFixed(1)})`;
@@ -168,7 +180,7 @@ function whyOf(c: NatalChart, s: Score): { why: L3; source: string } {
 
 function items(c: NatalChart, scores: Score[], table: Record<Planet, ItemText>, n: number, key: string): PlanItem[] {
   return scores.slice(0, n).map(s => {
-    const { why, source } = whyOf(c, s);
+    const { why, source } = whyOf(c, s, key);
     return { key: `${key}:${s.planet}`, planet: s.planet, text: table[s.planet], why, source };
   });
 }
@@ -482,7 +494,7 @@ export function optionLeaning(profile: TimingProfile, options: [string, string],
   let why: L3 | null = null;
   if (pick) {
     const best = own(pick, pick === a ? b : a).map(p => scores.find(s => s.planet === p)).filter((x): x is Score => !!x).sort((x, y) => y.score - x.score)[0];
-    if (best) why = whyOf(c, best).why;
+    if (best) why = whyOf(c, best, domain === 'study' ? 'study' : '').why;
   }
   return { pick, why, source: `${a} ${sa.toFixed(1)} vs ${b} ${sb.toFixed(1)}` };
 }
@@ -559,10 +571,11 @@ function whyNow(profile: TimingProfile, c: NatalChart, now: Date, topic: TimingT
         .map(x => x.split(/ and | और | আর /)[0].replace(/ের$|র$/, '')).filter(Boolean).join('|') + '|cycle|चक्र|চক্র',
     },
   });
-  list.push(mk('why:maha', WHY_NOW.maha, l => ({ area: area(maha, l) }),
+  const P = (p: Planet, l: Lang) => PLANET_PLAIN[p][l].replace(/^the /, '');
+  list.push(mk('why:maha', WHY_NOW.maha, l => ({ area: area(maha, l), P: P(maha, l) }),
     `mahadasha ${maha} (rules ${c.analysis?.planets[maha].rules.join('/') || '-'}, in house ${houseOf(c, maha)}, ${c.analysis?.planets[maha].functional ?? '?'})`, maha, l => nature(maha, l)));
   if (antar !== maha) {
-    list.push(mk('why:antar', WHY_NOW.antar, l => ({ area: area(antar, l), end: month(t.antar.end, l) }),
+    list.push(mk('why:antar', WHY_NOW.antar, l => ({ area: area(antar, l), end: month(t.antar.end, l), P: P(antar, l) }),
       `antardasha ${antar} (rules ${c.analysis?.planets[antar].rules.join('/') || '-'}, in house ${houseOf(c, antar)}, ${c.analysis?.planets[antar].functional ?? '?'}) until ${t.antar.end.toISOString().slice(0, 7)}`, antar));
     const rel = ((c.planets[antar].sign - c.planets[maha].sign + 12) % 12) + 1;
     if (rel === 6 || rel === 8) extra.push(WHY_NOW.friction);

@@ -42,7 +42,7 @@ export const PLANET_NAME: Record<Planet, L3> = {
 
 /** Life areas by house (plain): en "career", hi "करियर", bn genitive "কাজের". */
 export const AREA_OF_HOUSE: Record<Lang, string[]> = {
-  en: ['', 'self', 'money and family', 'effort and skills', 'home', 'creativity and study', 'daily work and health', 'partnership',
+  en: ['', 'personal growth', 'money and family', 'effort and skills', 'home', 'creativity and study', 'daily work and health', 'partnership',
     'change', 'luck and learning', 'career', 'gains and friends', 'abroad and spending'],
   hi: ['', 'व्यक्तित्व', 'धन और परिवार', 'मेहनत और हुनर', 'घर-परिवार', 'रचनात्मकता और पढ़ाई', 'रोज़ के काम और सेहत', 'साझेदारी',
     'बदलाव', 'भाग्य और ज्ञान', 'करियर', 'लाभ और दोस्तों', 'विदेश और खर्च'],
@@ -185,15 +185,15 @@ export const MONEY: Record<Planet, ItemText> = {
 // ─── Study field ─────────────────────────────────────────────────────────────
 
 export const STUDY: Record<Planet, ItemText> = {
-  Sun: { label: { en: 'political science, public administration or management', hi: 'राजनीति विज्ञान, लोक प्रशासन या मैनेजमेंट', bn: 'রাষ্ট্রবিজ্ঞান, জনপ্রশাসন বা ম্যানেজমেন্ট' }, model: 'political science, public administration or management', terms: 'politic|administrat|manage|राजनीति|प्रशासन|मैनेजमेंट|রাষ্ট্রবিজ্ঞান|প্রশাসন|ম্যানেজমেন্ট' },
-  Moon: { label: { en: 'psychology, nursing, hotel management or food science', hi: 'मनोविज्ञान, नर्सिंग, होटल मैनेजमेंट या फ़ूड साइंस', bn: 'মনোবিজ্ঞান, নার্সিং, হোটেল ম্যানেজমেন্ট বা খাদ্যবিজ্ঞান' }, model: 'psychology, nursing, hotel management or food science', terms: 'psycholog|nurs|hotel|food|मनोविज्ञान|नर्सिंग|होटल|फ़ूड|फूड|মনোবিজ্ঞান|নার্সিং|হোটেল|খাদ্য' },
-  Mars: { label: { en: 'engineering, medicine or sports science', hi: 'इंजीनियरिंग, मेडिकल या स्पोर्ट्स साइंस', bn: 'ইঞ্জিনিয়ারিং, ডাক্তারি বা স্পোর্টস সায়েন্স' }, model: 'engineering, medicine or sports science', terms: 'engineer|medic|surg|sport|इंजीनियर|मेडिकल|सर्जरी|स्पोर्ट्स|ইঞ্জিনিয়ার|ডাক্তারি|সার্জারি|স্পোর্টস' },
-  Mercury: { label: { en: 'computer science, maths, commerce, languages or journalism', hi: 'कंप्यूटर साइंस, गणित, कॉमर्स, भाषाएँ या पत्रकारिता', bn: 'কম্পিউটার সায়েন্স, গণিত, কমার্স, ভাষা বা সাংবাদিকতা' }, model: 'computer science, maths, commerce, languages or journalism', terms: 'computer|math|commerce|language|journalis|कंप्यूटर|गणित|कॉमर्स|भाषा|पत्रकारिता|কম্পিউটার|গণিত|কমার্স|ভাষা|সাংবাদিক' },
-  Jupiter: { label: { en: 'law, finance, education, management or philosophy', hi: 'कानून, वित्त, शिक्षा, मैनेजमेंट या दर्शन', bn: 'আইন, ফিনান্স, শিক্ষা, ম্যানেজমেন্ট বা দর্শন' }, model: 'law, finance, education, management or philosophy', terms: '\\blaw|financ|educat|manage|philosoph|कानून|वित्त|शिक्षा|मैनेजमेंट|दर्शन|আইন|ফিনান্স|শিক্ষা|ম্যানেজমেন্ট|দর্শন' },
-  Venus: { label: { en: 'design, fine arts, music, fashion or architecture', hi: 'डिज़ाइन, ललित कला, संगीत, फ़ैशन या आर्किटेक्चर', bn: 'ডিজাইন, চারুকলা, সঙ্গীত, ফ্যাশন বা স্থাপত্য' }, model: 'design, fine arts, music, fashion or architecture', terms: 'design|\\barts?\\b|music|fashion|architect|डिज़ाइन|डिजाइन|कला|संगीत|फ़ैशन|फैशन|आर्किटेक्चर|ডিজাইন|চারুকলা|সঙ্গীত|ফ্যাশন|স্থাপত্য' },
-  Saturn: { label: { en: 'civil or mechanical engineering, earth sciences, research or public administration', hi: 'सिविल या मैकेनिकल इंजीनियरिंग, भूविज्ञान, रिसर्च या लोक प्रशासन', bn: 'সিভিল বা মেকানিক্যাল ইঞ্জিনিয়ারিং, ভূতত্ত্ব, গবেষণা বা জনপ্রশাসন' }, model: 'civil or mechanical engineering, earth sciences, research or public administration', terms: 'civil|mechanical|geolog|earth science|research|administrat|सिविल|मैकेनिकल|भूविज्ञान|रिसर्च|प्रशासन|সিভিল|মেকানিক্যাল|ভূতত্ত্ব|গবেষণা|প্রশাসন' },
-  Rahu: { label: { en: 'computer science and AI, foreign languages, aviation or media', hi: 'कंप्यूटर साइंस और एआई, विदेशी भाषाएँ, एविएशन या मीडिया', bn: 'কম্পিউটার সায়েন্স ও এআই, বিদেশি ভাষা, এভিয়েশন বা মিডিয়া' }, model: 'computer science and AI, foreign languages, aviation or media', terms: '\\bai\\b|computer|foreign language|aviation|media|एआई|कंप्यूटर|विदेशी भाषा|एविएशन|मीडिया|এআই|কম্পিউটার|বিদেশি ভাষা|এভিয়েশন|মিডিয়া' },
-  Ketu: { label: { en: 'research, maths, coding or life sciences', hi: 'रिसर्च, गणित, कोडिंग या जीव विज्ञान', bn: 'গবেষণা, গণিত, কোডিং বা জীববিজ্ঞান' }, model: 'research, maths, coding or life sciences', terms: 'research|math|coding|life science|biolog|रिसर्च|गणित|कोडिंग|जीव विज्ञान|গবেষণা|গণিত|কোডিং|জীববিজ্ঞান' },
+  Sun: { label: { en: 'political science, public administration or management', hi: 'राजनीति विज्ञान, लोक प्रशासन या मैनेजमेंट', bn: 'রাষ্ট্রবিজ্ঞান, জনপ্রশাসন বা ম্যানেজমেন্ট' }, short: { en: 'political science or management', hi: 'राजनीति विज्ञान या मैनेजमेंट', bn: 'রাষ্ট্রবিজ্ঞান বা ম্যানেজমেন্ট' }, model: 'political science, public administration or management', terms: 'politic|administrat|manage|राजनीति|प्रशासन|मैनेजमेंट|রাষ্ট্রবিজ্ঞান|প্রশাসন|ম্যানেজমেন্ট' },
+  Moon: { label: { en: 'psychology, nursing, hotel management or food science', hi: 'मनोविज्ञान, नर्सिंग, होटल मैनेजमेंट या फ़ूड साइंस', bn: 'মনোবিজ্ঞান, নার্সিং, হোটেল ম্যানেজমেন্ট বা খাদ্যবিজ্ঞান' }, short: { en: 'psychology, nursing or hotel management', hi: 'मनोविज्ञान, नर्सिंग या होटल मैनेजमेंट', bn: 'মনোবিজ্ঞান, নার্সিং বা হোটেল ম্যানেজমেন্ট' }, model: 'psychology, nursing, hotel management or food science', terms: 'psycholog|nurs|hotel|food|मनोविज्ञान|नर्सिंग|होटल|फ़ूड|फूड|মনোবিজ্ঞান|নার্সিং|হোটেল|খাদ্য' },
+  Mars: { label: { en: 'engineering, medicine or sports science', hi: 'इंजीनियरिंग, मेडिकल या स्पोर्ट्स साइंस', bn: 'ইঞ্জিনিয়ারিং, ডাক্তারি বা স্পোর্টস সায়েন্স' }, short: { en: 'engineering or medicine', hi: 'इंजीनियरिंग या मेडिकल', bn: 'ইঞ্জিনিয়ারিং বা ডাক্তারি' }, model: 'engineering, medicine or sports science', terms: 'engineer|medic|surg|sport|इंजीनियर|मेडिकल|सर्जरी|स्पोर्ट्स|ইঞ্জিনিয়ার|ডাক্তারি|সার্জারি|স্পোর্টস' },
+  Mercury: { label: { en: 'computer science, maths, commerce, languages or journalism', hi: 'कंप्यूटर साइंस, गणित, कॉमर्स, भाषाएँ या पत्रकारिता', bn: 'কম্পিউটার সায়েন্স, গণিত, কমার্স, ভাষা বা সাংবাদিকতা' }, short: { en: 'computer science, maths or commerce', hi: 'कंप्यूटर साइंस, गणित या कॉमर्स', bn: 'কম্পিউটার সায়েন্স, গণিত বা কমার্স' }, model: 'computer science, maths, commerce, languages or journalism', terms: 'computer|math|commerce|language|journalis|कंप्यूटर|गणित|कॉमर्स|भाषा|पत्रकारिता|কম্পিউটার|গণিত|কমার্স|ভাষা|সাংবাদিক' },
+  Jupiter: { label: { en: 'law, finance, education, management or philosophy', hi: 'कानून, वित्त, शिक्षा, मैनेजमेंट या दर्शन', bn: 'আইন, ফিনান্স, শিক্ষা, ম্যানেজমেন্ট বা দর্শন' }, short: { en: 'law, finance or teaching', hi: 'कानून, वित्त या शिक्षा', bn: 'আইন, ফিনান্স বা শিক্ষা' }, model: 'law, finance, education, management or philosophy', terms: '\\blaw|financ|educat|manage|philosoph|कानून|वित्त|शिक्षा|मैनेजमेंट|दर्शन|আইন|ফিনান্স|শিক্ষা|ম্যানেজমেন্ট|দর্শন' },
+  Venus: { label: { en: 'design, fine arts, music, fashion or architecture', hi: 'डिज़ाइन, ललित कला, संगीत, फ़ैशन या आर्किटेक्चर', bn: 'ডিজাইন, চারুকলা, সঙ্গীত, ফ্যাশন বা স্থাপত্য' }, short: { en: 'design, fine arts or architecture', hi: 'डिज़ाइन, ललित कला या आर्किटेक्चर', bn: 'ডিজাইন, চারুকলা বা স্থাপত্য' }, model: 'design, fine arts, music, fashion or architecture', terms: 'design|\\barts?\\b|music|fashion|architect|डिज़ाइन|डिजाइन|कला|संगीत|फ़ैशन|फैशन|आर्किटेक्चर|ডিজাইন|চারুকলা|সঙ্গীত|ফ্যাশন|স্থাপত্য' },
+  Saturn: { label: { en: 'civil or mechanical engineering, earth sciences, research or public administration', hi: 'सिविल या मैकेनिकल इंजीनियरिंग, भूविज्ञान, रिसर्च या लोक प्रशासन', bn: 'সিভিল বা মেকানিক্যাল ইঞ্জিনিয়ারিং, ভূতত্ত্ব, গবেষণা বা জনপ্রশাসন' }, short: { en: 'civil engineering or research', hi: 'सिविल इंजीनियरिंग या रिसर्च', bn: 'সিভিল ইঞ্জিনিয়ারিং বা গবেষণা' }, model: 'civil or mechanical engineering, earth sciences, research or public administration', terms: 'civil|mechanical|geolog|earth science|research|administrat|सिविल|मैकेनिकल|भूविज्ञान|रिसर्च|प्रशासन|সিভিল|মেকানিক্যাল|ভূতত্ত্ব|গবেষণা|প্রশাসন' },
+  Rahu: { label: { en: 'computer science and AI, foreign languages, aviation or media', hi: 'कंप्यूटर साइंस और एआई, विदेशी भाषाएँ, एविएशन या मीडिया', bn: 'কম্পিউটার সায়েন্স ও এআই, বিদেশি ভাষা, এভিয়েশন বা মিডিয়া' }, short: { en: 'computer science and AI, or media', hi: 'कंप्यूटर साइंस और एआई, या मीडिया', bn: 'কম্পিউটার সায়েন্স ও এআই, বা মিডিয়া' }, model: 'computer science and AI, foreign languages, aviation or media', terms: '\\bai\\b|computer|foreign language|aviation|media|एआई|कंप्यूटर|विदेशी भाषा|एविएशन|मीडिया|এআই|কম্পিউটার|বিদেশি ভাষা|এভিয়েশন|মিডিয়া' },
+  Ketu: { label: { en: 'research, maths, coding or life sciences', hi: 'रिसर्च, गणित, कोडिंग या जीव विज्ञान', bn: 'গবেষণা, গণিত, কোডিং বা জীববিজ্ঞান' }, short: { en: 'research, coding or life sciences', hi: 'रिसर्च, कोडिंग या जीव विज्ञान', bn: 'গবেষণা, কোডিং বা জীববিজ্ঞান' }, model: 'research, maths, coding or life sciences', terms: 'research|math|coding|life science|biolog|रिसर्च|गणित|कोडिंग|जीव विज्ञान|গবেষণা|গণিত|কোডিং|জীববিজ্ঞান' },
 };
 
 // ─── Strengths and weaknesses ────────────────────────────────────────────────
@@ -341,7 +341,7 @@ type Table = L3;
 /** Opening sentence per ask; two variants each (the template picks one that doesn't repeat the thread). */
 export const LEAD: Record<string, Table[]> = {
   careerField: [
-    { en: 'Your chart points most clearly to {items}.', hi: 'आपका चार्ट सबसे साफ़ तौर पर {items} की ओर इशारा करता है।', bn: 'আপনার চার্ট সবচেয়ে স্পষ্টভাবে দেখায় এই দিকগুলো: {items}।' },
+    { en: 'Your chart points most clearly to {items}.', hi: 'आपके चार्ट का सबसे साफ़ झुकाव इन क्षेत्रों की ओर है: {items}।', bn: 'আপনার চার্ট সবচেয়ে স্পষ্টভাবে দেখায় এই দিকগুলো: {items}।' },
     { en: 'The fields that suit you best are {items}.', hi: 'आपके लिए सबसे अच्छे क्षेत्र हैं: {items}।', bn: 'আপনার জন্য সবচেয়ে মানানসই ক্ষেত্রগুলো হলো {items}।' },
   ],
   partner: [
@@ -357,7 +357,7 @@ export const LEAD: Record<string, Table[]> = {
     { en: 'Your chart favours {items} for study.', hi: 'पढ़ाई के लिए आपका चार्ट {items} का साथ देता है।', bn: 'পড়াশোনার জন্য আপনার চার্ট যেদিকে টানে: {items}।' },
   ],
   strengths: [
-    { en: 'Your biggest strengths are {items}.', hi: 'आपकी सबसे बड़ी ताकत है: {items}।', bn: 'আপনার সবচেয়ে বড় শক্তি হলো {items}।' },
+    { en: 'Your biggest strengths are {items}.', hi: 'आपकी सबसे बड़ी ताकतें हैं: {items}।', bn: 'আপনার সবচেয়ে বড় শক্তি: {items}।' },
     { en: 'What stands out in you is {items}.', hi: 'आपमें सबसे खास बात है: {items}।', bn: 'আপনার মধ্যে যা সবচেয়ে চোখে পড়ে তা হলো {items}।' },
   ],
   wellbeing: [
@@ -365,11 +365,11 @@ export const LEAD: Record<string, Table[]> = {
     { en: 'Your chart asks you to look after {items}.', hi: 'आपका चार्ट कहता है कि {items} का ध्यान रखें।', bn: 'আপনার চার্ট বলে এগুলোর দিকে নজর দিন: {items}।' },
   ],
   relocation: [
-    { en: 'Your chart leans towards {items}.', hi: 'आपके चार्ट का झुकाव है: {items}।', bn: 'আপনার চার্ট যেদিকে ঝোঁকে: {items}।' },
+    { en: 'Your chart leans towards {items}.', hi: 'आपके चार्ट का झुकाव है: {items}।', bn: 'আপনার চার্টের ঝোঁক এই দিকে: {items}।' },
     { en: 'The pattern in your chart is {items}.', hi: 'आपके चार्ट का रुझान है: {items}।', bn: 'আপনার চার্টের ঝোঁক হলো {items}।' },
   ],
   businessVsJob: [
-    { en: 'Your chart favours {items}.', hi: 'आपका चार्ट {items} का साथ देता है।', bn: 'আপনার চার্ট যেদিকে: {items}।' },
+    { en: 'Your chart favours {items}.', hi: 'आपका चार्ट इस ओर झुकता है: {items}।', bn: 'আপনার চার্ট বেশি টানে এই দিকে: {items}।' },
     { en: 'The better fit for you is {items}.', hi: 'आपके लिए बेहतर है: {items}।', bn: 'আপনার জন্য বেশি মানানসই হলো {items}।' },
   ],
   family: [
@@ -377,11 +377,11 @@ export const LEAD: Record<string, Table[]> = {
     { en: 'The bond with {who} carries {items}.', hi: '{who} के साथ रिश्ते में है: {items}।', bn: '{who} সঙ্গে সম্পর্কে আছে: {items}।' },
   ],
   relationship: [
-    { en: 'Your chart shows {items} in your relationship, a pattern rather than an ending.', hi: 'आपके रिश्ते में चार्ट दिखाता है: {items}, यह एक दौर है, अंत नहीं।', bn: 'আপনার সম্পর্কে চার্ট দেখায়: {items}, এটা একটা ধরন, শেষ নয়।' },
+    { en: 'In your relationships the chart shows {items}. That is a pattern to work with, not an ending.', hi: 'आपके रिश्तों में चार्ट दिखाता है: {items}। यह एक दौर है, अंत नहीं।', bn: 'আপনার সম্পর্কে চার্ট দেখায়: {items}। এটা একটা ধরন, শেষ নয়।' },
     { en: 'What runs through your relationships is {items}.', hi: 'आपके रिश्तों में बार-बार दिखता है: {items}।', bn: 'আপনার সম্পর্কগুলোয় বারবার দেখা যায়: {items}।' },
   ],
   purpose: [
-    { en: 'Your chart points to {items} as your path.', hi: 'आपका चार्ट आपकी राह के रूप में {items} की ओर इशारा करता है।', bn: 'আপনার চার্ট আপনার পথ হিসেবে দেখায়: {items}।' },
+    { en: 'Your chart points to {items} as your path.', hi: 'आपके चार्ट में आपकी राह यह दिखती है: {items}।', bn: 'আপনার চার্ট আপনার পথ হিসেবে দেখায়: {items}।' },
     { en: 'The theme that gives your life meaning is {items}.', hi: 'आपके जीवन को अर्थ देने वाला विषय है: {items}।', bn: 'আপনার জীবনে অর্থ আনে এই বিষয়: {items}।' },
   ],
   remedies: [
@@ -389,7 +389,7 @@ export const LEAD: Record<string, Table[]> = {
     { en: 'What supports you most is {items}.', hi: 'आपको सबसे ज़्यादा सहारा देता है: {items}।', bn: 'আপনাকে সবচেয়ে বেশি সাহায্য করে: {items}।' },
   ],
   loveArranged: [
-    { en: 'Your chart leans toward {items}.', hi: 'आपका चार्ट {items} की ओर झुकता है।', bn: 'আপনার চার্ট {items}-এর দিকে টানে।' },
+    { en: 'Your chart leans toward {items}.', hi: 'आपका चार्ट इस ओर झुकता है: {items}।', bn: 'আপনার চার্ট বেশি টানে এই দিকে: {items}।' },
     { en: 'The likelier path for you is {items}.', hi: 'आपके लिए ज़्यादा संभावित रास्ता है: {items}।', bn: 'আপনার জন্য বেশি সম্ভাব্য পথ: {items}।' },
   ],
   whyNow: [
@@ -411,7 +411,7 @@ export const WEAK_LINE: Table = { en: 'The side to watch is {weak}.', hi: 'ज�
 /** Relocation: kind of place. */
 export const PLACE_LINE: Table = { en: 'The kind of place that suits you is {place}.', hi: 'आपके लिए सही जगह होगी: {place}।', bn: 'আপনার জন্য মানানসই জায়গা হলো {place}।' };
 /** Business vs job: in which field. */
-export const FIELD_LINE: Table = { en: 'Either way, the field that suits you most is {field}.', hi: 'दोनों में, आपके लिए सबसे अच्छा क्षेत्र है: {field}।', bn: 'যেটাই করুন, আপনার জন্য সবচেয়ে মানানসই ক্ষেত্র হলো {field}।' };
+export const FIELD_LINE: Table = { en: 'Either way, the field that suits you most is {field}.', hi: 'रास्ता जो भी चुनें, आपके लिए सबसे अच्छा क्षेत्र है: {field}।', bn: 'যেটাই করুন, আপনার জন্য সবচেয়ে মানানসই ক্ষেত্র হলো {field}।' };
 /** Optional window line for choice answers. */
 export const WINDOW_LINE: Table = { en: 'A good time to make your move is {start} to {end}.', hi: 'कदम बढ़ाने का अच्छा समय {start} से {end} तक है।', bn: 'পা বাড়ানোর ভালো সময় {start} থেকে {end}।' };
 export const DOCTOR_LINE: Table = { en: 'For anything medical, please see a doctor.', hi: 'किसी भी बीमारी के लिए डॉक्टर से ज़रूर मिलें।', bn: 'শরীরের কোনো সমস্যায় অবশ্যই ডাক্তার দেখান।' };
@@ -444,11 +444,11 @@ export const WHY_NOW: Record<'maha' | 'antar' | 'sadeSati' | 'ashtama' | 'kantak
   nextLinked: { en: 'The next shorter cycle, from {start}, is tied to {topic}, so things open up then.', hi: '{start} से शुरू होने वाला अगला छोटा चक्र {topic} से जुड़ा है, इसलिए तब रास्ते खुलते हैं।', bn: '{start} থেকে শুরু হওয়া পরের ছোট চক্র {topic} সঙ্গে যুক্ত, তাই তখন পথ খোলে।' },
   nextOther: { en: 'The next shorter cycle begins in {start} and changes the focus again.', hi: 'अगला छोटा चक्र {start} में शुरू होता है और ध्यान फिर बदलता है।', bn: 'পরের ছোট চক্র শুরু হয় {start}-এ আর মন আবার অন্য দিকে যায়।' },
   rules: { en: '{area}', hi: '{area}', bn: '{area}' },
-  maha: { en: 'a long cycle that centres your life on {area}', hi: 'एक लंबा चक्र जो आपके जीवन का ध्यान {area} पर रखता है', bn: 'একটা লম্বা চক্র, যা জীবনের মন টানে {area} দিকে' },
-  antar: { en: 'a shorter cycle inside it, focused on {area}, until {end}', hi: 'उसके भीतर {end} तक एक छोटा चक्र, जिसका ध्यान {area} पर है', bn: 'তার ভেতরে {end} পর্যন্ত একটা ছোট চক্র, যার মন {area} দিকে' },
-  sadeSati: { en: 'a slow, testing time over your mind that eases around {end}', hi: 'मन पर एक धीमा, परखने वाला समय, जो {end} के आसपास हल्का होता है', bn: 'মনের ওপর একটা ধীর, পরীক্ষার সময়, যা {end} নাগাদ হালকা হয়' },
-  ashtama: { en: 'a heavy patch of sudden changes that lifts around {end}', hi: 'अचानक बदलावों का भारी समय, जो {end} के आसपास हटता है', bn: 'হঠাৎ বদলের একটা ভারী সময়, যা {end} নাগাদ কাটে' },
-  kantaka: { en: 'a strain on home and peace of mind that lifts around {end}', hi: 'घर और मन की शांति पर दबाव, जो {end} के आसपास हटता है', bn: 'বাড়ি আর মনের শান্তির ওপর চাপ, যা {end} নাগাদ কাটে' },
+  maha: { en: 'your long {P} period, which centres life on {area}', hi: 'आपका {P} का लंबा दौर, जो जीवन का ध्यान {area} पर रखता है', bn: 'আপনার {P}-এর লম্বা পর্ব, যা জীবনের ঝোঁক রাখে {area} দিকে' },
+  antar: { en: 'a shorter {P} period until {end}, focused on {area}', hi: '{end} तक {P} का छोटा दौर, जिसका ध्यान {area} पर है', bn: '{end} পর্যন্ত {P}-এর ছোট পর্ব, যার ঝোঁক {area} দিকে' },
+  sadeSati: { en: 'Saturn passing over your Moon sign, a slow, testing time for the mind that eases around {end}', hi: 'आपकी चंद्र राशि पर शनि का गोचर, मन के लिए धीमा और परखने वाला समय, जो {end} के आसपास हल्का होगा', bn: 'আপনার চন্দ্ররাশির ওপর দিয়ে শনির চলা, মনের জন্য ধীর আর পরীক্ষার সময়, যা {end} নাগাদ হালকা হবে' },
+  ashtama: { en: 'a heavy Saturn passage with sudden changes, which lifts around {end}', hi: 'शनि का भारी गोचर, अचानक बदलावों के साथ, जो {end} के आसपास हटेगा', bn: 'হঠাৎ বদলের সঙ্গে শনির একটা ভারী যাত্রা, যা {end} নাগাদ কাটবে' },
+  kantaka: { en: 'Saturn putting strain on your home and peace of mind, which lifts around {end}', hi: 'घर और मन की शांति पर शनि का दबाव, जो {end} के आसपास हटेगा', bn: 'বাড়ি আর মনের শান্তির ওপর শনির চাপ, যা {end} নাগাদ কাটবে' },
   notLinked: { en: 'This cycle does not light up {topic} much, which is why it feels slow.', hi: 'यह चक्र {topic} को ज़्यादा सहारा नहीं देता, इसीलिए चीज़ें धीमी लगती हैं।', bn: 'এই চক্র {topic} দিকে বেশি সাড়া দেয় না, তাই সব ধীর মনে হয়।' },
   linked: { en: 'This cycle does support {topic}, so steady effort now builds the base.', hi: 'यह चक्र {topic} का साथ देता है, इसलिए अभी की लगातार मेहनत नींव बनाती है।', bn: 'এই চক্র {topic} পাশে আছে, তাই এখনকার টানা চেষ্টাই ভিত গড়ে।' },
 };
@@ -494,18 +494,18 @@ export const TOPIC_NOUN: Record<string, Table> = {
 
 /** A follow-up on the same ask: point back briefly instead of restating everything. */
 export const FOLLOW_LEAD: Table = {
-  en: 'As I said, your strongest direction is {item}.',
-  hi: 'जैसा बताया, आपकी सबसे मज़बूत दिशा है: {item}।',
-  bn: 'যেমন বললাম, আপনার সবচেয়ে জোরালো দিক হলো {item}।',
+  en: 'To be specific, your strongest direction is {item}.',
+  hi: 'साफ़ कहूँ तो आपकी सबसे मज़बूत दिशा है: {item}।',
+  bn: 'স্পষ্ট করে বললে, আপনার সবচেয়ে জোরালো দিক হলো {item}।',
 };
 /** FOLLOW_LEAD / NEXT_ITEM for asks whose items aren't "directions" (partner traits, money sources …). */
 export const FOLLOW_LEAD_ASK: Partial<Record<string, Table>> = {
-  partner: { en: 'As I said, the partner your chart describes is {item}.', hi: 'जैसा बताया, आपका चार्ट ऐसे साथी की ओर इशारा करता है जो {item} हो।', bn: 'যেমন বললাম, আপনার চার্ট এমন সঙ্গীর কথা বলে, যিনি {item}।' },
+  partner: { en: 'The partner your chart describes is {item}.', hi: 'आपके चार्ट में साथी के ये गुण दिखते हैं: {item}।', bn: 'আপনার চার্টে সঙ্গীর এই গুণগুলো দেখা যায়: {item}।' },
   moneySources: { en: 'As I said, your money comes most naturally from {item}.', hi: 'जैसा बताया, आपका पैसा सबसे सहज रूप से {item} से आता है।', bn: 'যেমন বললাম, আপনার টাকা সবচেয়ে সহজে আসে {item} থেকে।' },
   strengths: { en: 'As I said, your biggest strength is {item}.', hi: 'जैसा बताया, आपकी सबसे बड़ी ताकत है: {item}।', bn: 'যেমন বললাম, আপনার সবচেয়ে বড় শক্তি হলো {item}।' },
 };
 export const NEXT_ITEM_ASK: Partial<Record<string, Table>> = {
-  partner: { en: 'They may also be {item}, because {why}.', hi: 'वे {item} भी हो सकते हैं, क्योंकि {why}।', bn: 'তিনি {item}ও হতে পারেন, কারণ {why}।' },
+  partner: { en: 'They may also be {item}, because {why}.', hi: 'उनमें ये गुण भी हो सकते हैं: {item}, क्योंकि {why}।', bn: 'ওঁর মধ্যে এই গুণগুলোও থাকতে পারে: {item}, কারণ {why}।' },
   strengths: { en: 'Another strength is {item}, because {why}.', hi: 'एक और ताकत है {item}, क्योंकि {why}।', bn: 'আরেকটা শক্তি হলো {item}, কারণ {why}।' },
 };
 
@@ -547,6 +547,6 @@ export const ASK_MORE: Table = {
 /** A later follow-up on the same ask, once FOLLOW_LEAD was used: name the next item to try. */
 export const FOLLOW_LEAD_NEXT: Table = {
   en: 'Of everything so far, {item} is the next one to try.',
-  hi: 'अब तक की बातों में, अगला कदम {item} की ओर हो सकता है।',
-  bn: 'এ পর্যন্ত যা বললাম, তার মধ্যে এরপর চেষ্টা করার মতো হলো {item}।',
+  hi: 'अब तक की बातों में, अगला आज़माने लायक विकल्प है: {item}।',
+  bn: 'এ পর্যন্ত যা বললাম, তার মধ্যে এরপর চেষ্টা করার মতো: {item}।',
 };

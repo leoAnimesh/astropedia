@@ -94,20 +94,21 @@ const ASK_CUE: Record<string, string> = {
 /**
  * Categories (AnswerPlan.resolved) astro-gemma v2.1 still writes; every other
  * category is answered from the plan's template when this adapter is active.
- * Chosen by the Stage 2 measurement (scratchpad agent/model-eval.ts: the
- * question bank on the shipped prompt mapping, greedy, planGuard + verify):
- * must-include pass with the model ≥ 70% and no unsafe wording (career 93%,
- * business 90%, partner 90%, family 90%, studies 90%, love/arranged 100%,
- * personality 100%); timing categories scored 0-60% (the model opens with
- * sympathy instead of the window, gives vague reasons, and once told a user
- * "marriage is not shown in your chart"); children (70%) and health (71%)
- * are left out for their wording ("the chart shows no clear date for a baby",
- * "don't think about children until then"). Re-measure when a new model ships.
+ *
+ * Empty since Stage 3 (judged evaluation, scratchpad stage3/): on the real
+ * pipeline the seven Stage 2 categories (career, business, partner, family,
+ * studies, love/arranged, personality) were shown the model's own text in only
+ * 10 of 76 routed answers; the planGuard fell back to the template in the other
+ * 66 (costing a full generation each), and the shown model answers scored
+ * 10.4-11.2/16 against 13.8 for the template: a career answer that described a
+ * person ("the best fit for you is someone who values steady effort"), IT
+ * picked against a plan that leans to finance, "now is the best time" against
+ * a 2029 window, a Hinglish question answered in Bengali, filler like "help
+ * from an old link". The template is better in every category, so the model
+ * writes none until v2.2 (ml/data/RUN_V3.md "Saga v2.2: categories") is
+ * trained on the verified plans and measured again.
  */
-export const GEMMA21_MODEL_CATEGORIES: ReadonlySet<string> = new Set([
-  'career_field', 'business_vs_job', 'partner_traits_meeting', 'family_parents_siblings', 'education_field',
-  'love_vs_arranged', 'personality',
-]);
+export const GEMMA21_MODEL_CATEGORIES: ReadonlySet<string> = new Set<string>([]);
 
 /**
  * The training-seed phrasing (ml/data/questions.py) a Stage 2 category is

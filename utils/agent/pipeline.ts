@@ -34,7 +34,13 @@ import type { AdapterTask, ChatTurn, ReadingResult } from './adapters/types';
 import { questionTitle, type Lang } from './strings';
 import type { ThreadFacts } from './thread-facts';
 
+/** Answer to "how are you?" ahead of the guru's greeting. */
+const WELL: Record<Lang, string> = { en: "I'm well, thank you!", hi: 'मैं ठीक हूँ, धन्यवाद!', bn: 'আমি ভালো আছি, ধন্যবাদ!' };
+
 export type PipelineTier = 'executorch' | 'deterministic' | 'pending';
+
+/** Categories where a "stress / tension" health topic is not a medical question (no doctor line appended). */
+const NO_DOCTOR = new Set(['family_parents_siblings', 'relationship_problems', 'why_now_current_phase', 'education_field', 'divorce_separation', 'mental_health_distress']);
 
 export type PipelineRequest = {
   profile: Profile;
@@ -96,7 +102,9 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
       const text = req.profile.isYou
         ? i18n.t(`${base}.self`, { lng: lang })
         : i18n.t(`${base}.other`, { lng: lang, name: req.profile.name.split(' ')[0] });
-      return { stream: once(text), tier: 'deterministic', plan };
+      // "kemon acho?" / "how are you?" gets an answer to the question before the introduction.
+      const well = plan.intent.flags.smalltalk && !/^(?:who|what|are you)/i.test(plan.question.trim()) ? `${WELL[lang]} ` : '';
+      return { stream: once(well + text), tier: 'deterministic', plan };
     }
     case 'canned':
       return { stream: once(i18n.t(`chat:safety.${plan.canned}`, { lng: lang })), tier: 'deterministic', plan };
@@ -127,7 +135,8 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
     if (plan.mode !== 'saga') return '';
     const kinds = missingAdvice(req.question, reply);
     // "Why am I always tired?" / "how do I reduce stress?" are health questions too.
-    if (plan.intent.topic === 'health' && !kinds.includes('doctor') && !mentionsDoctor(reply)) kinds.push('doctor');
+    // (Family, relationship and why-now answers about "tension" carry their own counsellor / step lines, not a doctor.)
+    if (plan.intent.topic === 'health' && !NO_DOCTOR.has(plan.resolved) && !kinds.includes('doctor') && !mentionsDoctor(reply)) kinds.push('doctor');
     const fixed = kinds.map(kind => `\n\n${i18n.t(`chat:safety.${kind}`, { lng: lang })}`).join('');
     // The plan's required lines (counsellor, helpline, documents, lawyer …) a reply leaves out.
     const lines = requiredTail(plan, reply + fixed);

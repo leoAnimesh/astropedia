@@ -52,6 +52,94 @@ export const S = {
     hi: '{who}हालात सबसे ज़्यादा {start} से {end} तक सुधरते हैं, खासकर {peak} के आसपास।',
     bn: '{who}পরিস্থিতি সবচেয়ে ভালো হয় {start} থেকে {end}, বিশেষ করে {peak} নাগাদ।',
   } as Table,
+  /** "When exactly?" / exact-date requests in one sentence: the window and its most likely month. */
+  windowNarrow: {
+    en: '{who}For {area}, the best window is {start} to {end}, and the most likely month is {peak}.',
+    hi: '{who}{area} के लिए सबसे अच्छा समय {start} से {end} तक है, और सबसे संभावित महीना {peak} है।',
+    bn: '{who}{areaGen} জন্য সবচেয়ে ভালো সময় {start} থেকে {end}, আর সবচেয়ে সম্ভাব্য মাস {peak}।',
+  } as Table,
+  /** Another person's chart: "For Priya, the best window for marriage is …". {name}, {nameGen} (bn genitive). */
+  windowOther: {
+    en: 'For {name}, the best window for {area} is {start} to {end}, peaking around {peak}.',
+    hi: '{name} के लिए {area} का सबसे अच्छा समय {start} से {end} तक है, खासकर {peak} के आसपास।',
+    bn: '{nameGen} {areaGen} জন্য সবচেয়ে ভালো সময় {start} থেকে {end}, বিশেষ করে {peak} নাগাদ।',
+  } as Table,
+  /** The window's reason in chart terms: the sub-period planet and its tie to the topic. {P} planet name, {link} clause. */
+  reasonPlanet: {
+    en: 'This window falls in your {P} phase, and {link}.',
+    hi: 'यह समय आपके जीवन के {P} वाले दौर में आता है, और {link}।',
+    bn: 'এই সময়টা পড়ে আপনার জীবনের {P}-এর পর্বে, আর {link}।',
+  } as Table,
+  /** Same, without a usable link (a node period): just the phase. */
+  reasonPlanetOnly: {
+    en: 'This window falls in your {P} phase, which is tied to {area} in your chart.',
+    hi: 'यह समय आपके जीवन के {P} वाले दौर में आता है, जो आपके चार्ट में {area} से जुड़ा है।',
+    bn: 'এই সময়টা পড়ে আপনার জীবনের {P}-এর পর্বে, যা আপনার চার্টে {areaGen} সঙ্গে যুক্ত।',
+  } as Table,
+  /** Appended to the reason when both slow planets back the window. */
+  plusDouble: { en: ' Jupiter and Saturn both support it then.', hi: ' उस समय गुरु और शनि दोनों का साथ भी मिलता है।', bn: ' তখন বৃহস্পতি আর শনি দুজনেরই সমর্থন থাকে।' } as Table,
+  plusJupiter: { en: ' Jupiter supports it then too.', hi: ' उस समय गुरु का साथ भी मिलता है।', bn: ' তখন বৃহস্পতির সমর্থনও থাকে।' } as Table,
+  /** One alternative per answer (template.ts altSentence). */
+  altStronger: {
+    en: 'This one is steady rather than strong; a stronger stretch comes {start} to {end}.',
+    hi: 'यह समय स्थिर है, बहुत मज़बूत नहीं; इससे मज़बूत दौर {start} से {end} तक है।',
+    bn: 'এই সময়টা স্থির, খুব জোরালো নয়; আরও জোরালো সময় {start} থেকে {end}।',
+  } as Table,
+  altNextStrong: {
+    en: 'It is steady rather than strong; a stronger stretch follows around {start}.',
+    hi: 'यह समय स्थिर है, बहुत मज़बूत नहीं; इससे मज़बूत दौर {start} के आसपास आता है।',
+    bn: 'এই সময়টা স্থির, খুব জোরালো নয়; আরও জোরালো সময় আসে {start} নাগাদ।',
+  } as Table,
+  altSteady: {
+    en: "It's a steady window rather than a dramatic one, so effort counts.",
+    hi: 'यह बहुत तेज़ नहीं, पर स्थिर समय है, इसलिए मेहनत मायने रखती है।',
+    bn: 'সময়টা খুব জোরালো নয়, তবে স্থির, তাই চেষ্টাটাই আসল।',
+  } as Table,
+  altEarlier: {
+    en: 'Before that, a smaller opening comes {start} to {end}.',
+    hi: 'इससे पहले {start} से {end} तक एक छोटा मौका भी है।',
+    bn: 'তার আগে {start} থেকে {end} একটা ছোট সুযোগও আছে।',
+  } as Table,
+  altSecond: {
+    en: 'The next good stretch after it is {start} to {end}.',
+    hi: 'उसके बाद अगला अच्छा दौर {start} से {end} तक है।',
+    bn: 'তার পরের ভালো সময় {start} থেকে {end}।',
+  } as Table,
+  /** "This year?" / "now?" answered directly before the window. */
+  nearYes: {
+    en: 'Yes, the coming months have real support for this.',
+    hi: 'हाँ, आने वाले महीनों में इसका अच्छा साथ है।',
+    bn: 'হ্যাঁ, সামনের মাসগুলোয় এর ভালো সমর্থন আছে।',
+  } as Table,
+  nearNo: {
+    en: 'Not strongly in the coming months; the better window comes later.',
+    hi: 'आने वाले महीनों में इसका ज़्यादा ज़ोर नहीं दिखता; बेहतर समय थोड़ा बाद में है।',
+    bn: 'সামনের কয়েক মাসে এর জোর কম; ভালো সময় আসে একটু পরে।',
+  } as Table,
+  /** The no-birth-time caveat, one sentence. */
+  noTimeShort: {
+    en: 'Without a birth time these dates are approximate; adding it sharpens them.',
+    hi: 'जन्म समय के बिना ये तारीखें अनुमानित हैं; उसे जोड़ने से ये और सटीक होंगी।',
+    bn: 'জন্মসময় ছাড়া এই তারিখগুলো আনুমানিক; সেটা যোগ করলে আরও নিখুঁত হবে।',
+  } as Table,
+  /** Practical step when the window is someone else's (the asker isn't the one applying / marrying). */
+  helpOther: {
+    en: 'The months before it are a good time for {name} to prepare.',
+    hi: 'उससे पहले के महीने {name} की तैयारी के लिए अच्छे हैं।',
+    bn: 'তার আগের মাসগুলো {nameGen} প্রস্তুতির জন্য ভালো।',
+  } as Table,
+  /** Death decline for an accident question. */
+  accident: {
+    en: "A chart can't predict accidents, and I won't guess at one. Ordinary care keeps you safe; if you like, ask me about the year ahead instead.",
+    hi: 'कुंडली से दुर्घटना का अंदाज़ा नहीं लगाया जा सकता, और मैं इसका अनुमान नहीं लगाऊँगा। सामान्य सावधानी ही सबसे अच्छी सुरक्षा है; चाहें तो आने वाले साल के बारे में पूछिए।',
+    bn: 'কুষ্ঠি দিয়ে দুর্ঘটনা বলা যায় না, আর আমি তা আন্দাজও করব না। সাধারণ সাবধানতাই সবচেয়ে ভালো সুরক্ষা; চাইলে সামনের বছর নিয়ে জিজ্ঞেস করুন।',
+  } as Table,
+  /** Death decline, first sentence only (the ill-parent version adds care lines). */
+  deathShort: {
+    en: "No chart can tell how long someone will live, and I won't guess.",
+    hi: 'कोई भी ग्रह-गणना यह नहीं बता सकती कि कोई कितना जिएगा, और मैं इसका अंदाज़ा नहीं लगाऊँगा।',
+    bn: 'কোনো গ্রহের হিসেবই বলতে পারে না কেউ কতদিন বাঁচবেন, আর আমি আন্দাজও করব না।',
+  } as Table,
   pastWindow: {
     en: '{who}Looking back, the strongest stretch for {area} was {start} to {end}.',
     hi: '{who}पीछे देखें तो {area} के लिए सबसे मज़बूत समय {start} से {end} तक था।',
@@ -188,7 +276,7 @@ export const HELPS: Record<Lang, Record<TimingTopic, string>> = {
     children: 'Look after your health together before then, and talk to a doctor about anything medical.',
     education: 'Steady daily study before then pays off most in that window.',
     foreign: 'Get your documents, savings and applications ready before then.',
-    health: "Regular sleep, food and movement help most; follow your doctor's advice for anything medical.",
+    health: 'Regular sleep, food and movement help most in the meantime.',
     legal: "Keep your papers in order and follow your lawyer's advice; take important steps in that window if you can.",
     general: 'Start the things that matter most to you in that window.',
   },
@@ -203,7 +291,7 @@ export const HELPS: Record<Lang, Record<TimingTopic, string>> = {
     children: 'उससे पहले दोनों अपनी सेहत का ध्यान रखें, और चिकित्सा से जुड़ी हर बात डॉक्टर से पूछें।',
     education: 'उससे पहले रोज़ थोड़ा-थोड़ा पढ़ना उस समय सबसे ज़्यादा काम आएगा।',
     foreign: 'उससे पहले कागज़ात, बचत और आवेदन तैयार रखें।',
-    health: 'नियमित नींद, भोजन और व्यायाम सबसे ज़्यादा मदद करते हैं; इलाज के लिए डॉक्टर की सलाह मानें।',
+    health: 'तब तक नियमित नींद, भोजन और व्यायाम सबसे ज़्यादा मदद करते हैं।',
     legal: 'अपने कागज़ात ठीक रखें और वकील की सलाह मानें; हो सके तो ज़रूरी कदम उसी समय उठाएँ।',
     general: 'जो काम आपके लिए सबसे ज़रूरी हैं, उन्हें उसी समय शुरू करें।',
   },
@@ -218,7 +306,7 @@ export const HELPS: Record<Lang, Record<TimingTopic, string>> = {
     children: 'তার আগে দুজনেই শরীরের যত্ন নিন, আর চিকিৎসার যেকোনো বিষয়ে ডাক্তারের সঙ্গে কথা বলুন।',
     education: 'তার আগে রোজ নিয়ম করে পড়াশোনা করলে ওই সময়ে সবচেয়ে বেশি কাজে দেবে।',
     foreign: 'তার আগে কাগজপত্র, সঞ্চয় আর আবেদন তৈরি রাখুন।',
-    health: 'নিয়মিত ঘুম, খাওয়া আর হাঁটাচলা সবচেয়ে বেশি সাহায্য করে; চিকিৎসার জন্য ডাক্তারের পরামর্শ মেনে চলুন।',
+    health: 'ততদিন নিয়মিত ঘুম, খাওয়া আর হাঁটাচলাই সবচেয়ে বেশি সাহায্য করে।',
     legal: 'কাগজপত্র গুছিয়ে রাখুন আর উকিলের পরামর্শ মেনে চলুন; পারলে জরুরি পদক্ষেপগুলো ওই সময়েই নিন।',
     general: 'যে কাজগুলো আপনার কাছে সবচেয়ে জরুরি, সেগুলো ওই সময়েই শুরু করুন।',
   },
@@ -240,8 +328,41 @@ export function monthLabel(d: Date, lang: Lang, { western = false } = {}): strin
   return western ? label : nativeDigits(label, lang);
 }
 
-/** A finished user-visible sentence in `lang`'s digits (ages, years filled into templates). */
-export const localText = (text: string, lang: Lang): string => nativeDigits(text, lang);
+/**
+ * Bengali genitive / objective case for a filled placeholder: "শনি-এর" →
+ * "শনির", "বুধ-এর" → "বুধের", "শুরু করা-এর" → "শুরু করার", "নীলা-কে" →
+ * "নীলাকে". Templates write "{x}-এর" because the filled word isn't known;
+ * this attaches the right ending (vowel-final words take র, consonant-final
+ * ones ের). Digits keep "-এর" ("২০২৮-এর"); a Latin name gets "-র" after a
+ * vowel ("Priya-র"). Stage 3 judging found the hyphenated forms in every
+ * Bengali route that fills a planet, activity or name.
+ */
+export function bnCase(text: string): string {
+  const VOWEL_SIGN = /[\u09BE-\u09C4\u09C7\u09C8\u09CB\u09CC\u0985-\u0994]$/;
+  return text
+    .replace(/([\u0980-\u09FF]+)-এর(?=[\s,।;:!?)]|$)/g, (_m, w: string) => (/[০-৯]$/.test(w) ? `${w}-এর` : VOWEL_SIGN.test(w) ? `${w}র` : `${w}ের`))
+    .replace(/([\u0980-\u09FF]+)-কে(?=[\s,।;:!?)]|$)/g, (_m, w: string) => (/[০-৯]$/.test(w) ? `${w}-কে` : `${w}কে`))
+    .replace(/([A-Za-z]+[aeiouyAEIOUY])-এর(?=[\s,।;:!?)]|$)/g, '$1-র');
+}
+
+/**
+ * Hindi oblique case after a filled phrase: "ऊर्जा और साहस का ग्रह की ओर" →
+ * "ऊर्जा और साहस के ग्रह की ओर", "वित्त का काम की ओर" → "वित्त के काम की ओर",
+ * "…करने वाला की" → "…करने वाले की", and the doubled "उनकी की". A noun phrase
+ * ending in का + noun takes के before a postposition.
+ */
+export function hiCase(text: string): string {
+  return text
+    .replace(/का (ग्रह|बिंदु|काम|हुनर|गुण|समय|दौर|पहलू) (की|के|का|को|से|में|पर|तक)(?=[\s,।]|$)/g, 'के $1 $2')
+    .replace(/वाला (की|के|का|को|से|में|पर)(?=[\s,।]|$)/g, 'वाले $1')
+    .replace(/चलना (की|के|का|को|से|में|पर)(?=[\s,।]|$)/g, 'चलने $1')
+    .replace(/बाँटना (की|के|का|को|से|में|पर)(?=[\s,।]|$)/g, 'बाँटने $1')
+    .replace(/उनकी की /g, 'उनकी ');
+}
+
+/** A finished user-visible sentence in `lang`'s digits (ages, years filled into templates) and case endings. */
+export const localText = (text: string, lang: Lang): string =>
+  nativeDigits(lang === 'bn' ? bnCase(text) : lang === 'hi' ? hiCase(text) : text, lang);
 
 /** Thread title without a model: the first question, cut to fit the thread list. */
 export function questionTitle(question: string, max = 36): string {
