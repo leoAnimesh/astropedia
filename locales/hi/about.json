@@ -47,7 +47,8 @@
     "terms": "इस्तेमाल की शर्तें",
     "licences": "ओपन-सोर्स लाइसेंस",
     "licencesSub": "इस ऐप में इस्तेमाल हुई लाइब्रेरी, फ़ॉन्ट, जगहों का डेटा और मॉडल",
-    "placesCredit": "जन्म-स्थान: GeoNames (geonames.org), CC BY 4.0 लाइसेंस के तहत।"
+    "placesCredit": "जन्म-स्थान: GeoNames (geonames.org), CC BY 4.0 लाइसेंस के तहत।",
+    "gitaCredit": "भगवद्गीता: अंग्रेज़ी अनुवाद के. टी. तेलंग (1882, Sacred Books of the East खंड 8), सार्वजनिक डोमेन। संस्कृत पाठ: github.com/gita/gita (Unlicense)। हिंदी और बांग्ला अनुवाद: Astropedia।"
   },
   "data": {
     "delete": "मेरा सारा डेटा मिटाएँ",

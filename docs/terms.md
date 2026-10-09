@@ -44,7 +44,7 @@ Do not use the App to break the law, to harass or harm anyone, or to present its
 
 ## 7. Intellectual property
 
-The App, its design and its original text are owned by us or our licensors. Open-source components and AI models remain under their own licences, listed in Settings → About → Open-source licences. Bhagavad Gita verses are shown with the translations credited in the App.
+The App, its design and its original text are owned by us or our licensors. Open-source components and AI models remain under their own licences, listed in Settings → About → Open-source licences. Bhagavad Gita verses are shown in the English translation of K. T. Telang (1882, *Sacred Books of the East* vol. 8), which is in the public domain; the Sanskrit text and transliteration are also in the public domain. The Hindi and Bengali renderings of the verses are original to Astropedia. These credits also appear in the App.
 
 ## 8. Availability and changes
 

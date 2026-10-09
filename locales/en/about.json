@@ -47,7 +47,8 @@
     "terms": "Terms of use",
     "licences": "Open-source licences",
     "licencesSub": "Libraries, fonts, place data and models this app is built with",
-    "placesCredit": "Birth places: GeoNames (geonames.org), licensed under CC BY 4.0."
+    "placesCredit": "Birth places: GeoNames (geonames.org), licensed under CC BY 4.0.",
+    "gitaCredit": "Bhagavad Gita: English translation by K. T. Telang (1882, Sacred Books of the East vol. 8), public domain. Sanskrit text: github.com/gita/gita (Unlicense). Hindi and Bengali renderings: Astropedia."
   },
   "data": {
     "delete": "Delete all my data",

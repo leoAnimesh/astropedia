@@ -6,6 +6,9 @@ words, so the app doesn't ship anyone's published translation. Output goes
 into assets/gita-corpus/curated-verses.json as `text_hi` / `text_bn` next to
 the English `text` (which the model keeps seeing as its prompt).
 
+The renderings now in the file were written by hand for the Telang (1882)
+English; see assets/gita-corpus/README.md. Running with --force replaces them.
+
 Usage: ../.venv/bin/python translate_verses.py [--langs hi,bn] [--force]
 """
 import argparse
