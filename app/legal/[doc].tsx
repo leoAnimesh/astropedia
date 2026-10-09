@@ -23,7 +23,10 @@ const LICENSES: { packages: Pkg[]; texts: Record<string, string> } = require('@/
  * Hosted copies of docs/privacy.md and docs/terms.md. Set these once the
  * pages are published; the screens then link to the full text.
  */
-const FULL_TEXT_URL: Record<'privacy' | 'terms', string | null> = { privacy: null, terms: null };
+const FULL_TEXT_URL: Record<'privacy' | 'terms', string | null> = {
+  privacy: 'https://ash-larch-a05.notion.site/Astropedia-Privacy-Policy-3f4a0161464a814984a9e0f6c63f8ab4',
+  terms: null,
+};
 
 /** /legal/privacy, /legal/terms, /legal/licenses. */
 export default function LegalScreen() {

@@ -28,7 +28,7 @@ Justification against Apple's definition ("collect" = transmit data off the devi
 - "Report this answer" only opens the user's own email app or the share sheet with a draft the user can edit; the app sends nothing. If the user sends the email, it reaches us as ordinary support email, initiated by the user (Apple: user-initiated sharing to a destination of the user's choice; not collected through the app). If you keep reports or reply to them, cover that in the privacy policy (section 7 already describes the report contents).
 - Error details are shared only by the user, through the system share sheet, to a destination they choose. Apple treats user-initiated sharing to a destination of the user's choice as not collected by the developer.
 
-Privacy policy URL: required. Host `docs/privacy.md` (for example on GitHub Pages) and enter its URL.
+Privacy policy URL: https://ash-larch-a05.notion.site/Astropedia-Privacy-Policy-3f4a0161464a814984a9e0f6c63f8ab4
 
 Tracking: **No.** No IDFA, no App Tracking Transparency prompt needed.
 

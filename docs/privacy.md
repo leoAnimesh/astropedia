@@ -1,9 +1,9 @@
 # Astropedia Privacy Policy
 
-> **DRAFT. Review with a lawyer before publishing.** Replace every `[bracketed]` placeholder. Keep this file in step with the in-app summary (`locales/*/about.json` → `privacyDoc`) and the store answers in `store/privacy-answers.md`.
+> Published at https://ash-larch-a05.notion.site/Astropedia-Privacy-Policy-3f4a0161464a814984a9e0f6c63f8ab4 (Notion). Review with a lawyer before launch. Keep this file in step with the in-app summary (`locales/*/about.json` → `privacyDoc`) and the store answers in `store/privacy-answers.md`.
 
-**Effective date:** [date of first public release]
-**Developer:** [legal name of the developer or company], [postal address]
+**Effective date:** 9 October 2026
+**Developer:** Animesh Mondal, West Bengal, India
 **Contact:** mondalarup808@gmail.com
 
 ## The short version
@@ -46,34 +46,32 @@ The app has no crash reporting or analytics service. If something goes wrong, th
 
 You can report an AI-written answer you find offensive or harmful ("Report this answer" on a chat reply). The app then opens your email app (or the share sheet) with a draft to our support address containing that question and answer, the app and model version, the app language and the date. You can edit it, and nothing is sent unless you send it yourself. The app does not add your name, birth details or other chats. The answer is then hidden on your phone; this mark stays on the device.
 
-## 7. Data we collect
+## 8. Data we collect
 
 None. Because we do not collect or receive personal data, we do not sell, share, rent or use it for advertising or profiling.
 
-## 8. Deleting your data
+## 9. Deleting your data
 
 - **In the app:** Settings → About → Delete all my data (or Settings → Your data → Reset all data) deletes every profile, chat, journal entry and setting from the device. The downloaded AI model is kept so it does not need downloading again.
 - **Uninstalling** the app deletes everything, including the model.
 - Backup files you exported are under your control; delete them where you saved them.
 
-## 9. Children
+## 10. Children
 
 Astropedia is not directed at children under 13 (or the minimum age in your country) and we do not knowingly collect information from children. Since the app does not collect personal data at all, no child's data reaches us.
 
-## 10. Your rights
+## 11. Your rights
 
 Data protection laws such as India's Digital Personal Data Protection Act 2023 and the EU/UK GDPR give you rights to access, correct and erase personal data held about you. Because all your data is on your device and in your control, you can exercise these rights directly in the app (edit or delete profiles, delete all data). If you have a question, contact us at mondalarup808@gmail.com.
 
-## 11. Security
+## 12. Security
 
 Your data is protected by your device's own security (app sandboxing, device encryption, screen lock). Keep your phone locked and keep exported backup files private.
 
-## 12. Changes to this policy
+## 13. Changes to this policy
 
 If we change how the app handles data, we will update this policy and its effective date, and describe significant changes in the app's release notes. If the app ever starts collecting data, we will ask for your consent first where the law requires it.
 
-## 13. Contact
+## 14. Contact
 
-[legal name], [postal address], mondalarup808@gmail.com
-
-[Grievance officer for India, if required: name, email]
+Animesh Mondal, West Bengal, India, mondalarup808@gmail.com
