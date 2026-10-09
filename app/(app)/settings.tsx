@@ -26,7 +26,9 @@ import { intlLocale, localizeDigits, tSign } from '@/utils/i18n';
 import { getBigThree } from '@/utils/astrology';
 import { parseBackup, type ParsedBackup } from '@/utils/backup';
 import { deleteBackupFiles, exportBackup, pickBackupText, restoreBackup } from '@/utils/backup-io';
-import { getModelInfo, redownloadModel, useModelSetup } from '@/utils/model-download';
+import { getInstallMarker, getModelInfo, redownloadModel, useModelSetup } from '@/utils/model-download';
+import { useModelSwitch } from '@/utils/model-switch';
+import { FALLBACK_CATALOG, currentEntryId, switchActive, switchPercent } from '@/utils/model-catalog';
 import {
   ensureNotificationPermission,
   scheduleDailyHoroscope,
@@ -81,6 +83,15 @@ export default function SettingsScreen() {
   const modelReceived = useModelSetup((s) => s.received);
   const modelTotal    = useModelSetup((s) => s.total);
   const modelInfo     = getModelInfo();
+  const switchPhase    = useModelSwitch((s) => s.phase);
+  const switchReceived = useModelSwitch((s) => s.received);
+  const switchTotal    = useModelSwitch((s) => s.total);
+  const switching      = switchActive({ phase: switchPhase });
+  // A general model from the catalog shows its own name; Saga keeps "Saga v2.1".
+  const installedEntry = FALLBACK_CATALOG.find((e) => e.id === currentEntryId(FALLBACK_CATALOG, getInstallMarker()));
+  const modelName = installedEntry && installedEntry.adapter !== 'gemma21'
+    ? installedEntry.name
+    : t('model.name', { version: modelVersionLabel(modelInfo.version) });
 
   const toggleNotify = async (key: NotifyKey, next: boolean) => {
     const n = NOTIFY[key];
@@ -208,7 +219,7 @@ export default function SettingsScreen() {
   const handleRedownload = () => {
     showDialog({
       title:   t('model.redownloadTitle'),
-      message: t('model.redownloadMessage'),
+      message: t('model.redownloadMessage', { mb: localizeDigits(String(Math.round(modelInfo.bytes / 1_000_000))) }),
       actions: [
         { label: t('model.cancel'), style: 'cancel' },
         { label: t('model.redownload'), onPress: () => { redownloadModel().catch(() => {}); } },
@@ -241,6 +252,7 @@ export default function SettingsScreen() {
   // ─── Model ─────────────────────────────────────────────────────────────────
   const modelReady = modelPhase === 'ready';
   const modelStatus =
+    switching ? t('model.downloading', { pct: switchPercent({ phase: switchPhase, received: switchReceived, total: switchTotal }) }) :
     modelReady ? t('model.ready') :
     modelPhase === 'downloading' ? t('model.downloading', { pct: modelTotal ? Math.floor((modelReceived / modelTotal) * 100) : 0 }) :
     modelPhase === 'offline' ? t('model.offline') :
@@ -404,9 +416,7 @@ export default function SettingsScreen() {
               <Icon name="sparkle" size={16} color={theme.accent} />
             </View>
             <View style={styles.flex}>
-              <Text style={[styles.rowLabel, { color: theme.ink }]}>
-                {t('model.name', { version: modelVersionLabel(modelInfo.version) })}
-              </Text>
+              <Text style={[styles.rowLabel, { color: theme.ink }]}>{modelName}</Text>
               <Text style={[styles.rowSub, { color: theme.muted }]}>
                 {t('model.sub', { mb: localizeDigits(String(modelMb)) })}
               </Text>
@@ -419,11 +429,19 @@ export default function SettingsScreen() {
           {Platform.OS !== 'web' && (
             <View style={styles.pillRow}>
               <TouchableOpacity
-                onPress={handleRedownload}
-                disabled={!modelReady && modelPhase !== 'error' && modelPhase !== 'offline' && modelPhase !== 'no-space'}
+                onPress={() => router.push('/settings/model')}
                 style={[styles.pill, { borderColor: theme.hairline2 }]}
                 accessibilityRole="button"
-                accessibilityHint={t('model.redownloadMessage')}
+                accessibilityHint={t('model.changeSub')}
+              >
+                <Text style={[styles.pillText, { color: theme.ink }]}>{t('model.change')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleRedownload}
+                disabled={switching || (!modelReady && modelPhase !== 'error' && modelPhase !== 'offline' && modelPhase !== 'no-space')}
+                style={[styles.pill, { borderColor: theme.hairline2 }, switching && styles.rowDisabled]}
+                accessibilityRole="button"
+                accessibilityHint={t('model.redownloadTitle')}
               >
                 <Text style={[styles.pillText, { color: theme.ink }]}>{t('model.redownload')}</Text>
               </TouchableOpacity>

@@ -190,6 +190,20 @@ export const Storage = {
   getModelResume: (): string | null => getStorage().getString('model_resume_v1') ?? null,
   setModelResume: (json: string): void => getStorage().set('model_resume_v1', json),
   clearModelResume: (): void => getStorage().delete('model_resume_v1'),
+  // The model the user chose in Settings → Change model (a catalog id,
+  // utils/model-catalog.ts); absent = the default Saga track (the manifest's
+  // latest). Launches keep the chosen model installed.
+  getSelectedModel: (): string | null => getStorage().getString('model_selected_v1') ?? null,
+  setSelectedModel: (id: string | null): void => {
+    if (id) getStorage().set('model_selected_v1', id);
+    else getStorage().delete('model_selected_v1');
+  },
+  clearSelectedModel: (): void => getStorage().delete('model_selected_v1'),
+  // A model switch's chat / cache wipe that hasn't finished ({ "to": id }):
+  // written before the new install record, cleared after the wipe.
+  getModelSwitchWipe: (): string | null => getStorage().getString('model_switch_wipe_v1') ?? null,
+  setModelSwitchWipe: (json: string): void => getStorage().set('model_switch_wipe_v1', json),
+  clearModelSwitchWipe: (): void => getStorage().delete('model_switch_wipe_v1'),
   // The full-screen "Preparing Saga…" overlay owed after onboarding; kept
   // until the model is ready so a relaunch mid-download shows it again.
   getModelOverlayPending: (): boolean => getStorage().getBoolean('model_overlay_pending') ?? false,
@@ -205,6 +219,18 @@ export const Storage = {
         s.delete(key);
       }
     }
+  },
+
+  // What a model switch clears from MMKV (utils/model-catalog.ts
+  // MODEL_DERIVED_KEY_PREFIXES): chart readings, follow-up chips, horoscope
+  // caches and the per-thread unread markers of the deleted chats.
+  clearModelDerivedKeys: (isDerived: (key: string) => boolean): number => {
+    const s = getStorage();
+    let n = 0;
+    for (const key of s.keys()) {
+      if (isDerived(key)) { s.delete(key); n++; }
+    }
+    return n;
   },
 
   // Clear everything (used by reset)

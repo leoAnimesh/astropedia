@@ -1,0 +1,107 @@
+{
+  "_comment": "Selectable on-device models (Settings -> On-device model -> Change model). ml/scripts/publish_model.py copies this into manifest.json as `catalog`; utils/model-catalog.ts FALLBACK_CATALOG_RAW must list the same entries (a unit test compares them). Generic models are the react-native-executorch 0.10.x exports (tag v0.10.0, ExecuTorch 1.4.1 runtime), pinned by commit; sizes and sha256 are the Hugging Face LFS ids / hashes of the downloaded files.",
+  "catalog": [
+    {
+      "id": "astro-gemma-v21",
+      "name": "Astropedia Saga v2.1",
+      "descriptionKey": "saga",
+      "description": {
+        "en": "Astropedia's own model, trained for Vedic astrology answers in English, Hindi and Bengali. Small, fast and the most natural in Hindi and Bengali.",
+        "hi": "Astropedia का अपना मॉडल, अंग्रेज़ी, हिंदी और बांग्ला में वैदिक ज्योतिष के जवाबों के लिए प्रशिक्षित। छोटा, तेज़ और हिंदी-बांग्ला में सबसे स्वाभाविक।",
+        "bn": "Astropedia-র নিজস্ব মডেল, ইংরেজি, হিন্দি ও বাংলায় বৈদিক জ্যোতিষের উত্তরের জন্য প্রশিক্ষিত। ছোট, দ্রুত এবং হিন্দি-বাংলায় সবচেয়ে স্বাভাবিক।"
+      },
+      "adapter": "gemma21",
+      "contextVersion": 2,
+      "followups": true,
+      "chatFormat": "gemma",
+      "contextWindow": 2048,
+      "languages": { "en": "best", "hi": "best", "bn": "best" },
+      "minRamMB": 2048,
+      "recommended": true,
+      "license": { "id": "gemma", "name": "Gemma Terms of Use", "url": "https://ai.google.dev/gemma/terms" },
+      "repo": "leoanimesh/astropedia-models",
+      "revision": "795af230c4d4199eea1ca5830b1aa08c9473d0f1",
+      "files": [
+        { "path": "astro-gemma-v21/astro-gemma-tokenizer.json", "size": 3704810, "sha256": "9d972da479ac5de28b69039c3c32c991568c9f0bf9d44d0a62295a55fdc282a8", "role": "tokenizer" },
+        { "path": "astro-gemma-v21/astro-gemma.pte", "size": 195659264, "sha256": "82e842eb92ebdb8be2e90e111ba2a2f502334d504c2538b15a6b647fe3085e16", "role": "model" }
+      ]
+    },
+    {
+      "id": "qwen3-0.6b",
+      "name": "Qwen3 0.6B",
+      "descriptionKey": "qwen3_0_6b",
+      "description": {
+        "en": "A general-purpose model from the Qwen team. Good English; Hindi and Bengali replies are simpler than Saga's. Dates and safety checks still come from the app.",
+        "hi": "Qwen टीम का एक सामान्य मॉडल। अंग्रेज़ी अच्छी; हिंदी और बांग्ला जवाब सागा से सरल होते हैं। तारीख़ें और सुरक्षा जाँच अब भी ऐप ही करता है।",
+        "bn": "Qwen দলের একটি সাধারণ মডেল। ইংরেজি ভালো; হিন্দি ও বাংলা উত্তর সাগার চেয়ে সরল। তারিখ ও নিরাপত্তা যাচাই এখনও অ্যাপই করে।"
+      },
+      "adapter": "instruct",
+      "chatTemplate": "qwen3",
+      "contextWindow": 2048,
+      "languages": { "en": "good", "hi": "basic", "bn": "basic" },
+      "minRamMB": 3072,
+      "recommended": false,
+      "license": { "id": "apache-2.0", "name": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/LICENSE" },
+      "repo": "software-mansion/react-native-executorch-qwen-3",
+      "revision": "5004436bc2c31aeaeb272a1ea6e47bd7d91da95c",
+      "files": [
+        { "path": "tokenizer_config.json", "size": 8426, "sha256": "40baaad5ff41e28668add0a761c0e004fc7d79ff4b3c37e83762363f1cabae03", "role": "tokenizer_config" },
+        { "path": "tokenizer.json", "size": 11422654, "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4", "role": "tokenizer" },
+        { "path": "0_6b/xnnpack/qwen_3_0_6b_xnnpack_8da4w.pte", "size": 505686400, "sha256": "7f8ece3b8d24789be7742d25c312d415574e1efc3c4535ace83a564f3fb27aa0", "role": "model" }
+      ]
+    },
+    {
+      "id": "llama3.2-1b",
+      "name": "Llama 3.2 1B",
+      "descriptionKey": "llama3_2_1b",
+      "description": {
+        "en": "Meta's compact general model (SpinQuant). Clear English and decent Hindi; Bengali is weak. Dates and safety checks still come from the app.",
+        "hi": "Meta का छोटा सामान्य मॉडल (SpinQuant)। साफ़ अंग्रेज़ी और ठीक-ठाक हिंदी; बांग्ला कमज़ोर। तारीख़ें और सुरक्षा जाँच अब भी ऐप ही करता है।",
+        "bn": "Meta-র ছোট সাধারণ মডেল (SpinQuant)। পরিষ্কার ইংরেজি ও মোটামুটি হিন্দি; বাংলা দুর্বল। তারিখ ও নিরাপত্তা যাচাই এখনও অ্যাপই করে।"
+      },
+      "adapter": "instruct",
+      "chatTemplate": "llama3",
+      "contextWindow": 4096,
+      "languages": { "en": "good", "hi": "fair", "bn": "basic" },
+      "minRamMB": 4096,
+      "recommended": false,
+      "license": {
+        "id": "llama3.2",
+        "name": "Llama 3.2 Community License",
+        "url": "https://www.llama.com/llama3_2/license/",
+        "notice": "Built with Llama. Llama 3.2 is licensed under the Llama 3.2 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved."
+      },
+      "repo": "software-mansion/react-native-executorch-llama-3.2",
+      "revision": "79216107364ad9dcad8df0c24a2165aaa9c5cbda",
+      "files": [
+        { "path": "tokenizer_config.json", "size": 54528, "sha256": "1187bb662fc796b799e5035826bef5ce5c2b1aa3c193c0655d125e53a0cbb782", "role": "tokenizer_config" },
+        { "path": "tokenizer.json", "size": 9906781, "sha256": "0b9897f5668a5d202662c4bab2be785eb987daf194b557315a690f3d2dff1ce0", "role": "tokenizer" },
+        { "path": "1b/xnnpack/llama_3_2_1b_xnnpack_spinquant.pte", "size": 1135951488, "sha256": "998bf825f0990a4dad60fa2246f202011f76a297119811e2f717e0b787765710", "role": "model" }
+      ]
+    },
+    {
+      "id": "qwen3-1.7b",
+      "name": "Qwen3 1.7B",
+      "descriptionKey": "qwen3_1_7b",
+      "description": {
+        "en": "The larger Qwen model: fuller answers and better Hindi and Bengali than the 0.6B, but slower and only for phones with plenty of memory.",
+        "hi": "बड़ा Qwen मॉडल: 0.6B से भरे-पूरे जवाब और बेहतर हिंदी-बांग्ला, पर धीमा और सिर्फ़ ज़्यादा मेमोरी वाले फ़ोन के लिए।",
+        "bn": "বড় Qwen মডেল: 0.6B-র চেয়ে পূর্ণ উত্তর আর ভালো হিন্দি-বাংলা, তবে ধীর এবং শুধু বেশি মেমরির ফোনের জন্য।"
+      },
+      "adapter": "instruct",
+      "chatTemplate": "qwen3",
+      "contextWindow": 2048,
+      "languages": { "en": "good", "hi": "fair", "bn": "fair" },
+      "minRamMB": 6144,
+      "recommended": false,
+      "license": { "id": "apache-2.0", "name": "Apache 2.0", "url": "https://huggingface.co/Qwen/Qwen3-1.7B/blob/main/LICENSE" },
+      "repo": "software-mansion/react-native-executorch-qwen-3",
+      "revision": "5004436bc2c31aeaeb272a1ea6e47bd7d91da95c",
+      "files": [
+        { "path": "tokenizer_config.json", "size": 8426, "sha256": "40baaad5ff41e28668add0a761c0e004fc7d79ff4b3c37e83762363f1cabae03", "role": "tokenizer_config" },
+        { "path": "tokenizer.json", "size": 11422654, "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4", "role": "tokenizer" },
+        { "path": "1_7b/xnnpack/qwen_3_1_7b_xnnpack_8da4w.pte", "size": 1303738496, "sha256": "72890e735c1333552b6f0ea0db90bec60d403090f00295cb5ebc94264320022a", "role": "model" }
+      ]
+    }
+  ]
+}

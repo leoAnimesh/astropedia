@@ -22,6 +22,13 @@
  * suspended); for kills, it checkpoints NSURLSession resume data to MMKV every
  * CHECKPOINT_BYTES while in the foreground. Pure decisions live in
  * ./model-download-logic.ts (unit-tested).
+ *
+ * Model choice: Settings → Change model (utils/model-switch.ts) installs a
+ * model from the catalog (utils/model-catalog.ts; the manifest's `catalog`,
+ * files possibly in other Hugging Face repos, pinned by commit) through
+ * downloadForSwitch / commitSwitchedModel below. The choice is persisted
+ * (Storage model_selected_v1) and launches keep that model instead of
+ * following `latest`; setup never runs while a switch owns the models folder.
  */
 import { AppState, Platform, type AppStateStatus } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
@@ -30,14 +37,15 @@ import Constants from 'expo-constants';
 import { create } from 'zustand';
 import { Storage } from './storage';
 import { CHAT_FORMAT, CONTEXT_VERSION, MODEL_FOLLOWUPS } from './local-llm';
-import { setActiveAdapter } from './agent/adapters';
+import { configureExecuTorchRuntime, setActiveAdapter } from './agent/adapters';
 import {
-  INITIAL_SETUP_STATE, adapterOf, adapterRunnable, basename, classifyError, decideAfterError, errorMessage, isFailurePhase,
+  INITIAL_SETUP_STATE, adapterOf, adapterRunnable, basename, classifyError, decideAfterError, errorMessage, fileUrl, isFailurePhase,
   markerFor, markerMatchesSpec, markerUsable, parseManifest, planFileResume, reduceSetup,
   remainingBytes, resolveUrl, selectModel, spaceShortfall, totalBytes, verifyFile,
-  type AppModelCaps, type InstallMarker, type Manifest, type ModelFile, type ModelFileRole,
+  type AppModelCaps, type InstallMarker, type ModelFile, type ModelFileRole,
   type ModelSpec, type ResumePlan, type SavedResume, type Selection, type SetupEvent, type SetupState,
 } from './model-download-logic';
+import { resolveCatalog, selectedEntry, type CatalogEntry } from './model-catalog';
 
 // ─── Configuration (the one place to change hosting) ─────────────────────────
 
@@ -264,21 +272,47 @@ function appCaps(): AppModelCaps {
  */
 function activateInstalledAdapter(marker: InstallMarker): void {
   const id = adapterOf(marker, appCaps());
+  if (id === 'instruct') configureExecuTorchRuntime({ contextWindow: marker.contextWindow ?? null });
   const active = setActiveAdapter(id ?? 'unsupported');
   log('adapter', id ?? '(unknown)', '->', active);
 }
 
+export type InstalledModelFiles = {
+  model: string;
+  tokenizer: string;
+  /** tokenizer_config.json ('instruct' models: chat template + stop tokens). */
+  tokenizerConfig: string | null;
+  version: string;
+  adapter: string | null;
+  chatTemplate: string | null;
+  contextWindow: number | null;
+};
+
 /** Local file paths of the installed model, or null when not ready. */
-export async function getInstalledModelFiles(): Promise<{ model: string; tokenizer: string; version: string; adapter: string | null } | null> {
+export async function getInstalledModelFiles(): Promise<InstalledModelFiles | null> {
   if (!remoteEnabled || !isModelReady()) return null;
   const marker = readMarker();
   if (!marker) return null;
   const byRole = (role: ModelFileRole) => marker.files.find((f) => f.role === role)?.name;
   const model = byRole('model');
   const tokenizer = byRole('tokenizer');
+  const config = byRole('tokenizer_config');
   if (!model || !tokenizer) return null;
   const dir = docPath(versionDir(marker.version));
-  return { model: `${dir}/${model}`, tokenizer: `${dir}/${tokenizer}`, version: marker.version, adapter: adapterOf(marker, appCaps()) };
+  return {
+    model: `${dir}/${model}`,
+    tokenizer: `${dir}/${tokenizer}`,
+    tokenizerConfig: config ? `${dir}/${config}` : null,
+    version: marker.version,
+    adapter: adapterOf(marker, appCaps()),
+    chatTemplate: marker.chatTemplate ?? null,
+    contextWindow: marker.contextWindow ?? null,
+  };
+}
+
+/** The install record (Settings → model picker: which catalog entry is current). */
+export function getInstallMarker(): InstallMarker | null {
+  return readMarker();
 }
 
 /**
@@ -307,13 +341,14 @@ export async function awaitInstalledModelFiles(timeoutMs = 10_000): Promise<Awai
 
 // ─── Manifest ─────────────────────────────────────────────────────────────────
 
-async function fetchManifest(): Promise<Manifest | null> {
+/** The manifest JSON as fetched (null offline / on errors); parsed by the callers. */
+async function fetchManifestRaw(): Promise<unknown> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), MANIFEST_TIMEOUT_MS);
   try {
     const res = await fetch(MANIFEST_URL, { signal: ctrl.signal, headers: { 'Cache-Control': 'no-cache' } });
     if (!res.ok) return null;
-    return parseManifest(await res.json(), 'main');
+    return await res.json();
   } catch {
     return null;
   } finally {
@@ -321,8 +356,27 @@ async function fetchManifest(): Promise<Manifest | null> {
   }
 }
 
+/**
+ * The selectable models: the manifest's `catalog`, else the compiled-in one
+ * (utils/model-catalog.ts FALLBACK_CATALOG).
+ */
+export async function fetchCatalog(): Promise<{ entries: CatalogEntry[]; source: 'manifest' | 'fallback' }> {
+  return resolveCatalog(await fetchManifestRaw());
+}
+
+/**
+ * What setup should install / keep. A model the user chose in Settings
+ * (Storage model_selected_v1) wins while the catalog still lists it and this
+ * build can run it; otherwise the manifest's `latest` Saga (or the pinned one).
+ */
 async function selectTarget(): Promise<Selection> {
-  const sel = selectModel(await fetchManifest(), appCaps(), PINNED_MODEL);
+  const raw = await fetchManifestRaw();
+  const chosen = selectedEntry(resolveCatalog(raw).entries, Storage.getSelectedModel());
+  if (chosen && adapterRunnable(chosen.spec, appCaps())) {
+    log('selected', chosen.id, '(user choice)');
+    return { spec: chosen.spec, source: 'manifest', reason: 'user choice' };
+  }
+  const sel = selectModel(parseManifest(raw, 'main'), appCaps(), PINNED_MODEL);
   log('selected', sel.spec.version, `(${sel.source}: ${sel.reason})`);
   return sel;
 }
@@ -360,10 +414,25 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 let _running: Promise<void> | null = null;
+/** A Settings model switch owns the models folder (utils/model-switch.ts). */
+let _switching = false;
+
+/**
+ * Called by utils/model-switch.ts around a switch: waits out a setup run in
+ * progress, and keeps setup from starting until the switch ends.
+ */
+export async function beginModelSwitch(): Promise<void> {
+  _switching = true;
+  if (_running) await _running.catch(() => {});
+}
+
+export function endModelSwitch(): void {
+  _switching = false;
+}
 
 /** Idempotent: starts setup unless it is running; resolves when it stops. */
 export function startModelSetup(): Promise<void> {
-  if (!remoteEnabled) return Promise.resolve();
+  if (!remoteEnabled || _switching) return Promise.resolve();
   if (_running) return _running;
   _running = run()
     .catch((e) => {
@@ -401,7 +470,7 @@ export function getModelInfo(): ModelInfo {
  * answers and wait for the model meanwhile.
  */
 export async function redownloadModel(): Promise<void> {
-  if (!remoteEnabled) return;
+  if (!remoteEnabled || _switching) return;
   if (_running) await _running.catch(() => {});
   try {
     await (require('./local-llm') as typeof import('./local-llm')).unloadLocalLLM();
@@ -432,7 +501,11 @@ async function run(): Promise<void> {
       // It takes effect the next time the model loads; the old files go at
       // the next launch (they may be open in the runner now).
       const sel = await selectTarget();
-      if (sel.spec.version !== marker.version && !markerMatchesSpec(marker, sel.spec)) {
+      // Only a newer build of the same kind of model updates silently: a
+      // different model (a user's switch) goes through Settings, which
+      // clears the chats the old model wrote.
+      const sameKind = adapterOf(sel.spec, caps) === adapterOf(marker, caps);
+      if (sameKind && sel.spec.version !== marker.version && !markerMatchesSpec(marker, sel.spec)) {
         await cleanupVersions([marker.version, sel.spec.version]);
         await installWithRetries(sel, true);
       } else {
@@ -501,6 +574,8 @@ async function installWithRetries(initial: Selection, silent: boolean): Promise<
         case 'fallback-pinned':
           if (silent) return false; // the installed model keeps working
           sel = { spec: PINNED_MODEL, source: 'pinned', reason: 'manifest model unavailable' };
+          // A chosen model that can't be fetched any more: back to Saga for good.
+          Storage.clearSelectedModel();
           attempt = 0;
           await cleanupVersions([PINNED_MODEL.version]);
           continue;
@@ -568,7 +643,23 @@ type FileJob = {
   have: number;
 };
 
-async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<void> {
+/**
+ * Cancels a download from outside (Settings model switch). The running
+ * DownloadTask is cancelled; the download rejects with a "cancelled" error.
+ */
+export type DownloadControl = {
+  cancelled: boolean;
+  task: DownloadTask | null;
+  /** iOS resume checkpoints (setup only; a switch download starts over after a kill). */
+  checkpoints: boolean;
+};
+
+export class DownloadCancelledError extends Error {
+  constructor() { super('download cancelled'); this.name = 'AbortError'; }
+}
+
+/** Plan each file of `spec`: what is already on disk, and how to resume the rest. */
+async function prepareJobs(spec: ModelSpec, resumable: boolean): Promise<FileJob[]> {
   const dir = versionDir(spec.version);
   await ensureDir(dir);
   await excludeFromBackup(MODELS_DIR);
@@ -582,12 +673,12 @@ async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<voi
     }
   } catch { /* ignore */ }
 
-  // Small file first so the big one's progress dominates the bar.
+  // Small files first so the big one's progress dominates the bar.
   const files = [...spec.files].sort((a, b) => a.size - b.size);
   const jobs: FileJob[] = [];
   for (const file of files) {
     const name = basename(file.path);
-    const url = resolveUrl(HF_BASE, HF_REPO, spec.revision, file.path);
+    const url = fileUrl(HF_BASE, HF_REPO, spec, file);
     const finalPath = docPath(`${dir}/${name}`);
     const partRel = `${dir}/${name}.part`;
     const partPath = docPath(partRel);
@@ -599,55 +690,80 @@ async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<voi
     if (finalSize != null) await unlinkQuiet(finalPath);
     const plan = planFileResume({
       platform, expectedSize: file.size, partialSize: await sizeOf(partPath),
-      saved: readResume(), url, version: spec.version, name,
+      saved: resumable ? readResume() : null, url, version: spec.version, name,
     });
     if (plan.kind === 'fresh') {
       if (plan.deletePartial) await unlinkQuiet(partPath);
-      if (plan.dropSaved) Storage.clearModelResume();
+      if (plan.dropSaved && resumable) Storage.clearModelResume();
     }
     const have = plan.kind === 'complete' ? file.size : plan.kind === 'resume' ? plan.from : 0;
     jobs.push({ file, name, url, finalPath, partRel, partPath, atFinal: false, plan, have });
   }
+  return jobs;
+}
 
+/** Throws NoSpaceError unless the rest of the download fits (with headroom). */
+function checkSpace(jobs: FileJob[]): void {
   const shortfall = spaceShortfall(
     remainingBytes(jobs.map((j) => ({ size: j.file.size, have: j.have }))),
     availableSpace(),
   );
   if (shortfall > 0) throw new NoSpaceError(shortfall);
+}
 
-  const total = totalBytes(spec);
-  if (!silent) dispatch({ type: 'download-start', version: spec.version, received: jobs.reduce((n, j) => n + j.have, 0), total });
-
+/** Download every job not yet complete; `onReceived` gets bytes across all files. */
+async function fetchJobs(version: string, jobs: FileJob[], onReceived: (bytes: number) => void, ctl?: DownloadControl): Promise<void> {
   let done = 0;
   for (const job of jobs) {
+    if (ctl?.cancelled) throw new DownloadCancelledError();
     if (job.plan.kind !== 'complete') {
       const base = done;
-      await downloadOne(spec.version, job, (bytes) => {
-        if (!silent) dispatch({ type: 'progress', received: base + bytes });
-      });
+      await downloadOne(version, job, (bytes) => onReceived(base + bytes), ctl);
     }
     done += job.file.size;
-    if (!silent) dispatch({ type: 'progress', received: done });
+    onReceived(done);
   }
+}
 
-  // Verify everything before anything is committed.
-  if (!silent) dispatch({ type: 'verify' });
+/** Size + SHA-256 of every file; a bad one is deleted and the whole set rejected. */
+async function verifyJobs(jobs: FileJob[], ctl?: DownloadControl): Promise<void> {
   for (const job of jobs) {
+    if (ctl?.cancelled) throw new DownloadCancelledError();
     const path = job.atFinal ? job.finalPath : job.partPath;
     const size = await sizeOf(path);
     const sha256 = size === job.file.size ? await fs.hash(path, 'sha256') : null;
     const result = verifyFile(job.file, { size, sha256 });
     if (result !== 'ok') {
       await unlinkQuiet(path);
-      Storage.clearModelResume();
+      if (!ctl) Storage.clearModelResume();
       throw new Error(`verification failed for ${job.name}: ${result}`);
     }
   }
+}
+
+/** Verified .part files to their final names. */
+async function promoteJobs(jobs: FileJob[]): Promise<void> {
   for (const job of jobs) {
     if (job.atFinal) continue;
     await unlinkQuiet(job.finalPath);
     await fs.mv(job.partPath, job.finalPath);
   }
+}
+
+async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<void> {
+  const jobs = await prepareJobs(spec, true);
+  checkSpace(jobs);
+
+  const total = totalBytes(spec);
+  if (!silent) dispatch({ type: 'download-start', version: spec.version, received: jobs.reduce((n, j) => n + j.have, 0), total });
+  await fetchJobs(spec.version, jobs, (received) => {
+    if (!silent) dispatch({ type: 'progress', received });
+  });
+
+  // Verify everything before anything is committed.
+  if (!silent) dispatch({ type: 'verify' });
+  await verifyJobs(jobs);
+  await promoteJobs(jobs);
 
   const marker = markerFor(spec, new Date());
   Storage.setModelInstall(JSON.stringify(marker));
@@ -661,22 +777,110 @@ async function downloadAndInstall(spec: ModelSpec, silent: boolean): Promise<voi
   dispatch({ type: 'ready', version: spec.version });
   // Old versions are deleted now on first install (nothing has them open).
   await cleanupVersions([spec.version]);
-  // Warm the model so the first chart reading / chat doesn't wait on it (and
-  // so screens waiting on the LLM state re-run). Finished in the background:
-  // warm it when the app comes back, not while suspended.
+  warmModel();
+}
+
+/**
+ * Warm the model so the first chart reading / chat doesn't wait on it (and
+ * so screens waiting on the LLM state re-run). Finished in the background:
+ * warm it when the app comes back, not while suspended.
+ */
+function warmModel(): void {
   waitForForeground().then(() => {
     (require('./local-llm') as typeof import('./local-llm')).initLocalLLM().catch(() => {});
   });
 }
 
+// ─── Settings model switch (utils/model-switch.ts drives these) ──────────────
+
+export { NoSpaceError };
+
+/**
+ * Download and verify `spec` into models/<version>/ next to the installed
+ * model, without touching it or its install record. Throws NoSpaceError,
+ * DownloadCancelledError (ctl.cancelled), network / HTTP errors or
+ * "verification failed"; partial files are kept for a retry.
+ */
+export async function downloadForSwitch(
+  spec: ModelSpec,
+  ctl: DownloadControl,
+  on: { start: (received: number, total: number) => void; progress: (received: number) => void; verify: () => void },
+): Promise<void> {
+  if (!remoteEnabled) throw new Error('on-device models are not available here');
+  const jobs = await prepareJobs(spec, false);
+  checkSpace(jobs);
+  on.start(jobs.reduce((n, j) => n + j.have, 0), totalBytes(spec));
+  await fetchJobs(spec.version, jobs, on.progress, ctl);
+  if (ctl.cancelled) throw new DownloadCancelledError();
+  on.verify();
+  await verifyJobs(jobs, ctl);
+  if (ctl.cancelled) throw new DownloadCancelledError();
+  await promoteJobs(jobs);
+}
+
+/**
+ * The commit of a switch: unloads the running model, writes the new install
+ * record (from here on the new model is the installed one), activates its
+ * adapter, deletes every other version's files and warms the new model.
+ * `spec` must have been through downloadForSwitch.
+ */
+export async function commitSwitchedModel(spec: ModelSpec): Promise<void> {
+  try {
+    await (require('./local-llm') as typeof import('./local-llm')).unloadLocalLLM();
+  } catch { /* not loaded */ }
+  const marker = markerFor(spec, new Date());
+  Storage.setModelInstall(JSON.stringify(marker));
+  Storage.clearModelResume();
+  activateInstalledAdapter(marker);
+  useModelSetup.setState({ ...INITIAL_SETUP_STATE, phase: 'ready', version: spec.version, received: totalBytes(spec), total: totalBytes(spec) });
+  dismissModelOverlay();
+  await cleanupVersions([spec.version]);
+  log('switched to', spec.version);
+}
+
+/** Warm the switched-to model (after the switch's wipe, so screens re-run on fresh caches). */
+export function warmSwitchedModel(): void {
+  warmModel();
+}
+
+/** Remove a cancelled / failed switch's partial files (the installed model's folder is kept). */
+export async function discardSwitchDownload(version: string): Promise<void> {
+  const installed = readMarker()?.version;
+  if (version === installed) return;
+  await unlinkQuiet(docPath(versionDir(version)));
+}
+
+/** Free bytes on the data partition, or null when unknown. */
+export function freeDiskBytes(): number | null {
+  return availableSpace();
+}
+
 /** One file into its .part path, resuming per job.plan. Resolves when complete. */
-async function downloadOne(version: string, job: FileJob, onBytes: (bytes: number) => void): Promise<void> {
+async function downloadOne(version: string, job: FileJob, onBytes: (bytes: number) => void, ctl?: DownloadControl): Promise<void> {
   const dest = new File(docUri(job.partRel));
   const isIOS = Platform.OS === 'ios';
   let lastCheckpoint = job.plan.kind === 'resume' ? job.plan.from : 0;
   let checkpointing = false;
-  let checkpointsWork = true;
+  let checkpointsWork = ctl ? ctl.checkpoints : true;
   let task: DownloadTask;
+  // Register each task with the controller; a cancel requested meanwhile stops it at once.
+  const track = (t: DownloadTask): DownloadTask => {
+    if (ctl) {
+      ctl.task = t;
+      if (ctl.cancelled) { try { t.cancel(); } catch { /* not started */ } }
+    }
+    return t;
+  };
+  const guard = async (p: Promise<File | null>): Promise<File | null> => {
+    try {
+      const r = await p;
+      if (ctl?.cancelled) throw new DownloadCancelledError();
+      return r;
+    } catch (e) {
+      if (ctl?.cancelled) throw new DownloadCancelledError();
+      throw e;
+    }
+  };
 
   const options = {
     sessionType: 'background' as const,
@@ -694,25 +898,25 @@ async function downloadOne(version: string, job: FileJob, onBytes: (bytes: numbe
     },
   };
 
-  const fresh = () => File.createDownloadTask(job.url, dest, options);
+  const fresh = () => track(File.createDownloadTask(job.url, dest, options));
   let result: File | null;
   if (job.plan.kind === 'resume') {
-    task = DownloadTask.fromSavable(
+    task = track(DownloadTask.fromSavable(
       { url: job.url, fileUri: dest.uri, isDirectory: false, resumeData: job.plan.resumeData },
       options,
-    );
+    ));
     try {
-      result = await task.resumeAsync();
+      result = await guard(task.resumeAsync());
     } catch (e) {
       // Stale iOS resume data (expired redirect, purged temp file) would fail
       // the same way forever; drop it so the retry starts over. Keep it when
       // the network was simply down.
-      if (isIOS && classifyError(e) !== 'network') Storage.clearModelResume();
+      if (!ctl && isIOS && classifyError(e) !== 'network') Storage.clearModelResume();
       throw e;
     }
   } else {
     task = fresh();
-    result = await task.downloadAsync();
+    result = await guard(task.downloadAsync());
   }
 
   // null = paused for a checkpoint.
@@ -724,7 +928,7 @@ async function downloadOne(version: string, job: FileJob, onBytes: (bytes: numbe
       Storage.setModelResume(JSON.stringify({
         version, name: job.name, url: job.url, resumeData: saved, bytes: lastCheckpoint,
       } satisfies SavedResume));
-      result = await task.resumeAsync();
+      result = await guard(task.resumeAsync());
     } else {
       // The server gave no resume data: stop checkpointing and start over
       // (only the bytes since the start are lost, once).
@@ -732,8 +936,9 @@ async function downloadOne(version: string, job: FileJob, onBytes: (bytes: numbe
       checkpointsWork = false;
       Storage.clearModelResume();
       task = fresh();
-      result = await task.downloadAsync();
+      result = await guard(task.downloadAsync());
     }
   }
-  if (isIOS) Storage.clearModelResume();
+  if (isIOS && !ctl) Storage.clearModelResume();
+  if (ctl) ctl.task = null;
 }

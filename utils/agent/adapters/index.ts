@@ -20,7 +20,10 @@ import { Platform } from 'react-native';
 import { renderTemplate } from './template';
 import { gemma21Adapter } from './gemma21';
 import { createInstructAdapter, type LLMRuntime, type InstructOptions } from './instruct';
+import { executorchRuntime } from './executorch-runtime';
 import type { AdapterId, AdapterTask, ModelAdapter } from './types';
+
+export { configureExecuTorchRuntime } from './executorch-runtime';
 
 /** No model at all: answers only what the plan can say by itself; ready() is false so the pipeline never waits on it. */
 export const templateAdapter: ModelAdapter = {
@@ -44,13 +47,18 @@ export const ADAPTERS: Record<AdapterId, ModelAdapter> = {
 
 /**
  * Plug an inference engine in for the 'instruct' adapter (see ./instruct.ts).
- * Nothing in this build registers one.
+ * iOS / Android register react-native-executorch (./executorch-runtime.ts)
+ * below, so a downloaded general instruct model (Settings → Change model)
+ * runs through the same native runner as Saga.
  */
 export function registerRuntime(runtime: LLMRuntime | null, options?: InstructOptions): void {
   ADAPTERS.instruct = createInstructAdapter(runtime, options);
   runtimeRegistered = !!runtime;
 }
 let runtimeRegistered = false;
+
+// Web has no on-device model.
+if (Platform.OS !== 'web') registerRuntime(executorchRuntime);
 
 /** Adapters with a working implementation in this build (keep RUNNABLE_ADAPTERS in model-download-logic.ts in step). */
 export function isRunnableAdapter(id: string | null | undefined): id is AdapterId {

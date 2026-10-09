@@ -13,7 +13,8 @@
  *  - 'template' no model: the TemplateRenderer (./template.ts and
  *               ./template-reading.ts);
  *  - 'instruct' a general instruction-following model behind a pluggable
- *               LLMRuntime (./instruct.ts; no runtime ships in this build).
+ *               LLMRuntime (./instruct.ts; react-native-executorch on device,
+ *               ./executorch-runtime.ts, with the model's own chat template).
  * The installed model's manifest entry names its adapter (ModelSpec.adapter,
  * utils/model-download-logic.ts); utils/model-download.ts activates it once
  * the install is verified.

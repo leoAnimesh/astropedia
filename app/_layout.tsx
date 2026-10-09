@@ -29,6 +29,7 @@ import { useOnboardingStore } from '@/stores/onboarding-store';
 import { OverlayProvider, showDialog } from '@/components/overlays';
 import { unloadLocalLLM } from '@/utils/local-llm';
 import { handleModelAppState, startModelSetup, useModelSetup } from '@/utils/model-download';
+import { resumePendingModelSwitch } from '@/utils/model-switch';
 import { ModelSetupOverlay } from '@/components/overlays/ModelSetupOverlay';
 import { setupNotifications, refreshScheduledNotifications } from '@/utils/notifications';
 
@@ -69,6 +70,9 @@ export default function RootLayout() {
     async function bootstrap() {
       try {
         await initDatabase();
+        // A model switch killed between its commit and its chat wipe: finish
+        // the wipe before the stores load the old chats.
+        await resumePendingModelSwitch().catch(() => {});
         // Existing chats were just regrouped by guru (schema v7): the Chat
         // tab owes a one-time explanation. Never on fresh installs.
         if (chatsMovedToGurus() && !Storage.getGuruNoticeSeen()) Storage.setGuruNoticePending(true);
@@ -246,6 +250,7 @@ export default function RootLayout() {
           <Stack.Screen name="report/[kind]" />
           <Stack.Screen name="report/pair" />
           <Stack.Screen name="archived" />
+          <Stack.Screen name="settings/model" />
         </Stack.Protected>
       </Stack>
 

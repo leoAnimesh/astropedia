@@ -9,7 +9,11 @@
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ModelFileRole = 'model' | 'tokenizer';
+/**
+ * 'tokenizer_config' is the Hugging Face tokenizer_config.json (chat template
+ * + stop tokens); 'instruct' models need it, astro-gemma doesn't.
+ */
+export type ModelFileRole = 'model' | 'tokenizer' | 'tokenizer_config';
 
 export type ModelFile = {
   /** Path inside the Hugging Face repo, e.g. "astro-gemma-v21/astro-gemma.pte". */
@@ -18,6 +22,13 @@ export type ModelFile = {
   /** Lowercase hex SHA-256 of the file. */
   sha256: string;
   role: ModelFileRole;
+  /**
+   * Hugging Face repo ("owner/name") the file lives in when it isn't the
+   * app's own model repo (catalog models published by other orgs).
+   */
+  repo?: string;
+  /** Commit the file is fetched from when it differs from the spec's `revision`. */
+  revision?: string;
 };
 
 export type ModelSpec = {
@@ -39,14 +50,23 @@ export type ModelSpec = {
    * + chatFormat. A build only installs models whose adapter it can run.
    */
   adapter?: string;
+  /**
+   * 'instruct' models: the chat template family ("qwen3", "llama3", ...).
+   * The template itself comes from the model's tokenizer_config.json; this
+   * names quirks the app handles (qwen3: thinking switched off).
+   */
+  chatTemplate?: string;
+  /** Prompt + reply budget in tokens ('instruct' models; gemma21 uses CONTEXT_WINDOW). */
+  contextWindow?: number;
   files: ModelFile[];
 };
 
 /**
  * Adapters this build can run a downloaded model with (utils/agent/adapters/index.ts
- * isRunnableAdapter; 'instruct' joins once a build registers an LLMRuntime).
+ * isRunnableAdapter). 'instruct' runs on react-native-executorch through
+ * utils/agent/adapters/executorch-runtime.ts (registered on iOS / Android).
  */
-export const RUNNABLE_ADAPTERS: readonly string[] = ['gemma21'];
+export const RUNNABLE_ADAPTERS: readonly string[] = ['gemma21', 'instruct'];
 /** The adapter of a model entry / install without an explicit `adapter` that matches this build's format. */
 export const DEFAULT_ADAPTER = 'gemma21';
 
@@ -86,6 +106,9 @@ export type AppModelCaps = {
 // ─── Manifest ─────────────────────────────────────────────────────────────────
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
+/** Hugging Face repo id: "owner/name". */
+export const REPO_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const REVISION_RE = /^[A-Za-z0-9._-]+$/;
 // Repo-relative path: no leading slash, no "..", no URL syntax.
 const PATH_RE = /^(?!\/)(?!.*\.\.)[A-Za-z0-9._\-/]+$/;
 const NAME_RE = /^[A-Za-z0-9._-]+$/;
@@ -102,19 +125,66 @@ export function basename(path: string): string {
 function inferRole(path: string): ModelFileRole | null {
   const name = basename(path).toLowerCase();
   if (name.endsWith('.pte')) return 'model';
+  if (name === 'tokenizer_config.json') return 'tokenizer_config';
   if (name.includes('tokenizer') && name.endsWith('.json')) return 'tokenizer';
   return null;
 }
 
+const ROLES: readonly ModelFileRole[] = ['model', 'tokenizer', 'tokenizer_config'];
+
+/**
+ * "https://huggingface.co/<owner>/<name>/resolve/<revision>/<path>" split into
+ * its parts; null for anything else (other hosts are never downloaded from).
+ */
+export function parseHfUrl(url: string, base = 'https://huggingface.co'): { repo: string; revision: string; path: string } | null {
+  const prefix = `${base.replace(/\/+$/, '')}/`;
+  if (!url.startsWith(prefix)) return null;
+  const m = /^([^/]+\/[^/]+)\/resolve\/([^/]+)\/(.+)$/.exec(url.slice(prefix.length).split(/[?#]/)[0]);
+  if (!m) return null;
+  let path: string;
+  let revision: string;
+  try { path = m[3].split('/').map(decodeURIComponent).join('/'); revision = decodeURIComponent(m[2]); } catch { return null; }
+  if (!REPO_RE.test(m[1]) || !REVISION_RE.test(revision) || !PATH_RE.test(path)) return null;
+  return { repo: m[1], revision, path };
+}
+
 function parseFile(raw: unknown): ModelFile | null {
   if (!isObj(raw)) return null;
-  const { path, size, sha256 } = raw;
+  const { size, sha256 } = raw;
+  let { path } = raw;
+  let repo: string | undefined;
+  let revision: string | undefined;
+  if (typeof raw.url === 'string') {
+    const u = parseHfUrl(raw.url);
+    if (!u) return null;
+    ({ path, repo, revision } = u);
+  } else {
+    if (raw.repo !== undefined) {
+      if (typeof raw.repo !== 'string' || !REPO_RE.test(raw.repo)) return null;
+      repo = raw.repo;
+    }
+    if (raw.revision !== undefined) {
+      if (typeof raw.revision !== 'string' || !REVISION_RE.test(raw.revision)) return null;
+      revision = raw.revision;
+    }
+  }
   if (typeof path !== 'string' || !PATH_RE.test(path)) return null;
   if (typeof size !== 'number' || !Number.isSafeInteger(size) || size <= 0) return null;
   if (typeof sha256 !== 'string' || !SHA256_RE.test(sha256.toLowerCase())) return null;
-  const role = raw.role === 'model' || raw.role === 'tokenizer' ? raw.role : inferRole(path);
+  const role = (ROLES as readonly unknown[]).includes(raw.role) ? raw.role as ModelFileRole : inferRole(path);
   if (!role) return null;
-  return { path, size, sha256: sha256.toLowerCase(), role };
+  return { path, size, sha256: sha256.toLowerCase(), role, ...(repo ? { repo } : {}), ...(revision ? { revision } : {}) };
+}
+
+/**
+ * The file set a model needs: exactly one model and one tokenizer, at most
+ * one tokenizer_config (required for 'instruct'), distinct local names.
+ */
+export function filesValid(files: ModelFile[], adapter?: string): boolean {
+  const count = (r: ModelFileRole) => files.filter((f) => f.role === r).length;
+  if (count('model') !== 1 || count('tokenizer') !== 1 || count('tokenizer_config') > 1) return false;
+  if (adapter === 'instruct' && count('tokenizer_config') !== 1) return false;
+  return new Set(files.map((f) => basename(f.path))).size === files.length;
 }
 
 /**
@@ -130,10 +200,8 @@ export function parseModelSpec(version: string, raw: unknown, defaultRevision: s
     if (!parsed) return null;
     files.push(parsed);
   }
-  const roles = files.map((f) => f.role);
-  if (roles.filter((r) => r === 'model').length !== 1) return null;
-  if (roles.filter((r) => r === 'tokenizer').length !== 1) return null;
-  if (new Set(files.map((f) => basename(f.path))).size !== files.length) return null;
+  const adapterRaw = typeof raw.adapter === 'string' && NAME_RE.test(raw.adapter) ? raw.adapter : undefined;
+  if (!filesValid(files, adapterRaw)) return null;
   if (typeof raw.contextVersion !== 'number' || !Number.isInteger(raw.contextVersion)) return null;
   if (typeof raw.followups !== 'boolean') return null;
   const revision = typeof raw.revision === 'string' && /^[A-Za-z0-9._-]+$/.test(raw.revision)
@@ -141,13 +209,18 @@ export function parseModelSpec(version: string, raw: unknown, defaultRevision: s
     : defaultRevision;
   const chatFormat = typeof raw.chatFormat === 'string' ? raw.chatFormat : 'gemma';
   const minAppVersion = typeof raw.minAppVersion === 'string' ? raw.minAppVersion : undefined;
-  const adapter = typeof raw.adapter === 'string' && NAME_RE.test(raw.adapter) ? raw.adapter : undefined;
+  const adapter = adapterRaw;
+  const chatTemplate = typeof raw.chatTemplate === 'string' && NAME_RE.test(raw.chatTemplate) ? raw.chatTemplate : undefined;
+  const contextWindow = typeof raw.contextWindow === 'number' && Number.isInteger(raw.contextWindow) && raw.contextWindow >= 512
+    ? raw.contextWindow : undefined;
   return {
     version, revision, files, chatFormat,
     contextVersion: raw.contextVersion,
     followups: raw.followups,
     ...(minAppVersion ? { minAppVersion } : {}),
     ...(adapter ? { adapter } : {}),
+    ...(chatTemplate ? { chatTemplate } : {}),
+    ...(contextWindow ? { contextWindow } : {}),
   };
 }
 
@@ -176,6 +249,13 @@ export function compareVersions(a: string, b: string): number {
 /** Why a model can't run in this build, or null when it can. */
 export function incompatibility(spec: ModelSpec, caps: AppModelCaps): string | null {
   if (spec.adapter && !RUNNABLE_ADAPTERS.includes(spec.adapter)) return `adapter ${spec.adapter} not in this build`;
+  // A general instruct model is driven by a plain-language prompt: the
+  // gemma21 training format (context version, chat format, chips) is moot.
+  if (spec.adapter === 'instruct') {
+    if (!spec.files.some((f) => f.role === 'tokenizer_config')) return 'instruct model without tokenizer_config';
+    if (spec.minAppVersion && compareVersions(caps.appVersion, spec.minAppVersion) < 0) return `needs app >= ${spec.minAppVersion}`;
+    return null;
+  }
   if (spec.contextVersion !== caps.contextVersion) return `contextVersion ${spec.contextVersion} != ${caps.contextVersion}`;
   if (caps.usesFollowups && !spec.followups) return 'app needs followups';
   if (spec.chatFormat !== caps.chatFormat) return `chatFormat ${spec.chatFormat} != ${caps.chatFormat}`;
@@ -213,6 +293,11 @@ export function totalBytes(spec: ModelSpec): number {
 export function resolveUrl(base: string, repo: string, revision: string, path: string): string {
   const enc = path.split('/').map(encodeURIComponent).join('/');
   return `${base.replace(/\/+$/, '')}/${repo}/resolve/${encodeURIComponent(revision)}/${enc}`;
+}
+
+/** Download URL of one file of a spec: its own repo / revision, else the app repo and the spec's revision. */
+export function fileUrl(base: string, defaultRepo: string, spec: Pick<ModelSpec, 'revision'>, file: ModelFile): string {
+  return resolveUrl(base, file.repo ?? defaultRepo, file.revision ?? spec.revision, file.path);
 }
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
@@ -305,6 +390,9 @@ export type InstallMarker = {
   installedAt: string;
   /** Adapter that drives this install (ModelSpec.adapter); absent in markers written before adapters. */
   adapter?: string;
+  /** ModelSpec.chatTemplate / contextWindow ('instruct' installs). */
+  chatTemplate?: string;
+  contextWindow?: number;
 };
 
 export function markerFor(spec: ModelSpec, now: Date): InstallMarker {
@@ -316,6 +404,8 @@ export function markerFor(spec: ModelSpec, now: Date): InstallMarker {
     chatFormat: spec.chatFormat,
     installedAt: now.toISOString(),
     ...(spec.adapter ? { adapter: spec.adapter } : {}),
+    ...(spec.chatTemplate ? { chatTemplate: spec.chatTemplate } : {}),
+    ...(spec.contextWindow ? { contextWindow: spec.contextWindow } : {}),
   };
 }
 
@@ -334,6 +424,11 @@ export function markerUsable(
   // An install this build has no adapter for (an app downgrade, a newer model
   // family) is not used: setup installs a supported model instead.
   if (marker.adapter && !RUNNABLE_ADAPTERS.includes(marker.adapter)) return false;
+  if (!marker.files.some((f) => f.role === 'model') || !marker.files.some((f) => f.role === 'tokenizer')) return false;
+  if (marker.adapter === 'instruct') {
+    if (!marker.files.some((f) => f.role === 'tokenizer_config')) return false;
+    return marker.files.every((f) => sizesOnDisk[f.name] === f.size);
+  }
   if (marker.contextVersion !== caps.contextVersion) return false;
   if (caps.usesFollowups && !marker.followups) return false;
   if ((marker.chatFormat ?? 'gemma') !== caps.chatFormat) return false;

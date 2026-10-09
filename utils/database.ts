@@ -371,6 +371,20 @@ export async function clearAllData(): Promise<void> {
   );
 }
 
+/**
+ * A model switch (utils/model-switch.ts): deletes every chat thread and
+ * message (all gurus, Krishna, archived ones) and the cached report text, in
+ * one transaction. Profiles, journal, saved answers and report reading
+ * progress stay. `statements` = utils/model-catalog.ts MODEL_SWITCH_WIPE_SQL.
+ */
+export async function clearChatsAndModelText(statements: readonly string[]): Promise<void> {
+  const run = async (conn: SQLite.SQLiteDatabase) => {
+    for (const sql of statements) await conn.execAsync(sql);
+  };
+  if (Platform.OS === 'web') await db.withTransactionAsync(() => run(db));
+  else await db.withExclusiveTransactionAsync((txn) => run(txn));
+}
+
 // ─── Backup / restore ─────────────────────────────────────────────────────────
 
 /** Raw rows of the given tables, for utils/backup.ts to serialize. */

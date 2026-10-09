@@ -5,7 +5,7 @@
  * AnswerPlan is written out as a plain system prompt, so a new model needs a
  * runtime, not new astrology.
  *
- * Plugging in a runtime (no native code ships for one in this build):
+ * Plugging in a runtime (react-native-executorch ships as ./executorch-runtime.ts):
  *  1. implement LLMRuntime (below) over the engine's API: `ready` loads the
  *     weights, `generate` streams tokens through `onToken` (return true from
  *     it to stop) and resolves with the full text;
@@ -19,6 +19,12 @@
  * rule needs re-implementing. Model-bound text is always in Western digits;
  * the pipeline localizes the reply for display.
  *
+ * hi / bn: every prompt carries scriptRule(), and chat replies run through
+ * the shared script / repetition guard (runGuarded) like Saga's; readings
+ * keep their script check with retry. General models still write plainer
+ * Hindi / Bengali than the fine-tune (the catalog says so); dates and the
+ * doctor / lawyer lines are guaranteed by the pipeline either way.
+ *
  * Pure: no React Native imports (the runtime brings its own).
  */
 import type { AnswerPlan } from '../plan';
@@ -26,7 +32,9 @@ import { AREA, HELPS, monthLabel, type Lang } from '../strings';
 import { getAstrologyContext, getFullKundli } from '../../astrology';
 import { pickGitaVerse, formatGitaQuote } from '../../gita';
 import { parseModelFollowUps, followUpTurns, FOLLOWUPS_MAX_TOKENS } from '../../follow-ups';
-import { NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, readingScriptRatio, westernDigits } from '../../reply-guards';
+import {
+  NATIVE_SCRIPT_MIN, RETRY_TEMPERATURE, readingScriptRatio, runGuarded, westernDigits, type ReplyGuard,
+} from '../../reply-guards';
 import type {
   AdapterCaps, ChatTurn, FollowUpsRequest, ModelAdapter, ReadingRequest, ReadingResult, RenderRequest, TitleRequest,
 } from './types';
@@ -72,16 +80,76 @@ export type InstructOptions = {
   temperature?: number;
 };
 
+/**
+ * Drops "<think> … </think>" reasoning a model may still emit (Qwen3 is
+ * prompted with an empty think block, but a small model can open one anyway),
+ * streaming everything else through as it arrives.
+ */
+export function createThinkFilter(emit: (text: string) => void) {
+  let buf = '';
+  let inThink = false;
+  const OPEN = '<think>';
+  const CLOSE = '</think>';
+  const flushSafe = (final: boolean) => {
+    for (;;) {
+      if (inThink) {
+        const end = buf.indexOf(CLOSE);
+        if (end < 0) { if (final) buf = ''; else buf = buf.slice(Math.max(0, buf.length - CLOSE.length)); return; }
+        buf = buf.slice(end + CLOSE.length).replace(/^\s+/, '');
+        inThink = false;
+        continue;
+      }
+      const start = buf.indexOf(OPEN);
+      if (start >= 0) {
+        if (start > 0) emit(buf.slice(0, start));
+        buf = buf.slice(start + OPEN.length);
+        inThink = true;
+        continue;
+      }
+      // Hold back a possible partial "<think" at the end.
+      const keep = final ? 0 : partialTail(buf, OPEN);
+      const out = buf.slice(0, buf.length - keep);
+      if (out) emit(out);
+      buf = buf.slice(buf.length - keep);
+      return;
+    }
+  };
+  return {
+    push(token: string) { buf += token; flushSafe(false); },
+    flush() { flushSafe(true); },
+  };
+}
+
+function partialTail(text: string, tag: string): number {
+  for (let n = Math.min(tag.length - 1, text.length); n > 0; n--) {
+    if (text.endsWith(tag.slice(0, n))) return n;
+  }
+  return 0;
+}
+
 // ─── Prompts ──────────────────────────────────────────────────────────────────
 
 const LANG_NAME: Record<Lang, string> = { en: 'English', hi: 'Hindi (Devanagari script)', bn: 'Bengali (Bengali script)' };
 const ml = (d: Date) => monthLabel(d, 'en', { western: true });
+
+/**
+ * General models drift into English (or Hinglish) far more than the
+ * fine-tuned Saga, so hi / bn prompts say it twice: the language, and that
+ * every word must be in its script. Digits stay Western in the model's text;
+ * the pipeline shows them in the reader's script.
+ */
+export function scriptRule(lang: Lang): string | null {
+  if (lang === 'hi') return 'Write every word in Hindi in Devanagari script. Do not switch to English or Latin letters, except for names. Write numbers with digits 0-9.';
+  if (lang === 'bn') return 'Write every word in Bengali in Bengali script. Do not switch to English or Latin letters, except for names. Write numbers with digits 0-9.';
+  return null;
+}
 
 /** A system prompt that carries the whole plan in plain words (model-bound: Western digits). */
 export function instructSystemPrompt(plan: AnswerPlan): string {
   const lines = [
     'You are Saga, a warm Vedic astrologer. Answer in plain language: no house numbers, sign names or dasha terms.',
     `Reply in ${LANG_NAME[plan.lang]}, 3 to 5 short sentences, no markdown.`,
+    ...(scriptRule(plan.lang) ? [scriptRule(plan.lang)!] : []),
     `The question is about ${plan.subject.isYou === false ? `${plan.subject.name} (the user's ${plan.subject.relationship ?? 'family member'})` : 'the user'}.`,
   ];
   const t = plan.timing;
@@ -113,6 +181,7 @@ export function instructKrishnaSystem(lang: Lang, versePrompt: string, userName?
   return [
     'You are Krishna from the Bhagavad Gita, speaking to a friend who came to you with something on their mind.',
     `Reply in ${LANG_NAME[lang]}, 2 to 4 warm, simple sentences, no markdown.`,
+    scriptRule(lang) ?? '',
     userName ? `Their name is ${userName.split(' ')[0]}.` : '',
     `Do not quote any verse; the app shows this one under your reply, so speak in its spirit: ${versePrompt}`,
   ].filter(Boolean).join('\n');
@@ -127,6 +196,7 @@ export function instructReadingSystem(profile: ReadingRequest['profile'], lang: 
   return [
     `Write a short personality reading for ${profile.name.split(' ')[0]} in ${LANG_NAME[lang]}, warm and plain.`,
     `Chart: Sun in ${sun?.name ?? 'unknown'}, Moon in ${moon?.name ?? 'unknown'}${rising ? `, rising ${rising.name}` : ''}, birth star ${k.nakshatra.name}, current life phase ${k.dasha.lord} until ${k.dasha.endDate}.`,
+    ...(scriptRule(lang) ? [`${scriptRule(lang)} Only the line keys stay in English.`] : []),
     `Reply with exactly these lines, keys in English capitals, one or two sentences each:`,
     ['SUN:', 'MOON:', ...(rising ? ['RISING:'] : []), 'NAKSHATRA:', 'DASHA:', 'OVERVIEW:'].join('\n'),
   ].join('\n');
@@ -134,7 +204,7 @@ export function instructReadingSystem(profile: ReadingRequest['profile'], lang: 
 
 export function instructTitlePrompt(question: string, reply: string, lang: Lang): RuntimeMessage[] {
   return [
-    { role: 'system', content: `Write a 2 to 4 word title for this conversation in ${LANG_NAME[lang]}. Reply with the title only.` },
+    { role: 'system', content: [`Write a 2 to 4 word title for this conversation in ${LANG_NAME[lang]}. Reply with the title only.`, scriptRule(lang)].filter(Boolean).join('\n') },
     { role: 'user', content: `User: ${westernDigits(question)}\nAssistant: ${westernDigits(reply)}` },
   ];
 }
@@ -147,7 +217,8 @@ export function instructFollowUpsPrompt(history: ChatTurn[], lastAnswer: string,
       content: [
         `Suggest 3 short questions the user might ask next, in ${LANG_NAME[lang]}, written as the user ("I", "my").`,
         'One per line, each ending with "?", at most 8 words, no astrology terms, no names, no numbering.',
-      ].join('\n'),
+        scriptRule(lang) ?? '',
+      ].filter(Boolean).join('\n'),
     },
     { role: 'user', content: turns.map(t => `User: ${westernDigits(t.user)}\nAssistant: ${westernDigits(t.assistant)}`).join('\n') },
   ];
@@ -195,6 +266,51 @@ async function* streamRuntime(rt: LLMRuntime, messages: RuntimeMessage[], opts: 
   if (suffix && wrote) yield suffix;
 }
 
+/**
+ * A chat reply through utils/reply-guards.ts runGuarded: hi / bn replies that
+ * come out in the wrong script, or that repeat the previous answer, are
+ * regenerated once (as for Saga). Plan dates are verified by the pipeline.
+ */
+async function* streamGuarded(
+  rt: LLMRuntime, messages: RuntimeMessage[], opts: GenerateOptions, guard: ReplyGuard, suffix = '',
+): AsyncGenerator<string> {
+  const queue: string[] = [];
+  let wake: (() => void) | null = null;
+  let finished = false;
+  let failure: unknown = null;
+  let wrote = false;
+  const push = (text: string) => {
+    if (!text) return;
+    queue.push(text);
+    wrote = true;
+    wake?.();
+    wake = null;
+  };
+  const done = runGuarded(
+    (onToken, temperature) => rt.generate(messages, { ...opts, temperature: temperature ?? opts.temperature, onToken }),
+    guard, push,
+  ).catch((e) => { failure = e; }).finally(() => { finished = true; wake?.(); });
+  let i = 0;
+  while (!finished || i < queue.length) {
+    if (i < queue.length) yield queue[i++];
+    else await new Promise<void>(r => { wake = r; });
+  }
+  await done;
+  if (failure) throw failure;
+  if (suffix && wrote) yield suffix;
+}
+
+/** The guard for a reply, or null when nothing needs checking (English, first answer). */
+export function instructGuard(lang: Lang, names: (string | undefined)[], history: ChatTurn[]): ReplyGuard | null {
+  const previous = [...history].reverse().find(m => m.role === 'assistant')?.content;
+  if (lang === 'en' && !previous) return null;
+  return {
+    lang,
+    previous: previous ? westernDigits(previous) : undefined,
+    ignore: names.flatMap(n => (n ? [n.split(' ')[0]] : [])),
+  };
+}
+
 export function createInstructAdapter(runtime: LLMRuntime | null, options: InstructOptions = {}): ModelAdapter {
   const maxTokens = options.maxTokens ?? 400;
   const temperature = options.temperature ?? 0.4;
@@ -228,7 +344,11 @@ export function createInstructAdapter(runtime: LLMRuntime | null, options: Instr
         const verse = pickGitaVerse(plan.question);
         const system = instructKrishnaSystem(plan.lang, verse.prompt, req.userName);
         const messages: RuntimeMessage[] = [{ role: 'system', content: system }, { role: 'user', content: question }];
-        return streamRuntime(r, messages, { maxNewTokens: maxTokens, temperature }, `\n\n${formatGitaQuote(verse, plan.lang)}`);
+        const suffix = `\n\n${formatGitaQuote(verse, plan.lang)}`;
+        const guard = instructGuard(plan.lang, [req.userName], []);
+        return guard
+          ? streamGuarded(r, messages, { maxNewTokens: maxTokens, temperature }, guard, suffix)
+          : streamRuntime(r, messages, { maxNewTokens: maxTokens, temperature }, suffix);
       }
       const system = instructChatSystem(plan);
       const messages: RuntimeMessage[] = [
@@ -236,7 +356,10 @@ export function createInstructAdapter(runtime: LLMRuntime | null, options: Instr
         ...fitHistory(r, system, req.history, question, maxTokens),
         { role: 'user', content: question },
       ];
-      return streamRuntime(r, messages, { maxNewTokens: maxTokens, temperature });
+      const guard = instructGuard(plan.lang, [plan.subject.name, req.userName], req.history);
+      return guard
+        ? streamGuarded(r, messages, { maxNewTokens: maxTokens, temperature }, guard)
+        : streamRuntime(r, messages, { maxNewTokens: maxTokens, temperature });
     },
 
     async reading({ profile, lang, skipEnglishFallback = false }: ReadingRequest): Promise<ReadingResult> {

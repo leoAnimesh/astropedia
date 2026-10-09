@@ -9,13 +9,18 @@ import type { LLMRunner, LLMGenerationConfig } from 'react-native-executorch/llm
 type ExecuTorch = {
   wrapAsync: typeof import('react-native-executorch').wrapAsync;
   createLLMRunner: typeof import('react-native-executorch/llm').createLLMRunner;
+  parseTokenizerConfig: typeof import('react-native-executorch/llm').parseTokenizerConfig;
+  createChatPreprocessor: typeof import('react-native-executorch/llm').createChatPreprocessor;
 };
 let _et: ExecuTorch | null = null;
 function executorch(): ExecuTorch {
   if (!_et) {
     const core = require('react-native-executorch') as typeof import('react-native-executorch');
     const llm  = require('react-native-executorch/llm') as typeof import('react-native-executorch/llm');
-    _et = { wrapAsync: core.wrapAsync, createLLMRunner: llm.createLLMRunner };
+    _et = {
+      wrapAsync: core.wrapAsync, createLLMRunner: llm.createLLMRunner,
+      parseTokenizerConfig: llm.parseTokenizerConfig, createChatPreprocessor: llm.createChatPreprocessor,
+    };
   }
   return _et;
 }
@@ -85,6 +90,36 @@ export type ChatMessage = { role: 'user' | 'assistant' | 'system'; content: stri
 let _state: LLMState = { status: 'idle' };
 let _runner: LLMRunner | null = null;
 
+/**
+ * How prompts reach the loaded model. astro-gemma (gemma21) uses the exact
+ * format it was trained on (formatGemma below). A general 'instruct' model
+ * ships a Hugging Face tokenizer_config.json: its Jinja chat template and
+ * stop tokens are applied with react-native-executorch's own
+ * parseTokenizerConfig + createChatPreprocessor (as its LLM chat session does).
+ */
+type PromptFormat = {
+  kind: 'builtin' | 'template';
+  format: (messages: ChatMessage[]) => string;
+  stopTokens: string[];
+  dispose?: () => void;
+};
+let _format: PromptFormat | null = null;
+
+/**
+ * Text after the template's generation prompt, per chat-template family
+ * (ModelSpec.chatTemplate). Qwen3 thinks before answering unless the turn
+ * opens with an empty think block (its template's enable_thinking=false,
+ * which the preprocessor can't pass).
+ */
+const TEMPLATE_REPLY_OPENERS: Record<string, string> = {
+  qwen3: '<think>\n\n</think>\n\n',
+};
+
+/** The loaded model's prompt format: 'template' for instruct models (null when nothing is loaded). */
+export function loadedPromptKind(): PromptFormat['kind'] | null {
+  return _runner ? (_format?.kind ?? 'builtin') : null;
+}
+
 type Listener = (state: LLMState) => void;
 const _listeners = new Set<Listener>();
 
@@ -119,7 +154,9 @@ const modelDownload = () => require('./model-download') as ModelDownload;
  * Local paths of the model and tokenizer. Remote (default): the files
  * utils/model-download.ts installed; throws ModelNotInstalledError until then.
  */
-async function resolveModelFiles(): Promise<{ model: string; tokenizer: string }> {
+type ResolvedFiles = { model: string; tokenizer: string; tokenizerConfig?: string | null; chatTemplate?: string | null };
+
+async function resolveModelFiles(): Promise<ResolvedFiles> {
   const md = modelDownload();
   if (md.MODEL_SOURCE === 'bundled') return resolveBundledModelFiles();
   const files = await md.awaitInstalledModelFiles();
@@ -183,10 +220,15 @@ export function initLocalLLM(): Promise<void> {
       // Before 'loading': while the model is still downloading this throws
       // without touching the state, so subscribers (useChartReading) don't
       // re-run in a loop; they re-run when the warmed-up model turns 'ready'.
-      const { model, tokenizer } = await resolveModelFiles();
+      const { model, tokenizer, tokenizerConfig, chatTemplate } = await resolveModelFiles();
       setState({ status: 'loading' });
-      const { wrapAsync, createLLMRunner } = executorch();
-      _runner = await wrapAsync(createLLMRunner)(model, tokenizer);
+      const et = executorch();
+      // The template first: a broken tokenizer_config fails before the
+      // weights are loaded.
+      const format = tokenizerConfig ? await templateFormat(tokenizerConfig, chatTemplate ?? null) : builtinFormat();
+      _runner = await et.wrapAsync(et.createLLMRunner)(model, tokenizer);
+      _format?.dispose?.();
+      _format = format;
       setState({ status: 'ready' });
       // Loaded without a request (e.g. warmed after the download): release
       // it again if nothing uses it.
@@ -234,6 +276,8 @@ export async function unloadLocalLLM(): Promise<void> {
     try { await _activeGeneration; } catch {}
   }
   try { runner.dispose(); } catch {}
+  try { _format?.dispose?.(); } catch {}
+  _format = null;
 }
 
 // ─── Idle unload ──────────────────────────────────────────────────────────────
@@ -291,8 +335,29 @@ function formatGemma(messages: ChatMessage[]): string {
   return s + '<start_of_turn>model\n';
 }
 
-const formatPrompt = (messages: ChatMessage[]) =>
-  (CHAT_FORMAT === 'gemma' ? formatGemma : formatChatML)(messages);
+function builtinFormat(): PromptFormat {
+  return {
+    kind: 'builtin',
+    format: CHAT_FORMAT === 'gemma' ? formatGemma : formatChatML,
+    stopTokens: STOP_TOKENS[CHAT_FORMAT],
+  };
+}
+
+/** The model's own chat template (tokenizer_config.json) through react-native-executorch's preprocessor. */
+async function templateFormat(configPath: string, chatTemplate: string | null): Promise<PromptFormat> {
+  const et = executorch();
+  const config = et.parseTokenizerConfig(JSON.parse(await RNBlobUtil.fs.readFile(configPath, 'utf8')));
+  const pre = et.createChatPreprocessor({ chatTemplate: config.chatTemplate });
+  const opener = (chatTemplate && TEMPLATE_REPLY_OPENERS[chatTemplate]) || '';
+  return {
+    kind: 'template',
+    format: (messages) => pre.render(messages, { addGenPrompt: true }).text + opener,
+    stopTokens: [...config.stopTokens],
+    dispose: () => pre.dispose(),
+  };
+}
+
+const currentFormat = (): PromptFormat => _format ?? builtinFormat();
 
 type GenerateOptions = {
   genConfig: LLMGenerationConfig;
@@ -397,9 +462,10 @@ async function runLocked(
     }
   };
 
-  _activeGeneration = generateAsync(runner, formatPrompt(messages) + replyPrefix, {
+  const format = currentFormat();
+  _activeGeneration = generateAsync(runner, format.format(messages) + replyPrefix, {
     genConfig: { temperature: 0.3, maxNewTokens: 200, ...genConfig },
-    stopTokens: STOP_TOKENS[CHAT_FORMAT],
+    stopTokens: format.stopTokens,
     onToken,
   });
   try {

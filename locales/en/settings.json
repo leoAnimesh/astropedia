@@ -107,7 +107,78 @@
     "redownload": "Re-download",
     "cancel": "Cancel",
     "redownloadTitle": "Download Saga again?",
-    "redownloadMessage": "Deletes the model on this phone and downloads a fresh copy (about 200 MB). Chats wait until it is ready."
+    "redownloadMessage": "Deletes the model on this phone and downloads a fresh copy (about {{mb}} MB). Chats wait until it is ready.",
+    "change": "Change model",
+    "changeSub": "Pick another model from Hugging Face"
+  },
+  "modelPicker": {
+    "eyebrow": "On-device model",
+    "title": "Change model",
+    "intro": "One model runs on this phone at a time. Switching downloads the new one from Hugging Face and replaces the current model.",
+    "loading": "Loading models…",
+    "builtInList": "Couldn't reach Hugging Face, so this is the built-in list.",
+    "hiddenNote": "Models this phone can't run (memory, storage or system) aren't shown.",
+    "hiddenNoteRamUnknown": "Models this phone can't run aren't shown. This phone doesn't report its memory, so larger models may run slowly.",
+    "current": "Current",
+    "recommended": "Recommended",
+    "size": "{{mb}} MB download",
+    "sizeInstalled": "{{mb}} MB on this phone",
+    "ram": "Needs {{gb}} GB RAM",
+    "languages": "Languages",
+    "quality": {
+      "best": "Best",
+      "good": "Good",
+      "fair": "Fair",
+      "basic": "Basic"
+    },
+    "lang": {
+      "en": "English",
+      "hi": "Hindi",
+      "bn": "Bengali"
+    },
+    "licence": "Licence: {{name}}",
+    "licenceHint": "Opens the licence in your browser",
+    "select": "Use this model",
+    "selectHint": "Asks before downloading and switching",
+    "setupBusy": "Wait until the current download finishes.",
+    "confirmTitle": "Switch to {{name}}?",
+    "confirmDownload": "Downloads about {{mb}} MB (needs internet; Wi-Fi recommended) and replaces {{current}} on this phone.",
+    "confirmChats": "All your chats will be cleared, including past conversations.",
+    "confirmRegen": "Chart readings, reports, chat titles and suggestions will be written again by the new model.",
+    "confirmKept": "Saved answers, profiles and your journal are kept.",
+    "confirmGeneric": "{{name}} is a general model: Hindi and Bengali answers may be plainer than Saga's. Dates and safety checks still come from the app.",
+    "confirm": "Switch model",
+    "cancel": "Cancel",
+    "progress": {
+      "downloading": "Downloading {{name}} · {{pct}}%",
+      "retrying": "Connection lost, retrying…",
+      "verifying": "Checking the download…",
+      "installing": "Installing…",
+      "clearing": "Clearing chats…"
+    },
+    "progressNote": "Your current model keeps working until the new one is ready.",
+    "cancelDownload": "Cancel download",
+    "cancelledTitle": "Download cancelled",
+    "cancelledMessage": "{{current}} is still in use.",
+    "failedTitle": "Couldn't switch model",
+    "failed": {
+      "offline": "No internet connection. Your current model is still in use.",
+      "no-space": "Not enough free space. Your current model is still in use.",
+      "verify": "The download was damaged. Your current model is still in use; please try again.",
+      "unavailable": "This model can't be downloaded right now. Your current model is still in use.",
+      "busy": "Another download is running. Try again when it finishes.",
+      "unsupported": "This phone can't run this model.",
+      "error": "Something went wrong. Your current model is still in use."
+    },
+    "doneTitle": "Model switched",
+    "doneMessage": "{{name}} is ready. Your chats were cleared; readings and reports refresh as you open them.",
+    "thisModel": "the current model",
+    "desc": {
+      "saga": "Astropedia's own model, trained for Vedic astrology answers in English, Hindi and Bengali. Small, fast and the most natural in Hindi and Bengali.",
+      "qwen3_0_6b": "A general-purpose model from the Qwen team. Good English; Hindi and Bengali replies are simpler than Saga's. Dates and safety checks still come from the app.",
+      "llama3_2_1b": "Meta's compact general model (SpinQuant). Clear English and decent Hindi; Bengali is weak. Dates and safety checks still come from the app.",
+      "qwen3_1_7b": "The larger Qwen model: fuller answers and better Hindi and Bengali than the 0.6B, but slower and only for phones with plenty of memory."
+    }
   },
   "about": {
     "section": "About",
