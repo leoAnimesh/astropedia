@@ -76,6 +76,17 @@ export const S = {
     hi: 'यह समय आपके जीवन के {P} वाले दौर में आता है, जो आपके चार्ट में {area} से जुड़ा है।',
     bn: 'এই সময়টা পড়ে আপনার জীবনের {P}-এর পর্বে, যা আপনার চার্টে {areaGen} সঙ্গে যুক্ত।',
   } as Table,
+  /** A past window's reason ("Looking back …" answers): the phase that ran then. */
+  reasonPlanetPast: {
+    en: 'That stretch fell in your {P} phase, and {link}.',
+    hi: 'वह समय आपके जीवन के {P} वाले दौर में था, और {link}।',
+    bn: 'ওই সময়টা ছিল আপনার জীবনের {P}-এর পর্বে, আর {link}।',
+  } as Table,
+  reasonPlanetOnlyPast: {
+    en: 'That stretch fell in your {P} phase, which is tied to {area} in your chart.',
+    hi: 'वह समय आपके जीवन के {P} वाले दौर में था, जो आपके चार्ट में {area} से जुड़ा है।',
+    bn: 'ওই সময়টা ছিল আপনার জীবনের {P}-এর পর্বে, যা আপনার চার্টে {areaGen} সঙ্গে যুক্ত।',
+  } as Table,
   /** Appended to the reason when both slow planets back the window. */
   plusDouble: { en: ' Jupiter and Saturn both support it then.', hi: ' उस समय गुरु और शनि दोनों का साथ भी मिलता है।', bn: ' তখন বৃহস্পতি আর শনি দুজনেরই সমর্থন থাকে।' } as Table,
   plusJupiter: { en: ' Jupiter supports it then too.', hi: ' उस समय गुरु का साथ भी मिलता है।', bn: ' তখন বৃহস্পতির সমর্থনও থাকে।' } as Table,
@@ -115,6 +126,18 @@ export const S = {
     en: 'Not strongly in the coming months; the better window comes later.',
     hi: 'आने वाले महीनों में इसका ज़्यादा ज़ोर नहीं दिखता; बेहतर समय थोड़ा बाद में है।',
     bn: 'সামনের কয়েক মাসে এর জোর কম; ভালো সময় আসে একটু পরে।',
+  } as Table,
+  /** "This year?" when the best window opens after the coming twelve months: a plain no, then the window. */
+  nearNoYear: {
+    en: 'Not this year; the stronger window comes later.',
+    hi: 'इस साल नहीं; ज़्यादा मज़बूत समय बाद में आता है।',
+    bn: 'এই বছর নয়; আরও জোরালো সময় আসে পরে।',
+  } as Table,
+  /** "This year? / now?" when the best window opens within the year but is steady rather than strong. */
+  nearSteady: {
+    en: 'Yes, the coming months give this steady support, though not a strong push.',
+    hi: 'हाँ, आने वाले महीनों में इसका स्थिर साथ है, हालाँकि बहुत तेज़ ज़ोर नहीं।',
+    bn: 'হ্যাঁ, সামনের মাসগুলোয় এর স্থির সমর্থন আছে, যদিও খুব জোরালো নয়।',
   } as Table,
   /** The no-birth-time caveat, one sentence. */
   noTimeShort: {

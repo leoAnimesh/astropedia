@@ -355,26 +355,43 @@ export const C = {
   },
 
   // ─── Career, money, studies ───────────────────────────────────────────────
+  govtStrongShort: { en: 'Your chart has good support for government work: the planet of authority is strong.', hi: 'आपके चार्ट में सरकारी नौकरी के लिए अच्छा साथ है: अधिकार का ग्रह मज़बूत है।', bn: 'আপনার চার্টে সরকারি চাকরির ভালো সমর্থন আছে: কর্তৃত্বের গ্রহ জোরালো।' },
   govtStrong: {
     en: 'Your chart has good support for government and public-sector work: the planet of authority, which stands for government, is strong and tied to your work side.',
     hi: 'आपके चार्ट में सरकारी नौकरी के लिए अच्छा साथ है: अधिकार का ग्रह, जो सरकार का प्रतीक है, मज़बूत है और आपके काम वाले पहलू से जुड़ा है।',
     bn: 'আপনার চার্টে সরকারি চাকরির জন্য ভালো সমর্থন আছে: কর্তৃত্বের গ্রহ, যা সরকারের প্রতীক, জোরালো আর আপনার কাজের দিকের সঙ্গে যুক্ত।',
   },
+  govtFairShort: { en: 'Your chart gives government work a fair chance; preparation decides a lot.', hi: 'आपके चार्ट में सरकारी नौकरी की ठीक-ठाक संभावना है; तैयारी बहुत कुछ तय करेगी।', bn: 'আপনার চার্টে সরকারি চাকরির মোটামুটি সম্ভাবনা আছে; প্রস্তুতিই অনেকটা ঠিক করবে।' },
   govtFair: {
     en: 'Your chart gives government and public-sector work a fair chance: the planet of authority is steady rather than dominant, so preparation decides a lot.',
     hi: 'आपके चार्ट में सरकारी नौकरी की ठीक-ठाक संभावना है: अधिकार का ग्रह स्थिर है पर बहुत प्रबल नहीं, इसलिए तैयारी बहुत कुछ तय करेगी।',
     bn: 'আপনার চার্টে সরকারি চাকরির মোটামুটি সম্ভাবনা আছে: কর্তৃত্বের গ্রহ স্থির, তবে খুব প্রবল নয়, তাই প্রস্তুতিই অনেকটা ঠিক করবে।',
   },
+  govtWeakShort: { en: "Government work isn't your chart's strongest pull, so keep a private-sector option open too.", hi: 'सरकारी नौकरी चार्ट का सबसे मज़बूत झुकाव नहीं है, इसलिए एक प्राइवेट विकल्प भी खुला रखें।', bn: 'সরকারি চাকরি চার্টের সবচেয়ে জোরালো টান নয়, তাই একটা বেসরকারি বিকল্পও খোলা রাখুন।' },
   govtWeak: {
     en: "Government work isn't the chart's strongest pull; private-sector roles in your best-fit fields look more natural, so keep both doors open.",
     hi: 'सरकारी नौकरी चार्ट का सबसे मज़बूत झुकाव नहीं है; आपके अनुकूल क्षेत्रों में प्राइवेट नौकरियाँ ज़्यादा सहज दिखती हैं, इसलिए दोनों रास्ते खुले रखें।',
     bn: 'সরকারি চাকরি চার্টের সবচেয়ে জোরালো টান নয়; আপনার মানানসই ক্ষেত্রে বেসরকারি কাজ বেশি স্বাভাবিক দেখায়, তাই দুটো পথই খোলা রাখুন।',
   },
+  studyStrategyShort: { en: 'Take regular mock tests and revise weak areas steadily.', hi: 'नियमित मॉक टेस्ट दें और कमज़ोर हिस्सों का रिवीज़न करते रहें।', bn: 'নিয়মিত মক টেস্ট দিন আর দুর্বল অংশ রিভিশন করতে থাকুন।' },
   studyStrategy: {
     en: 'Use the coming months for mock tests under exam conditions and steady revision of weak areas; consistency matters more than extra hours.',
     hi: 'आने वाले महीनों में परीक्षा जैसे माहौल में मॉक टेस्ट दें और कमज़ोर हिस्सों का लगातार रिवीज़न करें; ज़्यादा घंटों से ज़्यादा नियमितता मायने रखती है।',
     bn: 'সামনের মাসগুলোয় পরীক্ষার মতো পরিবেশে মক টেস্ট দিন আর দুর্বল অংশগুলো নিয়মিত রিভিশন করুন; বেশি ঘণ্টার চেয়ে নিয়মিত পড়াই বেশি কাজের।',
   },
+  /** 60+: no mock-test drill; a calm routine if they do sit an exam, and roles that fit experience. */
+  /** A minor whose family presses for marriage (the redirect's second sentence). */
+  minorPressure: {
+    en: "If your family is pushing you about marriage, it's okay to tell them you want to finish your studies first; a teacher, school counsellor or Childline (1098) can help you talk to them.",
+    hi: 'अगर घरवाले शादी के लिए दबाव डाल रहे हैं, तो उन्हें बताना ठीक है कि आप पहले पढ़ाई पूरी करना चाहते हैं; कोई टीचर, स्कूल काउंसलर या चाइल्डलाइन (1098) उनसे बात करने में आपकी मदद कर सकते हैं।',
+    bn: 'বাড়ির লোক বিয়ের জন্য চাপ দিলে তাঁদের বলা ঠিক যে আপনি আগে পড়াশোনা শেষ করতে চান; কোনো শিক্ষক, স্কুলের কাউন্সেলর বা চাইল্ডলাইন (1098) তাঁদের সঙ্গে কথা বলতে সাহায্য করতে পারে।',
+  },
+  studyStrategyElder: {
+    en: 'If you do sit an exam, a calm daily study routine matters more than long hours; at this stage, advisory or contract roles are also worth a look.',
+    hi: 'अगर आप परीक्षा देते हैं, तो लंबे घंटों से ज़्यादा रोज़ की शांत पढ़ाई और अभ्यास काम आता है; इस उम्र में सलाहकार या अनुबंध वाली भूमिकाएँ भी देखने लायक हैं।',
+    bn: 'পরীক্ষা দিলে লম্বা সময়ের চেয়ে রোজের শান্ত পড়া আর অনুশীলন বেশি কাজের; এই বয়সে পরামর্শদাতা বা চুক্তিভিত্তিক কাজও দেখার মতো।',
+  },
+  studyStrategyGovtShort: { en: 'Prepare with a weekly mock test and steady revision.', hi: 'हर हफ़्ते मॉक टेस्ट और लगातार रिवीज़न से तैयारी करें।', bn: 'প্রতি সপ্তাহে মক টেস্ট আর নিয়মিত রিভিশন নিয়ে প্রস্তুতি নিন।' },
   studyStrategyGovt: {
     en: 'Prepare with a fixed daily schedule, a weekly mock test and steady revision, and keep one private-sector option open as well.',
     hi: 'रोज़ का तय समय, हर हफ़्ते एक मॉक टेस्ट और लगातार रिवीज़न के साथ तैयारी करें, और एक प्राइवेट विकल्प भी खुला रखें।',
@@ -395,6 +412,23 @@ export const C = {
     hi: 'शांति से और लिखित में बात आगे बढ़ाएँ, और जो पैसा दिया उसका हिसाब रखें; चार्ट बेहतर समय बता सकता है, सामने वाले का फ़ैसला नहीं।',
     bn: 'শান্তভাবে আর লিখিতভাবে খোঁজ নিন, আর কত টাকা দিয়েছিলেন তার হিসেব রাখুন; চার্ট ভালো সময় দেখাতে পারে, অন্যজনের সিদ্ধান্ত নয়।',
   },
+  /** A car or bike: budget, papers and a test drive (Stage 3: "legal title / registration" read as a property step). */
+  vehicleChecks: {
+    en: 'Before you commit, check the budget, the loan and insurance papers, and take a test drive; for the delivery day itself, use the Muhurat tab.',
+    hi: 'पक्का करने से पहले बजट, लोन और बीमा के कागज़ात देख लें और टेस्ट ड्राइव लें; गाड़ी लेने के दिन के लिए मुहूर्त टैब देखें।',
+    bn: 'পাকা করার আগে বাজেট, ঋণ আর বিমার কাগজপত্র দেখে নিন আর একবার টেস্ট ড্রাইভ করুন; গাড়ি নেওয়ার দিনের জন্য মুহূর্ত ট্যাব দেখুন।',
+  },
+  /** "Will my brother support me?": a likelihood from the relation's main planet, never a promise about another person. */
+  familySupportGood: {
+    en: 'Support looks likely: your chart shows a trusting bond with {who}, though their own situation matters too.',
+    hi: '{who} के साथ आपके रिश्ते में भरोसे का संकेत है, इसलिए साथ मिलने की अच्छी संभावना है, हालाँकि उनकी अपनी स्थिति भी मायने रखती है।',
+    bn: '{who} সঙ্গে আপনার সম্পর্কে ভরসার ইঙ্গিত আছে, তাই সমর্থন পাওয়ার ভালো সম্ভাবনা আছে, যদিও ওঁর নিজের পরিস্থিতিও গুরুত্বপূর্ণ।',
+  },
+  familySupportMixed: {
+    en: 'Support has a fair chance but may need a clear, calm request: the bond with {who} carries some friction in your chart.',
+    hi: 'साथ मिलना संभव है, पर साफ़ और शांत बातचीत ज़रूरी होगी: आपके चार्ट में {who} के साथ रिश्ते में कुछ खिंचाव है।',
+    bn: 'সমর্থন পাওয়া সম্ভব, তবে স্পষ্ট আর শান্তভাবে বলতে হবে: আপনার চার্টে {who} সঙ্গে সম্পর্কে কিছুটা টানাপোড়েন আছে।',
+  },
   propertyChecks: {
     en: 'Before you commit, check the budget, the documents and the legal title; for the registration day itself, use the Muhurat tab.',
     hi: 'पक्का करने से पहले बजट, कागज़ात और कानूनी मालिकाना हक़ जाँच लें; रजिस्ट्री के दिन के लिए मुहूर्त टैब देखें।',
@@ -410,11 +444,13 @@ export const C = {
     hi: 'आपके चार्ट में साझेदारी थोड़ी धीमी दिखती है; नियंत्रण अपने हाथ में रखना आपके लिए बेहतर है, इसलिए आगे बढ़ें तो साफ़ अनुबंध और छोटी शुरुआत करें।',
     bn: 'আপনার চার্টে অংশীদারি একটু ধীর দেখায়; নিয়ন্ত্রণ নিজের হাতে রাখাই আপনার পক্ষে ভালো, তাই এগোলে স্পষ্ট চুক্তি আর ছোট শুরু করুন।',
   },
+  switchNowShort: { en: 'Start applying now and make the switch inside that window.', hi: 'अभी से आवेदन शुरू करें और उसी समय में बदलाव करें।', bn: 'এখন থেকেই আবেদন শুরু করুন আর সেই সময়ের মধ্যে বদলান।' },
   switchNow: {
     en: 'Moving is supported once your stronger window opens, so start applying now and make the switch inside it.',
     hi: 'मज़बूत समय शुरू होते ही बदलाव को साथ मिलता है, इसलिए अभी से आवेदन शुरू करें और उसी समय में बदलाव करें।',
     bn: 'জোরালো সময় শুরু হলেই বদলের সমর্থন মেলে, তাই এখন থেকেই আবেদন শুরু করুন আর সেই সময়ের মধ্যে বদলান।',
   },
+  switchWaitShort: { en: 'Better to grow where you are for now and move in the stronger window.', hi: 'अभी जहाँ हैं वहीं आगे बढ़ना बेहतर है, बदलाव मज़बूत समय में करें।', bn: 'আপাতত যেখানে আছেন সেখানেই এগোনো ভালো, বদল করুন জোরালো সময়ে।' },
   switchWait: {
     en: 'Better to grow where you are for now and move in the stronger window; keep your options warm meanwhile.',
     hi: 'अभी जहाँ हैं वहीं आगे बढ़ना बेहतर है और मज़बूत समय में बदलाव करें; तब तक विकल्प तैयार रखें।',
@@ -527,6 +563,7 @@ export const C = {
   },
 
   // ─── Wellbeing ────────────────────────────────────────────────────────────
+  selfCareShort: { en: 'Meanwhile, regular sleep and a short daily walk help most.', hi: 'तब तक नियमित नींद और रोज़ थोड़ी सैर सबसे ज़्यादा मदद करते हैं।', bn: 'ততদিন নিয়মিত ঘুম আর রোজ একটু হাঁটা সবচেয়ে বেশি সাহায্য করে।' },
   selfCare: {
     en: 'Meanwhile, regular sleep, a short daily walk and some quiet time each day help most.',
     hi: 'तब तक नियमित नींद, रोज़ थोड़ी सैर और हर दिन कुछ शांत समय सबसे ज़्यादा मदद करते हैं।',
@@ -612,6 +649,22 @@ export const C = {
     hi: 'अगले कुछ दिनों में {activity} के लिए कोई साफ़ समय नहीं है; मुहूर्त टैब पर आगे के हफ़्ते देखें।',
     bn: 'সামনের কয়েক দিনে {activity}-এর জন্য পরিষ্কার সময় নেই; মুহূর্ত ট্যাবে পরের সপ্তাহগুলো দেখুন।',
   },
+  /** Why these days suit the asker (routes.ts muhuratRoute; muhurat.ts Tara Bala / Chandra Bala). */
+  muhuratPersonalBoth: {
+    en: "They also suit your own chart: the day's star is a friendly one counted from your birth star (Tara Bala), and the Moon sits well from your birth Moon (Chandra Bala).",
+    hi: 'ये दिन आपकी अपनी कुंडली से भी मेल खाते हैं: उस दिन का नक्षत्र आपके जन्म नक्षत्र से गिनने पर शुभ है (तारा बल), और चंद्रमा आपकी जन्म राशि से अच्छी जगह पर है (चंद्र बल)।',
+    bn: 'এই দিনগুলো আপনার নিজের কুষ্ঠির সঙ্গেও মেলে: সেদিনের নক্ষত্র আপনার জন্মনক্ষত্র থেকে গুনলে শুভ (তারা বল), আর চাঁদ আপনার জন্মরাশি থেকে ভালো জায়গায় থাকে (চন্দ্র বল)।',
+  },
+  muhuratPersonalTara: {
+    en: "They also avoid the unfriendly stars counted from your birth star (Tara Bala); the Moon's position from your birth Moon is only average, so keep to the time window.",
+    hi: 'ये दिन आपके जन्म नक्षत्र से गिनने पर अशुभ ताराओं से भी बचते हैं (तारा बल); जन्म राशि से चंद्रमा की स्थिति औसत है, इसलिए दिए गए समय में ही काम करें।',
+    bn: 'এই দিনগুলো আপনার জন্মনক্ষত্র থেকে গোনা অশুভ তারাও এড়িয়ে যায় (তারা বল); জন্মরাশি থেকে চাঁদের অবস্থান মাঝারি, তাই দেওয়া সময়ের মধ্যেই কাজ করুন।',
+  },
+  muhuratPersonalNone: {
+    en: "None of the clean days ahead has a friendly star counted from your birth star, so these are the best of the general almanac; keep to the time window.",
+    hi: 'आगे के साफ़ दिनों में से किसी में भी आपके जन्म नक्षत्र से गिनने पर शुभ तारा नहीं है, इसलिए ये पंचांग के हिसाब से सबसे अच्छे दिन हैं; दिए गए समय में ही काम करें।',
+    bn: 'সামনের পরিষ্কার দিনগুলোর কোনোটাতেই আপনার জন্মনক্ষত্র থেকে গোনা শুভ তারা নেই, তাই এগুলো পঞ্জিকা অনুযায়ী সেরা দিন; দেওয়া সময়ের মধ্যেই কাজ করুন।',
+  },
   muhuratMore: { en: "You'll find more options in the Muhurat tab.", hi: 'और विकल्प मुहूर्त टैब में मिलेंगे।', bn: 'আরও বিকল্প মুহূর্ত ট্যাবে পাবেন।' },
   muhuratDoctor: {
     en: 'For a surgery date, your doctor decides first; a muhurat only matters if the doctor gives you a choice.',
@@ -673,7 +726,7 @@ export const C = {
   dashaMeaning: {
     en: 'In plain words, this period centres your life on {area}.',
     hi: 'सीधे शब्दों में, यह दौर आपके जीवन का ध्यान {area} पर रखता है।',
-    bn: 'সহজ কথায়, এই পর্ব আপনার জীবনের মন টানে {area} দিকে।',
+    bn: 'সহজ কথায়, এই পর্বে আপনার জীবনের ঝোঁক থাকে {area} দিকে।',
   },
   placement: {
     en: '{planet} in that part of your chart brings {nature} to your {area} side: {effect}',

@@ -43,7 +43,13 @@ export type ForbiddenCode = (typeof FORBIDDEN_CODES)[number];
  * their code. `terms`: what shows the line's content in a reply (any
  * language; default: the code's vocabulary).
  */
-export type PlanLine = { code: PlanCode; text: L3; pos: 'lead' | 'body' | 'end'; required?: boolean; terms?: string; also?: PlanCode[] };
+export type PlanLine = {
+  code: PlanCode; text: L3; pos: 'lead' | 'body' | 'end'; required?: boolean; terms?: string; also?: PlanCode[];
+  /** A shorter wording the template uses when the answer runs over the word limit (template.ts trim). */
+  short?: L3;
+  /** Trim order when over the word limit (lower goes first); default from the line's role. */
+  trim?: number;
+};
 
 const nfc = (s: string) => westernDigits(s.normalize('NFC'));
 const rx = (parts: string[]) => new RegExp(parts.join('|').normalize('NFC'), 'iu');

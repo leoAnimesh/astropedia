@@ -16,7 +16,7 @@ import { getSadeSati } from '../sade-sati';
 import { matchCharts, personChart, type KootaKey } from '../ashtakoota';
 import { getLuckyForDay, LUCKY_COLOR, LUCKY_NUMBER } from '../lucky';
 import { findMuhurats, type Activity } from '../muhurat';
-import { natalChart, timingWindows, splitPeriod, type Planet, type TimingTopic, type TimingWindow } from '../timing-engine';
+import { natalChart, timingWindows, splitPeriod, TOPIC_RULES, type Planet, type TimingTopic, type TimingWindow } from '../timing-engine';
 import { SIGN_RULER } from '../chart-analysis';
 import type { AnswerContent } from './astrologer';
 import { askYogas, govtIndicator, optionLeaning, partnershipGood, OPTION_LABEL, saturnPressure } from './astrologer';
@@ -24,6 +24,7 @@ import { AREA_OF_HOUSE, TIP2, type L3 } from './ask-strings';
 import { ACTIVITY, C, COLOUR, GEM_OF, KOOTA_PLAIN, MONTH_SHORT, PLANET_PLAIN, VERDICT, WEEKDAY, YOGA_PLAIN, type CKey } from './category-strings';
 import { isYesNo, relationIn, relationMatches } from './intent';
 import { AREA, AREA_GEN_BN, HELPS, S, fill, monthLabel, type Lang } from './strings';
+import { isElder, linkClause, reasonParts } from './adapters/template';
 import type { PlanCode, PlanLine } from './checks';
 import type { AnswerPlan, PlanProfile } from './plan';
 
@@ -34,9 +35,14 @@ const val = (v: Vars[string], l: Lang) => (typeof v === 'function' ? v(l) : type
 /** A PlanLine from a C key (or a ready L3) with {vars} filled per language. */
 export function line(code: PlanCode, text: CKey | L3, pos: PlanLine['pos'] = 'body', vars: Vars = {}, extra: Partial<PlanLine> = {}): PlanLine {
   const t: L3 = typeof text === 'string' ? C[text] : text;
-  const out = {} as L3;
-  for (const l of LANGS) out[l] = fill(t[l], Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, val(v, l)])));
-  return { code, text: out, pos, ...extra };
+  const fillAll = (x: L3) => {
+    const out = {} as L3;
+    for (const l of LANGS) out[l] = fill(x[l], Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, val(v, l)])));
+    return out;
+  };
+  // A C key with a "…Short" twin gets it as the line's shorter wording (template.ts trims to the word limit with it).
+  const short = typeof text === 'string' ? (C as Record<string, L3>)[`${text}Short`] : undefined;
+  return { code, text: fillAll(t), pos, ...(short ? { short: fillAll(short) } : {}), ...extra };
 }
 
 const firstName = (n: string) => n.split(' ')[0];
@@ -44,6 +50,12 @@ const ml = (d: Date) => (l: Lang) => monthLabel(d, l, { western: true });
 
 /** "This year / now / this cycle" in a question (en / hi / bn, Hinglish / Banglish). */
 export const NEAR_RE = /\bthis (?:year|month|time|appraisal|cycle)\b|\bnow\b|\bsoon\b|\bis this a good time\b|\bis saal\b|\bis baar\b|\bei bochh?or\b|\bebar\b|इस साल|इस बार|अभी|এই বছর|এবার|এখন/i;
+
+/** A car / bike purchase (property_vehicle): its own practical step. */
+const VEHICLE_RE = /\b(?:car|bike|scooter|scooty|vehicle|gaa?di|gari|motorcycle)\b|गाड़ी|गाडी|वाहन|स्कूटर|কার\b|গাড়ি|গাড়ি|বাইক|স্কুটার/i;
+
+/** "This year / this time" (not just "now"): the question is about the coming twelve months. */
+export const YEAR_NEAR_RE = /\bthis (?:year|time|appraisal|cycle)\b|\bis saal\b|\bis baar\b|\bei bochh?or\b|\bebar\b|\bebaar\b|इस साल|इस बार|এই বছর|এবার/i;
 
 /** The likelihood ladder (rules.md §1.9) from the plan's best window. */
 export function likelihoodLine(plan: AnswerPlan, pos: PlanLine['pos'] = 'lead'): PlanLine | null {
@@ -56,12 +68,11 @@ export function likelihoodLine(plan: AnswerPlan, pos: PlanLine['pos'] = 'lead'):
   const near = NEAR_RE.test(plan.question);
   let key: CKey;
   if (near) {
-    // "This year? Now? This cycle?" gets a direct yes / not-yet before the window (rubric 3.1).
+    // "This year? Now? This cycle?" gets a direct yes / not-yet before the window (rubric 3.1), and it agrees
+    // with the window the answer then gives (Stage 3: "good chance" followed by a 2029 window read as a contradiction).
     const horizon = plan.now.getTime() + YEAR;
-    const open = t.result.windows.filter(x => x.start.getTime() <= horizon);
-    if (open.some(x => x.strength === 'strong')) return line('likelihood', S.nearYes, pos);
-    if (!open.length) return line('likelihood', S.nearNo, pos);
-    key = 'likelyModerate';
+    if (w.start.getTime() <= horizon) return line('likelihood', w.strength === 'strong' ? S.nearYes : S.nearSteady, pos);
+    return line('likelihood', YEAR_NEAR_RE.test(plan.question) ? S.nearNoYear : S.nearNo, pos);
   } else {
     const years = (w.start.getTime() - plan.now.getTime()) / YEAR;
     const promise = plan.facts[0]?.code;
@@ -76,6 +87,26 @@ function windowShortLine(plan: AnswerPlan): PlanLine | null {
   const w = plan.timing?.best;
   if (!w || plan.timing?.result.past) return null;
   return line('window', 'windowShort', 'body', { start: ml(w.start), end: ml(w.end) });
+}
+
+/** The window's chart reason (the sub-period planet and its tie to the topic) as a plan line, in every language. */
+export function reasonLine(plan: AnswerPlan): PlanLine | null {
+  if (!plan.timing) return null;
+  const out = {} as L3;
+  for (const l of LANGS) {
+    const r = reasonParts({ ...plan, lang: l });
+    if (!r?.reason) return null;
+    out[l] = r.reason;
+  }
+  return { code: 'chart_reason', text: out, pos: 'body', also: ['dasha_reason'], trim: 80 };
+}
+
+/** A yes/no answer without the timing paragraph: the window and one concrete chart reason (Stage 3: "no reason"). */
+function windowAndReason(p: AnswerPlan): void {
+  const w = windowShortLine(p);
+  if (!w) return;
+  add(p, w, reasonLine(p));
+  must(p, 'chart_reason');
 }
 
 /** "Permanent or just for work / settle there?" (a foreign follow-up). */
@@ -120,15 +151,26 @@ const planetObl = (p: Planet) => PLANET_PHRASE[p].hi.replace(/का (ग्र�
 const planetGen = (p: Planet) => PLANET_PHRASE[p].bn.replace(/গ্রহ$/, 'গ্রহের').replace(/বিন্দু$/, 'বিন্দুর');
 const planetVars = (p: Planet) => ({ planet: PLANET_PHRASE[p], planetObl: planetObl(p), planetGen: planetGen(p) });
 
-/** "it rules your career side" / "it sits in your partnership side": a dasha lord's tie to a topic, in plain words. */
+/**
+ * "Saturn sits in your career side": a dasha lord's tie to the window's topic, in plain words. Read from the
+ * engine's links for the window (template.ts linkClause), so the house belongs to the topic; without one, the
+ * topic's own houses are checked first, then any house the planet rules, then where it sits.
+ */
 function linkPhrase(plan: AnswerPlan, lord: Planet): L3 {
+  const out = {} as L3;
+  const viaWindow = LANGS.map(l => linkClause(plan, lord, l));
+  if (viaWindow.every(Boolean)) {
+    LANGS.forEach((l, k) => { out[l] = viaWindow[k]!; });
+    return out;
+  }
   const a = natalChart(plan.subject).analysis;
   const houses = a?.planets[lord].rules ?? [];
   const sits = a?.planets[lord].house ?? 1;
-  const topicHouse = plan.timing ? [7, 10, 5, 4, 11, 2, 9, 12, 6, 1].find(h => houses.includes(h)) : undefined;
-  const out = {} as L3;
+  const topicHouses = plan.timing ? TOPIC_RULES[plan.timing.topic].houses.map(([h]) => h) : [];
+  const sitsTopic = topicHouses.includes(sits);
+  const topicHouse = topicHouses.find(h => houses.includes(h)) ?? (plan.timing && !sitsTopic ? [7, 10, 5, 4, 11, 2, 9, 12, 6, 1].find(h => houses.includes(h)) : undefined);
   for (const l of LANGS) {
-    out[l] = topicHouse
+    out[l] = topicHouse && !sitsTopic
       ? fill({ en: 'it guides your {area} side', hi: 'यह आपके {area} वाले पहलू को चलाता है', bn: 'এটা আপনার {area} দিকটা চালায়' }[l], { area: AREA_OF_HOUSE[l][topicHouse] })
       : fill({ en: 'it sits in your {area} side', hi: 'यह आपके {area} वाले पहलू में है', bn: 'এটা আছে আপনার {area} দিকে' }[l], { area: AREA_OF_HOUSE[l][sits] });
   }
@@ -158,19 +200,32 @@ function muhuratRoute(plan: AnswerPlan, activity: string | null | undefined): vo
     return;
   }
   if (/\b(?:surgery|operation)\b|ऑपरेशन|অপারেশন/i.test(plan.question)) add(plan, line('doctor', 'muhuratDoctor', 'lead', {}, { required: true }));
-  let days: { date: string; start: number; end: number; favoured: boolean }[] = [];
+  type Day = { date: string; start: number; end: number; favoured: boolean; taraOk: boolean; chandraOk: boolean };
+  let days: Day[] = [];
+  let personal = false;
   try {
-    const found = (n: number) => findMuhurats(act, plan.subject.birthLat, plan.subject.birthLng, n, plan.now)
-      .filter(d => d.window && !d.passed).map(d => ({ date: d.date, start: d.window!.startHour, end: d.window!.endHour, favoured: d.favoured }));
+    // Personalised by the asker's own Moon (muhurat.ts: Tara Bala, Chandra Bala) on top of the panchang filters.
+    let birth: { moonLon: number } | null = null;
+    try { const m = natalChart(plan.subject).moonLon; birth = Number.isFinite(m) ? { moonLon: m } : null; } catch { birth = null; }
+    personal = !!birth;
+    const found = (n: number) => findMuhurats(act, plan.subject.birthLat, plan.subject.birthLng, n, plan.now, birth)
+      .filter(d => d.window && !d.passed).map(d => ({ date: d.date, start: d.window!.startHour, end: d.window!.endHour, favoured: d.favoured, taraOk: d.taraOk ?? true, chandraOk: d.chandraOk ?? true }));
     days = found(7);
-    if (days.length < 2) days = found(14);
+    // Two days with a usable tara, looking a week further when this week has fewer.
+    if (days.filter(d => d.taraOk).length < 2) days = found(14);
   } catch { days = []; }
-  days.sort((a, b) => Number(b.favoured) - Number(a.favoured) || a.date.localeCompare(b.date));
+  // Tara Bala first (the classical texts let a good tara carry a middling Moon), then Chandra Bala, then the tithi.
+  days.sort((a, b) => Number(b.taraOk) - Number(a.taraOk) || Number(b.chandraOk) - Number(a.chandraOk)
+    || Number(b.favoured) - Number(a.favoured) || a.date.localeCompare(b.date));
   const pick = days.slice(0, 2).sort((a, b) => a.date.localeCompare(b.date));
   if (pick.length) {
     const list = (l: Lang) => pick.map(d => `${dayLabel(d.date, l)} (${hourLabel(d.start, l)}–${hourLabel(d.end, l)})`).join(l === 'en' ? ' and ' : l === 'hi' ? ' और ' : ' আর ');
     const terms = pick.map(d => { const x = new Date(d.date + 'T12:00:00'); return `${WEEKDAY.en[x.getDay()]}|${WEEKDAY.hi[x.getDay()]}|${WEEKDAY.bn[x.getDay()]}`; }).join('|');
     add(plan, line('muhurat_days', 'muhuratDays', activity === 'ceremony' ? 'body' : 'lead', { activity: ACTIVITY[act], days: list }, { terms: `${terms}|muhurat|मुहूर्त|মুহূর্ত` }));
+    if (personal) {
+      const key: CKey = pick.every(d => d.taraOk && d.chandraOk) ? 'muhuratPersonalBoth' : pick.every(d => d.taraOk) ? 'muhuratPersonalTara' : 'muhuratPersonalNone';
+      add(plan, line('chart_reason', key, 'body', {}, { trim: 70 }));
+    }
   } else {
     add(plan, line('muhurat_days', 'muhuratNone', 'lead', { activity: ACTIVITY[act] }));
   }
@@ -588,9 +643,9 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       const g = govtIndicator(natalChart(p.subject));
       // The government indicator is the likelihood (a generic "strong chance" line before it contradicted "a fair chance").
       add(p, line('govt_indicators', g.level === 'strong' ? 'govtStrong' : g.level === 'fair' ? 'govtFair' : 'govtWeak', i.timing ? 'body' : 'lead', {}, { also: ['chart_reason', 'likelihood'] }));
-      add(p, line('study_strategy', 'studyStrategyGovt', 'end', {}, { also: ['practical_step'] }));
+      add(p, line('study_strategy', isElder(p) ? 'studyStrategyElder' : 'studyStrategyGovt', 'end', {}, { also: ['practical_step'] }));
       must(p, 'likelihood', 'govt_indicators', 'study_strategy');
-      if (!i.timing) { p.coreOff = true; add(p, windowShortLine(p)); }
+      if (!i.timing) { p.coreOff = true; windowAndReason(p); }
       if (f.options) leaningLine(p, f.options, 'career');
       break;
     }
@@ -610,7 +665,7 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       if (f.documents || /visa|वीज़ा|वीजा|ভিসা/i.test(p.question)) { add(p, line('documents_decide', 'documents', 'end', {}, { required: true })); must(p, 'documents_decide'); }
       if (yesno) { add(p, likelihoodLine(p)); must(p, 'likelihood'); }
       // A yes/no answered from the relocation reading still names its window (rubric 3.1).
-      if (yesno && !i.timing && p.content?.ask === 'relocation') add(p, windowShortLine(p));
+      if (yesno && !i.timing && p.content?.ask === 'relocation') windowAndReason(p);
       must(p, 'settlement_vs_travel', 'chart_reason');
       if (p.timing && (i.timing || yesno)) must(p, 'window');
       // Not a when-question: the leaning is the answer (the planner's own optional window line stays).
@@ -633,7 +688,12 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
         const joinItems = (l: Lang) => items.map(x => x.text.label[l]).join(l === 'en' ? ', and also ' : l === 'hi' ? ', और साथ ही ' : ', সঙ্গে ');
         const lead: L3 = { en: 'Your money comes most naturally from {items}.', hi: 'आपके लिए पैसा सबसे सहज रूप से {items} से आता है।', bn: 'আপনার টাকা সবচেয়ে সহজে আসে {items} থেকে।' };
         if (p.content?.ask === 'moneySources') { /* rendered as the core */ }
-        else if (p.timing?.asked || yesno) add(p, line('income_sources', lead, 'body', { items: joinItems }, { terms: items.map(x => x.text.terms).join('|') }));
+        else if (p.timing?.asked || yesno) {
+          // Over the word limit the line keeps its first source only (Stage 3: Hindi money answers ran to 110-130 words).
+          const one = {} as L3;
+          for (const l of LANGS) one[l] = fill(lead[l], { items: items[0].text.label[l] });
+          add(p, line('income_sources', lead, 'body', { items: joinItems }, { terms: items.map(x => x.text.terms).join('|'), short: one }));
+        }
         else { p.content = mc; p.timing = null; }
         p.checks.itemTerms.push(...items.map(x => x.text.terms));
       }
@@ -658,7 +718,7 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       break;
     }
     case 'property_vehicle': {
-      add(p, line('practical_step', 'propertyChecks', 'end', {}, { also: ['muhurat_days'] }));
+      add(p, line('practical_step', VEHICLE_RE.test(p.question) ? 'vehicleChecks' : 'propertyChecks', 'end', {}, { also: ['muhurat_days'] }));
       if (yesno) { add(p, likelihoodLine(p)); must(p, 'likelihood'); }
       must(p, 'window', 'chart_reason', 'practical_step');
       break;
@@ -711,7 +771,7 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
         }
       } else p.content = rc;
       const exBack = /\bex\b|come back|wapas|ফিরে|वापस|patch up/i.test(p.question);
-      if (exBack) add(p, line('practical_step', 'exBack', 'lead', {}, { also: ['explain_policy'] }));
+      if (exBack) add(p, line('practical_step', 'exBack', 'lead', {}, { also: ['explain_policy'], trim: 95 }));
       add(p, line('communication_step', 'communication', 'end', {}, { also: ['practical_step'] }));
       if (f.feelings) add(p, line('validation', 'validation', 'lead'));
       // "Will my ex come back?" is their choice (rules.md §5.13): no odds for another person's decision.
@@ -774,6 +834,12 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
           must(p, 'phase_cause');
         }
       }
+      // "Will my brother support me?": a likelihood from the relation's main planet (rubric: yes/no → likelihood).
+      if (yesno && fc) {
+        const good = ['Jupiter', 'Venus', 'Moon', 'Mercury'].includes(fc.items[0]?.planet ?? '');
+        add(p, line('likelihood', good ? 'familySupportGood' : 'familySupportMixed', 'lead', { who: fc.vars!.who }));
+        must(p, 'likelihood');
+      }
       add(p, line('no_blame', 'noBlame', 'body'));
       // A "when will it get better with my brother?" answer gets the family step, not the general "start what matters".
       if (p.timing) add(p, line('practical_step', TIP2.family, 'end'));
@@ -798,10 +864,10 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
     case 'exams_competitive': {
       if (!p.timing || p.timing.topic !== 'education') p = ctx.timing({ ...p, timing: null }, 'education', !!i.timing);
       add(p, likelihoodLine(p, 'lead'));
-      add(p, line('study_strategy', 'studyStrategy', 'end', {}, { also: ['practical_step'] }));
+      add(p, line('study_strategy', isElder(p) ? 'studyStrategyElder' : 'studyStrategy', 'end', {}, { also: ['practical_step'] }));
       if (f.govt) { add(p, line('govt_indicators', ['strong', 'fair'].includes(govtIndicator(natalChart(p.subject)).level) ? 'govtFair' : 'govtWeak', 'body')); must(p, 'govt_indicators'); }
       if (f.feelings) add(p, line('validation', 'validation', 'lead'));
-      if (!i.timing) { p.coreOff = true; add(p, windowShortLine(p)); }
+      if (!i.timing) { p.coreOff = true; windowAndReason(p); }
       must(p, 'likelihood', 'study_strategy');
       break;
     }
@@ -863,7 +929,7 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
       add(p, line('likelihood', !lw ? 'legalModerate' : lw.strength === 'strong' ? 'legalStrong' : lw.strength === 'moderate' ? 'legalModerate' : 'legalWeak', 'lead'));
       add(p, line('lawyer', 'lawyer', 'end', {}, { required: true }));
       must(p, 'lawyer', 'likelihood');
-      if (!i.timing) { p.coreOff = true; add(p, windowShortLine(p)); }
+      if (!i.timing) { p.coreOff = true; windowAndReason(p); }
       break;
     }
     case 'spirituality_purpose': {
@@ -972,6 +1038,13 @@ export function applyCategory(plan: AnswerPlan, ctx: RouteCtx): AnswerPlan {
     if (!p.say.some(l => l.code === 'likelihood')) add(p, likelihoodLine(p));
     must(p, 'likelihood', 'window', 'practical_step');
   }
+  // "This year? / this time?" with a window gets a direct yes or "not this year" first, agreeing with the
+  // window that follows (Stage 3: "ebar increment?" answered with a 2031 window and no "not this time").
+  if (YEAR_NEAR_RE.test(p.question) && p.timing && !p.timing.result.past && !p.say.some(l => l.code === 'likelihood')
+    && !['why_now_current_phase', 'mental_health_distress', 'relationship_problems', 'divorce_separation', 'past_event_verification'].includes(res)) {
+    const l = likelihoodLine(p);
+    if (l) { add(p, l); must(p, 'likelihood'); }
+  }
   return p;
 }
 
@@ -998,8 +1071,17 @@ function leaningLine(p: AnswerPlan, options: [string, string], domain: 'career' 
     const ia = ra < 0 ? 99 : ra, ib = rb < 0 ? 99 : rb;
     if (ia !== ib) {
       const pick = ia < ib ? o1 : o2;
-      const it = items[Math.min(ia, ib)];
+      const k = Math.min(ia, ib);
+      const it = items[k];
       r = { pick, why: it.why ?? r.why };
+      // The picked option's field leads the list, so the leaning and the first field named agree.
+      if (k > 0 && p.content) p.content = { ...p.content, items: [it, ...items.filter((_, j) => j !== k)] };
+    } else if (p.content && ia === 99) {
+      // Neither option is among the chart's own fields: they are named as "beyond these two".
+      p.content = { ...p.content, beyond: true };
+    } else if (p.content && ia > 0) {
+      // Both options sit in the same field ("engineering or medicine"): that field leads.
+      p.content = { ...p.content, items: [items[ia], ...items.filter((_, j) => j !== ia)] };
     }
   }
   const [a, b] = options;

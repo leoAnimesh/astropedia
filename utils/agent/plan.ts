@@ -137,6 +137,10 @@ export type PlanInput = {
   noPrev?: boolean;
 };
 
+/** Family pushing a minor about marriage ("ghar wale pareshan hain", "barir lok chap dicche"). */
+const FAMILY_RE = /\b(?:family|parents|ghar ?wale|gharwale|ghar ke log|mummy|papa|maa|barir lok|bari(?:r)? theke|baba|ma)\b|परिवार|घर ?वाले|घरवाले|माता-पिता|मम्मी|पापा|বাড়ির লোক|পরিবার|বাবা|মা\b/i;
+const PRESSURE_RE = /pressur|\bforc|\bpush|pareshan|dabav|dabaav|zabardasti|\bchap\b|\bchaap\b|jor kor|दबाव|परेशान|ज़बरदस्ती|जबरदस्ती|চাপ|জোর কর/i;
+
 /** Topics a minor gets no timing for (ageLine in utils/astrology.ts says the same to the model). */
 const ADULT_TOPICS = new Set<string>(['marriage', 'love', 'children']);
 /** From this age, childbirth timing is not given. */
@@ -305,7 +309,9 @@ export function buildPlan(input: PlanInput): AnswerPlan {
 
   if (topic && age != null && age < 18 && ADULT_TOPICS.has(topic)) {
     // Redirect to studies, with the study window.
-    const p = withTiming({ ...plan, route: 'decline', decline: 'minorRomance', category: 'minor', deterministic: true, must: ['minor_redirect'] }, 'education', true);
+    const pressure = FAMILY_RE.test(input.question) && PRESSURE_RE.test(input.question);
+    const say = pressure ? [line('safety_resources', 'minorPressure', 'body', {}, { also: ['counsellor'] })] : [];
+    const p = withTiming({ ...plan, route: 'decline', decline: 'minorRomance', category: 'minor', deterministic: true, say, must: ['minor_redirect'] }, 'education', true);
     return p;
   }
   if (topic === 'children' && age != null && age >= ELDER_AGE) {

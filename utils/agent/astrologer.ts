@@ -43,6 +43,7 @@ import {
 import { linked, naturalRelation, strengthFactor, yogasFor, type ChartAnalysis, type Yoga } from '../chart-analysis';
 import { vargaUsable, vargaLord, vargaOccupants, type Varga } from '../vargas';
 import { splitPeriod } from '../timing-engine';
+import { ageOn } from '../guru-context';
 import type { AnswerKind, Ask } from './intent';
 import { PLANET_PLAIN } from './category-strings';
 import {
@@ -81,6 +82,8 @@ export type AnswerContent = {
   window: { topic: TimingTopic; best: TimingWindow } | null;
   /** Dates the answer may name besides the window (whyNow: when the current cycle ends). */
   allowedDates: Date[];
+  /** The user named two options and neither is among the items: the lead frames them as "beyond these two". */
+  beyond?: boolean;
 };
 
 // ─── Chart helpers ───────────────────────────────────────────────────────────
@@ -412,8 +415,12 @@ export function remedyTarget(question: string, c: NatalChart, profile: TimingPro
   }
 }
 
-function remedies(target: Planet, secular: boolean): PlanItem[] {
-  const r = REMEDY[target];
+/** Topics whose remedies keep relationship lines ("respect your partner"); others use a planet's work variant. */
+const PARTNER_TOPICS = new Set<TimingTopic>(['marriage', 'love', 'children']);
+
+function remedies(target: Planet, secular: boolean, topic: TimingTopic | null = null): PlanItem[] {
+  const base = REMEDY[target];
+  const r = topic && !PARTNER_TOPICS.has(topic) && base.work ? base.work : base;
   const text: ItemText = { label: secular ? r.secular : r.practice, model: (secular ? r.secular : r.practice).en, terms: REMEDY_TERMS };
   return [{ key: `remedy:${target}`, planet: target, text, why: null, source: `free remedy for ${target}${secular ? ' (secular)' : ''}` }];
 }
@@ -583,8 +590,11 @@ function whyNow(profile: TimingProfile, c: NatalChart, now: Date, topic: TimingT
   }
   const sat = saturnPressure(c, now);
   if (sat) {
-    allowed.push(sat.end);
-    const it = mk(`why:${sat.kind}`, WHY_NOW[sat.kind], l => ({ end: month(sat.end, l) }), `Saturn ${sat.kind} until ${sat.end.toISOString().slice(0, 7)}`, 'Saturn');
+    // A minor hears the phase and what helps, not how many years it lasts.
+    const minor = (ageOn(profile.birthDate, now) ?? 30) < 18;
+    if (!minor) allowed.push(sat.end);
+    const table = minor ? WHY_NOW[`${sat.kind}Teen` as const] : WHY_NOW[sat.kind];
+    const it = mk(`why:${sat.kind}`, table, l => ({ end: month(sat.end, l) }), `Saturn ${sat.kind} until ${sat.end.toISOString().slice(0, 7)}${minor ? ' (end not shown to a minor)' : ''}`, 'Saturn');
     it.text.terms = 'slow|testing|heavy|strain|pressure|धीमा|परख|भारी|दबाव|ধীর|পরীক্ষা|ভারী|চাপ';
     list.push(it);
   }
@@ -692,7 +702,12 @@ export function planAsk(
     case 'family': {
       const who = familyWho(opts.question ?? '');
       content.items = family(c, who);
-      content.vars = { who: FAMILY_WHO_L3[who] };
+      // "My brother" / "my sister": named as asked, not "your brother or sister".
+      const q = (opts.question ?? '').toLowerCase();
+      const one: L3 | null = who !== 'siblings' ? null
+        : /brother|\bbhai|\bbhaiya|\bdada\b|भाई|ভাই|দাদা/.test(q) && !/sister|behen|bahan|didi|बहन|দিদি|বোন/.test(q) ? { en: 'your brother', hi: 'भाई', bn: 'ভাইয়ের' }
+          : /sister|behen|bahan|didi|बहन|দিদি|বোন/.test(q) && !/brother|\bbhai|भाई|ভাই/.test(q) ? { en: 'your sister', hi: 'बहन', bn: 'বোনের' } : null;
+      content.vars = { who: one ?? FAMILY_WHO_L3[who] };
       break;
     }
     case 'relationship':
@@ -706,7 +721,7 @@ export function planAsk(
     }
     case 'remedies': {
       const target = remedyTarget(opts.question ?? '', c, profile, now, topic);
-      content.items = remedies(target.planet, !!opts.secular);
+      content.items = remedies(target.planet, !!opts.secular, topic);
       break;
     }
     case 'loveArranged': {

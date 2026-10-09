@@ -268,7 +268,7 @@ export const DYNAMICS: Record<Planet, ItemText> = {
   Jupiter: { label: { en: 'warmth, guidance and real support', hi: 'अपनापन, मार्गदर्शन और सच्चा सहारा', bn: 'আন্তরিকতা, পথ দেখানো আর সত্যিকারের ভরসা' }, model: 'warmth, guidance and real support', terms: 'warmth|guidance|support|अपनापन|मार्गदर्शन|सहारा|আন্তরিক|পথ দেখানো|ভরসা' },
   Venus: { label: { en: 'affection and a wish for harmony', hi: 'स्नेह और मेल-जोल की चाह', bn: 'স্নেহ আর মিলেমিশে থাকার ইচ্ছে' }, model: 'affection and a wish for harmony', terms: 'affection|harmony|स्नेह|मेल|স্নেহ|মিলেমিশে' },
   Saturn: { label: { en: 'duty, some distance and heavy responsibilities, rather than lasting damage', hi: 'ज़िम्मेदारियाँ और थोड़ी दूरी, कोई स्थायी दरार नहीं', bn: 'দায়িত্ব আর খানিক দূরত্ব, কোনো স্থায়ী ফাটল নয়' }, model: 'duty, some distance and heavy responsibilities rather than lasting damage', terms: 'duty|distance|responsib|ज़िम्मेदारी|जिम्मेदारी|दूरी|দায়িত্ব|দূরত্ব' },
-  Rahu: { label: { en: 'mixed signals and restlessness, which settle with honesty', hi: 'उलझे संकेत और बेचैनी, जो ईमानदारी से शांत होती है', bn: 'জট পাকানো ইঙ্গিত আর অস্থিরতা, যা সততায় শান্ত হয়' }, model: 'mixed signals and restlessness that settle with honesty', terms: 'mixed signal|restless|उलझे|बेचैनी|জট|অস্থির' },
+  Rahu: { label: { en: 'mixed signals and restlessness, which settle with honesty', hi: 'उलझे संकेत और बेचैनी, जो ईमानदारी से शांत होती है', bn: 'মিশ্র ইঙ্গিত আর অস্থিরতা, যা সততায় শান্ত হয়' }, model: 'mixed signals and restlessness that settle with honesty', terms: 'mixed signal|restless|उलझे|बेचैनी|মিশ্র|অস্থির' },
   Ketu: { label: { en: 'some emotional distance, where giving each other space helps', hi: 'थोड़ी भावनात्मक दूरी, जहाँ एक-दूसरे को जगह देना मदद करता है', bn: 'খানিকটা মনের দূরত্ব, যেখানে একে অপরকে জায়গা দেওয়া কাজে দেয়' }, model: 'some emotional distance where space helps', terms: 'distance|space|दूरी|जगह|দূরত্ব|জায়গা|জায়গা' },
 };
 
@@ -295,7 +295,7 @@ export const PURPOSE: Record<Planet, ItemText & { practice: L3 }> = {
 
 // ─── Free remedies (rules.md §5.28; never paid) ──────────────────────────────
 
-export const REMEDY: Record<Planet, { practice: L3; secular: L3 }> = {
+export const REMEDY: Record<Planet, { practice: L3; secular: L3; work?: { practice: L3; secular: L3 } }> = {
   Sun: { practice: { en: 'waking early and sitting in morning light, respecting your father and elders, and the Gayatri or Aditya Hridayam if you like', hi: 'जल्दी उठकर सुबह की धूप में बैठना, पिता और बड़ों का सम्मान, और चाहें तो गायत्री मंत्र या आदित्य हृदय', bn: 'ভোরে উঠে সকালের রোদে বসা, বাবা আর গুরুজনদের সম্মান করা, আর চাইলে গায়ত্রী মন্ত্র বা আদিত্য হৃদয়' },
     secular: { en: 'waking early, getting morning light and helping an elder each week', hi: 'जल्दी उठना, सुबह की धूप लेना और हर हफ़्ते किसी बुज़ुर्ग की मदद करना', bn: 'ভোরে ওঠা, সকালের রোদ নেওয়া আর প্রতি সপ্তাহে কোনো বয়স্ক মানুষকে সাহায্য করা' } },
   Moon: { practice: { en: 'regular sleep, time near water, calling your mother, and Shiva prayers if you like; giving water or milk to someone in need', hi: 'नियमित नींद, पानी के पास कुछ समय, माँ से बात करना, और चाहें तो शिव की प्रार्थना; किसी ज़रूरतमंद को पानी या दूध देना', bn: 'নিয়মিত ঘুম, জলের কাছে কিছুটা সময়, মায়ের সঙ্গে কথা বলা, আর চাইলে শিবের প্রার্থনা; কোনো দরকারি মানুষকে জল বা দুধ দেওয়া' },
@@ -307,7 +307,12 @@ export const REMEDY: Record<Planet, { practice: L3; secular: L3 }> = {
   Jupiter: { practice: { en: 'studying or teaching, respecting your teachers, giving books or food, and prayers on Thursdays if you like', hi: 'पढ़ना या पढ़ाना, गुरुओं का सम्मान, किताबें या भोजन दान, और चाहें तो गुरुवार की प्रार्थना', bn: 'পড়া বা পড়ানো, শিক্ষকদের সম্মান, বই বা খাবার দান, আর চাইলে বৃহস্পতিবারের প্রার্থনা' },
     secular: { en: 'studying or teaching, thanking a mentor and donating books', hi: 'पढ़ना या पढ़ाना, किसी गुरु का धन्यवाद और किताबें दान', bn: 'পড়া বা পড়ানো, কোনো শিক্ষককে ধন্যবাদ আর বই দান' } },
   Venus: { practice: { en: 'art or music, keeping your home clean and pleasant, respecting your partner, and Lakshmi prayers if you like', hi: 'कला या संगीत, घर साफ़ और सुंदर रखना, साथी का सम्मान, और चाहें तो लक्ष्मी पूजा', bn: 'শিল্প বা গান, ঘর পরিষ্কার আর সুন্দর রাখা, সঙ্গীকে সম্মান, আর চাইলে লক্ষ্মীর প্রার্থনা' },
-    secular: { en: 'art or music, a clean and pleasant home and kindness to your partner', hi: 'कला या संगीत, साफ़-सुथरा घर और साथी के प्रति नरमी', bn: 'শিল্প বা গান, পরিচ্ছন্ন ঘর আর সঙ্গীর প্রতি নরম ব্যবহার' } },
+    secular: { en: 'art or music, a clean and pleasant home and kindness to your partner', hi: 'कला या संगीत, साफ़-सुथरा घर और साथी के प्रति नरमी', bn: 'শিল্প বা গান, পরিচ্ছন্ন ঘর আর সঙ্গীর প্রতি নরম ব্যবহার' },
+    // Work, money and study questions: the same Venus practices without the partner line (Stage 3: a job remedy said "respect your partner").
+    work: {
+      practice: { en: 'art or music, keeping your home and desk clean and pleasant, courtesy to the people you work with, and Lakshmi prayers if you like', hi: 'कला या संगीत, घर और काम की जगह साफ़ और सुंदर रखना, साथ काम करने वालों से शालीन व्यवहार, और चाहें तो लक्ष्मी पूजा', bn: 'শিল্প বা গান, ঘর আর কাজের টেবিল পরিষ্কার আর সুন্দর রাখা, সহকর্মীদের সঙ্গে ভদ্র ব্যবহার, আর চাইলে লক্ষ্মীর প্রার্থনা' },
+      secular: { en: 'art or music, a clean and pleasant desk and courtesy to the people you work with', hi: 'कला या संगीत, साफ़-सुथरी काम की जगह और साथ काम करने वालों से शालीन व्यवहार', bn: 'শিল্প বা গান, পরিচ্ছন্ন কাজের টেবিল আর সহকর্মীদের সঙ্গে ভদ্র ব্যবহার' },
+    } },
   Saturn: { practice: { en: 'discipline and punctuality, serving elderly people or workers, and the Hanuman Chalisa on Saturdays if you like', hi: 'अनुशासन और समय की पाबंदी, बुज़ुर्गों या मज़दूरों की सेवा, और चाहें तो शनिवार को हनुमान चालीसा', bn: 'শৃঙ্খলা আর সময়ানুবর্তিতা, বয়স্ক মানুষ বা শ্রমিকদের সেবা, আর চাইলে শনিবার হনুমান চালিসা' },
     secular: { en: 'a steady routine, being punctual and spending time helping elderly people or workers', hi: 'नियमित दिनचर्या, समय की पाबंदी और बुज़ुर्गों या मज़दूरों की मदद में समय देना', bn: 'নিয়মিত রুটিন, সময় মেনে চলা আর বয়স্ক মানুষ বা শ্রমিকদের সাহায্যে সময় দেওয়া' } },
   Rahu: { practice: { en: 'cutting down screens and intoxicants, staying honest, helping animals, and Durga prayers if you like', hi: 'स्क्रीन और नशे से दूरी, ईमानदारी, जानवरों की मदद, और चाहें तो दुर्गा की प्रार्थना', bn: 'স্ক্রিন আর নেশা কমানো, সৎ থাকা, পশুদের সাহায্য, আর চাইলে দুর্গার প্রার্থনা' },
@@ -337,6 +342,17 @@ export const LOVE_WHY: Record<'link57' | 'venus5' | 'rahu' | 'link79' | 'jupiter
 // ─── Answer sentences ────────────────────────────────────────────────────────
 
 type Table = L3;
+
+/**
+ * Opening sentence when the user named two options and neither is among the chart's own top fields: the
+ * leaning line answers the choice, so the items are framed as "beyond these two" (Stage 3: "leans to IT"
+ * followed by "your chart points most clearly to care work" read as a contradiction).
+ */
+export const LEAD_BEYOND: Record<string, Table> = {
+  careerField: { en: 'Beyond these two, the fields your chart favours most are {items}.', hi: 'इन दोनों के अलावा, आपका चार्ट सबसे ज़्यादा इन क्षेत्रों का साथ देता है: {items}।', bn: 'এই দুটোর বাইরে আপনার চার্ট সবচেয়ে বেশি টানে এই ক্ষেত্রগুলোয়: {items}।' },
+  studyField: { en: 'Beyond these two, the subjects your chart favours most are {items}.', hi: 'इन दोनों के अलावा, आपका चार्ट सबसे ज़्यादा इन विषयों का साथ देता है: {items}।', bn: 'এই দুটোর বাইরে আপনার চার্ট সবচেয়ে বেশি টানে এই বিষয়গুলোয়: {items}।' },
+  purpose: { en: 'Beyond these two, your chart points to {items}.', hi: 'इन दोनों के अलावा, आपका चार्ट इस ओर इशारा करता है: {items}।', bn: 'এই দুটোর বাইরে আপনার চার্ট এদিকে ইঙ্গিত করে: {items}।' },
+};
 
 /** Opening sentence per ask; two variants each (the template picks one that doesn't repeat the thread). */
 export const LEAD: Record<string, Table[]> = {
@@ -435,7 +451,7 @@ export const TIP: Record<string, Table> = {
 };
 
 /** whyNow items. {area} plain area; {end} month label. */
-export const WHY_NOW: Record<'maha' | 'antar' | 'sadeSati' | 'ashtama' | 'kantaka' | 'notLinked' | 'linked'
+export const WHY_NOW: Record<'maha' | 'antar' | 'sadeSati' | 'ashtama' | 'kantaka' | 'sadeSatiTeen' | 'ashtamaTeen' | 'kantakaTeen' | 'notLinked' | 'linked'
   | 'supportive' | 'effortful' | 'friction' | 'cost' | 'nextLinked' | 'nextOther' | 'rules', Table> = {
   supportive: { en: 'a supportive cycle for you overall', hi: 'कुल मिलाकर आपके लिए सहायक चक्र', bn: 'সব মিলিয়ে আপনার জন্য সহায়ক চক্র' },
   effortful: { en: 'a cycle that asks for effort more than it gives', hi: 'ऐसा चक्र जो देता कम और मेहनत ज़्यादा माँगता है', bn: 'এমন চক্র যা দেয় কম, পরিশ্রম চায় বেশি' },
@@ -446,6 +462,10 @@ export const WHY_NOW: Record<'maha' | 'antar' | 'sadeSati' | 'ashtama' | 'kantak
   rules: { en: '{area}', hi: '{area}', bn: '{area}' },
   maha: { en: 'your long {P} period, which centres life on {area}', hi: 'आपका {P} का लंबा दौर, जो जीवन का ध्यान {area} पर रखता है', bn: 'আপনার {P}-এর লম্বা পর্ব, যা জীবনের ঝোঁক রাখে {area} দিকে' },
   antar: { en: 'a shorter {P} period until {end}, focused on {area}', hi: '{end} तक {P} का छोटा दौर, जिसका ध्यान {area} पर है', bn: '{end} পর্যন্ত {P}-এর ছোট পর্ব, যার ঝোঁক {area} দিকে' },
+  // Minors (under 18): the same Saturn phases without a far end date (Stage 3: "eases around June 2032" to a teenager).
+  sadeSatiTeen: { en: 'Saturn passing over your Moon sign, a slower phase that rewards patience and steady habits', hi: 'आपकी चंद्र राशि पर शनि का गोचर, एक धीमा दौर जो धैर्य और अच्छी आदतों का फल देता है', bn: 'আপনার চন্দ্ররাশির ওপর দিয়ে শনির চলা, একটা ধীর পর্ব যা ধৈর্য আর ভালো অভ্যাসের ফল দেয়' },
+  ashtamaTeen: { en: 'a Saturn passage that brings changes and asks for patience', hi: 'शनि का ऐसा गोचर जो बदलाव लाता है और धैर्य माँगता है', bn: 'শনির এমন একটা যাত্রা যা বদল আনে আর ধৈর্য চায়' },
+  kantakaTeen: { en: 'Saturn asking for patience at home and with your peace of mind', hi: 'घर और मन की शांति के मामले में शनि धैर्य माँगता है', bn: 'বাড়ি আর মনের শান্তির ব্যাপারে শনি ধৈর্য চায়' },
   sadeSati: { en: 'Saturn passing over your Moon sign, a slow, testing time for the mind that eases around {end}', hi: 'आपकी चंद्र राशि पर शनि का गोचर, मन के लिए धीमा और परखने वाला समय, जो {end} के आसपास हल्का होगा', bn: 'আপনার চন্দ্ররাশির ওপর দিয়ে শনির চলা, মনের জন্য ধীর আর পরীক্ষার সময়, যা {end} নাগাদ হালকা হবে' },
   ashtama: { en: 'a heavy Saturn passage with sudden changes, which lifts around {end}', hi: 'शनि का भारी गोचर, अचानक बदलावों के साथ, जो {end} के आसपास हटेगा', bn: 'হঠাৎ বদলের সঙ্গে শনির একটা ভারী যাত্রা, যা {end} নাগাদ কাটবে' },
   kantaka: { en: 'Saturn putting strain on your home and peace of mind, which lifts around {end}', hi: 'घर और मन की शांति पर शनि का दबाव, जो {end} के आसपास हटेगा', bn: 'বাড়ি আর মনের শান্তির ওপর শনির চাপ, যা {end} নাগাদ কাটবে' },

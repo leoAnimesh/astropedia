@@ -14,8 +14,10 @@ import { PLANET_PLAIN } from '../category-strings';
 import { formatGitaQuote, pickGitaVerse } from '../../gita';
 import { findDates, replyOverlap, westernDigits } from '../../reply-guards';
 import type { AnswerContent } from '../astrologer';
+import type { PlanLine } from '../checks';
+import type { L3 } from '../ask-strings';
 import {
-  FOLLOW_LEAD_ASK, NEXT_ITEM_ASK, AREA_OF_HOUSE,
+  FOLLOW_LEAD_ASK, NEXT_ITEM_ASK, AREA_OF_HOUSE, LEAD_BEYOND, REMEDY,
   AND, BECAUSE, COMMA, DOCTOR_LINE, EXAMPLES, EXAMPLES_MORE, FIELD_LINE, FOLLOW_LEAD, FOLLOW_LEAD_NEXT, LEAD, MEET_LINE, NEXT_ITEM, PLACE_LINE, TIP, TIP2,
   WEAK_LINE, WINDOW_LINE,
 } from '../ask-strings';
@@ -37,6 +39,34 @@ const HELP_APPROVAL: Record<Lang, string> = {
   hi: 'तब तक हर किस्त समय पर चुकाएँ और खर्च बजट में रखें; लोन देने वाले सबसे पहले यही रिकॉर्ड देखते हैं।',
   bn: 'ততদিন প্রতিটা কিস্তি সময়ে শোধ করুন আর খরচ বাজেটের মধ্যে রাখুন; ঋণদাতারা প্রথমে এই রেকর্ডটাই দেখেন।',
 };
+
+/** From this age, CV / application / exam-drill tips give way to steadier, experience-led steps. */
+export const ELDER_TIPS_AGE = 60;
+export const isElder = (plan: AnswerPlan) => (plan.age ?? 0) >= ELDER_TIPS_AGE;
+
+const ELDER_HELPS: Partial<Record<TimingTopic, L3>> = {
+  job: {
+    en: 'Before then, reach out to people who know your work; advisory, mentoring or part-time roles suit this stage well.',
+    hi: 'उससे पहले उन लोगों से संपर्क करें जो आपका काम जानते हैं; सलाह, मार्गदर्शन या पार्ट-टाइम काम इस दौर में अच्छे रहते हैं।',
+    bn: 'তার আগে যাঁরা আপনার কাজ জানেন তাঁদের সঙ্গে যোগাযোগ করুন; পরামর্শ, পথ দেখানো বা পার্ট-টাইম কাজ এই সময়ে ভালো মানায়।',
+  },
+  promotion: {
+    en: 'Before then, let your experience show: offer guidance to others and take on the work you know best.',
+    hi: 'उससे पहले अपने अनुभव को सामने आने दें: दूसरों को राह दिखाएँ और वह काम लें जिसे आप सबसे अच्छा जानते हैं।',
+    bn: 'তার আগে নিজের অভিজ্ঞতাকে সামনে আনুন: অন্যদের পথ দেখান আর যে কাজটা সবচেয়ে ভালো জানেন সেটা নিন।',
+  },
+  education: {
+    en: 'A calm, regular routine of reading or practice before then helps most in that window.',
+    hi: 'उससे पहले पढ़ने या अभ्यास का एक शांत, नियमित क्रम उस समय सबसे ज़्यादा काम आएगा।',
+    bn: 'তার আগে পড়া বা অনুশীলনের একটা শান্ত, নিয়মিত অভ্যাস ওই সময়ে সবচেয়ে কাজে দেবে।',
+  },
+};
+
+/** The topic's practical step, in a form that fits the asker's age. */
+export function helpFor(plan: AnswerPlan, topic: TimingTopic): string {
+  if (isElder(plan) && ELDER_HELPS[topic]) return ELDER_HELPS[topic]![plan.lang];
+  return HELPS[plan.lang][topic];
+}
 
 function areaOverride(plan: AnswerPlan | undefined, topic: TimingTopic): (typeof AREA_OVERRIDE)[string] | null {
   if (!plan) return null;
@@ -91,9 +121,41 @@ const planetName = (p: string, l: Lang, bare = false) => (bare ? (PLANET_PLAIN[p
  * one concrete chart reason instead of "the part of the life timeline linked to …".
  */
 export function reasonSentence(plan: AnswerPlan): string | null {
+  const r = reasonParts(plan);
+  if (!r) return null;
+  return r.reason ? r.reason + (r.transit ? ' ' + r.transit : '') : r.transit;
+}
+
+/**
+ * How `planet` (a sub-period lord of the best window) is tied to the window's topic, as a clause with the
+ * planet as subject ("Saturn sits in your career side"), from the engine's links for that window; null if none.
+ * The "why this time?" follow-up uses it, so its house always belongs to the topic (Stage 3: a job window
+ * explained by "it guides your partnership side").
+ */
+export function linkClause(plan: AnswerPlan, planet: string, lang: Lang): string | null {
+  const t = plan.timing;
+  if (!t) return null;
+  const d = t.best.reasons.find(r => r.kind === 'dasha') as { kind: 'dasha'; maha: string; antar: string; mahaLinks: Link[]; antarLinks: Link[] } | undefined;
+  if (!d) return null;
+  const links = d.antar === planet ? d.antarLinks : d.maha === planet ? d.mahaLinks : [];
+  const houses = TOPIC_RULES[t.topic].houses.map(([h]) => h);
+  const link = links.filter(l => LINK_TEXT[l.kind] && (l.kind === 'karaka' || (l.house != null && houses.includes(l.house))))
+    .sort((a, b) => LINK_ORDER.indexOf(a.kind) - LINK_ORDER.indexOf(b.kind) || houses.indexOf(a.house ?? 99) - houses.indexOf(b.house ?? 99))[0];
+  if (!link) return null;
+  return fill(LINK_TEXT[link.kind]![lang], {
+    p: planetName(planet, lang), area: link.house ? (TOPIC_HOUSE_WORD[t.topic]?.[link.house]?.[lang] ?? AREA_OF_HOUSE[lang][link.house]) : '', topic: AREA[lang][t.topic], topicGen: AREA_GEN_BN[t.topic],
+  });
+}
+
+/**
+ * The window's chart reason split in two: the sub-period clause and the
+ * slow-planet transit support (a separate sentence the word-limit trim may drop).
+ */
+export function reasonParts(plan: AnswerPlan): { reason: string | null; transit: string | null } | null {
   const t = plan.timing;
   if (!t) return null;
   const lang = plan.lang;
+  const past = t.result.past;
   const d = t.best.reasons.find(r => r.kind === 'dasha') as { kind: 'dasha'; maha: string; antar: string; mahaLinks: Link[]; antarLinks: Link[] } | undefined;
   const houses = TOPIC_RULES[t.topic].houses.map(([h]) => h);
   const pick = (links: Link[]) => {
@@ -101,10 +163,10 @@ export function reasonSentence(plan: AnswerPlan): string | null {
     return ok.sort((a, b) => LINK_ORDER.indexOf(a.kind) - LINK_ORDER.indexOf(b.kind)
       || houses.indexOf(a.house ?? 99) - houses.indexOf(b.house ?? 99))[0] ?? null;
   };
-  const transit = t.best.reasons.some(r => r.kind === 'doubleTransit') ? S.plusDouble[lang]
+  const transit = past ? '' : t.best.reasons.some(r => r.kind === 'doubleTransit') ? S.plusDouble[lang]
     : t.best.reasons.some(r => r.kind === 'jupiterTransit') ? S.plusJupiter[lang] : '';
   const v = vars(lang, t.topic, t.best, plan);
-  if (!d) return transit ? transit.trim() : null;
+  if (!d) return transit ? { reason: null, transit: transit.trim() } : null;
   let planet = d.antar, link = pick(d.antarLinks);
   if (!link && pick(d.mahaLinks)) { planet = d.maha; link = pick(d.mahaLinks); }
   const P = planetName(planet, lang, true);
@@ -113,19 +175,21 @@ export function reasonSentence(plan: AnswerPlan): string | null {
     const clause = fill(LINK_TEXT[link.kind]![lang], {
       p: planetName(planet, lang), area: link.house ? (TOPIC_HOUSE_WORD[t.topic]?.[link.house]?.[lang] ?? AREA_OF_HOUSE[lang][link.house]) : '', topic: AREA[lang][t.topic], topicGen: AREA_GEN_BN[t.topic],
     });
-    text = fill(S.reasonPlanet[lang], { P, link: clause });
+    text = fill((past ? S.reasonPlanetPast : S.reasonPlanet)[lang], { P, link: clause });
   } else {
-    text = fill(S.reasonPlanetOnly[lang], { P, area: v.area, areaGen: v.areaGen });
+    text = fill((past ? S.reasonPlanetOnlyPast : S.reasonPlanetOnly)[lang], { P, area: v.area, areaGen: v.areaGen });
   }
-  text += transit;
+  let tr = transit.trim();
   // Another person's chart: their phase and their houses, not "your".
   if (plan.subject.isYou === false) {
     const name = firstName(plan.subject.name);
-    text = lang === 'en' ? text.replace(/\byour\b/g, `${name}'s`)
-      : lang === 'hi' ? text.replace(/आपके /g, `${name} के `).replace(/आपकी /g, `${name} की `)
-        : text.replace(/আপনার /g, `${name}-এর `);
+    const other = (x: string) => (lang === 'en' ? x.replace(/\byour\b/g, `${name}'s`)
+      : lang === 'hi' ? x.replace(/आपके /g, `${name} के `).replace(/आपकी /g, `${name} की `)
+        : x.replace(/আপনার /g, `${name}-এর `));
+    text = other(text);
+    tr = other(tr);
   }
-  return text;
+  return { reason: text, transit: tr || null };
 }
 
 /**
@@ -161,42 +225,56 @@ const COMPACT = new Set(['relationship_problems', 'mental_health_distress', 'why
 /** Codes of plan lines that already give the answer's practical step (the topic tip is then left out). */
 const PRACTICAL = new Set(['practical_step', 'communication_step', 'money_habit', 'study_strategy', 'self_care', 'doctor', 'lawyer']);
 
+/** A sentence of a template answer with its trim priority (KEEP: never trimmed; lower is trimmed first). */
+export type Part = { text: string; prio: number; short?: string; line?: PlanLine; core?: boolean; covers?: string[] };
+export const KEEP = 100;
+
 /**
  * The timing paragraph (Stage 3: 50-90 words, answer first): the window (with
  * the most likely month when narrowing, or the other person's name), one chart
  * reason, at most one other window, one practical step, and the caveats.
  */
-export function timingSentences(plan: AnswerPlan, { withHelps = true } = {}): string[] {
+export function timingSentences(plan: AnswerPlan, opts: { withHelps?: boolean } = {}): string[] {
+  return timingParts(plan, opts).map(x => x.text);
+}
+
+export function timingParts(plan: AnswerPlan, { withHelps = true } = {}): Part[] {
   const t = plan.timing;
   if (!t) return [];
   const lang = plan.lang;
   const v = vars(lang, t.topic, t.best, plan);
-  const out: string[] = [];
+  const out: Part[] = [];
+  const push = (text: string, prio: number) => out.push({ text, prio, core: true });
   const other = plan.subject.isYou === false && plan.decline !== 'minorRomance';
   const name = firstName(plan.subject.name);
   const named = { ...v, name, nameGen: `${name}-এর` };
   const narrow = plan.notes.includes('narrow');
-  if (t.result.past) out.push(fill(S.pastWindow[lang], { ...v, who: other ? fill(S.whoOther[lang], { name }) : '' }));
-  else if (other) out.push(fill(S.windowOther[lang], named));
-  else out.push(fill((narrow ? S.windowNarrow : t.topic === 'general' ? S.windowGeneral : S.window)[lang], { ...v, who: '' }));
+  if (t.result.past) push(fill(S.pastWindow[lang], { ...v, who: other ? fill(S.whoOther[lang], { name }) : '' }), KEEP);
+  else if (other) push(fill(S.windowOther[lang], named), KEEP);
+  else push(fill((narrow ? S.windowNarrow : t.topic === 'general' ? S.windowGeneral : S.window)[lang], { ...v, who: '' }), KEEP);
   // Where feelings, dynamics or care lead the answer, the window is one part of it: no alternatives.
   // A yes/no answer (likelihood line) is likelihood + window + reason: no alternatives either.
   const compact = COMPACT.has(plan.resolved) || plan.say.some(l => l.code === 'likelihood');
-  if (!t.result.past && plan.decline !== 'minorRomance') {
-    const reason = reasonSentence(plan);
-    if (reason) out.push(reason);
-    const alt = compact ? null : altSentence(plan);
-    if (alt) out.push(alt);
+  if (plan.decline !== 'minorRomance') {
+    // One concrete chart reason, also for a past window (rubric 3.2: "why that time" in one clause).
+    const r = reasonParts(plan);
+    if (r?.reason) push(r.reason, 80);
+    if (r?.transit) push(r.transit, 20);
+    const alt = compact || t.result.past ? null : altSentence(plan);
+    // A nearer opening before a far window matters more than "the next one after".
+    if (alt) push(alt, plan.notes.includes('far') ? 45 : 30);
   }
   if (!t.result.past && withHelps && !plan.say.some(l => PRACTICAL.has(l.code))) {
     // Loan approval: a saving/returns tip is beside the point; repayment record and paperwork are what lenders weigh.
     const approval = areaOverride(plan, t.topic) === AREA_OVERRIDE.approval;
-    out.push(other ? fill(S.helpOther[lang], named) : approval ? HELP_APPROVAL[lang] : HELPS[lang][t.topic]);
+    push(other ? fill(S.helpOther[lang], named) : approval ? HELP_APPROVAL[lang] : helpFor(plan, t.topic), 50);
+    out[out.length - 1].covers = ['practical_step', ...(t.topic === 'money' ? ['money_habit'] : [])];
   }
-  if (plan.notes.includes('exactDate')) out.push(S.exactDate[lang]);
-  if (plan.notes.includes('noTime')) out.push(S.noTimeShort[lang]);
-  else if (plan.notes.includes('noPlace')) out.push(S.noPlace[lang]);
-  return out.map(x => localText(x, lang));
+  if (plan.notes.includes('exactDate')) push(S.exactDate[lang], 70);
+  // The no-birth-time caveat is never trimmed (the verify layer would add back its longer form).
+  if (plan.notes.includes('noTime')) push(S.noTimeShort[lang], 95);
+  else if (plan.notes.includes('noPlace')) push(S.noPlace[lang], 40);
+  return out.map(x => ({ ...x, text: localText(x.text, lang) }));
 }
 
 /**
@@ -222,6 +300,8 @@ export function renderTemplate(plan: AnswerPlan, previous: string[] = []): strin
       case 'minorRomance': {
         // The redirect, the study window and one study tip: nothing about romance timing, no extra windows.
         const parts = [fill(S.minorRomance[lang], { age: plan.age ?? '' })];
+        // Family pressing a minor about marriage: what they can say and who can help (plan.ts).
+        parts.push(...plan.say.map(l => l.text[lang]));
         if (plan.timing) parts.push(...timingSentences(plan));
         return localText(parts.join(' '), lang);
       }
@@ -232,78 +312,139 @@ export function renderTemplate(plan: AnswerPlan, previous: string[] = []): strin
   }
   if (plan.route !== 'answer') return null;
   const t = plan.timing;
-  let core = '';
+  let core: Part[] = [];
   if (!plan.coreOff) {
-    if (plan.content && !plan.intent.timing) core = renderContent(plan, previous);
-    else if (t) {
-      // The window answers the question, so it comes first; the sub-period behind it is its reason.
-      core = localText(timingSentences(plan).join(' '), lang);
-    }
+    if (plan.content && !plan.intent.timing) core = contentParts(plan, previous);
+    // The window answers the question, so it comes first; the sub-period behind it is its reason.
+    else if (t) core = timingParts(plan);
   }
-  if (!core && !plan.say.length) return null;
+  if (!core.length && !plan.say.length) return null;
   return withLines(plan, core, previous);
 }
 
 /** Soft word budget for a whole template answer (Stage 3 target 50-90 words; Hindi and Bengali run ~10% longer / shorter). */
 const BUDGET: Record<Lang, number> = { en: 90, hi: 100, bn: 85 };
+/** Hard word limit (judge_rubric.md 3.5 "long" from): over it, the least important sentences go first. */
+export const WORD_LIMIT: Record<Lang, number> = { en: 90, hi: 105, bn: 85 };
+
+/**
+ * Sentences that say the same kind of thing ("talk to your family" twice, two doctor lines):
+ * one per answer. Matched per sentence, in any of the three languages.
+ */
+const SAME_POINT: [string, RegExp][] = [
+  ['familyTalk', /\btalk\b[^.;]*\b(?:family|parents)\b|(?:परिवार|माता-पिता|घरवालों)[^।;]*बात (?:करें|कीजिए)|(?:পরিবার|বাবা-মা)[^।;]*কথা বলুন/i],
+  ['doctor', /\b(?:see|talk to|consult) (?:a |your )?doctor\b|डॉक्टर (?:को दिखाएँ|से (?:बात|सलाह|मिलें))|ডাক্তার(?:ের সঙ্গে কথা| দেখান)/i],
+  ['counsellor', /\bcounsell?or\b|काउंसलर|কাউন্সেলর/i],
+  ['cv', /\bCV\b|बायोडाटा|বায়োডেটা/i],
+];
+const pointOf = (x: string) => SAME_POINT.find(([, re]) => re.test(x))?.[0] ?? null;
+
+const count = (x: string) => x.split(/\s+/).filter(Boolean).length;
 
 /**
  * The plan's lines around the core paragraph: lead lines first, then the
  * core, body and end lines. Lines already said in an earlier reply are left
  * out (unless required), and optional body lines stop at the word budget.
+ * Then: one sentence per point (SAME_POINT), and over the language's word
+ * limit the least important sentences are shortened or left out (never a
+ * required line, the window or the direct answer).
  */
-function withLines(plan: AnswerPlan, core: string, previous: string[]): string {
+function withLines(plan: AnswerPlan, coreIn: Part[] | string, previous: string[]): string {
   const lang = plan.lang;
+  const core: Part[] = typeof coreIn === 'string' ? (coreIn ? [{ text: coreIn, prio: KEEP, core: true }] : []) : coreIn;
   const said = (x: string) => previous.some(p => replyOverlap(westernDigits(x), p) >= SAID_MAX);
   const pick = (pos: 'lead' | 'body' | 'end') => plan.say.filter(l => l.pos === pos).map(l => ({ l, text: l.text[lang] }))
     // The direct answer to a choice ("IT or finance?") stays even when its reason echoes an earlier reply.
     .filter(({ l, text }) => l.required || l.code === 'leaning' || !said(text));
   const lead = pick('lead'), body = pick('body'), end = pick('end');
-  const count = (x: string) => x.split(/\s+/).filter(Boolean).length;
-  let n = count(core) + [...lead, ...end].reduce((a, x) => a + count(x.text), 0);
-  const keptBody: string[] = [];
+  const coreWords = core.reduce((a, x) => a + count(x.text), 0);
+  let n = coreWords + [...lead, ...end].reduce((a, x) => a + count(x.text), 0);
+  const keptBody: Part[] = [];
   // Codes the plan intends to cover (plan.must) that no kept line carries yet: such a line is kept past the budget.
   const covered = new Set([...lead, ...end].flatMap(x => [x.l.code, ...(x.l.also ?? [])]));
   // The core paragraph (window + sub-period, or the items + their reason) already gives the chart reason.
-  if (core) covered.add('chart_reason');
+  if (core.length) covered.add('chart_reason');
+  // A line that carries one of the plan's must codes is shortened at most, never dropped.
+  const carriesMust = (l: PlanLine) => [l.code, ...(l.also ?? [])].some(c => plan.must.includes(c));
+  const part = (l: PlanLine, text: string, prio: number): Part => ({
+    text, prio: l.trim ?? (l.required ? KEEP : carriesMust(l) ? Math.max(prio, 90) : prio), short: l.short?.[lang], line: l,
+  });
   for (const b of body) {
     const needed = [b.l.code, ...(b.l.also ?? [])].some(c => plan.must.includes(c) && !covered.has(c));
     // Optional body lines stop at the budget (Stage 3: answers ran to 130-180 words keeping "at least one").
     if (!b.l.required && !needed && n + count(b.text) > BUDGET[lang]) continue;
     for (const c of [b.l.code, ...(b.l.also ?? [])]) covered.add(c);
-    keptBody.push(b.text);
+    keptBody.push(part(b.l, b.text, needed ? 90 : 40));
     n += count(b.text);
   }
-  const coreSentences = core ? core.split(/(?<=[.!?।])\s+/) : [];
   // Answer first (rules.md §1.1): a timing core's window sentence (after a yes/no likelihood line) comes before
   // feelings and context lines; feelings-first categories (distress, why-now) keep their order.
   const DIRECT = new Set(['likelihood', 'compat_score', 'lucky_values', 'muhurat_days', 'computed_fact', 'leaning', 'decline_name', 'decline_sex', 'no_exact_day', 'peak', 'window', 'emergency', 'safety_resources', 'explain_reasoning']);
+  const OPENER = new Set(['ack_correction', 'calm_boundary', 'validation']);
+  const leadPart = (x: { l: PlanLine; text: string }) => part(x.l, x.text, DIRECT.has(x.l.code) ? KEEP : OPENER.has(x.l.code) ? 85 : 60);
   // The core (a window, or a "which / what" answer's items) leads unless the category starts with feelings.
-  const timingFirst = !plan.coreOff && !!core && !['mental_health_distress', 'why_now_current_phase', 'family_parents_siblings', 'relationship_problems'].includes(plan.resolved)
+  const timingFirst = !plan.coreOff && core.length > 0 && !['mental_health_distress', 'why_now_current_phase', 'family_parents_siblings', 'relationship_problems'].includes(plan.resolved)
     && plan.category !== 'elderly';
-  let head: string[] = lead.map(x => x.text);
-  let coreRest = coreSentences;
-  if (timingFirst && coreSentences.length) {
+  let head: Part[] = lead.map(leadPart);
+  let coreRest = core;
+  if (timingFirst) {
     // A one-phrase acknowledgement ("Thanks for telling me.", "Sorry…") still opens the answer.
     // Feelings get one short sentence before the answer (rules.md §1.8), never after the window.
-    const OPENER = new Set(['ack_correction', 'calm_boundary', 'validation']);
-    const open = lead.filter(x => OPENER.has(x.l.code)).map(x => x.text);
-    const direct = lead.filter(x => DIRECT.has(x.l.code)).map(x => x.text);
-    const rest = lead.filter(x => !DIRECT.has(x.l.code) && !OPENER.has(x.l.code)).map(x => x.text);
-    head = [...open, ...direct, coreSentences[0], ...rest];
-    coreRest = coreSentences.slice(1);
+    const open = lead.filter(x => OPENER.has(x.l.code)).map(leadPart);
+    const direct = lead.filter(x => DIRECT.has(x.l.code)).map(leadPart);
+    const rest = lead.filter(x => !DIRECT.has(x.l.code) && !OPENER.has(x.l.code)).map(leadPart);
+    head = [...open, ...direct, core[0], ...rest];
+    coreRest = core.slice(1);
   }
-  const parts = [...head, ...coreRest, ...keptBody, ...end.map(x => x.text)].filter(x => x && x.trim());
-  // Never the same sentence twice (a line and the core can share one).
+  const all = [...head, ...coreRest, ...keptBody, ...end.map(x => part(x.l, x.text, 45))].filter(x => x.text && x.text.trim());
+  // Never the same sentence twice (a line and the core can share one), and one sentence per point:
+  // the plan's own line (more specific) wins over the core's generic tip; else the more important one.
+  const out: Part[] = [];
   const seen = new Set<string>();
-  const out: string[] = [];
-  for (const x of parts) {
-    const k = westernDigits(x).trim();
+  for (const x of all) {
+    const k = westernDigits(x.text).trim();
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push(capFirst(x));
+    const pt = pointOf(x.text);
+    const dup = pt ? out.findIndex(y => pointOf(y.text) === pt) : -1;
+    if (dup >= 0) {
+      const y = out[dup];
+      const xWins = x.prio > y.prio || (x.prio === y.prio && !!y.core && !x.core);
+      const loser = xWins ? y : x;
+      // A required line is never dropped (two required lines of the same kind both stay).
+      if (!loser.line?.required) {
+        if (!xWins) continue;
+        out.splice(dup, 1);
+      }
+    }
+    out.push(x);
   }
-  return localText(out.join(' '), lang);
+  // A core sentence that is the only carrier of a must code (the timing paragraph's practical step) stays too.
+  for (const x of out) {
+    if (!x.covers) continue;
+    const others = out.filter(y => y !== x && y.line).flatMap(y => [y.line!.code, ...(y.line!.also ?? [])]);
+    if (x.covers.some(c => plan.must.includes(c as PlanLine['code']) && !others.includes(c as PlanLine['code']))) x.prio = Math.max(x.prio, 90);
+  }
+  // Over the word limit: shorten, then drop, the least important sentences (KEEP lines stay).
+  const total = () => out.reduce((a, x) => a + count(x.text), 0);
+  const order = out.filter(x => x.prio < KEEP).sort((a, b) => a.prio - b.prio);
+  const over = () => total() > WORD_LIMIT[lang];
+  // 1. Minor sentences (transit add-on, other windows, generic tips): shortened or left out.
+  for (const x of order.filter(y => y.prio < 80)) {
+    if (!over()) break;
+    if (x.short) { x.text = x.short; x.short = undefined; } else out.splice(out.indexOf(x), 1);
+  }
+  // 2. Anything with a shorter wording (lines that carry a must code included).
+  for (const x of order) {
+    if (!over()) break;
+    if (x.short && out.includes(x)) { x.text = x.short; x.short = undefined; }
+  }
+  // 3. Then the chart reason and acknowledgements; lines that carry a must code (prio 90+) are never dropped.
+  for (const x of order.filter(y => y.prio >= 80 && y.prio < 90)) {
+    if (!over()) break;
+    if (out.includes(x)) out.splice(out.indexOf(x), 1);
+  }
+  return localText(out.map(x => capFirst(x.text)).join(' '), lang);
 }
 
 /** "a, b and c" in `lang`. */
@@ -324,7 +465,7 @@ const capFirst = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
  */
 export function contentLead(content: AnswerContent, lang: Lang, variant = 0): string {
   const leads = LEAD[content.ask];
-  const lead = leads[variant % leads.length];
+  const lead = (content.beyond && LEAD_BEYOND[content.ask]) || leads[variant % leads.length];
   // Two items lead every answer (rubric: 2-3 options, never a shotgun list); the third is kept for follow-ups.
   const n = 2;
   const extra = Object.fromEntries(Object.entries(content.vars ?? {}).map(([k, v]) => [k, v[lang]]));
@@ -346,8 +487,12 @@ const MAX_WORDS: Record<Lang, number> = { en: 62, hi: 66, bn: 56 };
  * the template never repeats the thread either.
  */
 export function renderContent(plan: AnswerPlan, previous: string[] = []): string {
+  return localText(contentParts(plan, previous).map(x => capFirst(x.text)).join(' '), plan.lang);
+}
+
+export function contentParts(plan: AnswerPlan, previous: string[] = []): Part[] {
   const c = plan.content!;
-  if (c.ask === 'whyNow') return renderWhyNow(plan, previous);
+  if (c.ask === 'whyNow') return whyNowParts(plan, previous);
   const lang = plan.lang;
   const said = (t: string) => previous.some(p => replyOverlap(t, p) >= SAID_MAX);
   const label = (i: number) => (c.items[i] ? (c.items[i].text.short ?? c.items[i].text.label)[lang] : '');
@@ -379,14 +524,16 @@ export function renderContent(plan: AnswerPlan, previous: string[] = []): string
   if (meetQ && meet) parts.push(fill(MEET_LINE[lang], { meet: meet.text[lang] }));
   parts.push(lead);
   const optional: string[] = [];
+  const optPrio = new Map<string, number>();
+  const opt = (x: string, prio: number, front = false) => { optPrio.set(x, prio); if (front) optional.unshift(x); else optional.push(x); };
   const whys = c.items.flatMap(i => (i.why ? [i.why[lang]] : []));
   // (Not when a leaning line already gave the same reason.)
   const leanWhy = plan.say.some(l => l.code === 'leaning' && whys[0] && l.text[lang].includes(whys[0]));
-  if (whys.length && !followUp && !leanWhy && !evenLove) optional.push(fill(BECAUSE[lang], { reasons: whys[0] }));
+  if (whys.length && !followUp && !leanWhy && !evenLove) opt(fill(BECAUSE[lang], { reasons: whys[0] }), 80);
   if (followUp) {
     // Items the thread hasn't named yet come first in a follow-up.
     for (const [k, it] of c.items.slice(1).entries()) {
-      if (!namedBefore(k + 1) && it.why) optional.unshift(fill((NEXT_ITEM_ASK[c.ask] ?? NEXT_ITEM)[lang], { item: (it.text.short ?? it.text.label)[lang], why: it.why[lang] }));
+      if (!namedBefore(k + 1) && it.why) opt(fill((NEXT_ITEM_ASK[c.ask] ?? NEXT_ITEM)[lang], { item: (it.text.short ?? it.text.label)[lang], why: it.why[lang] }), 80, true);
     }
     lead = parts[parts.length - 1];
   }
@@ -395,31 +542,31 @@ export function renderContent(plan: AnswerPlan, previous: string[] = []): string
     // One set of concrete roles (rubric: no more than ~4 options); the second field's roles are a follow-up's new information.
     const ex0 = exampleList(0, 3);
     const ex1 = exampleList(1, 3);
-    if (!followUp && ex0) optional.push(fill(EXAMPLES[lang], { examples: ex0 }));
-    if (followUp && ex1) optional.push(fill(EXAMPLES_MORE[lang], { examples: ex1 }));
+    if (!followUp && ex0) opt(fill(EXAMPLES[lang], { examples: ex0 }), 55);
+    if (followUp && ex1) opt(fill(EXAMPLES_MORE[lang], { examples: ex1 }), 55);
   }
   for (const e of c.extra) {
     const t = e.text[lang];
-    if (e.kind === 'meet') { if (!meetQ) optional.push(fill(MEET_LINE[lang], { meet: t })); }
-    else if (e.kind === 'weak') optional.push(fill(WEAK_LINE[lang], { weak: t }));
-    else if (e.kind === 'place') optional.push(fill(PLACE_LINE[lang], { place: t }));
-    else if (e.kind === 'field') optional.push(fill(FIELD_LINE[lang], { field: t }));
-    else optional.push(t);
+    if (e.kind === 'meet') { if (!meetQ) opt(fill(MEET_LINE[lang], { meet: t }), 45); }
+    else if (e.kind === 'weak') opt(fill(WEAK_LINE[lang], { weak: t }), 45);
+    else if (e.kind === 'place') opt(fill(PLACE_LINE[lang], { place: t }), 35);
+    else if (e.kind === 'field') opt(fill(FIELD_LINE[lang], { field: t }), 35);
+    else opt(t, 35);
   }
   const leanJob = c.ask === 'businessVsJob' && /:job$/.test(c.items[0]?.key ?? '');
-  const tip1 = leanJob ? TIP_JOB[lang] : TIP[c.ask][lang];
+  const tip1 = leanJob ? TIP_JOB[lang] : c.ask === 'careerField' && isElder(plan) ? TIP_ELDER_CAREER[lang] : TIP[c.ask][lang];
   const tips = plan.intent.kind === 'advice' || followUp ? [TIP2[c.ask][lang], tip1] : [tip1, TIP2[c.ask][lang]];
-  optional.push(...tips);
+  for (const x of tips) opt(x, 50);
   // A dated "good time to move" only where the chart favours the move and it is near (rubric 3.3: no far, unasked dates).
   const w = c.window?.best;
   const moveAsk = (c.ask === 'businessVsJob' && /:(?:business|both)$/.test(c.items[0]?.key ?? '')) || (c.ask === 'relocation' && /:abroad$/.test(c.items[0]?.key ?? ''));
   const near = w && (w.start.getTime() - plan.now.getTime()) / (365.25 * 86400000) < 2;
   const gaveWindow = w && previous.some(p => findDates(p).some(d => d.year != null && dateInWindows({ year: d.year, month: d.month }, [w], 0)));
-  if (w && moveAsk && near && !gaveWindow) optional.push(fill(WINDOW_LINE[lang], { start: monthLabel(w.start, lang), end: monthLabel(w.end, lang) }));
+  if (w && moveAsk && near && !gaveWindow) opt(fill(WINDOW_LINE[lang], { start: monthLabel(w.start, lang), end: monthLabel(w.end, lang) }), 30);
 
-  const count = (t: string) => t.split(/\s+/).filter(Boolean).length;
   let n = parts.reduce((a, x) => a + count(x), 0);
   let tipped = false;
+  const kept: Part[] = parts.map(x => ({ text: x, prio: KEEP, core: true }));
   for (const o of optional) {
     if (said(o)) continue;
     const isTip = tips.includes(o);
@@ -427,11 +574,12 @@ export function renderContent(plan: AnswerPlan, previous: string[] = []): string
     // One practical tip always fits (rules.md §1.4); other extras stop at the word budget.
     if (n + count(o) > MAX_WORDS[lang] && parts.length >= 2 && !isTip) continue;
     parts.push(o);
+    kept.push({ text: o, prio: optPrio.get(o) ?? 35, core: true, ...(isTip ? { covers: ['practical_step', ...(c.ask === 'moneySources' ? ['money_habit'] : [])] } : {}) });
     n += count(o);
     if (isTip) tipped = true;
   }
-  if (c.ask === 'wellbeing' || plan.resolved === 'health_wellbeing') parts.push(DOCTOR_LINE[lang]);
-  return localText(parts.map(capFirst).join(' '), lang);
+  if (c.ask === 'wellbeing' || plan.resolved === 'health_wellbeing') kept.push({ text: DOCTOR_LINE[lang], prio: KEEP, core: true });
+  return kept.map(x => ({ ...x, text: localText(x.text, lang) }));
 }
 
 const LOVE_EVEN: Record<Lang, string> = {
@@ -442,6 +590,13 @@ const LOVE_EVEN: Record<Lang, string> = {
 
 /** Asks whose items are "directions" (FOLLOW_LEAD reads "your strongest direction is …"). */
 const DIRECTION_ASKS = new Set(['careerField', 'studyField']);
+
+/** 60+: no CV advice; experience-led roles (Stage 3: "put these skills first on your CV" at 80). */
+const TIP_ELDER_CAREER: Record<Lang, string> = {
+  en: 'At this stage these strengths fit advisory, mentoring or part-time roles; choose one that keeps you engaged without strain.',
+  hi: 'इस दौर में ये गुण सलाह, मार्गदर्शन या पार्ट-टाइम काम में सबसे अच्छे लगते हैं; ऐसा काम चुनें जो बिना थकाए आपको जोड़े रखे।',
+  bn: 'এই সময়ে এই গুণগুলো পরামর্শ, পথ দেখানো বা পার্ট-টাইম কাজে সবচেয়ে মানায়; এমন কাজ বেছে নিন যা ক্লান্ত না করে আপনাকে ব্যস্ত রাখে।',
+};
 
 /** Job-leaning business-vs-job tip (the business tip "test the idea before big money" contradicts a job leaning). */
 const TIP_JOB: Record<Lang, string> = {
@@ -455,6 +610,12 @@ const WHY_LEAD: Record<'main' | 'satYes' | 'satNo' | 'also', Record<Lang, string
   satYes: { en: 'Yes, Saturn is part of it: {x}.', hi: 'हाँ, इसमें शनि की भूमिका है: {x}।', bn: 'হ্যাঁ, এতে শনির ভূমিকা আছে: {x}।' },
   satNo: { en: "Saturn isn't the main pressure right now; the bigger factor is {x}.", hi: 'अभी शनि मुख्य दबाव नहीं है; बड़ी वजह है: {x}।', bn: 'এখন শনি মূল চাপ নয়; বড় কারণ হলো: {x}।' },
   also: { en: 'Alongside it: {x}.', hi: 'इसके साथ: {x}।', bn: 'এর সঙ্গে: {x}।' },
+};
+
+const WHY_PRACTICE: Record<Lang, string> = {
+  en: 'A free, traditional way to work with this phase: {practice}.',
+  hi: 'इस दौर के साथ चलने का एक मुफ़्त, पारंपरिक तरीका: {practice}।',
+  bn: 'এই পর্বের সঙ্গে চলার একটা বিনামূল্যের প্রথাগত উপায়: {practice}।',
 };
 
 const WHY_MEANS: Record<'saturn' | 'phase', Record<Lang, string>> = {
@@ -477,7 +638,7 @@ const WHY_MEANS: Record<'saturn' | 'phase', Record<Lang, string>> = {
  * Answers "is it Saturn?" directly. Stage 3 judging: the older template listed the
  * major and sub-period abstractly and left the Saturn pressure out.
  */
-function renderWhyNow(plan: AnswerPlan, previous: string[]): string {
+function whyNowParts(plan: AnswerPlan, previous: string[]): Part[] {
   const c = plan.content!;
   const lang = plan.lang;
   const said = (t: string) => previous.some(p => replyOverlap(t, p) >= SAID_MAX);
@@ -486,23 +647,25 @@ function renderWhyNow(plan: AnswerPlan, previous: string[]): string {
   const antar = get('why:antar');
   const maha = get('why:maha');
   const main = sat ?? antar ?? maha;
-  if (!main) return '';
+  if (!main) return [];
   const second = [antar, maha].find(x => x && x !== main);
   const lab = (i: typeof main) => i.text.label[lang];
   const askedSaturn = /\b(?:saturn|shan[iy]|shoni)(?:r|er|ka|ki|ke)?\b|\bsade ?sati\b|शनि|साढ़े ?साती|শনি|সাড়ে ?সাতি/i.test(plan.question);
   const first = askedSaturn ? fill((sat ? WHY_LEAD.satYes : WHY_LEAD.satNo)[lang], { x: lab(main) }) : fill(WHY_LEAD.main[lang], { x: lab(main) });
-  const parts: string[] = [first];
-  const add = (t: string | undefined) => { if (t && !said(t)) parts.push(t); };
+  const parts: Part[] = [{ text: first, prio: KEEP, core: true }];
+  const add = (t: string | undefined, prio: number) => { if (t && !said(t)) parts.push({ text: t, prio, core: true }); };
   const repeat = said(first);
-  if (second && !repeat) add(fill(WHY_LEAD.also[lang], { x: lab(second) }));
+  // A follow-up that already heard the main cause still gets the other running cycle when it is new.
+  if (second) add(fill(WHY_LEAD.also[lang], { x: lab(second) }), 70);
   // A follow-up that already heard the cause gets what it means instead (never just a tip).
-  if (repeat || !second) add(sat ? WHY_MEANS.saturn[lang] : WHY_MEANS.phase[lang]);
+  if (repeat || !second) add(sat ? WHY_MEANS.saturn[lang] : WHY_MEANS.phase[lang], 60);
   const hope = c.extra.find(e => e.kind === 'line' || e.kind === 'topicLink');
-  if (hope) add(hope.text[lang]);
+  if (hope) add(hope.text[lang], 65);
+  // Asked again ("why is it still so bad?"): something new from the chart, the main planet's free traditional practices.
+  if (repeat && main.planet && REMEDY[main.planet as keyof typeof REMEDY]) add(fill(WHY_PRACTICE[lang], { practice: REMEDY[main.planet as keyof typeof REMEDY][plan.thread.secular ? 'secular' : 'practice'][lang] }), 55);
   const tip = said(TIP.whyNow[lang]) ? TIP2.whyNow[lang] : TIP.whyNow[lang];
-  parts.push(tip);
-  if (!parts.length) parts.push(first);
-  return localText(parts.map(capFirst).join(' '), lang);
+  parts.push({ text: tip, prio: 50, core: true, covers: ['practical_step'] });
+  return parts.map(x => ({ ...x, text: localText(x.text, lang) }));
 }
 
 /** A short pointer used when no model is available and the plan has nothing to say. */
