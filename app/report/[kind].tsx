@@ -303,7 +303,7 @@ export default function ReportScreen() {
           <ReportSummaryCard report={report} />
 
           {report.chapters.map((c, i) => (
-            <View key={c.id} onLayout={onChapterLayout(i)} style={styles.chapter} accessibilityLabel={c.title}>
+            <View key={c.id} onLayout={onChapterLayout(i)} style={[styles.chapter, c.type !== 'text' && styles.chapterWide]} accessibilityLabel={c.title}>
               <View style={styles.chHead}>
                 <Text style={[styles.chN, { color: theme.accent }]}>{localizeDigits(String(i + 1).padStart(2, '0'))}</Text>
                 <Text style={[styles.h2, { color: theme.ink }]} accessibilityRole="header">{c.title}</Text>
@@ -414,7 +414,7 @@ function ChapterBody({ c, open, onToggle, showDasha, onDasha, latin }: {
           {c.items.map((h, i) => (
             <View key={h.t} style={[styles.helpRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.hairline }]}>
               <View style={[styles.tick, { backgroundColor: TILE_BG }]}><Icon name="check" size={12} color={theme.accent} /></View>
-              <View style={styles.flex}>
+              <View style={styles.helpText}>
                 <Text style={[styles.helpT, { color: theme.ink }]}>{h.t}</Text>
                 <Text style={[styles.helpS, { color: theme.ink2 }]}>{h.s}</Text>
               </View>
@@ -467,7 +467,7 @@ function ChapterBody({ c, open, onToggle, showDasha, onDasha, latin }: {
                   }} />
                   <View style={[styles.tlLine, { backgroundColor: i === c.items.length - 1 ? 'transparent' : theme.hairline2 }]} />
                 </View>
-                <View style={styles.tlBody}>
+                <View style={[styles.tlBody, i === c.items.length - 1 && styles.tlBodyLast]}>
                   <View style={styles.tlMeta}>
                     <Text style={[styles.tlDate, { color: it.state === 'now' ? theme.accent : theme.muted }, latin && styles.upper]}>{it.date}</Text>
                     <View style={[styles.tag, { borderColor: theme.hairline2 }]}>
@@ -532,6 +532,7 @@ const baseStyles = StyleSheet.create({
   noticeText: { flex: 1, fontFamily: FONTS.sansRegular, fontSize: 12.5, lineHeight: 18 },
 
   chapter: { gap: 10 },
+  chapterWide: { gap: 12 },
   chHead: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
   chN: { fontFamily: FONTS.monoRegular, fontSize: 11, lineHeight: 14, letterSpacing: 0.9 },
   h2: { flex: 1, fontFamily: FONTS.serifItalic, fontSize: 26, lineHeight: 30 },
@@ -550,6 +551,7 @@ const baseStyles = StyleSheet.create({
   tlRail: { width: 16, alignItems: 'center' },
   tlLine: { flex: 1, width: 2 },
   tlBody: { flex: 1, minWidth: 0, gap: 3, paddingBottom: 18 },
+  tlBodyLast: { paddingBottom: 4 },
   tlMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   tlDate: { fontFamily: FONTS.monoRegular, fontSize: 11, lineHeight: 15, letterSpacing: 0.4 },
   upper: { textTransform: 'uppercase' },
@@ -565,6 +567,7 @@ const baseStyles = StyleSheet.create({
 
   helpRow: { flexDirection: 'row', gap: 12, paddingVertical: 13, paddingHorizontal: 16 },
   tick: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  helpText: { flex: 1, gap: 2 },
   helpT: { fontFamily: FONTS.sansMedium, fontSize: 14.5, lineHeight: 20 },
   helpS: { fontFamily: FONTS.sansRegular, fontSize: 13, lineHeight: 18 },
   note: { fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 17 },

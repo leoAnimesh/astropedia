@@ -105,19 +105,22 @@ export const ReportSummaryCard = forwardRef<View, Props>(function ReportSummaryC
       {score && (
         <>
           <View style={[styles.kootas, { borderTopColor: theme.hairline }]}>
-            {score.kootas.map((k) => (
-              <View key={k.key} style={styles.kRow} accessible accessibilityLabel={`${k.name}, ${n(k.score)} / ${n(k.max)}${kootaNotes?.[k.key] ? `. ${kootaNotes[k.key]}` : ''}`}>
-                <View style={styles.kText}>
-                  <Text style={[styles.kName, { color: theme.ink }]}>{k.name}</Text>
-                  <Text style={[styles.kTrad, { color: theme.muted }]}>{k.trad}</Text>
-                  {kootaNotes?.[k.key] ? <Text style={[styles.kNote, { color: theme.ink2 }]}>{kootaNotes[k.key]}</Text> : null}
+            {score.kootas.map((k) => {
+              const noted = !!kootaNotes?.[k.key];
+              return (
+                <View key={k.key} style={[styles.kRow, noted && styles.kRowNoted]} accessible accessibilityLabel={`${k.name}, ${n(k.score)} / ${n(k.max)}${kootaNotes?.[k.key] ? `. ${kootaNotes[k.key]}` : ''}`}>
+                  <View style={styles.kText}>
+                    <Text style={[styles.kName, { color: theme.ink }]}>{k.name}</Text>
+                    <Text style={[styles.kTrad, { color: theme.muted }]}>{k.trad}</Text>
+                    {kootaNotes?.[k.key] ? <Text style={[styles.kNote, { color: theme.ink2 }]}>{kootaNotes[k.key]}</Text> : null}
+                  </View>
+                  <View style={[styles.kTrack, noted && styles.kTrackNoted, { backgroundColor: theme.hairline }]}>
+                    <View style={[styles.kFill, { width: `${Math.round((k.score / k.max) * 100)}%`, backgroundColor: theme.accent }]} />
+                  </View>
+                  <Text style={[styles.kScore, noted && styles.kScoreNoted, { color: theme.ink2 }]}>{n(`${k.score}/${k.max}`)}</Text>
                 </View>
-                <View style={[styles.kTrack, { backgroundColor: theme.hairline }]}>
-                  <View style={[styles.kFill, { width: `${Math.round((k.score / k.max) * 100)}%`, backgroundColor: theme.accent }]} />
-                </View>
-                <Text style={[styles.kScore, { color: theme.ink2 }]}>{n(`${k.score}/${k.max}`)}</Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
           <View style={[styles.mars, { backgroundColor: theme.surface2, borderTopColor: theme.hairline }]}>
             <Icon name="check" size={16} color={theme.accent} />
@@ -159,9 +162,15 @@ const baseStyles = StyleSheet.create({
   bars: { flexDirection: 'row', gap: 4 },
   bar: { width: 22, height: 6, borderRadius: 3 },
   focusReason: { fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 17 },
-  kootas: { paddingTop: 4, paddingHorizontal: 18, paddingBottom: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  // Even space under the divider above and over the Mars row below (was 4 / 10, and 4 / 16 with notes).
+  kootas: { paddingVertical: 8, paddingHorizontal: 18, borderTopWidth: StyleSheet.hairlineWidth },
   kRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 34 },
-  kNote: { marginTop: 2, marginBottom: 6, fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 16 },
+  // Pair screen: rows with a plain note grow; keep them off the hairlines and apart from each other.
+  kRowNoted: { alignItems: 'flex-start', paddingVertical: 6 },
+  // Bar and score line up with the name (17px line) when the row is top-aligned.
+  kTrackNoted: { marginTop: 7 },
+  kScoreNoted: { marginTop: 2 },
+  kNote: { marginTop: 2, fontFamily: FONTS.sansRegular, fontSize: 12, lineHeight: 16 },
   kText: { flex: 1 },
   kName: { fontFamily: FONTS.sansRegular, fontSize: 13, lineHeight: 17 },
   kTrad: { fontFamily: FONTS.monoRegular, fontSize: 9.5, lineHeight: 12, letterSpacing: 0.5 },
