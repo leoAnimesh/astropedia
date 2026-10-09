@@ -468,8 +468,7 @@ export function shouldRetrySwitch(failure: SwitchFailure | 'cancelled', attempt:
 // with their titles, unread markers and model-written follow-up chips; cached
 // chart readings; cached report text (regenerated on open, reading progress
 // kept); daily horoscope caches; the semantic answer cache (utils/cache.ts).
-// Kept: profiles, journal, saved answers (the user's own bookmarks; they keep
-// their copied question and answer), settings, notifications.
+// Also cleared: saved answers (they were written by the old model). Kept: profiles, journal, settings, notifications.
 
 /** MMKV (utils/storage.ts) key prefixes of model-derived data. */
 export const MODEL_DERIVED_KEY_PREFIXES: readonly string[] = ['chart_reading_', 'followups_', 'horoscope_', 'chat_seen_'];
@@ -482,11 +481,12 @@ export function isModelDerivedKey(key: string): boolean {
 export const MODEL_SWITCH_WIPE_SQL: readonly string[] = [
   'DELETE FROM messages',
   'DELETE FROM threads',
+  'DELETE FROM saved_answers',
   'UPDATE reports SET payload = NULL, chart_hash = NULL, generated_at = NULL',
 ];
 
 /** Tables a switch never touches. */
-export const KEPT_ON_SWITCH: readonly string[] = ['profiles', 'saved_answers', 'journal_entries'];
+export const KEPT_ON_SWITCH: readonly string[] = ['profiles', 'journal_entries'];
 
 /**
  * Persisted while a switch's wipe is owed (written before the new install

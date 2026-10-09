@@ -145,7 +145,7 @@
     "confirmDownload": "Downloads about {{mb}} MB (needs internet; Wi-Fi recommended) and replaces {{current}} on this phone.",
     "confirmChats": "All your chats will be cleared, including past conversations.",
     "confirmRegen": "Chart readings, reports, chat titles and suggestions will be written again by the new model.",
-    "confirmKept": "Saved answers, profiles and your journal are kept.",
+    "confirmKept": "Saved answers and all chats will be deleted. Profiles and your journal are kept.",
     "confirmGeneric": "{{name}} is a general model: Hindi and Bengali answers may be plainer than Saga's. Dates and safety checks still come from the app.",
     "confirm": "Switch model",
     "cancel": "Cancel",
