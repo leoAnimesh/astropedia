@@ -82,10 +82,43 @@ const ASK_AREA: Record<string, LifeArea | null> = {
   careerField: 'Career', businessVsJob: 'Career', partner: 'Love/marriage', moneySources: 'Money',
   studyField: 'Romance/children/study', strengths: 'Self/health', wellbeing: 'Self/health',
   relocation: 'Abroad/spending/spiritual', whyNow: 'Mind',
+  // Stage 2 planners, on the Life areas line the v2.1 model already reads for that area.
+  family: 'Home/family', relationship: 'Love/marriage', purpose: 'Growth/luck', remedies: 'Self/health', loveArranged: 'Love/marriage',
 };
 const ASK_CUE: Record<string, string> = {
   careerField: 'best fits', businessVsJob: 'better path', partner: 'partner likely', moneySources: 'money from',
   studyField: 'best subjects', strengths: 'strengths', wellbeing: 'habits to keep', relocation: 'leans to', whyNow: 'right now',
+  family: 'dynamics', relationship: 'pattern', purpose: 'path', remedies: 'free remedies', loveArranged: 'leans to',
+};
+
+/**
+ * Categories (AnswerPlan.resolved) astro-gemma v2.1 still writes; every other
+ * category is answered from the plan's template when this adapter is active.
+ * Chosen by the Stage 2 measurement (scratchpad agent/model-eval.ts: the
+ * question bank on the shipped prompt mapping, greedy, planGuard + verify):
+ * must-include pass with the model ≥ 70% and no unsafe wording (career 93%,
+ * business 90%, partner 90%, family 90%, studies 90%, love/arranged 100%,
+ * personality 100%); timing categories scored 0-60% (the model opens with
+ * sympathy instead of the window, gives vague reasons, and once told a user
+ * "marriage is not shown in your chart"); children (70%) and health (71%)
+ * are left out for their wording ("the chart shows no clear date for a baby",
+ * "don't think about children until then"). Re-measure when a new model ships.
+ */
+export const GEMMA21_MODEL_CATEGORIES: ReadonlySet<string> = new Set([
+  'career_field', 'business_vs_job', 'partner_traits_meeting', 'family_parents_siblings', 'education_field',
+  'love_vs_arranged', 'personality',
+]);
+
+/**
+ * The training-seed phrasing (ml/data/questions.py) a Stage 2 category is
+ * sent as when the user's own question is far from what v2.1 saw: the model
+ * answers in-distribution and the plan's lines are verified / appended after.
+ * Only categories whose seed keeps the question's meaning.
+ */
+export const CATEGORY_SEED: Partial<Record<string, string>> = {
+  why_now_current_phase: 'Why is everything so hard right now?',
+  personality: 'What kind of person am I really?',
+  mental_health_distress: 'What does this phase of my life mean?',
 };
 
 /** Puts the content's items on its Life areas line (moved first) in the context's own grammar. */
@@ -222,9 +255,10 @@ export function sagaChatParts(
     content: allowed ? { content: plan.content, allowed, mode: contentMode } : null,
   });
   const c = plan.content;
+  const seed = plan.lang === 'en' && !plan.intent.timing ? CATEGORY_SEED[plan.resolved] ?? null : null;
   const rewrite = contentMode === 'baseline' ? null
     : contentMode === 'line-q' && c && !plan.intent.timing && (plan.intent.kind === 'choice' || plan.intent.kind === 'nature')
-      ? ASK_QUESTION[c.ask][plan.lang] : plan.rewrite;
+      ? ASK_QUESTION[c.ask][plan.lang] : plan.rewrite ?? seed;
   return {
     system,
     question: westernDigits(rewrite ?? plan.question),

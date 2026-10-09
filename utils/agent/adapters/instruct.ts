@@ -179,6 +179,16 @@ export function instructSystemPrompt(plan: AnswerPlan): string {
     lines.push('Do not give dates unless the question asks when.');
   }
   for (const f of plan.facts) lines.push(`Chart fact (${f.code}): ${f.source}.`);
+  // The category route's own lines (routes.ts): what a practising astrologer must say for this kind of question.
+  lines.push(`Category: ${plan.category}${plan.resolved !== plan.category ? ` (about ${plan.resolved})` : ''}${plan.followUp ? `; follow-up: ${plan.followUp}` : ''}.`);
+  if (plan.say.length) {
+    lines.push('Must say (in your own words, in the reply language; keep dates exactly):');
+    for (const l of plan.say) lines.push(`- ${l.text.en}`);
+  }
+  if (plan.followUp) lines.push('This is a follow-up: add only what is new; do not repeat the previous answer.');
+  const t2 = plan.thread;
+  const known = [t2.married ? 'already married' : '', t2.employed ? 'already employed' : '', t2.gender ? `a ${t2.gender}` : '', t2.secular ? 'not religious (secular advice only)' : ''].filter(Boolean);
+  if (known.length) lines.push(`The user told you earlier: ${known.join(', ')}. Respect it.`);
   if (plan.notes.length) lines.push(`Must mention: ${plan.notes.join(', ')}.`);
   if (plan.advice.includes('doctor')) lines.push('Tell them to see a doctor.');
   if (plan.advice.includes('lawyer')) lines.push('Tell them to talk to a lawyer.');

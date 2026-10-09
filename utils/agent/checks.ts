@@ -104,7 +104,7 @@ export const VOCAB: Partial<Record<PlanCode, RegExp>> = {
 
 /** Forbidden-word detectors (subset that can be read off a reply). */
 export const FORBIDDEN_VOCAB: Partial<Record<ForbiddenCode, RegExp>> = {
-  guarantee: rx(['\\bdefinitely\\b', '\\b100 ?%', '\\bguaranteed?\\b(?! (?:outcome|anything))', '\\bwill never\\b', '\\bcertainly will\\b', 'पक्का होगा', 'ज़रूर होगा', 'निश्चित रूप से', 'কখনও হবে না', 'নিশ্চিতভাবে হবে', 'অবশ্যই হবে']),
+  guarantee: rx(['\\bdefinitely\\b', '\\b100 ?%', '(?<!(?:not|no|nothing is|isn\'t|never) )\\bguaranteed?\\b(?! (?:outcome|anything))', '\\bwill never\\b', '\\bcertainly will\\b', 'पक्का होगा', 'ज़रूर होगा', 'निश्चित रूप से', 'কখনও হবে না', 'নিশ্চিতভাবে হবে', 'অবশ্যই হবে']),
   fatalism: rx(['\\bdoom', '\\bcurse', '\\bbad karma\\b', 'will ruin', 'श्राप', 'अभिशाप', 'অভিশাপ']),
   kaal_sarp: rx(['you have (?:a )?kaal ?sarp', 'kaal ?sarp (?:dosh|yog) (?:is present|in your chart)']),
   paid_remedy: rx(['\\b(?:you should|must|need to) (?:buy|wear|get) (?:a |an |the )?(?:gem|stone|ruby|sapphire|emerald|pearl|coral|rudraksha|yantra)', 'book a puja', 'consult (?:a|our) (?:paid )?astrologer']),

@@ -29,6 +29,7 @@ import { localizeDigitsStream, previousReplies, requiredTail, verifyStream } fro
 import { krishnaTemplate, renderTemplate } from './adapters/template';
 import { templateReading } from './adapters/template-reading';
 import { activeAdapter, adapterSupports } from './adapters';
+import { GEMMA21_MODEL_CATEGORIES } from './adapters/gemma21-prompt';
 import type { AdapterTask, ChatTurn, ReadingResult } from './adapters/types';
 import { questionTitle, type Lang } from './strings';
 import type { ThreadFacts } from './thread-facts';
@@ -134,6 +135,10 @@ async function route(req: PipelineRequest): Promise<PipelineResult> {
   };
   const template = plan.mode === 'saga' ? renderTemplate(plan, previousReplies(req.history)) : null;
   const adapter = activeAdapter();
+  // The small on-device model only writes the categories it measured well on (gemma21-prompt.ts).
+  if (template && plan.mode === 'saga' && adapter.caps.id === 'gemma21' && !GEMMA21_MODEL_CATEGORIES.has(plan.resolved)) {
+    return { stream: verifyStream(once(template), plan, advice, req.history), tier: 'deterministic', plan };
+  }
   if (!adapter.caps.model || !(await adapter.ready(req.waitMs))) {
     // No model: a timing / topic question still gets a full answer from the plan.
     if (template) return { stream: verifyStream(once(template), plan, advice, req.history), tier: 'deterministic', plan };

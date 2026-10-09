@@ -140,9 +140,12 @@ function withLines(plan: AnswerPlan, core: string, previous: string[]): string {
   let head: string[] = lead.map(x => x.text);
   let coreRest = coreSentences;
   if (timingFirst && coreSentences.length) {
+    // A one-phrase acknowledgement ("Thanks for telling me.", "Sorry…") still opens the answer.
+    const OPENER = new Set(['ack_correction', 'calm_boundary']);
+    const open = lead.filter(x => OPENER.has(x.l.code)).map(x => x.text);
     const direct = lead.filter(x => DIRECT.has(x.l.code)).map(x => x.text);
-    const rest = lead.filter(x => !DIRECT.has(x.l.code)).map(x => x.text);
-    head = [...direct, coreSentences[0], ...rest];
+    const rest = lead.filter(x => !DIRECT.has(x.l.code) && !OPENER.has(x.l.code)).map(x => x.text);
+    head = [...open, ...direct, coreSentences[0], ...rest];
     coreRest = coreSentences.slice(1);
   }
   const parts = [...head, ...coreRest, ...keptBody, ...end.map(x => x.text)].filter(x => x && x.trim());
