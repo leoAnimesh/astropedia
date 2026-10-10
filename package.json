@@ -71,6 +71,7 @@
     "@types/react": "~19.2.4",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~57.0.2",
+    "hermes-compiler-v1": "npm:hermes-compiler@250829098.0.17",
     "typescript": "~6.0.3"
   },
   "private": true,
