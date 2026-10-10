@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.astropedia",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "supportsTablet": false,
       "icon": {
         "light": "./assets/images/icon-ios-light.png",
@@ -64,11 +64,12 @@
     },
     "android": {
       "package": "com.astropedia",
-      "versionCode": 1,
+      "versionCode": 2,
+      "icon": "./assets/images/android-icon-legacy-light.png",
       "adaptiveIcon": {
-        "backgroundColor": "#1D1A14",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
+        "backgroundColor": "#FAF9F6",
+        "foregroundImage": "./assets/images/android-icon-foreground-light.png",
+        "backgroundImage": "./assets/images/android-icon-background-light.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -137,6 +138,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4e182a32-b09e-46fa-af19-0c94ff974198"
+      }
     }
   }
 }

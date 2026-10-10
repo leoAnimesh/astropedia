@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
+import { skipNotificationsStepIfGranted } from '@/utils/onboarding-finish';
 import { useTranslation } from 'react-i18next';
 import { localCityName, localCountryName, localizePlace, localStateName } from '@/utils/place-names';
 import { useAccent } from '@/hooks/use-accent';
@@ -121,6 +122,9 @@ export default function BirthPlaceScreen() {
       });
       // The profile exists now, so the notifications step replaces this screen
       // (no way back to create a duplicate). It finishes onboarding.
+      // If notifications are already allowed, skip the step and finish here
+      // (decided before navigating, so the step never flashes).
+      if (await skipNotificationsStepIfGranted()) return;
       router.replace('/(onboarding)/notifications');
     } finally {
       setLoading(false);
