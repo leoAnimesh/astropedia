@@ -1,4 +1,4 @@
-import { StyleSheet, View, type ColorValue } from 'react-native';
+import { Pressable, StyleSheet, View, type ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +48,23 @@ export default function TabsLayout() {
           elevation:       0,
         },
         tabBarLabelStyle: styles.label,
+        // No Android ripple on the tab buttons. Plain RN Pressable (not the
+        // react-navigation PlatformPressable) so there's no opacity flash either.
+        tabBarButton: ({ children, style, onPress, onLongPress, accessibilityState, accessibilityLabel, testID, href: _href, ...rest }) => (
+          <Pressable
+            {...(rest as object)}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            accessibilityRole="button"
+            accessibilityState={accessibilityState}
+            accessibilityLabel={accessibilityLabel}
+            testID={testID}
+            android_ripple={{ color: 'transparent', borderless: false }}
+            style={style}
+          >
+            {children}
+          </Pressable>
+        ),
       }}
     >
       <Tabs.Screen

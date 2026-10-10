@@ -11,22 +11,14 @@ import { EyebrowLabel } from '@/components/atoms/EyebrowLabel';
 import { ScreenLayout } from '@/components/templates/ScreenLayout';
 import { showDialog } from '@/components/overlays';
 import { FONTS, RADIUS } from '@/constants/themes';
-import { Storage } from '@/utils/storage';
-import {
-  ensureNotificationPermission,
-  scheduleDailyHoroscope,
-  scheduleTransitAlerts,
-} from '@/utils/notifications';
-import { resetOnboardingDraft } from './_store';
-import { useOnboardingStore } from '@/stores/onboarding-store';
-import { requestModelOverlay } from '@/utils/model-download';
+import { ensureNotificationPermission } from '@/utils/notifications';
+import { applyNotificationChoices, finishOnboarding } from '@/utils/onboarding-finish';
 
 export default function NotificationsScreen() {
   const styles = useIndicStyles(baseStyles);
   const { theme } = useAccent();
   const { t, i18n } = useTranslation('onboarding');
   const indic = i18n.language !== 'en';
-  const setOnboardingDone = useOnboardingStore((s) => s.setDone);
 
   const [daily,   setDaily]   = useState(true);
   const [transit, setTransit] = useState(true);
@@ -38,15 +30,7 @@ export default function NotificationsScreen() {
     return () => sub.remove();
   }, []);
 
-  // Flipping the store makes the <Stack.Protected> guards in the root layout
-  // swap into the app stack — no imperative navigation needed.
-  // If Saga's model is still downloading, the root layout shows the
-  // "Preparing Saga…" overlay over home until it's ready.
-  const finish = () => {
-    resetOnboardingDraft();
-    requestModelOverlay();
-    setOnboardingDone(true);
-  };
+  const finish = finishOnboarding;
 
   const handleEnable = async () => {
     if (busy || (!daily && !transit)) return;
@@ -57,17 +41,7 @@ export default function NotificationsScreen() {
         showDialog({ title: t('notifications.deniedTitle'), message: t('notifications.deniedBody') });
         return finish();
       }
-      // Same storage flags + schedulers the Settings toggles use.
-      try {
-        if (daily) {
-          Storage.setDailyHoroscopePush(true);
-          await scheduleDailyHoroscope();
-        }
-        if (transit) {
-          Storage.setTransitAlerts(true);
-          await scheduleTransitAlerts(null);
-        }
-      } catch { /* app/_layout re-schedules on next launch/foreground */ }
+      await applyNotificationChoices({ daily, transit });
       finish();
     } finally {
       setBusy(false);
